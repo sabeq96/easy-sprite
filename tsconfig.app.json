@@ -23,7 +23,6 @@
     "noFallthroughCasesInSwitch": true,
 
     /* Alsias */
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     }

@@ -27,7 +27,7 @@ Explicitly **out of scope**: GIF export, cloud sync, collaboration, vector tools
 | Doc | What it is |
 | --- | --- |
 | [architecture.md](architecture.md) | System design: state ownership, rendering pipeline, memory/perf budget, folder map |
-| [conventions.md](conventions.md) | Code standard: module boundaries, where code belongs, naming, size limits, lint enforcement |
+| [conventions.md](conventions.md) | Code standard: module boundaries, where code belongs, shadcn-first UI rule, naming, size limits, lint enforcement |
 | [shortcuts.md](shortcuts.md) | The full keymap, the command registry contract, and conflict rules |
 
 ## Phases
@@ -68,8 +68,10 @@ argued in full where it is implemented; this table is the short version.
 
 | Decision | Why | Revisit if |
 | --- | --- | --- |
+| Keep the `shadcn` npm package as a dependency | Not an install accident: `src/index.css` does `@import "shadcn/tailwind.css"`, which is the base-nova style layer. Removing it breaks the production build. The CLI is still invoked as `npx shadcn@latest add …`. | the style layer is vendored into `index.css` |
+| UI is shadcn-first, minimal custom CSS | Hand-rolled markup drifts from the design system and produces inconsistent spacing, focus and a11y behaviour. Generic-but-clean beats bespoke. See [conventions.md §6b](conventions.md). | never |
 | Keep the `cn` npm package | The base-nova shadcn style generates `import { cn } from "cn"` (see `src/components/ui/button.tsx`). Rewiring it to `@/lib/utils` means hand-patching every future `npx shadcn add`. `@/lib/utils` re-exports `cn`, so app code has one import path and generated code still compiles. | shadcn changes its generated import, or you stop generating components |
-| Drop `init`, `npx`, `shadcn` from `dependencies` | Install-time accidents. `shadcn` is a CLI (`npx shadcn@latest add …`), the other two are unrelated packages that ship nothing to the bundle. | never — run `npm remove init npx shadcn` in phase 0 |
+| Drop `init` and `npx` from `dependencies` | Install-time accidents that ship nothing to the bundle and are imported by nothing. `shadcn` is **not** in this list — see the row above. | never — run `npm remove init npx` in phase 0 |
 | Dexie 4 for IndexedDB | Typed `EntityTable` collections, typed compound indexes, schema versioning, and `useLiveQuery` for a gallery that updates itself. | the app ever needs sync/replication — then RxDB |
 | Raw RGBA in IndexedDB, not PNG | PNG round-trips through premultiplied alpha and silently mutates translucent pixels. Lossless beats small for source data. | sprites routinely exceed the ~48 MB budget; then compress cels with `deflate-raw` on write |
 | Pixels never re-render React | Drawing writes to typed arrays and emits dirty rects; React only subscribes to structure/meta revision counters. | never — this is the architecture |

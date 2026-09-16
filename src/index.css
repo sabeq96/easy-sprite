@@ -47,6 +47,9 @@
   --color-sidebar-ring: var(--sidebar-ring);
   --font-heading: var(--font-sans);
   --font-sans: 'Inter Variable', sans-serif;
+  --color-canvas-bg: var(--canvas-bg);
+  --color-checker-a: var(--checker-a);
+  --color-checker-b: var(--checker-b);
 }
 
 :root {
@@ -82,6 +85,11 @@
   --sidebar-accent-foreground: oklch(0.216 0.006 56.043);
   --sidebar-border: oklch(0.923 0.003 48.717);
   --sidebar-ring: oklch(0.709 0.01 56.259);
+
+  /* Editor surfaces: the canvas backdrop and the transparency checkerboard. */
+  --canvas-bg: oklch(0.955 0.002 106.423);
+  --checker-a: oklch(1 0 0);
+  --checker-b: oklch(0.93 0.002 106.423);
 }
 
 .dark {
@@ -116,6 +124,10 @@
   --sidebar-accent-foreground: oklch(0.985 0.001 106.423);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.553 0.013 58.071);
+
+  --canvas-bg: oklch(0.19 0.004 49.25);
+  --checker-a: oklch(0.31 0.005 49.25);
+  --checker-b: oklch(0.26 0.005 49.25);
 }
 
 @layer base {
@@ -127,5 +139,21 @@
   }
   html {
     @apply font-sans;
+  }
+}
+@layer base {
+  /* Pixel art must never be resampled smoothly, wherever it is shown. */
+  .pixelated {
+    image-rendering: pixelated;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }

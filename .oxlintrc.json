@@ -1,8 +1,75 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
+  "plugins": ["react", "typescript", "oxc", "import"],
   "rules": {
     "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
+    "react/only-export-components": ["warn", { "allowConstantExport": true }],
+    "typescript/no-explicit-any": "error",
+    "typescript/consistent-type-imports": "error",
+    "import/no-cycle": "error"
+  },
+  "overrides": [
+    {
+      "files": ["src/editor/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "react",
+                  "react-dom",
+                  "react-router",
+                  "dexie",
+                  "dexie-react-hooks",
+                  "zustand",
+                  "lucide-react",
+                  "@/components/*",
+                  "@/hooks/*",
+                  "@/stores/*",
+                  "@/db/*",
+                  "@/app/*",
+                  "@/services/*"
+                ],
+                "message": "src/editor/** is framework-free: no React, no Dexie, no UI, no DB imports."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/db/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@/components/*", "@/editor/*", "@/hooks/*", "@/app/*", "react", "react-dom"],
+                "message": "src/db/** must not depend on the UI or the editor core."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/lib/**", "src/constants/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@/components/*", "@/editor/*", "@/db/*", "@/hooks/*", "@/stores/*", "@/app/*", "react", "react-dom", "dexie"],
+                "message": "src/lib/** and src/constants/** are pure: they may only import each other and types."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
 }

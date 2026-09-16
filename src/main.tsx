@@ -1,15 +1,24 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import { BrowserRouter } from "react-router";
+import { AppProviders } from "@/app/providers";
+import { AppRoutes } from "@/app/routes";
+import { seedDatabase } from "@/db/seed";
 import "./index.css";
-import App from "./App.tsx";
-import { BrowserRouter, Route, Routes } from "react-router";
+
+// Seeding runs in the background: if IndexedDB is unavailable (private mode, blocked site
+// data) the promise can hang forever, and awaiting it here would leave a permanently blank
+// page. Live queries pick the palettes up whenever the seed lands.
+void seedDatabase().catch((error: unknown) => {
+  console.error("Could not seed built-in palettes", error);
+});
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <BrowserRouter>
-      <Routes>
-        <Route index path="/" element={<App />} />
-      </Routes>
+      <AppProviders>
+        <AppRoutes />
+      </AppProviders>
     </BrowserRouter>
   </StrictMode>,
 );

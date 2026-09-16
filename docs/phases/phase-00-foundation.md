@@ -12,11 +12,16 @@ module boundaries, constants, shared utils, routing, and a dark-mode app shell. 
 The scaffold has three packages that are install-time accidents and should go:
 
 ```bash
-npm remove init npx shadcn        # `shadcn` is a CLI — use `npx shadcn@latest` instead
+npm remove init npx
 ```
 
-> `cn` (the tiny clsx + tailwind-merge package) **stays** — the base-nova shadcn style imports
-> `cn` from it directly, as seen in `src/components/ui/button.tsx`.
+Two packages that look like accidents but are not, and must stay:
+
+- **`cn`** — the base-nova shadcn style generates `import { cn } from "cn"`, as in
+  `src/components/ui/button.tsx`.
+- **`shadcn`** — `src/index.css` does `@import "shadcn/tailwind.css"`, which is the style layer
+  the generated components are built against. Removing it fails the production build with
+  `Can't resolve 'shadcn/tailwind.css'`. The CLI is still used as `npx shadcn@latest add …`.
 
 Add what the app actually needs:
 
@@ -405,11 +410,17 @@ Three stubs so routing is verifiable today: `SpriteManagerPage`, `EditorPage`, `
 ## 0.9 shadcn components to pull now
 
 ```bash
-npx shadcn@latest add button input label dialog dropdown-menu tooltip separator \
-  slider switch tabs popover scroll-area toggle toggle-group sonner
+npx shadcn@latest add button input label field card badge dialog alert-dialog \
+  dropdown-menu context-menu menubar tooltip kbd separator slider switch tabs \
+  popover scroll-area toggle toggle-group select sonner skeleton empty
 ```
 
-These cover phases 0–9. Pull `command` in phase 11 for the command palette.
+These cover phases 0–10. Pull `command` in phase 11 for the command palette.
+
+**This list is the UI vocabulary for the whole app.** Per
+[conventions.md §6b](../conventions.md), panels are composed from these primitives with
+layout-only utility classes; if something needs a primitive that is not here, install it rather
+than hand-rolling it.
 
 ---
 
@@ -420,4 +431,4 @@ These cover phases 0–9. Pull `command` in phase 11 for the command palette.
 - [ ] `npm run lint` errors on a React import inside `src/editor/` and passes otherwise.
 - [ ] `npm run test` runs (zero tests is fine) with `fake-indexeddb` loaded.
 - [ ] Theme toggle persists across reload; dark is the default.
-- [ ] `src/App.tsx` is gone; `init`, `npx` and `shadcn` are out of `dependencies`.
+- [ ] `src/App.tsx` is gone; `init` and `npx` are out of `dependencies` (`cn` and `shadcn` stay).

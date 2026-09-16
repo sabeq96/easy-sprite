@@ -57,6 +57,14 @@ Types over interfaces for unions and aliases; `interface` for object shapes that
 (`Tool`, `ToolContext`). Always `import type { … }` for type-only imports — `verbatimModuleSyntax`
 is on and will error otherwise.
 
+Two compiler settings shape how classes are written in this repo:
+
+- **`erasableSyntaxOnly`** forbids constructor parameter properties (`constructor(private readonly
+  doc: Doc) {}`) and enums. Declare fields explicitly and assign them in the constructor body.
+- **Pixel buffers are `PixelBuffer`** (`src/types/pixels.ts`), i.e. `Uint8ClampedArray<ArrayBuffer>`.
+  The default `Uint8ClampedArray` is backed by `ArrayBufferLike`, which `ImageData` rejects —
+  and wrapping the cel buffer in `ImageData` without copying is load-bearing for the renderer.
+
 ## 4. Constants: no magic numbers, ever
 
 Every tuning value in this app is user-visible behaviour (zoom feel, autosave latency, onion
@@ -110,6 +118,29 @@ The React Compiler is enabled in `vite.config.ts`.
 - Every list gets a stable `key` from a domain id — never an array index (frames and layers get
   reordered, and index keys will corrupt the UI state of the rows).
 - Dialogs/menus come from `components/ui/` (shadcn). Do not hand-roll focus traps.
+
+## 6b. UI composition: shadcn first
+
+**Always build from the shadcn components in `src/components/ui/`, and write as little CSS as
+possible.** The UI may look generic — the bar is clean and easy to navigate, not bespoke.
+
+- Before writing a component, check whether a shadcn primitive covers it. If one exists but is
+  not installed, install it (`npx shadcn@latest add card field badge context-menu alert-dialog
+  command kbd …`) rather than rebuilding it out of `div`s.
+- Utility classes are for **layout only** — `flex`, `grid`, `gap`, `size`, `min-w-0`, `truncate`.
+  Colours, borders, radii, shadows, focus rings, hover and pressed states come from the
+  component's own variants. A 12-class string on a `div` is a sign the wrong primitive is in use.
+- Structure panels with `Card` / `CardHeader` / `CardContent`, rows with `Button` variants,
+  labelled controls with `Field` + `Label`, menus with `DropdownMenu` / `ContextMenu`,
+  destructive confirms with `AlertDialog`, key hints with `Kbd`.
+- Custom markup is reserved for genuinely domain-specific surfaces that no design system covers:
+  the canvas stack, colour swatch grids, frame/layer thumbnails. Even there, wrap them in
+  shadcn containers and keep the bespoke classes to sizing and positioning.
+- Never restyle a `ui/` component inline to make it look different. If a variant is missing, add
+  it to the component's `cva` config so every use site gets it.
+
+The components generated into `src/components/ui/` are the exception to the "don't hand-edit"
+rule only for adding variants — never fork one into an app component.
 
 ## 7. Custom hook shape
 
