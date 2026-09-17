@@ -40,7 +40,7 @@ describe("viewSlice", () => {
     const store = createTestStore();
     store.getState().setOnion({ enabled: true });
     expect(store.getState().onion.enabled).toBe(true);
-    expect(store.getState().onion.before).toBeGreaterThan(0); // untouched fields survive the patch
+    expect(store.getState().onion.direction).toBe("before"); // untouched fields survive the patch
   });
 
   it("tracks the active frame and layer", () => {

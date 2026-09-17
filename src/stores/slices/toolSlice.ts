@@ -1,9 +1,4 @@
-import {
-  DEFAULT_BRUSH_SIZE,
-  DEFAULT_FILL_TOLERANCE,
-  MAX_CYCLE_BRUSH_SIZE,
-  type ToolId,
-} from "@/constants/tools";
+import { DEFAULT_BRUSH_SIZE, MAX_CYCLE_BRUSH_SIZE, type ToolId } from "@/constants/tools";
 import type { ToolOptions } from "@/editor/tools/types";
 import type { SliceCreator } from "@/stores/slices/types";
 
@@ -27,7 +22,6 @@ export const createToolSlice: SliceCreator<ToolSlice> = (set, get) => ({
     brushSize: DEFAULT_BRUSH_SIZE,
     mirrorHorizontal: false,
     mirrorVertical: false,
-    fillTolerance: DEFAULT_FILL_TOLERANCE,
     pickFromComposite: true,
   },
 

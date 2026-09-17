@@ -6,11 +6,10 @@ import { EditorMenu } from "@/components/editor/EditorMenu";
 import { SaveStatusBadge } from "@/components/editor/SaveStatusBadge";
 import { SpriteNameField } from "@/components/editor/SpriteNameField";
 import { ViewControls } from "@/components/editor/ViewControls";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ROUTES } from "@/constants/routes";
+import { shortcutHint } from "@/constants/shortcuts";
 import { useHistoryState } from "@/hooks/useHistoryState";
-import { IS_APPLE } from "@/lib/keys";
 
 export interface EditorTopBarProps {
   onShowHelp: () => void;
@@ -19,14 +18,14 @@ export interface EditorTopBarProps {
 export function EditorTopBar({ onShowHelp }: EditorTopBarProps) {
   const { history, saveStatus } = useDocumentSession();
   const { canUndo, canRedo, undoLabel, redoLabel } = useHistoryState(history);
-  const mod = IS_APPLE ? "⌘" : "Ctrl+";
 
   return (
-    <header className="flex items-center gap-2 border-b px-2">
-      <Button
+    <header className="flex items-center gap-2 rounded-xl bg-card px-2 py-1.5 shadow-sm ring-1 ring-foreground/5">
+      <TooltipButton
+        label="Back to sprites"
+        shortcut={shortcutHint("app.backToLibrary")}
         size="icon-sm"
         variant="ghost"
-        aria-label="Back to sprites"
         nativeButton={false}
         render={
           <Link to={ROUTES.sprites}>
@@ -41,7 +40,7 @@ export function EditorTopBar({ onShowHelp }: EditorTopBarProps) {
 
       <TooltipButton
         label={undoLabel ? `Undo ${undoLabel.toLowerCase()}` : "Undo"}
-        shortcut={`${mod}Z`}
+        shortcut={shortcutHint("edit.undo")}
         disabled={!canUndo}
         onClick={() => history.undo()}
       >
@@ -50,7 +49,7 @@ export function EditorTopBar({ onShowHelp }: EditorTopBarProps) {
 
       <TooltipButton
         label={redoLabel ? `Redo ${redoLabel.toLowerCase()}` : "Redo"}
-        shortcut={`${mod}⇧Z`}
+        shortcut={shortcutHint("edit.redo")}
         disabled={!canRedo}
         onClick={() => history.redo()}
       >
@@ -60,7 +59,11 @@ export function EditorTopBar({ onShowHelp }: EditorTopBarProps) {
       <div className="ml-auto flex items-center gap-2">
         <ViewControls />
 
-        <TooltipButton label="Keyboard shortcuts" shortcut="?" onClick={onShowHelp}>
+        <TooltipButton
+          label="Keyboard shortcuts"
+          shortcut={shortcutHint("app.shortcutHelp")}
+          onClick={onShowHelp}
+        >
           <Keyboard />
         </TooltipButton>
 

@@ -10,8 +10,10 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { shortcutHint } from "@/constants/shortcuts";
 
 export function EditorMenu() {
   const { doc, autosave } = useDocumentSession();
@@ -28,7 +30,7 @@ export function EditorMenu() {
             </Button>
           }
         />
-        <DropdownMenuContent align="start">
+        <DropdownMenuContent align="start" className="min-w-56">
           <DropdownMenuItem onClick={() => setResizing(true)}>
             <Crop />
             Resize canvas…
@@ -45,6 +47,7 @@ export function EditorMenu() {
           >
             <Save />
             Save now
+            <DropdownMenuShortcut>{shortcutHint("edit.save")}</DropdownMenuShortcut>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

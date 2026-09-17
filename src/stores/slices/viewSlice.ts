@@ -1,14 +1,12 @@
 import { DEFAULT_ZOOM } from "@/constants/canvas";
-import { ONION_DEFAULT } from "@/constants/animation";
+import { ONION_DEFAULT, type OnionDirection } from "@/constants/animation";
 import { clampViewport, fitViewport, zoomStep, type Point, type Size, type Viewport } from "@/editor/viewport";
 import type { SliceCreator } from "@/stores/slices/types";
 
 export interface OnionConfig {
   enabled: boolean;
-  before: number;
-  after: number;
+  direction: OnionDirection;
   opacity: number;
-  tint: boolean;
 }
 
 export interface ViewSlice {

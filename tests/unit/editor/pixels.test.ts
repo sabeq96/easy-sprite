@@ -76,13 +76,13 @@ describe("floodFill", () => {
     expect(floodFill(area, 0, 0, { r: 0, g: 0, b: 0, a: 0 })).toBeNull();
   });
 
-  it("respects tolerance", () => {
+  it("only fills pixels that match the seed colour exactly", () => {
     const area = target(2, 1);
     setPixel(area.buffer, 0, 0, 2, { r: 100, g: 100, b: 100, a: 255 });
     setPixel(area.buffer, 1, 0, 2, { r: 110, g: 100, b: 100, a: 255 });
 
-    floodFill(area, 0, 0, RED, { tolerance: 20 });
-    expect(getPixel(area.buffer, 1, 0, 2)).toEqual(RED);
+    floodFill(area, 0, 0, RED);
+    expect(getPixel(area.buffer, 1, 0, 2)).not.toEqual(RED);
   });
 
   it("fills every matching pixel when non-contiguous", () => {

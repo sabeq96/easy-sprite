@@ -3,6 +3,7 @@ import { useDocumentSession } from "@/app/DocumentProvider";
 import { TooltipButton } from "@/components/common/TooltipButton";
 import { LayerRow } from "@/components/editor/LayerRow";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { shortcutHint } from "@/constants/shortcuts";
 import {
   addLayerCommand,
   duplicateLayerCommand,
@@ -28,24 +29,28 @@ export function LayersPanel() {
   const actions = [
     {
       label: "Add layer",
+      shortcut: shortcutHint("layer.add"),
       icon: Plus,
       disabled: false,
       run: () => dispatch(() => addLayerCommand(doc, activeLayerId ?? undefined)),
     },
     {
       label: "Duplicate layer",
+      shortcut: undefined,
       icon: Copy,
       disabled: !activeLayerId,
       run: () => activeLayerId && dispatch(() => duplicateLayerCommand(doc, activeLayerId)),
     },
     {
       label: "Merge down",
+      shortcut: shortcutHint("layer.mergeDown"),
       icon: ChevronsDownUp,
       disabled: activeIndex <= 0,
       run: () => activeLayerId && dispatch(() => mergeLayerDownCommand(doc, activeLayerId)),
     },
     {
       label: "Delete layer",
+      shortcut: undefined,
       icon: Trash2,
       disabled: snapshot.layers.length <= 1 || !activeLayerId,
       run: () => activeLayerId && dispatch(() => removeLayerCommand(doc, activeLayerId)),
@@ -53,15 +58,19 @@ export function LayersPanel() {
   ];
 
   return (
-    <section aria-label="Layers" className="flex min-h-0 flex-1 flex-col">
-      <header className="flex h-8 shrink-0 items-center gap-1 border-b px-2 text-xs font-medium text-muted-foreground">
+    <section
+      aria-label="Layers"
+      className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl bg-card shadow-sm ring-1 ring-foreground/5"
+    >
+      <header className="flex h-8 shrink-0 items-center gap-1 rounded-t-xl bg-muted/60 px-2 text-xs font-medium text-muted-foreground">
         <Layers className="size-3.5" />
         Layers
         <div className="ml-auto flex gap-0.5">
-          {actions.map(({ label, icon: Icon, disabled, run }) => (
+          {actions.map(({ label, shortcut, icon: Icon, disabled, run }) => (
             <TooltipButton
               key={label}
               label={label}
+              shortcut={shortcut}
               size="icon-xs"
               disabled={disabled}
               onClick={run}

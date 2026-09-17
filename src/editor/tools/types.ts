@@ -22,7 +22,6 @@ export interface ToolOptions {
   brushSize: number;
   mirrorHorizontal: boolean;
   mirrorVertical: boolean;
-  fillTolerance: number;
   /** The colour picker samples the merged image rather than the active layer. */
   pickFromComposite: boolean;
 }
@@ -45,8 +44,6 @@ export interface ToolContext {
 export interface Tool {
   readonly id: ToolId;
   readonly label: string;
-  /** CSS cursor while this tool is active. */
-  readonly cursor: string;
   /** Whether a drag continues the operation (pencil) or is a one-shot (bucket). */
   readonly continuous: boolean;
 

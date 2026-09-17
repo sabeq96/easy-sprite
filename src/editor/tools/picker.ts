@@ -21,7 +21,6 @@ function sample(ctx: ToolContext, point: ToolPoint): void {
 export const pickerTool: Tool = {
   id: "picker",
   label: "Color picker",
-  cursor: "copy",
   // Dragging keeps sampling, like Piskel.
   continuous: true,
 

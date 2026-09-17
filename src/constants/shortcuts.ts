@@ -1,5 +1,5 @@
 import type { CommandId } from "@/constants/commands";
-import { bindingSignature, type KeyBinding } from "@/lib/keys";
+import { bindingSignature, formatBinding, type KeyBinding } from "@/lib/keys";
 
 /**
  * The single source of truth for the keymap. Every entry maps to a command id, not a handler,
@@ -7,7 +7,6 @@ import { bindingSignature, type KeyBinding } from "@/lib/keys";
  */
 export const SHORTCUTS: Partial<Record<CommandId, KeyBinding[]>> = {
   "tool.pencil": [{ key: "p" }],
-  "tool.mirrorPencil": [{ key: "v" }],
   "tool.eraser": [{ key: "e" }],
   "tool.bucket": [{ key: "b" }],
   "tool.fillSimilar": [{ key: "g" }],
@@ -41,7 +40,7 @@ export const SHORTCUTS: Partial<Record<CommandId, KeyBinding[]>> = {
   "layer.selectBelow": [{ key: "pagedown" }],
 
   "view.zoomIn": [{ key: "+" }, { key: "=" }],
-  "view.zoomOut": [{ key: "-" }],
+  "view.zoomOut": [{ key: "-" }, { key: "_" }],
   "view.fit": [{ key: "0" }],
   "view.toggleGrid": [{ key: "g", mod: true }],
   "view.toggleOnion": [{ key: "o", mod: true, shift: true }],
@@ -52,6 +51,12 @@ export const SHORTCUTS: Partial<Record<CommandId, KeyBinding[]>> = {
 
 /** Keys held to temporarily swap tools, released back to the previous tool. */
 export const HELD_TOOL_KEYS = { Alt: "picker" } as const;
+
+/** The first bound chord for a command, formatted for a tooltip — reads the one keymap table. */
+export function shortcutHint(commandId: CommandId): string | undefined {
+  const binding = SHORTCUTS[commandId]?.[0];
+  return binding && formatBinding(binding);
+}
 
 // Dev-only guard: two features must never silently claim the same chord.
 if (import.meta.env.DEV) {

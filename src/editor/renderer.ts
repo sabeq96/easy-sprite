@@ -1,4 +1,4 @@
-import { ONION_TINT_AFTER, ONION_TINT_BEFORE } from "@/constants/animation";
+import { onionOffset, type OnionDirection } from "@/constants/animation";
 import { GRID_MIN_SCALE } from "@/constants/canvas";
 import { compositeFrame } from "@/editor/composite";
 import type { SpriteDocument } from "@/editor/document";
@@ -6,10 +6,8 @@ import type { Viewport } from "@/editor/viewport";
 
 export interface OnionSettings {
   enabled: boolean;
-  before: number;
-  after: number;
+  direction: OnionDirection;
   opacity: number;
-  tint: boolean;
 }
 
 export interface RendererTargets {
@@ -41,8 +39,17 @@ export class CanvasRenderer {
   private readonly offPixels: () => void;
 
   private state: RendererState;
+  /** The active tool's own preview — brush cursor, drag marquee, floating-move ghost. */
   private overlayPainter: OverlayPainter | null = null;
   private overlayAnimating = false;
+  /**
+   * The committed selection's marching ants, drawn underneath the tool preview. Kept on its
+   * own channel and driven straight from store state (see `useSelectionOverlay`) rather than
+   * from tool pointer handlers, so it stays correct no matter how the selection changed —
+   * a drag, Ctrl+A, paste, or Escape all look the same from here.
+   */
+  private selectionPainter: OverlayPainter | null = null;
+  private selectionAnimating = false;
   private rafId = 0;
   private dpr = 1;
   private disposed = false;
@@ -74,6 +81,12 @@ export class CanvasRenderer {
   setOverlayPainter(painter: OverlayPainter | null, animate = false): void {
     this.overlayPainter = painter;
     this.overlayAnimating = painter !== null && animate;
+    this.invalidate("overlay");
+  }
+
+  setSelectionOverlay(painter: OverlayPainter | null, animate = false): void {
+    this.selectionPainter = painter;
+    this.selectionAnimating = painter !== null && animate;
     this.invalidate("overlay");
   }
 
@@ -120,7 +133,7 @@ export class CanvasRenderer {
     this.dirty.clear();
 
     // Marching ants and brush previews need a continuous repaint while active.
-    if (this.overlayAnimating) this.invalidate("overlay");
+    if (this.overlayAnimating || this.selectionAnimating) this.invalidate("overlay");
   }
 
   private context(canvas: HTMLCanvasElement): CanvasRenderingContext2D | null {
@@ -142,31 +155,23 @@ export class CanvasRenderer {
     const ctx = this.context(this.targets.onion);
     if (!ctx) return;
 
-    const { enabled, before, after, opacity, tint } = this.state.onion;
+    const { enabled, direction, opacity } = this.state.onion;
     if (!enabled || this.state.isPlaying) return;
 
+    // Clamped, never wrapped: a ghost past the ends would read as a bug.
     const index = this.doc.frameIndex(this.state.frameId);
-    for (let offset = -before; offset <= after; offset++) {
-      if (offset === 0) continue;
+    const frame = this.doc.frames[index + onionOffset(direction)];
+    if (!frame) return;
 
-      // Clamped, never wrapped: ghosts past the ends would read as a bug.
-      const frame = this.doc.frames[index + offset];
-      if (!frame) continue;
-
-      const source = compositeFrame(this.doc, frame.id, this.onionScratch);
-      const distance = Math.abs(offset);
-      this.present(
-        ctx,
-        tint ? tintCanvas(source, offset < 0 ? ONION_TINT_BEFORE : ONION_TINT_AFTER) : source,
-        opacity / distance,
-      );
-    }
+    const source = compositeFrame(this.doc, frame.id, this.onionScratch);
+    this.present(ctx, source, opacity);
   }
 
   private renderOverlay(): void {
     const ctx = this.context(this.targets.overlay);
     if (!ctx) return;
     if (this.state.gridEnabled) this.drawGrid(ctx);
+    this.selectionPainter?.(ctx, this.state.viewport);
     this.overlayPainter?.(ctx, this.state.viewport);
   }
 
@@ -203,24 +208,4 @@ export class CanvasRenderer {
 
     ctx.stroke();
   }
-}
-
-const tintScratch = new OffscreenCanvas(1, 1);
-
-/** Flat-colours a composite while keeping its alpha — the cheap "ghost frame" look. */
-function tintCanvas(source: OffscreenCanvas, color: string): OffscreenCanvas {
-  tintScratch.width = source.width;
-  tintScratch.height = source.height;
-
-  const ctx = tintScratch.getContext("2d");
-  if (!ctx) return source;
-
-  ctx.clearRect(0, 0, source.width, source.height);
-  ctx.drawImage(source, 0, 0);
-  ctx.globalCompositeOperation = "source-in";
-  ctx.fillStyle = color;
-  ctx.fillRect(0, 0, source.width, source.height);
-  ctx.globalCompositeOperation = "source-over";
-
-  return tintScratch;
 }

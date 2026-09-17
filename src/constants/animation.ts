@@ -2,14 +2,15 @@ export const DEFAULT_FPS = 12;
 export const MIN_FPS = 1;
 export const MAX_FPS = 60;
 
-export const ONION_MAX_FRAMES = 3;
+export type OnionDirection = "before" | "after";
+
 export const ONION_DEFAULT = {
   enabled: false,
-  before: 1,
-  after: 1,
+  direction: "before" as OnionDirection,
   opacity: 0.35,
-  tint: true,
 } as const;
 
-export const ONION_TINT_BEFORE = "#ff4d4d";
-export const ONION_TINT_AFTER = "#4d9dff";
+/** The single ghost frame is always the immediate neighbour in the chosen direction. */
+export function onionOffset(direction: OnionDirection): -1 | 1 {
+  return direction === "before" ? -1 : 1;
+}

@@ -18,8 +18,11 @@ export function useColorHotkeys(): void {
       if (event.ctrlKey || event.metaKey || event.altKey) return;
       if (isTypingTarget(event.target)) return;
 
-      const slot = Number(event.key);
-      if (!Number.isInteger(slot) || slot < 1 || slot > 9) return;
+      // event.key reflects the shifted character (Shift+1 is "!"), so the digit must come
+      // from the physical key instead — otherwise Shift+digit never matches.
+      const digit = /^Digit([1-9])$/.exec(event.code);
+      if (!digit) return;
+      const slot = Number(digit[1]);
 
       const hex = active.colors[slot - 1];
       if (!hex) return;

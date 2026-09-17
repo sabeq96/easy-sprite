@@ -1,5 +1,5 @@
-import { useRef } from "react";
-import { Copy, Download, MoreHorizontal, Plus, Trash2, Upload, Wand2 } from "lucide-react";
+import { useRef, useState } from "react";
+import { Copy, Download, MoreHorizontal, Pencil, Plus, Trash2, Upload, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import { useDocumentSession } from "@/app/DocumentProvider";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { PaletteNameDialog } from "@/components/editor/PaletteNameDialog";
 import { createPalette, removePalette, updatePalette } from "@/db/repositories/palettes";
 import type { PaletteRecord } from "@/db/schema";
 import { collectColorUsage } from "@/editor/colorUsage";
@@ -22,10 +23,17 @@ export function PaletteMenu({ palette }: { palette: PaletteRecord | null }) {
   const { doc } = useDocumentSession();
   const setActivePalette = useEditorStore((state) => state.setActivePalette);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [isCreating, setCreating] = useState(false);
+  const [isRenaming, setRenaming] = useState(false);
 
-  const create = async () => {
-    const created = await createPalette("New palette", []);
+  const create = async (name: string) => {
+    const created = await createPalette(name, []);
     setActivePalette(created.id);
+  };
+
+  const rename = async (name: string) => {
+    if (!palette) return;
+    await updatePalette(palette.id, { name });
   };
 
   const duplicate = async () => {
@@ -80,14 +88,18 @@ export function PaletteMenu({ palette }: { palette: PaletteRecord | null }) {
             </Button>
           }
         />
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={create}>
+        <DropdownMenuContent align="end" className="min-w-56">
+          <DropdownMenuItem onClick={() => setCreating(true)}>
             <Plus />
             New palette
           </DropdownMenuItem>
           <DropdownMenuItem disabled={!palette} onClick={duplicate}>
             <Copy />
             Duplicate
+          </DropdownMenuItem>
+          <DropdownMenuItem disabled={!palette || palette.builtIn} onClick={() => setRenaming(true)}>
+            <Pencil />
+            Rename…
           </DropdownMenuItem>
           <DropdownMenuItem disabled={!palette || palette.builtIn} onClick={addSpriteColors}>
             <Wand2 />
@@ -128,6 +140,26 @@ export function PaletteMenu({ palette }: { palette: PaletteRecord | null }) {
           if (file) void importFile(file);
           event.target.value = "";
         }}
+      />
+
+      <PaletteNameDialog
+        key={isCreating ? "creating" : "not-creating"}
+        open={isCreating}
+        onOpenChange={setCreating}
+        title="New palette"
+        description="Name your palette. You can rename it later."
+        confirmLabel="Create"
+        onConfirm={(name) => void create(name)}
+      />
+      <PaletteNameDialog
+        key={isRenaming ? "renaming" : "not-renaming"}
+        open={isRenaming}
+        onOpenChange={setRenaming}
+        title="Rename palette"
+        description="Choose a new name for this palette."
+        initialName={palette?.name ?? ""}
+        confirmLabel="Save"
+        onConfirm={(name) => void rename(name)}
       />
     </>
   );

@@ -1,6 +1,6 @@
 export const DB_NAME = "sprite-editor";
 
-export const AUTOSAVE_DEBOUNCE_MS = 700;
+export const AUTOSAVE_DEBOUNCE_MS = 2000;
 export const THUMBNAIL_THROTTLE_MS = 5_000;
 export const THUMBNAIL_MAX_PX = 128;
 

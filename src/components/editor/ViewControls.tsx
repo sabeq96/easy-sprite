@@ -3,6 +3,7 @@ import { useDocumentSession } from "@/app/DocumentProvider";
 import { TooltipButton } from "@/components/common/TooltipButton";
 import { OnionSkinControl } from "@/components/editor/OnionSkinControl";
 import { Separator } from "@/components/ui/separator";
+import { shortcutHint } from "@/constants/shortcuts";
 import { useDocumentSnapshot } from "@/hooks/useDocumentSnapshot";
 import { useEditorStore } from "@/stores/useEditorStore";
 
@@ -19,11 +20,21 @@ export function ViewControls() {
   const centre = { x: containerSize.width / 2, y: containerSize.height / 2 };
 
   const buttons = [
-    { label: "Zoom out", shortcut: "-", icon: ZoomOut, run: () => zoom(centre, -1, sprite) },
-    { label: "Zoom in", shortcut: "+", icon: ZoomIn, run: () => zoom(centre, 1, sprite) },
+    {
+      label: "Zoom out",
+      shortcut: shortcutHint("view.zoomOut"),
+      icon: ZoomOut,
+      run: () => zoom(centre, -1, sprite),
+    },
+    {
+      label: "Zoom in",
+      shortcut: shortcutHint("view.zoomIn"),
+      icon: ZoomIn,
+      run: () => zoom(centre, 1, sprite),
+    },
     {
       label: "Fit to window",
-      shortcut: "0",
+      shortcut: shortcutHint("view.fit"),
       icon: Maximize,
       run: () => fitToContainer(containerSize, sprite),
     },
@@ -39,6 +50,7 @@ export function ViewControls() {
 
       <TooltipButton
         label="Toggle pixel grid"
+        shortcut={shortcutHint("view.toggleGrid")}
         variant={gridEnabled ? "secondary" : "ghost"}
         aria-pressed={gridEnabled}
         onClick={toggleGrid}

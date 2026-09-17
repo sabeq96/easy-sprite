@@ -30,7 +30,7 @@ export function LayerRow({ layer, frameId, isActive, onSelect, onReorder }: Laye
     <li
       data-active={isActive || undefined}
       className={cn(
-        "flex items-center gap-1.5 border-b px-1.5 py-1 transition-colors",
+        "mx-1 my-0.5 flex items-center gap-1.5 rounded-lg px-1.5 py-1 transition-colors",
         "hover:bg-muted/50 data-active:bg-muted",
       )}
       draggable

@@ -3,8 +3,7 @@ import { useDocumentSession } from "@/app/DocumentProvider";
 import { compositeFrame } from "@/editor/composite";
 import { StrokeRecorder } from "@/editor/history";
 import { brushCursorPainter } from "@/editor/overlays/brushCursor";
-import { marchingAntsPainter } from "@/editor/overlays/selectionOverlay";
-import type { CanvasRenderer, OverlayPainter } from "@/editor/renderer";
+import type { CanvasRenderer } from "@/editor/renderer";
 import { getTool } from "@/editor/tools";
 import type { PointerModifiers, ToolContext, ToolPoint } from "@/editor/tools/types";
 import { screenToSprite } from "@/editor/viewport";
@@ -12,19 +11,7 @@ import { useCursorStore } from "@/stores/useCursorStore";
 import { useEditorStore } from "@/stores/useEditorStore";
 
 /** Tools whose brush footprint is worth previewing under the cursor. */
-const BRUSH_PREVIEW_TOOLS = new Set(["pencil", "mirrorPencil", "eraser"]);
-
-/**
- * A committed selection shares the single overlay channel with tool previews, so switching to
- * a brush tool would otherwise wipe out the marching ants. Layer them underneath instead.
- */
-function withSelectionAnts(painter: OverlayPainter | null): OverlayPainter {
-  return (ctx, viewport) => {
-    const selection = useEditorStore.getState().selection;
-    if (selection) marchingAntsPainter(() => selection, () => null)(ctx, viewport);
-    painter?.(ctx, viewport);
-  };
-}
+const BRUSH_PREVIEW_TOOLS = new Set(["pencil", "eraser"]);
 
 interface ActiveStroke {
   pointerId: number;
@@ -88,16 +75,14 @@ export function usePointerPaint(
       if (active || !BRUSH_PREVIEW_TOOLS.has(state.toolId)) return;
 
       renderer.setOverlayPainter(
-        withSelectionAnts(
-          brushCursorPainter(
-            () => hover,
-            () => useEditorStore.getState().toolOptions.brushSize,
-            { width: doc.width, height: doc.height },
-            {
-              horizontal: state.toolId === "mirrorPencil" || state.toolOptions.mirrorHorizontal,
-              vertical: state.toolId !== "mirrorPencil" && state.toolOptions.mirrorVertical,
-            },
-          ),
+        brushCursorPainter(
+          () => hover,
+          () => useEditorStore.getState().toolOptions.brushSize,
+          { width: doc.width, height: doc.height },
+          {
+            horizontal: state.toolOptions.mirrorHorizontal,
+            vertical: state.toolOptions.mirrorVertical,
+          },
         ),
         true,
       );
@@ -186,8 +171,7 @@ export function usePointerPaint(
       if (active) return;
       hover = null;
       reportCursor(null);
-      const selection = useEditorStore.getState().selection;
-      renderer.setOverlayPainter(selection ? withSelectionAnts(null) : null, selection !== null);
+      renderer.setOverlayPainter(null);
     };
 
     element.addEventListener("pointerdown", onPointerDown);

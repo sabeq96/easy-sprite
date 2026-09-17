@@ -31,13 +31,11 @@ export function useCanvasViewControls(containerRef: RefObject<HTMLElement | null
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.code !== "Space") return;
       spacePressed = true;
-      element.style.cursor = "grab";
     };
 
     const onKeyUp = (event: KeyboardEvent) => {
       if (event.code !== "Space") return;
       spacePressed = false;
-      element.style.cursor = "";
     };
 
     const onPointerDown = (event: PointerEvent) => {
@@ -46,7 +44,6 @@ export function useCanvasViewControls(containerRef: RefObject<HTMLElement | null
       panning = true;
       last = { x: event.clientX, y: event.clientY };
       element.setPointerCapture(event.pointerId);
-      element.style.cursor = "grabbing";
     };
 
     const onPointerMove = (event: PointerEvent) => {
@@ -56,9 +53,7 @@ export function useCanvasViewControls(containerRef: RefObject<HTMLElement | null
     };
 
     const onPointerUp = () => {
-      if (!panning) return;
       panning = false;
-      element.style.cursor = spacePressed ? "grab" : "";
     };
 
     element.addEventListener("wheel", onWheel, { passive: false });

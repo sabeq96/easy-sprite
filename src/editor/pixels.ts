@@ -65,7 +65,7 @@ export function forEachLinePixel(
   }
 }
 
-/** Max-channel distance: predictable for a user tuning a 0–255 tolerance slider. */
+/** Max-channel distance. */
 export function colorDistance(a: RGBA, b: RGBA): number {
   return Math.max(
     Math.abs(a.r - b.r),
@@ -76,7 +76,6 @@ export function colorDistance(a: RGBA, b: RGBA): number {
 }
 
 export interface FillOptions {
-  tolerance?: number;
   /** false = replace the matching colour across the whole layer ("fill similar"). */
   contiguous?: boolean;
   /** Restricts the fill to a selection mask, when one exists. */
@@ -98,7 +97,6 @@ export function floodFill(
   if (startX < 0 || startY < 0 || startX >= width || startY >= height) return null;
   if (options.mask && options.mask[startY * width + startX] === 0) return null;
 
-  const tolerance = options.tolerance ?? 0;
   const contiguous = options.contiguous ?? true;
   const seed = getPixel(buffer, startX, startY, width);
 
@@ -107,7 +105,7 @@ export function floodFill(
 
   const matches = (x: number, y: number) => {
     if (options.mask && options.mask[y * width + x] === 0) return false;
-    return colorDistance(getPixel(buffer, x, y, width), seed) <= tolerance;
+    return colorDistance(getPixel(buffer, x, y, width), seed) === 0;
   };
 
   let dirty: Rect | null = null;

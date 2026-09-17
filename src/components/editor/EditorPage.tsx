@@ -59,10 +59,10 @@ function EditorShell() {
   useShortcuts(withHelp);
 
   return (
-    <div className="grid h-dvh grid-rows-[2.5rem_2.25rem_1fr_auto_1.75rem] overflow-hidden">
+    <div className="grid h-dvh grid-rows-[auto_auto_1fr_auto_auto] gap-2 overflow-hidden bg-background p-2">
       <EditorTopBar onShowHelp={() => setShowHelp(true)} />
       <ToolOptionsBar />
-      <div className="grid min-h-0 grid-cols-[3rem_1fr_18rem]">
+      <div className="grid min-h-0 grid-cols-[3.5rem_1fr_18rem] gap-2">
         <ToolSidebar />
         <EditorCanvas />
         <RightSidebar />

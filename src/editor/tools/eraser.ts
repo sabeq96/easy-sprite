@@ -8,7 +8,6 @@ const eraseOptions = (size: number) => ({ color: TRANSPARENT, size, replace: tru
 export const eraserTool: Tool = {
   id: "eraser",
   label: "Eraser",
-  cursor: "crosshair",
   continuous: true,
 
   onPointerDown(ctx, point) {

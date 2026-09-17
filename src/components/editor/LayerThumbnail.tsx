@@ -21,7 +21,7 @@ export function LayerThumbnail({ layerId, frameId }: LayerThumbnailProps) {
       width={LAYER_THUMB_PX}
       height={LAYER_THUMB_PX}
       aria-hidden
-      className="size-7 shrink-0 rounded-sm border bg-checker-a"
+      className="size-7 shrink-0 rounded-sm bg-checker-a ring-1 ring-foreground/10"
     />
   );
 }

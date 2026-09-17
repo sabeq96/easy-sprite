@@ -1,7 +1,6 @@
 export const COMMAND_IDS = [
   // tools
   "tool.pencil",
-  "tool.mirrorPencil",
   "tool.eraser",
   "tool.bucket",
   "tool.fillSimilar",

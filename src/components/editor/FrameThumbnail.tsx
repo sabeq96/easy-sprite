@@ -15,7 +15,7 @@ export function FrameThumbnail({ frameId }: { frameId: string }) {
       width={FRAME_THUMB_PX}
       height={FRAME_THUMB_PX}
       aria-hidden
-      className="size-12 rounded-sm bg-checker-a"
+      className="size-12 rounded-sm bg-checker-a ring-1 ring-foreground/10"
     />
   );
 }

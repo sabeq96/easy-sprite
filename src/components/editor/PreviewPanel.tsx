@@ -71,12 +71,15 @@ export function PreviewPanel() {
   }, [doc, snapshot, player.isPlaying, player.frameIndex, activeFrameId]);
 
   return (
-    <section aria-label="Preview" className="flex shrink-0 flex-col gap-2 border-b p-2">
+    <section
+      aria-label="Preview"
+      className="flex shrink-0 flex-col gap-2 rounded-xl bg-card p-2 shadow-sm ring-1 ring-foreground/5"
+    >
       <canvas
         ref={canvasRef}
         width={480}
         height={300}
-        className="w-full rounded-md border bg-checker-a"
+        className="w-full rounded-lg bg-checker-a ring-1 ring-foreground/10"
       />
 
       <div className="flex items-center gap-2">

@@ -5,7 +5,7 @@ import {
   type LiftedRegion,
   type Selection,
 } from "@/editor/selection";
-import { floatingPainter, marchingAntsPainter } from "@/editor/overlays/selectionOverlay";
+import { floatingPainter } from "@/editor/overlays/selectionOverlay";
 import type { Tool, ToolPoint } from "@/editor/tools/types";
 import { rectContains, rectFromPoints, rectUnion } from "@/lib/rect";
 
@@ -46,13 +46,11 @@ let drag: DragState | null = null;
 export const selectTool: Tool = {
   id: "select",
   label: "Select",
-  cursor: "crosshair",
   continuous: true,
 
-  onPointerDown(ctx, point) {
+  onPointerDown(_ctx, point) {
     drag = { origin: point, lifted: null, offset: { x: 0, y: 0 } };
     bridge.setPending({ x: point.x, y: point.y, w: 1, h: 1 });
-    ctx.setOverlay(marchingAntsPainter(bridge.get, bridge.getPending), true);
   },
 
   onPointerMove(_ctx, point) {
@@ -72,21 +70,18 @@ export const selectTool: Tool = {
 
     bridge.set(selection);
     bridge.setPending(null);
-    ctx.setOverlay(selection ? marchingAntsPainter(bridge.get, () => null) : null, true);
     drag = null;
   },
 
-  onCancel(ctx) {
+  onCancel() {
     drag = null;
     bridge.setPending(null);
-    ctx.setOverlay(null);
   },
 };
 
 export const moveTool: Tool = {
   id: "move",
   label: "Move selection",
-  cursor: "move",
   continuous: true,
 
   onPointerDown(ctx, point, modifiers) {
@@ -99,6 +94,9 @@ export const moveTool: Tool = {
     if (!lifted) return;
 
     drag = { origin: point, lifted, offset: { x: 0, y: 0 } };
+    // The floating preview below is the selection while it's moving; the static marching-ants
+    // channel would otherwise keep showing the (now hollow) source rect underneath it.
+    bridge.set(null);
     ctx.setOverlay(
       floatingPainter(() => (drag?.lifted ? { region: drag.lifted, offset: drag.offset } : null)),
       true,
@@ -130,12 +128,15 @@ export const moveTool: Tool = {
       y: target.y,
     });
     bridge.set(moved);
-    ctx.setOverlay(moved ? marchingAntsPainter(bridge.get, () => null) : null, true);
+    ctx.setOverlay(null);
     drag = null;
   },
 
   onCancel(ctx) {
     ctx.setOverlay(null);
+    // onPointerDown cleared the selection for the floating preview's sake; a cancelled drag
+    // never reached onPointerUp to restore it, so put it back at its original spot.
+    if (drag?.lifted) bridge.set(createRectSelection(ctx.doc.width, ctx.doc.height, drag.lifted.rect));
     drag = null;
   },
 };

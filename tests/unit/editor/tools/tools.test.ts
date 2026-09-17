@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { getPixel, setPixel } from "@/editor/buffer";
 import { eraserTool } from "@/editor/tools/eraser";
 import { bucketTool, fillSimilarTool } from "@/editor/tools/fill";
-import { mirrorPencilTool, pencilTool } from "@/editor/tools/pencil";
+import { pencilTool } from "@/editor/tools/pencil";
 import { pickerTool } from "@/editor/tools/picker";
 import { BLUE, makeDocument, makeToolContext, RED } from "@test/factories";
 
@@ -36,7 +36,6 @@ describe("pencil", () => {
         brushSize: 2,
         mirrorHorizontal: false,
         mirrorVertical: false,
-        fillTolerance: 0,
         pickFromComposite: false,
       },
     });
@@ -57,11 +56,18 @@ describe("pencil", () => {
     expect(getPixel(doc.ensureCel("l1", "f1").pixels, 3, 0, 4).a).toBe(0);
   });
 
-  it("mirrors across the vertical axis", () => {
+  it("mirrors across the vertical axis when the mirror option is on", () => {
     const doc = makeDocument();
-    const { ctx } = makeToolContext(doc);
+    const { ctx } = makeToolContext(doc, {
+      options: {
+        brushSize: 1,
+        mirrorHorizontal: true,
+        mirrorVertical: false,
+        pickFromComposite: false,
+      },
+    });
 
-    mirrorPencilTool.onPointerDown(ctx, { x: 0, y: 2 }, NO_MODIFIERS);
+    pencilTool.onPointerDown(ctx, { x: 0, y: 2 }, NO_MODIFIERS);
 
     const pixels = doc.getCel("l1", "f1")!.pixels;
     expect(getPixel(pixels, 0, 2, 4)).toEqual(RED);

@@ -32,9 +32,9 @@ export function ColorSwatch({
       aria-label={`Color ${hex}`}
       aria-pressed={isActive}
       className={cn(
-        "relative shrink-0 rounded-sm border border-black/20 bg-checker-a transition-transform",
+        "relative shrink-0 rounded-full border border-black/20 bg-checker-a transition-transform",
         "hover:z-10 hover:scale-110 focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-        size === "sm" ? "size-4" : "size-5",
+        size === "sm" ? "size-5" : "size-7",
         isActive && "ring-2 ring-ring",
       )}
       onClick={() => onPick(color)}
@@ -45,14 +45,14 @@ export function ColorSwatch({
     >
       <span
         aria-hidden
-        className="absolute inset-0 rounded-[1px]"
+        className="absolute inset-0 rounded-full"
         style={{ backgroundColor: rgbaToHex(color), opacity: color.a / 255 }}
       />
       {index !== undefined && index < 9 && (
         <span
           aria-hidden
           className={cn(
-            "absolute right-0.5 bottom-0 text-[8px] leading-none",
+            "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[8px] leading-none",
             luminance(color) > 0.5 ? "text-black/60" : "text-white/70",
           )}
         >

@@ -10,12 +10,27 @@ export interface KeyBinding {
 export const IS_APPLE =
   typeof navigator !== "undefined" && /mac|iphone|ipad/i.test(navigator.platform);
 
+/**
+ * Letters and named keys (e.g. "escape") produce the same `event.key` regardless of Shift, so
+ * Shift is a real modifier for them and must match the binding exactly. A symbol or digit key
+ * (e.g. "+", "?") already encodes Shift in which character was produced — the browser reports a
+ * different `event.key` for the shifted and unshifted forms — so re-checking `shiftKey` there
+ * would demand a physically-impossible combination for any binding that omits `shift: true`.
+ */
+function shiftIsSignificant(key: string): boolean {
+  return key.length > 1 || /[a-z]/.test(key);
+}
+
 export function matchesBinding(event: KeyboardEvent, binding: KeyBinding): boolean {
   const mod = IS_APPLE ? event.metaKey : event.ctrlKey;
+  const shiftMatches = shiftIsSignificant(binding.key)
+    ? event.shiftKey === Boolean(binding.shift)
+    : true;
+
   return (
     event.key.toLowerCase() === binding.key &&
     mod === Boolean(binding.mod) &&
-    event.shiftKey === Boolean(binding.shift) &&
+    shiftMatches &&
     event.altKey === Boolean(binding.alt)
   );
 }

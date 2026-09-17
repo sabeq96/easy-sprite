@@ -6,7 +6,6 @@ function createFill(id: "bucket" | "fillSimilar", label: string, contiguous: boo
   return {
     id,
     label,
-    cursor: "crosshair",
     // A drag must not repeat the fill.
     continuous: false,
 
@@ -19,7 +18,7 @@ function createFill(id: "bucket" | "fillSimilar", label: string, contiguous: boo
         point.x,
         point.y,
         ctx.color,
-        { tolerance: ctx.options.fillTolerance, contiguous, mask: ctx.mask },
+        { contiguous, mask: ctx.mask },
       );
 
       commitWrite(ctx, dirty);

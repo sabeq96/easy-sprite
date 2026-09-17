@@ -1,25 +1,23 @@
 import { FlipHorizontal, FlipVertical } from "lucide-react";
 import type { ToolId } from "@/constants/tools";
-import { BRUSH_SIZES, MAX_FILL_TOLERANCE } from "@/constants/tools";
+import { BRUSH_SIZES } from "@/constants/tools";
 import { TOOLS } from "@/editor/tools";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Toggle } from "@/components/ui/toggle";
 import { ToggleGroup } from "@/components/ui/toggle-group";
 import { Button } from "@/components/ui/button";
 import { useEditorStore } from "@/stores/useEditorStore";
 
-type OptionField = "brushSize" | "mirror" | "fillTolerance" | "pickSource";
+type OptionField = "brushSize" | "mirror" | "pickSource";
 
 /** Declarative per-tool option list beats a chain of conditionals in the JSX. */
 const TOOL_OPTION_FIELDS: Record<ToolId, readonly OptionField[]> = {
   pencil: ["brushSize", "mirror"],
-  mirrorPencil: ["brushSize"],
   eraser: ["brushSize"],
-  bucket: ["fillTolerance"],
-  fillSimilar: ["fillTolerance"],
+  bucket: [],
+  fillSimilar: [],
   picker: ["pickSource"],
   select: [],
   move: [],
@@ -33,7 +31,7 @@ export function ToolOptionsBar() {
   const fields = TOOL_OPTION_FIELDS[toolId];
 
   return (
-    <div className="flex h-9 items-center gap-3 border-b px-3 text-xs">
+    <div className="flex h-9 items-center gap-3 rounded-xl bg-card px-3 text-xs shadow-sm ring-1 ring-foreground/5">
       <span className="font-medium">{TOOLS[toolId].label}</span>
       {fields.length > 0 && <Separator orientation="vertical" className="h-4" />}
 
@@ -77,24 +75,6 @@ export function ToolOptionsBar() {
           >
             <FlipVertical />
           </Button>
-        </div>
-      )}
-
-      {fields.includes("fillTolerance") && (
-        <div className="flex items-center gap-2">
-          <Label className="text-xs text-muted-foreground">Tolerance</Label>
-          <Slider
-            className="w-32"
-            min={0}
-            max={MAX_FILL_TOLERANCE}
-            value={[options.fillTolerance]}
-            onValueChange={(value) => {
-              const next = Array.isArray(value) ? value[0] : value;
-              setToolOptions({ fillTolerance: next });
-            }}
-            aria-label="Fill tolerance"
-          />
-          <span className="w-6 tabular-nums text-muted-foreground">{options.fillTolerance}</span>
         </div>
       )}
 

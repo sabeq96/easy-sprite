@@ -2,6 +2,7 @@ import { useDocumentSession } from "@/app/DocumentProvider";
 import { Separator } from "@/components/ui/separator";
 import { useDocumentSnapshot } from "@/hooks/useDocumentSnapshot";
 import { rgbaToHex } from "@/lib/color";
+import { cn } from "@/lib/utils";
 import { useCursorStore } from "@/stores/useCursorStore";
 import { useEditorStore } from "@/stores/useEditorStore";
 
@@ -15,26 +16,27 @@ export function EditorStatusBar() {
   const activeFrameId = useEditorStore((state) => state.activeFrameId);
   const activeLayerId = useEditorStore((state) => state.activeLayerId);
 
-  const frameNumber = snapshot.frames.findIndex((frame) => frame.id === activeFrameId) + 1;
+  const frameNumber =
+    snapshot.frames.findIndex((frame) => frame.id === activeFrameId) + 1;
   const layerName =
     snapshot.layers.find((layer) => layer.id === activeLayerId)?.name ?? "—";
+  const hex = color && color.a > 0 ? rgbaToHex(color) : null;
 
   return (
-    <footer className="flex items-center gap-2 border-t px-3 text-xs text-muted-foreground">
-      <span className="w-24 tabular-nums">
+    <footer className="flex items-center gap-2 rounded-xl bg-card px-3 py-1.5 text-xs text-muted-foreground shadow-sm ring-1 ring-foreground/5">
+      <span className="w-16 tabular-nums">
         {position ? `${position.x}, ${position.y}` : "–, –"}
       </span>
 
-      {color && color.a > 0 && (
-        <>
-          <span
-            aria-hidden
-            className="size-3 rounded-xs border"
-            style={{ backgroundColor: rgbaToHex(color) }}
-          />
-          <span className="tabular-nums">{rgbaToHex(color)}</span>
-        </>
-      )}
+      <span
+        aria-hidden
+        className={cn(
+          "size-3 shrink-0 rounded-sm ring-1 ring-foreground/15",
+          !hex && "bg-transparent",
+        )}
+        style={hex ? { backgroundColor: hex } : undefined}
+      />
+      <span className="w-16 tabular-nums">{hex ?? "–"}</span>
 
       <Separator orientation="vertical" className="h-3" />
       <span className="tabular-nums">

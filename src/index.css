@@ -53,8 +53,9 @@
 }
 
 :root {
-  --radius: 0;
-  --background: oklch(1 0 0);
+  --radius: 0.75rem;
+  /* The app chrome is a muted backdrop so white island surfaces read via contrast, not lines. */
+  --background: oklch(0.937 0.004 106.423);
   --foreground: oklch(0.147 0.004 49.25);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.147 0.004 49.25);
@@ -64,32 +65,32 @@
   --primary-foreground: oklch(0.987 0.022 95.277);
   --secondary: oklch(0.967 0.001 286.375);
   --secondary-foreground: oklch(0.21 0.006 285.885);
-  --muted: oklch(0.97 0.001 106.424);
+  --muted: oklch(0.955 0.002 106.424);
   --muted-foreground: oklch(0.553 0.013 58.071);
-  --accent: oklch(0.97 0.001 106.424);
+  --accent: oklch(0.955 0.002 106.424);
   --accent-foreground: oklch(0.216 0.006 56.043);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.923 0.003 48.717);
-  --input: oklch(0.923 0.003 48.717);
+  --border: oklch(0.907 0.003 48.717);
+  --input: oklch(0.907 0.003 48.717);
   --ring: oklch(0.709 0.01 56.259);
   --chart-1: oklch(0.869 0.005 56.366);
   --chart-2: oklch(0.553 0.013 58.071);
   --chart-3: oklch(0.444 0.011 73.639);
   --chart-4: oklch(0.374 0.01 67.558);
   --chart-5: oklch(0.268 0.007 34.298);
-  --sidebar: oklch(0.985 0.001 106.423);
+  --sidebar: oklch(1 0 0);
   --sidebar-foreground: oklch(0.147 0.004 49.25);
   --sidebar-primary: oklch(0.666 0.179 58.318);
   --sidebar-primary-foreground: oklch(0.987 0.022 95.277);
-  --sidebar-accent: oklch(0.97 0.001 106.424);
+  --sidebar-accent: oklch(0.955 0.002 106.424);
   --sidebar-accent-foreground: oklch(0.216 0.006 56.043);
-  --sidebar-border: oklch(0.923 0.003 48.717);
+  --sidebar-border: oklch(0.907 0.003 48.717);
   --sidebar-ring: oklch(0.709 0.01 56.259);
 
   /* Editor surfaces: the canvas backdrop and the transparency checkerboard. */
-  --canvas-bg: oklch(0.955 0.002 106.423);
+  --canvas-bg: oklch(0.907 0.003 106.423);
   --checker-a: oklch(1 0 0);
-  --checker-b: oklch(0.93 0.002 106.423);
+  --checker-b: oklch(0.87 0.003 106.423);
 }
 
 .dark {

@@ -12,10 +12,9 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { updatePalette } from "@/db/repositories/palettes";
-import type { PaletteRecord } from "@/db/schema";
 import { useColorUsage } from "@/hooks/useColorUsage";
 import { usePalettes } from "@/hooks/usePalettes";
-import { hexToRgba, rgbaEquals, type RGBA } from "@/lib/color";
+import { hexToRgba, rgbaToHex, rgbaEquals, type RGBA } from "@/lib/color";
 import { useEditorStore } from "@/stores/useEditorStore";
 
 export function PalettePanel() {
@@ -30,7 +29,7 @@ export function PalettePanel() {
   const recentColors = useEditorStore((state) => state.recentColors);
 
   return (
-    <section aria-label="Colors" className="flex shrink-0 flex-col gap-2 border-b p-2">
+    <section aria-label="Colors" className="flex shrink-0 flex-col gap-2 p-2">
       <div className="flex items-center gap-2">
         <ActiveColors />
         <Separator orientation="vertical" className="h-8" />
@@ -74,9 +73,12 @@ export function PalettePanel() {
                 })
             : undefined
         }
-        onReorder={
+        onDropColor={
           active && !active.builtIn
-            ? (from, to) => void updatePalette(active.id, { colors: reorder(active, from, to) })
+            ? (hex, targetIndex) =>
+                void updatePalette(active.id, {
+                  colors: upsertColorAt(active.colors, normalizePaletteHex(hex), targetIndex),
+                })
             : undefined
         }
       />
@@ -104,11 +106,18 @@ export function PalettePanel() {
   );
 }
 
-function reorder(palette: PaletteRecord, from: number, to: number): string[] {
-  const colors = [...palette.colors];
-  const [moved] = colors.splice(from, 1);
-  colors.splice(to, 0, moved);
-  return colors;
+/** Re-encodes any incoming hex (with or without alpha) to this app's storage convention. */
+function normalizePaletteHex(hex: string): string {
+  const rgba = hexToRgba(hex);
+  return rgbaToHex(rgba, rgba.a !== 255);
+}
+
+/** Drops `hex` at `targetIndex`, removing any earlier occurrence first — dedupe via move. */
+function upsertColorAt(colors: string[], hex: string, targetIndex: number): string[] {
+  const next = colors.filter((entry) => entry !== hex);
+  const index = Math.min(Math.max(targetIndex, 0), next.length);
+  next.splice(index, 0, hex);
+  return next;
 }
 
 interface SwatchGridProps {
@@ -119,7 +128,8 @@ interface SwatchGridProps {
   onPick: (color: RGBA) => void;
   onPickSecondary: (color: RGBA) => void;
   onRemove?: (hex: string) => void;
-  onReorder?: (from: number, to: number) => void;
+  /** Present only on the editable palette grid — accepts drops from anywhere colors are shown. */
+  onDropColor?: (hex: string, targetIndex: number) => void;
 }
 
 function SwatchGrid({
@@ -130,17 +140,37 @@ function SwatchGrid({
   onPick,
   onPickSecondary,
   onRemove,
-  onReorder,
+  onDropColor,
 }: SwatchGridProps) {
+  const acceptsDrop = Boolean(onDropColor);
+
+  const dropAt = (index: number) => (event: React.DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const hex = event.dataTransfer.getData("text/color-hex");
+    if (hex) onDropColor?.(hex, index);
+  };
+
+  const allowDrop = (event: React.DragEvent) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+  };
+
   return (
-    <div className="flex flex-col gap-1">
+    <div
+      className="flex flex-col gap-1"
+      onDragOver={acceptsDrop ? allowDrop : undefined}
+      onDrop={acceptsDrop ? dropAt(colors.length) : undefined}
+    >
       <div className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground uppercase">
         <PaletteIcon className="size-3" />
         {label}
       </div>
 
       {colors.length === 0 ? (
-        <p className="text-xs text-muted-foreground">No colors yet.</p>
+        <p className="text-xs text-muted-foreground">
+          {acceptsDrop ? "Drag colors here to add them." : "No colors yet."}
+        </p>
       ) : (
         <div className="flex flex-wrap gap-1">
           {colors.map((hex, index) => {
@@ -148,16 +178,22 @@ function SwatchGrid({
             return (
               <div
                 key={`${hex}-${index}`}
-                draggable={Boolean(onReorder)}
-                onDragStart={(event) => event.dataTransfer.setData("text/swatch", String(index))}
-                onDragOver={(event) => onReorder && event.preventDefault()}
-                onDrop={(event) => {
-                  event.preventDefault();
-                  const from = Number(event.dataTransfer.getData("text/swatch"));
-                  if (!Number.isNaN(from)) onReorder?.(from, index);
+                draggable
+                onDragStart={(event) => {
+                  event.dataTransfer.setData("text/color-hex", hex);
+                  // Must include "move" (what every drop target's dragover requests), or the
+                  // browser silently rejects the drop even though the target accepted it.
+                  event.dataTransfer.effectAllowed = "copyMove";
                 }}
+                onDragEnd={(event) => {
+                  // Dropped somewhere that never accepted it (dropEffect stays "none") — treat
+                  // that as "dragged out to remove", the same way a real palette editor would.
+                  if (onRemove && event.dataTransfer.dropEffect === "none") onRemove(hex);
+                }}
+                onDragOver={acceptsDrop ? allowDrop : undefined}
+                onDrop={acceptsDrop ? dropAt(index) : undefined}
                 onDoubleClick={() => onRemove?.(hex)}
-                title={onRemove ? `${hex} — double-click to remove` : hex}
+                title={onRemove ? `${hex} — drag out or double-click to remove` : hex}
               >
                 <ColorSwatch
                   color={color}

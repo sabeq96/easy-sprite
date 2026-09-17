@@ -34,6 +34,27 @@ describe("matchesBinding", () => {
     const mod = IS_APPLE ? { metaKey: true } : { ctrlKey: true };
     expect(matchesBinding(keyEvent({ key: "y", ...mod }), binding)).toBe(false);
   });
+
+  it("matches a shift-only symbol whether or not the browser reports shiftKey", () => {
+    // Typing "+", "?" or a layout's "-" physically requires Shift, so the browser always
+    // reports shiftKey: true for the keydown — even though none of these bindings declare
+    // `shift: true`. Re-checking shiftKey against an undeclared binding would make the chord
+    // impossible to press, since the character itself already encodes that Shift was held.
+    expect(matchesBinding(keyEvent({ key: "+", shiftKey: true }), { key: "+" })).toBe(true);
+    expect(matchesBinding(keyEvent({ key: "?", shiftKey: true }), { key: "?" })).toBe(true);
+    expect(matchesBinding(keyEvent({ key: "-", shiftKey: true }), { key: "-" })).toBe(true);
+    expect(matchesBinding(keyEvent({ key: "-", shiftKey: false }), { key: "-" })).toBe(true);
+  });
+
+  it("still treats shift as a real modifier for letters and named keys", () => {
+    expect(matchesBinding(keyEvent({ key: "n", shiftKey: true }), { key: "n" })).toBe(false);
+    expect(matchesBinding(keyEvent({ key: "n", shiftKey: true }), { key: "n", shift: true })).toBe(
+      true,
+    );
+    expect(
+      matchesBinding(keyEvent({ key: "Escape", shiftKey: true }), { key: "escape" }),
+    ).toBe(false);
+  });
 });
 
 describe("bindingSignature", () => {

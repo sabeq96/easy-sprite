@@ -4,7 +4,7 @@ import { useCanvasRenderer } from "@/hooks/useCanvasRenderer";
 import { useCanvasViewControls } from "@/hooks/useCanvasViewControls";
 import { usePointerPaint } from "@/hooks/usePointerPaint";
 import { useSelectionBridge } from "@/hooks/useSelectionBridge";
-import { TOOLS } from "@/editor/tools";
+import { useSelectionOverlay } from "@/hooks/useSelectionOverlay";
 import { useDocumentSnapshot } from "@/hooks/useDocumentSnapshot";
 import { useEditorStore } from "@/stores/useEditorStore";
 
@@ -14,9 +14,9 @@ export function EditorCanvas() {
   const snapshot = useDocumentSnapshot(doc);
   const { containerRef, mainRef, onionRef, overlayRef, renderer } = useCanvasRenderer();
   const viewport = useEditorStore((state) => state.viewport);
-  const toolId = useEditorStore((state) => state.toolId);
 
   useSelectionBridge();
+  useSelectionOverlay(renderer);
   useCanvasViewControls(containerRef);
   usePointerPaint(containerRef, renderer);
 
@@ -26,8 +26,7 @@ export function EditorCanvas() {
       role="application"
       aria-label="Sprite canvas"
       tabIndex={0}
-      className="relative size-full touch-none overflow-hidden bg-canvas-bg outline-none"
-      style={{ cursor: TOOLS[toolId].cursor }}
+      className="relative size-full touch-none overflow-hidden rounded-xl bg-canvas-bg shadow-sm outline-none"
     >
       <CheckerboardLayer viewport={viewport} width={snapshot.width} height={snapshot.height} />
       {/* All canvases are pointer-events-none: hit testing happens on the container. */}

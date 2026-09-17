@@ -44,7 +44,6 @@ export function makeToolContext(
       brushSize: 1,
       mirrorHorizontal: false,
       mirrorVertical: false,
-      fillTolerance: 0,
       pickFromComposite: false,
     },
     stroke,

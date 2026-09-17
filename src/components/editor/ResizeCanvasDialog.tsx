@@ -85,8 +85,8 @@ function ResizeForm({ onDone }: { onDone: () => void }) {
                     aria-pressed={isActive}
                     onClick={() => setAnchor({ x, y })}
                     className={cn(
-                      "size-7 rounded-sm border transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-                      isActive ? "border-ring bg-primary" : "hover:bg-muted",
+                      "size-7 rounded-sm ring-1 ring-foreground/10 transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                      isActive ? "bg-primary ring-primary" : "hover:bg-muted",
                     )}
                   />
                 );

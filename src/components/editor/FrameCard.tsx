@@ -1,6 +1,8 @@
 import { Copy, Trash2 } from "lucide-react";
+import { TooltipButton } from "@/components/common/TooltipButton";
 import { FrameThumbnail } from "@/components/editor/FrameThumbnail";
 import { Button } from "@/components/ui/button";
+import { shortcutHint } from "@/constants/shortcuts";
 import { cn } from "@/lib/utils";
 
 export interface FrameCardProps {
@@ -36,8 +38,8 @@ export function FrameCard({
         onDrop();
       }}
       className={cn(
-        "group relative rounded-lg border p-1 transition-colors",
-        isActive ? "border-ring bg-muted" : "hover:bg-muted/50",
+        "group relative rounded-lg p-1 transition-colors",
+        isActive ? "bg-primary/10 shadow-sm" : "hover:bg-muted/50",
       )}
     >
       <button
@@ -56,9 +58,16 @@ export function FrameCard({
 
       {/* Actions stay hidden until hover or keyboard focus to keep the strip calm. */}
       <div className="absolute top-0.5 right-0.5 flex gap-0.5 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
-        <Button size="icon-xs" variant="ghost" aria-label="Duplicate frame" onClick={onDuplicate}>
+        <TooltipButton
+          label="Duplicate frame"
+          shortcut={shortcutHint("frame.duplicate")}
+          side="top"
+          size="icon-xs"
+          variant="ghost"
+          onClick={onDuplicate}
+        >
           <Copy />
-        </Button>
+        </TooltipButton>
         <Button
           size="icon-xs"
           variant="ghost"

@@ -1,32 +1,42 @@
 import { Layers2 } from "lucide-react";
-import { NumberField } from "@/components/common/NumberField";
 import { Button } from "@/components/ui/button";
+import { Kbd } from "@/components/ui/kbd";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import { ONION_MAX_FRAMES } from "@/constants/animation";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { shortcutHint } from "@/constants/shortcuts";
 import { useEditorStore } from "@/stores/useEditorStore";
 
 export function OnionSkinControl() {
   const onion = useEditorStore((state) => state.onion);
   const setOnion = useEditorStore((state) => state.setOnion);
+  const shortcut = shortcutHint("view.toggleOnion");
 
   return (
     <Popover>
-      <PopoverTrigger
-        render={
-          <Button
-            size="icon-sm"
-            variant={onion.enabled ? "secondary" : "ghost"}
-            aria-label="Onion skin settings"
-            aria-pressed={onion.enabled}
-          >
-            <Layers2 />
-          </Button>
-        }
-      />
+      <Tooltip>
+        <TooltipTrigger render={<span className="inline-flex" />}>
+          <PopoverTrigger
+            render={
+              <Button
+                size="icon-sm"
+                variant={onion.enabled ? "secondary" : "ghost"}
+                aria-label="Onion skin settings"
+                aria-pressed={onion.enabled}
+              >
+                <Layers2 />
+              </Button>
+            }
+          />
+        </TooltipTrigger>
+        <TooltipContent>
+          Onion skin settings
+          {shortcut && <Kbd>{shortcut}</Kbd>}
+        </TooltipContent>
+      </Tooltip>
       <PopoverContent className="flex w-56 flex-col gap-3">
         <Label className="flex items-center justify-between gap-2 text-xs font-normal">
           Onion skin
@@ -38,20 +48,19 @@ export function OnionSkinControl() {
 
         <Separator />
 
-        <NumberField
-          label="Frames before"
-          min={0}
-          max={ONION_MAX_FRAMES}
-          value={onion.before}
-          onChange={(before) => setOnion({ before })}
-        />
-        <NumberField
-          label="Frames after"
-          min={0}
-          max={ONION_MAX_FRAMES}
-          value={onion.after}
-          onChange={(after) => setOnion({ after })}
-        />
+        <Label className="flex items-center justify-between gap-2 text-xs font-normal">
+          <span className={onion.direction === "before" ? "text-foreground" : "text-muted-foreground"}>
+            Before
+          </span>
+          <Switch
+            checked={onion.direction === "after"}
+            onCheckedChange={(checked) => setOnion({ direction: checked ? "after" : "before" })}
+            aria-label="Onion skin direction"
+          />
+          <span className={onion.direction === "after" ? "text-foreground" : "text-muted-foreground"}>
+            After
+          </span>
+        </Label>
 
         <Label className="flex flex-col gap-1.5 text-xs font-normal">
           Opacity
@@ -63,14 +72,6 @@ export function OnionSkinControl() {
             onValueChange={(value) =>
               setOnion({ opacity: (Array.isArray(value) ? value[0] : value) / 100 })
             }
-          />
-        </Label>
-
-        <Label className="flex items-center justify-between gap-2 text-xs font-normal">
-          Tint red / blue
-          <Switch
-            checked={onion.tint}
-            onCheckedChange={(checked) => setOnion({ tint: checked })}
           />
         </Label>
       </PopoverContent>

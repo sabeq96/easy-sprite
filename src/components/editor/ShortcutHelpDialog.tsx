@@ -19,7 +19,11 @@ export interface ShortcutHelpDialogProps {
 }
 
 /** Rendered from the same SHORTCUTS table the handler reads, so the two cannot disagree. */
-export function ShortcutHelpDialog({ commands, open, onOpenChange }: ShortcutHelpDialogProps) {
+export function ShortcutHelpDialog({
+  commands,
+  open,
+  onOpenChange,
+}: ShortcutHelpDialogProps) {
   const groups = new Map<CommandGroup, { label: string; keys: string[] }[]>();
 
   for (const [commandId, bindings] of Object.entries(SHORTCUTS)) {
@@ -33,16 +37,17 @@ export function ShortcutHelpDialog({ commands, open, onOpenChange }: ShortcutHel
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="min-w-xl">
         <DialogHeader>
           <DialogTitle>Keyboard shortcuts</DialogTitle>
           <DialogDescription>
-            Hold <Kbd>Alt</Kbd> with any drawing tool to pick a colour, then release to go back.
+            Hold <Kbd>Alt</Kbd> with any drawing tool to pick a colour, then
+            release to go back.
           </DialogDescription>
         </DialogHeader>
 
         <ScrollArea className="max-h-[60vh]">
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 pr-4 sm:grid-cols-2">
             {[...groups.entries()].map(([group, entries]) => (
               <section key={group}>
                 <h3 className="mb-1 text-xs font-semibold text-muted-foreground uppercase">
@@ -50,7 +55,10 @@ export function ShortcutHelpDialog({ commands, open, onOpenChange }: ShortcutHel
                 </h3>
                 <ul className="flex flex-col gap-1">
                   {entries.map((entry) => (
-                    <li key={entry.label} className="flex items-center justify-between gap-2">
+                    <li
+                      key={entry.label}
+                      className="flex items-center justify-between gap-2"
+                    >
                       <span className="text-sm">{entry.label}</span>
                       <KbdGroup>
                         {entry.keys.map((key) => (
