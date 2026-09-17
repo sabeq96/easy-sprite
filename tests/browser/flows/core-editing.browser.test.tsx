@@ -1,0 +1,129 @@
+import { expect, test } from "vitest";
+import { userEvent } from "@vitest/browser/context";
+import { AppRoutes } from "@/app/routes";
+import { createSprite } from "@/db/repositories/sprites";
+import { IS_APPLE } from "@/lib/keys";
+import { useEditorStore } from "@/stores/useEditorStore";
+import { render } from "@test/render";
+import { clickSpritePixel } from "@test/pointer";
+
+const UNDO = IS_APPLE ? "{Meta>}z{/Meta}" : "{Control>}z{/Control}";
+const REDO = IS_APPLE ? "{Meta>}{Shift>}z{/Shift}{/Meta}" : "{Control>}{Shift>}z{/Shift}{/Control}";
+const SELECT_ALL = IS_APPLE ? "{Meta>}a{/Meta}" : "{Control>}a{/Control}";
+
+/** Renders the real app at a freshly seeded sprite and waits for the canvas to be interactive. */
+async function openEditor(width = 16, height = 16) {
+  const sprite = await createSprite({ width, height });
+  const screen = render(<AppRoutes />, { route: `/sprites/${sprite.id}` });
+
+  const canvas = screen.getByRole("application", { name: "Sprite canvas" });
+  await expect.element(canvas).toBeVisible();
+  await expect.poll(() => useEditorStore.getState().containerSize.width > 0).toBe(true);
+
+  return { screen, canvas: canvas.element(), spriteId: sprite.id };
+}
+
+function countPaintedPixels(): number {
+  const doc = window.__spriteEditor?.doc;
+  if (!doc) return 0;
+  const cel = doc.getCel(doc.layers[0].id, doc.frames[0].id);
+  if (!cel) return 0;
+  let painted = 0;
+  for (let i = 3; i < cel.pixels.length; i += 4) if (cel.pixels[i] > 0) painted++;
+  return painted;
+}
+
+test("drawing with the pencil, undo and redo", async () => {
+  const { canvas } = await openEditor();
+  const { viewport } = useEditorStore.getState();
+
+  clickSpritePixel(canvas, viewport, { x: 8, y: 8 });
+  await expect.poll(countPaintedPixels).toBeGreaterThan(0);
+
+  await userEvent.keyboard(UNDO);
+  await expect.poll(countPaintedPixels).toBe(0);
+
+  await userEvent.keyboard(REDO);
+  await expect.poll(countPaintedPixels).toBeGreaterThan(0);
+});
+
+test("the bucket tool fills the whole (empty) canvas", async () => {
+  const { screen, canvas } = await openEditor();
+  const { viewport } = useEditorStore.getState();
+
+  await userEvent.click(screen.getByRole("button", { name: "Paint bucket" }));
+  clickSpritePixel(canvas, viewport, { x: 8, y: 8 });
+
+  await expect.poll(countPaintedPixels).toBe(16 * 16);
+});
+
+test("layers and frames panels reflect document structure", async () => {
+  const { screen } = await openEditor();
+
+  await expect.element(screen.getByRole("button", { name: /^(Hide|Show) /u })).toBeVisible();
+  await userEvent.click(screen.getByRole("button", { name: "Add layer" }));
+  await expect
+    .poll(() => screen.getByRole("button", { name: /^(Hide|Show) /u }).elements().length)
+    .toBe(2);
+
+  await userEvent.click(screen.getByRole("button", { name: "Frame", exact: true }));
+  await expect
+    .poll(() => screen.getByRole("button", { name: /^Frame \d+$/ }).elements().length)
+    .toBe(2);
+});
+
+test("select all + delete clears the canvas, and undo restores it", async () => {
+  const { canvas } = await openEditor();
+  const { viewport } = useEditorStore.getState();
+
+  clickSpritePixel(canvas, viewport, { x: 8, y: 8 });
+  await expect.poll(countPaintedPixels).toBeGreaterThan(0);
+
+  await userEvent.keyboard(SELECT_ALL);
+  await userEvent.keyboard("{Delete}");
+  await expect.poll(countPaintedPixels).toBe(0);
+
+  await userEvent.keyboard(UNDO);
+  await expect.poll(countPaintedPixels).toBeGreaterThan(0);
+});
+
+test("clicking a tool activates it and updates aria-pressed on both buttons", async () => {
+  const { screen } = await openEditor();
+  const pencil = screen.getByRole("button", { name: "Pencil", exact: true });
+  const eraser = screen.getByRole("button", { name: "Eraser", exact: true });
+
+  await expect.element(pencil).toHaveAttribute("aria-pressed", "true");
+
+  await userEvent.click(eraser);
+
+  await expect.element(eraser).toHaveAttribute("aria-pressed", "true");
+  await expect.element(pencil).toHaveAttribute("aria-pressed", "false");
+});
+
+test("? opens the shortcut cheat sheet listing a bound command", async () => {
+  const { screen } = await openEditor();
+
+  await userEvent.keyboard("?");
+
+  await expect.element(screen.getByRole("dialog", { name: "Keyboard shortcuts" })).toBeVisible();
+  await expect.element(screen.getByText("Undo")).toBeVisible();
+});
+
+test("a sprite survives a remount (the persistence a page reload would exercise)", async () => {
+  const { screen, canvas, spriteId } = await openEditor();
+  const { viewport } = useEditorStore.getState();
+
+  clickSpritePixel(canvas, viewport, { x: 8, y: 8 });
+  await expect.poll(countPaintedPixels).toBeGreaterThan(0);
+
+  // A real page reload would tear down the whole JS context; unmounting and remounting the
+  // same route exercises the part that matters here — that the pixel round-tripped through
+  // IndexedDB rather than only existing in the live in-memory document.
+  screen.unmount();
+
+  const reopened = render(<AppRoutes />, { route: `/sprites/${spriteId}` });
+  await expect
+    .element(reopened.getByRole("application", { name: "Sprite canvas" }))
+    .toBeVisible();
+  await expect.poll(countPaintedPixels).toBeGreaterThan(0);
+});

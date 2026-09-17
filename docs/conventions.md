@@ -142,6 +142,55 @@ possible.** The UI may look generic — the bar is clean and easy to navigate, n
 The components generated into `src/components/ui/` are the exception to the "don't hand-edit"
 rule only for adding variants — never fork one into an app component.
 
+## 6c. React Compiler traps (learned the hard way)
+
+The compiler is on, and it infers what a value depends on. Two rules follow, and breaking
+either produces a UI that silently never updates — no error, no warning.
+
+**Never read mutable document fields during render.** `SpriteDocument` mutates in place and its
+reference never changes, so a component that renders `doc.layers` gets memoised forever. Read
+through `useDocumentSnapshot(doc)`, which derives an immutable snapshot keyed on the revision
+counters:
+
+```tsx
+// ✗ renders once and never updates again
+const { doc } = useDocumentSession();
+return <ul>{doc.layers.map(...)}</ul>;
+
+// ✓
+const snapshot = useDocumentSnapshot(doc);
+return <ul>{snapshot.layers.map(...)}</ul>;
+```
+
+**A `useMemo` dependency that the callback does not read is ignored.** The compiler derives
+deps from the callback body, not from the array you wrote. A revision counter listed only in
+the deps array invalidates nothing — it has to be *used* inside:
+
+```ts
+// ✗ never recomputes: the callback only reads `doc`, whose reference is constant
+useMemo(() => ({ layers: doc.layers.map(copy) }), [doc, revision]);
+
+// ✓ `revision` is read inside, so it is a real dependency
+useMemo(() => ({ revision, layers: doc.layers.map(copy) }), [doc, revision]);
+```
+
+The same reasoning is why `SpriteDocument` **replaces** its `layers` and `frames` arrays instead
+of splicing them. Pixel buffers stay mutable — that is the hot path — but these arrays are tiny
+and their identity is what React uses to decide whether anything changed.
+
+## 6d. Base UI composition traps
+
+**`Tooltip.Trigger` swallows `onClick` on the element it renders.** The trigger injects its own
+click handler, which replaces the one on your element — the button renders, looks fine, and does
+nothing. Never write `<TooltipTrigger render={<Button onClick={…} />} />`; use the shared
+`<TooltipButton>`, which keeps the Button as a real child of a wrapper trigger.
+
+**`<Button render={<Link/>}>` needs `nativeButton={false}`.** Without it Base UI warns and the
+element loses native button semantics.
+
+**`<SelectValue>` renders the raw value, not the item label.** Pass a children function that maps
+the value back to a label.
+
 ## 7. Custom hook shape
 
 A hook returns either a value, or one object with a flat, named API — never a positional tuple
@@ -212,3 +261,24 @@ Added in phase 0 to `.oxlintrc.json` — the layering rule is the important one:
   ]
 }
 ```
+
+## 11. Testing
+
+- **Tests never sit next to the file they cover.** They live under `tests/`, mirroring `src/`
+  one level down: `src/editor/history.ts` → `tests/unit/editor/history.test.ts`. Colocated
+  `*.test.ts` files are a leftover of phases 0–11 and were moved out in
+  [phase 12](phases/phase-12-test-infrastructure.md); do not reintroduce the pattern.
+- **Two Vitest projects, chosen by one question:** does the code under test import React, touch
+  the DOM, or read a canvas? No → `tests/unit/**` (jsdom, `*.test.ts`). Yes → `tests/browser/**`
+  (real Chromium via the Playwright provider, `*.browser.test.tsx`). See
+  [phase 12 §12.2](phases/phase-12-test-infrastructure.md) for why jsdom cannot stand in for a
+  real canvas here, and [phase 13 §13.2](phases/phase-13-test-coverage.md) for the coverage plan.
+- **A test file holds assertions and fixtures only.** No prose, no comment block explaining why a
+  behavior is worth testing — that belongs in the phase doc that introduced the behavior. The
+  three cases in §9 (a perf trick, a browser-quirk workaround, a deliberate convention deviation)
+  are the only comments a test file earns, same as anywhere else in the codebase.
+- Shared test helpers (`factories.ts`, `render.tsx`, setup files) live in `tests/support/` and
+  are imported via the `@test/*` alias, never via relative paths that climb out of `tests/`.
+- Prefer asserting on the model (`doc.getCel(...)`, store state) over pixels rendered to screen or
+  screenshots — it's exact and needs no `waitFor`. Reach for a real interaction/visual assertion
+  only when the thing under test is the rendering itself, not the logic behind it.

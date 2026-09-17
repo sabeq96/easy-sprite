@@ -25,6 +25,7 @@ export function useCanvasRenderer(): CanvasRefs {
   const gridEnabled = useEditorStore((state) => state.gridEnabled);
   const onion = useEditorStore((state) => state.onion);
   const activeFrameId = useEditorStore((state) => state.activeFrameId);
+  const isPlaying = useEditorStore((state) => state.isPlaying);
   const fitToContainer = useEditorStore((state) => state.fitToContainer);
 
   // One renderer per document.
@@ -81,8 +82,9 @@ export function useCanvasRenderer(): CanvasRefs {
       gridEnabled,
       onion,
       frameId: activeFrameId ?? doc.frames[0].id,
+      isPlaying,
     });
-  }, [renderer, viewport, gridEnabled, onion, activeFrameId, doc]);
+  }, [renderer, viewport, gridEnabled, onion, activeFrameId, isPlaying, doc]);
 
   // Structural changes (layer order, visibility, opacity) are not pixel events.
   useEffect(() => {

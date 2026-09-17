@@ -29,6 +29,11 @@ So the app has two state systems that are deliberately kept apart:
 Everything under `src/editor/` is framework-free and unit-testable without a DOM renderer.
 Everything under `src/components/` is React and holds no pixel data.
 
+One consequence is easy to get wrong: because the document mutates in place, React components
+must never read its fields during render. They go through `useDocumentSnapshot`, and the
+document replaces its `layers`/`frames` arrays rather than splicing them. See
+[conventions.md §6c](conventions.md).
+
 ## 2. Folder map
 
 ```

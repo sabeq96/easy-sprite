@@ -1,0 +1,31 @@
+import { floodFill } from "@/editor/pixels";
+import { commitWrite } from "@/editor/tools/paint";
+import type { Tool } from "@/editor/tools/types";
+
+function createFill(id: "bucket" | "fillSimilar", label: string, contiguous: boolean): Tool {
+  return {
+    id,
+    label,
+    cursor: "crosshair",
+    // A drag must not repeat the fill.
+    continuous: false,
+
+    onPointerDown(ctx, point) {
+      ctx.stroke.touch(ctx.layerId, ctx.frameId);
+      const cel = ctx.doc.ensureCel(ctx.layerId, ctx.frameId);
+
+      const dirty = floodFill(
+        { buffer: cel.pixels, width: ctx.doc.width, height: ctx.doc.height },
+        point.x,
+        point.y,
+        ctx.color,
+        { tolerance: ctx.options.fillTolerance, contiguous, mask: ctx.mask },
+      );
+
+      commitWrite(ctx, dirty);
+    },
+  };
+}
+
+export const bucketTool = createFill("bucket", "Paint bucket", true);
+export const fillSimilarTool = createFill("fillSimilar", "Fill similar", false);

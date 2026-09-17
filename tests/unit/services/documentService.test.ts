@@ -4,7 +4,7 @@ import { flushCels } from "@/db/repositories/cels";
 import { createSprite, loadSnapshot } from "@/db/repositories/sprites";
 import { setPixel } from "@/editor/buffer";
 import { openDocument, saveDocumentStructure } from "@/services/documentService";
-import { RED } from "@/test/factories";
+import { RED } from "@test/factories";
 
 beforeEach(async () => {
   await db.delete();

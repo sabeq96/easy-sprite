@@ -52,7 +52,13 @@ export function DocumentProvider({
       .then((doc) => {
         if (disposed) return;
         controller = new AutosaveController(doc, setSaveStatus);
-        setState({ status: "ready", spriteId, doc, history: new History(), autosave: controller });
+        const history = new History();
+        // Dev-only handle: makes the live document inspectable from the console, and is how
+        // tests/browser/** reaches real pixel state without a DOM-only assertion.
+        if (import.meta.env.DEV) {
+          Object.assign(window, { __spriteEditor: { doc, history } });
+        }
+        setState({ status: "ready", spriteId, doc, history, autosave: controller });
       })
       .catch((error: unknown) => {
         if (disposed) return;

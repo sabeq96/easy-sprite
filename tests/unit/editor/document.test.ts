@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { setPixel } from "@/editor/buffer";
-import { makeDocument, RED } from "@/test/factories";
+import { makeDocument, RED } from "@test/factories";
 
 describe("SpriteDocument", () => {
   it("creates cels on demand and reports unpainted ones as null", () => {

@@ -53,6 +53,13 @@ export interface DocumentEvents {
 
 export type RevisionChannel = "structure" | "meta";
 
+/**
+ * Layers and frames are replaced, never mutated in place.
+ *
+ * Pixel buffers stay mutable because that is the hot path, but these arrays are tiny and their
+ * identity is load-bearing: React (and the React Compiler in particular) treats an unchanged
+ * array reference as an unchanged value and will happily reuse stale JSX forever.
+ */
 export class SpriteDocument {
   readonly id: string;
   readonly events = new Emitter<DocumentEvents>();
@@ -144,13 +151,13 @@ export class SpriteDocument {
       visible: true,
       locked: false,
     };
-    this.layers.splice(atIndex, 0, layer);
+    this.layers = insertAt(this.layers, atIndex, layer);
     this.bump("structure");
     return layer;
   }
 
   insertLayer(layer: LayerModel, atIndex: number, cels: CelData[] = []): void {
-    this.layers.splice(atIndex, 0, layer);
+    this.layers = insertAt(this.layers, atIndex, layer);
     for (const cel of cels) {
       const restored = createCel(cel.layerId, cel.frameId, this.width, this.height, cel.pixels);
       restored.storeDirty = true;
@@ -165,7 +172,9 @@ export class SpriteDocument {
     // A document always keeps at least one layer.
     if (index === -1 || this.layers.length === 1) return null;
 
-    const [layer] = this.layers.splice(index, 1);
+    const layer = this.layers[index];
+    this.layers = this.layers.filter((candidate) => candidate.id !== layerId);
+
     const removed: CelData[] = [];
     for (const frame of this.frames) {
       const key = celKey(layerId, frame.id);
@@ -181,15 +190,15 @@ export class SpriteDocument {
 
   moveLayer(from: number, to: number): void {
     if (from === to || from < 0 || from >= this.layers.length) return;
-    const [layer] = this.layers.splice(from, 1);
-    this.layers.splice(to, 0, layer);
+    this.layers = moveItem(this.layers, from, to);
     this.bump("structure");
   }
 
   setLayerProps(layerId: string, patch: Partial<Omit<LayerModel, "id">>): void {
-    const layer = this.getLayer(layerId);
-    if (!layer) return;
-    Object.assign(layer, patch);
+    if (!this.getLayer(layerId)) return;
+    this.layers = this.layers.map((layer) =>
+      layer.id === layerId ? { ...layer, ...patch } : layer,
+    );
     this.bump("meta");
   }
 
@@ -201,7 +210,7 @@ export class SpriteDocument {
 
   addFrame(atIndex = this.frames.length, copyOfFrameId?: string): FrameModel {
     const frame: FrameModel = { id: createId() };
-    this.frames.splice(atIndex, 0, frame);
+    this.frames = insertAt(this.frames, atIndex, frame);
 
     if (copyOfFrameId) {
       for (const layer of this.layers) {
@@ -229,7 +238,9 @@ export class SpriteDocument {
     // A document always keeps at least one frame.
     if (index === -1 || this.frames.length === 1) return null;
 
-    const [frame] = this.frames.splice(index, 1);
+    const frame = this.frames[index];
+    this.frames = this.frames.filter((candidate) => candidate.id !== frameId);
+
     const removed: CelData[] = [];
     for (const layer of this.layers) {
       const key = celKey(layer.id, frameId);
@@ -244,7 +255,7 @@ export class SpriteDocument {
   }
 
   insertFrame(frame: FrameModel, atIndex: number, cels: CelData[] = []): void {
-    this.frames.splice(atIndex, 0, frame);
+    this.frames = insertAt(this.frames, atIndex, frame);
     for (const cel of cels) {
       const restored = createCel(cel.layerId, cel.frameId, this.width, this.height, cel.pixels);
       restored.storeDirty = true;
@@ -255,8 +266,7 @@ export class SpriteDocument {
 
   moveFrame(from: number, to: number): void {
     if (from === to || from < 0 || from >= this.frames.length) return;
-    const [frame] = this.frames.splice(from, 1);
-    this.frames.splice(to, 0, frame);
+    this.frames = moveItem(this.frames, from, to);
     this.bump("structure");
   }
 
@@ -300,4 +310,16 @@ export class SpriteDocument {
     this.revisions[channel]++;
     this.events.emit(channel, undefined);
   }
+}
+
+function insertAt<T>(items: readonly T[], index: number, item: T): T[] {
+  const clamped = Math.max(0, Math.min(index, items.length));
+  return [...items.slice(0, clamped), item, ...items.slice(clamped)];
+}
+
+function moveItem<T>(items: readonly T[], from: number, to: number): T[] {
+  const next = [...items];
+  const [moved] = next.splice(from, 1);
+  next.splice(Math.max(0, Math.min(to, next.length)), 0, moved);
+  return next;
 }

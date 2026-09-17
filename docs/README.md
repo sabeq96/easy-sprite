@@ -30,6 +30,62 @@ Explicitly **out of scope**: GIF export, cloud sync, collaboration, vector tools
 | [conventions.md](conventions.md) | Code standard: module boundaries, where code belongs, shadcn-first UI rule, naming, size limits, lint enforcement |
 | [shortcuts.md](shortcuts.md) | The full keymap, the command registry contract, and conflict rules |
 
+## Status
+
+All fourteen phases are implemented and verified. `npm run dev` gives a working editor, and both
+the editor core and the UI layer around it (components, hooks, stores) now have real test
+coverage.
+
+| Check | Command | Result |
+| --- | --- | --- |
+| Types | `npm run build` (runs `tsc -b`) | clean |
+| Lint, incl. layering rules | `npm run lint` | clean |
+| Unit tests (jsdom) | `npm run test` | 158 passing |
+| Browser tests (real Chromium) | `npm run test:browser` | 19 passing |
+| Both projects | `npm run test:all` | 177 passing |
+| Coverage gate | `npm run test:coverage` | ~78% lines / ~84% branches, above the 70/60 floor |
+
+`npm run test:browser` and `test:all` need a Chromium binary that isn't installed by `npm
+install`: run `npx playwright install chromium` once per machine (it downloads outside the npm
+dependency graph, into `~/Library/Caches/ms-playwright` on macOS).
+
+There is also a VS Code launch config (`.vscode/launch.json`): **Debug app in Chrome** attaches
+source-mapped breakpoints to the running dev server, and two vitest configs debug the test suite.
+The `window.__spriteEditor` handle (dev builds only, set in `DocumentProvider`) exposes the live
+`doc` and `history` for console and debugger inspection — both interactively and from
+`tests/browser/**`, which reads it to assert on real pixel state instead of the DOM.
+
+`scripts/smoke.mjs`, the ad hoc Puppeteer script phases 0–11 relied on for a manual end-to-end
+check, is gone: `tests/browser/flows/core-editing.browser.test.tsx` and
+`tests/browser/flows/sprite-manager.browser.test.tsx` cover the same ground with real assertions
+that run in `npm run test:all`, not a screenshot someone has to look at.
+
+### Corrections made during implementation
+
+A few things in the plans below were wrong, and the code is the source of truth where they differ:
+
+1. **`shadcn` is a runtime dependency**, not an install accident — `src/index.css` imports its
+   Tailwind layer. See the decision log above.
+2. **Document structure arrays are immutable.** The plan had `SpriteDocument` splice its
+   `layers`/`frames` in place. With the React Compiler that makes panels render once and never
+   update, because the array reference never changes. They are now replaced on every structural
+   edit, and components read through `useDocumentSnapshot`. See
+   [conventions.md §6c](conventions.md).
+3. **Tooltip buttons need a wrapper trigger.** `<TooltipTrigger render={<Button onClick/>} />`
+   silently drops the handler; all icon buttons go through `<TooltipButton>`. See
+   [conventions.md §6d](conventions.md).
+4. **`DocumentProvider` takes a `spriteId`, not a `doc`.** Phase 12's sketch assumed the provider
+   accepted a live document directly; the real component owns loading by id (`fallback`,
+   `renderError`), so component tests that need one seed a sprite through the real repository and
+   render the real route instead of injecting a fake session.
+5. **`ConfirmDialog`'s trigger isn't always a real `<button>`.** `SpriteCardMenu` passes it a
+   `DropdownMenuItem`, so the Base UI trigger needs `nativeButton={false}` there and `true` (the
+   default) everywhere else — another instance of the conventions.md §6d trap, caught by the
+   sprite-manager flow test.
+6. **Vitest Browser Mode needs Tailwind's own Vite plugin**, not just the CSS import. Without it,
+   dialog overlays have no z-index/positioning and silently intercept clicks meant for their own
+   content — see [phase 12 §12.5](phases/phase-12-test-infrastructure.md).
+
 ## Phases
 
 Each phase is a self-contained, shippable slice with its own doc: goal, files touched, full
@@ -50,9 +106,12 @@ browser. Phases are ordered by dependency — do not reorder 1→4.
 | 9 | Sprite manager & canvas settings | [phase-09-sprite-manager.md](phases/phase-09-sprite-manager.md) | 1 | 1 d |
 | 10 | Export: spritesheet PNG + JSON backup | [phase-10-export-backup.md](phases/phase-10-export-backup.md) | 2, 9 | 1 d |
 | 11 | Shortcuts, command palette, polish, perf | [phase-11-shortcuts-polish.md](phases/phase-11-shortcuts-polish.md) | all | 1.5 d |
+| 12 | Test infrastructure: browser mode & test tree | [phase-12-test-infrastructure.md](phases/phase-12-test-infrastructure.md) | all | 1 d |
+| 13 | Component, interaction & flow coverage | [phase-13-test-coverage.md](phases/phase-13-test-coverage.md) | 12 | 2 d |
 
 **Critical path:** 0 → 1 → 2 → 3 → 4. After phase 4 you have a usable single-frame editor.
-Phases 6–9 are largely parallelisable if more than one person works on it.
+Phases 6–9 are largely parallelisable if more than one person works on it. Phases 12–13 don't
+block M1–M3 below; they close the coverage gap the milestones left behind.
 
 ### Milestones
 
@@ -60,6 +119,9 @@ Phases 6–9 are largely parallelisable if more than one person works on it.
   undo/redo, persisted to IndexedDB across reloads.
 - **M2 — "It animates" (phases 5–7).** Layers, frames, onion skin, playback.
 - **M3 — "It ships" (phases 8–11).** Palettes, library, export, backup, full keymap, polish.
+- **M4 — "It's proven" (phases 12–13).** Every layer has real coverage — including the canvas,
+  the tool sidebar, dialogs and shortcuts — running in `npm run test:all`, and `scripts/smoke.mjs`
+  is replaced by an assertion-based flow suite.
 
 ## Decision log
 

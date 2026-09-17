@@ -7,10 +7,12 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
-    "test": "vitest run",
+    "test": "vitest run --project=unit",
+    "test:browser": "vitest run --project=browser",
+    "test:all": "vitest run",
     "test:watch": "vitest",
-    "preview": "vite preview",
-    "smoke": "node scripts/smoke.mjs .smoke"
+    "test:coverage": "vitest run --coverage",
+    "preview": "vite preview"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
@@ -40,13 +42,16 @@
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
+    "@vitest/browser": "^3.2.7",
+    "@vitest/coverage-v8": "^3.2.7",
     "babel-plugin-react-compiler": "^1.0.0",
     "fake-indexeddb": "^6.2.5",
     "jsdom": "^30.0.1",
     "oxlint": "^1.81.0",
-    "puppeteer-core": "^24.43.1",
+    "playwright": "^1.63.0",
     "typescript": "~6.0.2",
     "vite": "^8.3.0",
-    "vitest": "^3.2.7"
+    "vitest": "^3.2.7",
+    "vitest-browser-react": "^1.0.1"
   }
 }

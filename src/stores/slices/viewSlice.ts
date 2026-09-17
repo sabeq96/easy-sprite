@@ -19,6 +19,8 @@ export interface ViewSlice {
   containerSize: Size;
   activeFrameId: string | null;
   activeLayerId: string | null;
+  /** Mirrors the preview player so the renderer can skip onion skin during playback. */
+  isPlaying: boolean;
 
   setViewport: (viewport: Viewport) => void;
   setContainerSize: (size: Size) => void;
@@ -30,6 +32,7 @@ export interface ViewSlice {
   setOnion: (patch: Partial<OnionConfig>) => void;
   setActiveFrame: (frameId: string) => void;
   setActiveLayer: (layerId: string) => void;
+  setPlaying: (isPlaying: boolean) => void;
 }
 
 export const createViewSlice: SliceCreator<ViewSlice> = (set, get) => ({
@@ -39,6 +42,7 @@ export const createViewSlice: SliceCreator<ViewSlice> = (set, get) => ({
   containerSize: { width: 0, height: 0 },
   activeFrameId: null,
   activeLayerId: null,
+  isPlaying: false,
 
   setViewport: (viewport) => set({ viewport }),
   setContainerSize: (containerSize) => set({ containerSize }),
@@ -67,4 +71,5 @@ export const createViewSlice: SliceCreator<ViewSlice> = (set, get) => ({
   setOnion: (patch) => set(({ onion }) => ({ onion: { ...onion, ...patch } })),
   setActiveFrame: (activeFrameId) => set({ activeFrameId }),
   setActiveLayer: (activeLayerId) => set({ activeLayerId }),
+  setPlaying: (isPlaying) => set({ isPlaying }),
 });

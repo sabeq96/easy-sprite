@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { setPixel } from "@/editor/buffer";
 import { History, StrokeRecorder, type Command } from "@/editor/history";
-import { makeDocument, RED } from "@/test/factories";
+import { makeDocument, RED } from "@test/factories";
 
 function noopCommand(label: string, sizeBytes = 0): Command {
   return { label, sizeBytes, undo() {}, redo() {} };

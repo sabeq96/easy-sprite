@@ -1,16 +1,16 @@
 import { useState } from "react";
 import { useDocumentSession } from "@/app/DocumentProvider";
 import { Input } from "@/components/ui/input";
-import { useDocumentRevision } from "@/hooks/useDocumentRevision";
+import { useDocumentSnapshot } from "@/hooks/useDocumentSnapshot";
 
 export function SpriteNameField() {
   const { doc } = useDocumentSession();
-  useDocumentRevision(doc, "meta");
+  const snapshot = useDocumentSnapshot(doc);
   const [draft, setDraft] = useState<string | null>(null);
 
   const commit = () => {
     const next = draft?.trim();
-    if (next) doc.setMeta({ name: next });
+    if (next && next !== snapshot.name) doc.setMeta({ name: next });
     setDraft(null);
   };
 
@@ -18,17 +18,17 @@ export function SpriteNameField() {
     <Input
       aria-label="Sprite name"
       className="h-7 w-48 border-transparent bg-transparent hover:border-border focus:border-border"
-      value={draft ?? doc.name}
+      value={draft ?? snapshot.name}
       onChange={(event) => setDraft(event.target.value)}
       onBlur={commit}
       onKeyDown={(event) => {
+        // Typing must never reach the global shortcut handler.
+        event.stopPropagation();
         if (event.key === "Enter") event.currentTarget.blur();
         if (event.key === "Escape") {
           setDraft(null);
           event.currentTarget.blur();
         }
-        // Typing must never reach the global shortcut handler.
-        event.stopPropagation();
       }}
     />
   );

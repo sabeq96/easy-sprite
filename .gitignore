@@ -23,3 +23,10 @@ dist-ssr
 *.sln
 *.sw?
 .smoke/
+.vscode/.chrome-profile/
+
+# Testing
+coverage/
+playwright-report/
+test-results/
+tests/**/__screenshots__/

@@ -1,46 +1,65 @@
-import { useLiveQuery } from "dexie-react-hooks";
-import { Plus } from "lucide-react";
-import { Link, useNavigate } from "react-router";
+import { useState } from "react";
+import { Images, Plus } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   Empty,
   EmptyContent,
   EmptyDescription,
   EmptyHeader,
+  EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
-import { ROUTES } from "@/constants/routes";
-import { createSprite, listSprites } from "@/db/repositories/sprites";
+import { Skeleton } from "@/components/ui/skeleton";
+import { NewSpriteDialog } from "@/components/manager/NewSpriteDialog";
+import { SpriteCard } from "@/components/manager/SpriteCard";
+import { SpriteLibraryToolbar } from "@/components/manager/SpriteLibraryToolbar";
+import { DEFAULT_EXPORT_OPTIONS } from "@/constants/export";
+import type { SpriteRecord } from "@/db/schema";
+import { downloadBlob, toFilenameSlug } from "@/export/download";
+import { exportSpritesheet } from "@/export/spritesheet";
+import { openDocument } from "@/services/documentService";
+import { useSpriteLibrary } from "@/hooks/useSpriteLibrary";
 
-// Minimal library so the editor is reachable; phase 9 replaces this with the full manager.
 export function SpriteManagerPage() {
-  const sprites = useLiveQuery(() => listSprites(), []);
-  const navigate = useNavigate();
+  const library = useSpriteLibrary();
+  const [isCreating, setCreating] = useState(false);
 
-  const create = async () => {
-    const sprite = await createSprite();
-    navigate(ROUTES.sprite(sprite.id));
+  // Quick export straight from the gallery, at defaults; the editor dialog has the options.
+  const exportSprite = async (sprite: SpriteRecord) => {
+    try {
+      const doc = await openDocument(sprite.id);
+      const { blob } = await exportSpritesheet(doc, DEFAULT_EXPORT_OPTIONS);
+      downloadBlob(blob, `${toFilenameSlug(sprite.name)}-sheet.png`);
+      toast.success(`Exported ${doc.frames.length} frames`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Export failed.");
+    }
   };
 
   return (
-    <div className="mx-auto flex max-w-5xl flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold">Sprites</h1>
-        <Button onClick={create}>
-          <Plus />
-          New sprite
-        </Button>
-      </div>
+    <div className="mx-auto flex max-w-6xl flex-col gap-4">
+      <SpriteLibraryToolbar library={library} onCreate={() => setCreating(true)} />
 
-      {sprites?.length === 0 ? (
+      {library.isLoading ? (
+        <SpriteGridSkeleton />
+      ) : library.sprites.length === 0 ? (
         <Empty>
           <EmptyHeader>
-            <EmptyTitle>No sprites yet</EmptyTitle>
-            <EmptyDescription>Create one to start drawing.</EmptyDescription>
+            <EmptyMedia variant="icon">
+              <Images />
+            </EmptyMedia>
+            <EmptyTitle>
+              {library.search || library.tag ? "No sprites match" : "No sprites yet"}
+            </EmptyTitle>
+            <EmptyDescription>
+              {library.search || library.tag
+                ? "Try a different search or clear the tag filter."
+                : "Create one to start drawing."}
+            </EmptyDescription>
           </EmptyHeader>
           <EmptyContent>
-            <Button onClick={create}>
+            <Button onClick={() => setCreating(true)}>
               <Plus />
               New sprite
             </Button>
@@ -48,22 +67,27 @@ export function SpriteManagerPage() {
         </Empty>
       ) : (
         <ul className="grid grid-cols-[repeat(auto-fill,minmax(10rem,1fr))] gap-3">
-          {sprites?.map((sprite) => (
+          {library.sprites.map((sprite) => (
             <li key={sprite.id}>
-              <Card>
-                <CardContent className="p-3">
-                  <Link className="text-sm font-medium" to={ROUTES.sprite(sprite.id)}>
-                    {sprite.name}
-                  </Link>
-                  <p className="text-xs text-muted-foreground tabular-nums">
-                    {sprite.width}×{sprite.height} · {sprite.frames.length} frames
-                  </p>
-                </CardContent>
-              </Card>
+              <SpriteCard sprite={sprite} onExport={exportSprite} />
             </li>
           ))}
         </ul>
       )}
+
+      <NewSpriteDialog open={isCreating} onOpenChange={setCreating} />
     </div>
+  );
+}
+
+function SpriteGridSkeleton() {
+  return (
+    <ul className="grid grid-cols-[repeat(auto-fill,minmax(10rem,1fr))] gap-3">
+      {Array.from({ length: 8 }, (_, index) => (
+        <li key={index}>
+          <Skeleton className="h-40 rounded-xl" />
+        </li>
+      ))}
+    </ul>
   );
 }
