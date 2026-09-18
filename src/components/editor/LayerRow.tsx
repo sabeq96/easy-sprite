@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Eye, EyeOff, Lock, LockOpen } from "lucide-react";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { useDocumentSession } from "@/app/DocumentProvider";
 import { LayerOpacityControl } from "@/components/editor/LayerOpacityControl";
 import { LayerThumbnail } from "@/components/editor/LayerThumbnail";
@@ -15,32 +17,31 @@ export interface LayerRowProps {
   frameId: string | null;
   isActive: boolean;
   onSelect: () => void;
-  onReorder: (sourceLayerId: string) => void;
 }
 
-export function LayerRow({ layer, frameId, isActive, onSelect, onReorder }: LayerRowProps) {
+export function LayerRow({ layer, frameId, isActive, onSelect }: LayerRowProps) {
   const { doc } = useDocumentSession();
   const dispatch = useCommandDispatch();
   const [isRenaming, setRenaming] = useState(false);
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: layer.id,
+  });
 
   const toggle = (patch: Partial<LayerModel>, label: string) =>
     dispatch(() => setLayerPropsCommand(doc, layer.id, patch, label));
 
   return (
     <li
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
       data-active={isActive || undefined}
+      {...attributes}
+      {...listeners}
       className={cn(
-        "mx-1 my-0.5 flex items-center gap-1.5 rounded-lg px-1.5 py-1 transition-colors",
+        "mx-1 my-0.5 flex touch-none items-center gap-1.5 rounded-lg px-1.5 py-1 transition-colors",
         "hover:bg-muted/50 data-active:bg-muted",
+        isDragging && "opacity-40",
       )}
-      draggable
-      onDragStart={(event) => event.dataTransfer.setData("text/layer-id", layer.id)}
-      onDragOver={(event) => event.preventDefault()}
-      onDrop={(event) => {
-        event.preventDefault();
-        const sourceId = event.dataTransfer.getData("text/layer-id");
-        if (sourceId && sourceId !== layer.id) onReorder(sourceId);
-      }}
     >
       <Button
         size="icon-xs"
@@ -82,6 +83,17 @@ export function LayerRow({ layer, frameId, isActive, onSelect, onReorder }: Laye
   );
 }
 
+/** Floating preview rendered inside LayersPanel's DragOverlay. */
+export function LayerDragPreview({ layer, frameId }: { layer: LayerModel; frameId: string | null }) {
+  return (
+    <div className="flex items-center gap-1.5 rounded-lg bg-card px-1.5 py-1 shadow-lg ring-2 ring-primary/60">
+      {layer.visible ? <Eye className="size-3.5" /> : <EyeOff className="size-3.5 opacity-40" />}
+      <LayerThumbnail layerId={layer.id} frameId={frameId} />
+      <span className="max-w-32 truncate text-xs">{layer.name}</span>
+    </div>
+  );
+}
+
 function LayerNameInput({ layer, onDone }: { layer: LayerModel; onDone: () => void }) {
   const { doc } = useDocumentSession();
   const dispatch = useCommandDispatch();
@@ -104,7 +116,8 @@ function LayerNameInput({ layer, onDone }: { layer: LayerModel; onDone: () => vo
       onChange={(event) => setDraft(event.target.value)}
       onBlur={commit}
       onKeyDown={(event) => {
-        // Typing must never reach the global shortcut handler.
+        // Typing must never reach the global shortcut handler — this also conveniently keeps
+        // typing out of KeyboardSensor's drag-activation keys.
         event.stopPropagation();
         if (event.key === "Enter") commit();
         if (event.key === "Escape") onDone();

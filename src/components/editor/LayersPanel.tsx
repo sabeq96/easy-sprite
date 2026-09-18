@@ -1,7 +1,16 @@
+import { useState } from "react";
 import { ChevronsDownUp, Copy, Layers, Plus, Trash2 } from "lucide-react";
+import {
+  closestCenter,
+  DndContext,
+  DragOverlay,
+  type DragEndEvent,
+  type DragStartEvent,
+} from "@dnd-kit/core";
+import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useDocumentSession } from "@/app/DocumentProvider";
 import { TooltipButton } from "@/components/common/TooltipButton";
-import { LayerRow } from "@/components/editor/LayerRow";
+import { LayerDragPreview, LayerRow } from "@/components/editor/LayerRow";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { shortcutHint } from "@/constants/shortcuts";
 import {
@@ -13,6 +22,7 @@ import {
 } from "@/editor/commands/layers";
 import { useCommandDispatch } from "@/hooks/useCommandDispatch";
 import { useDocumentSnapshot } from "@/hooks/useDocumentSnapshot";
+import { useAppDndSensors } from "@/lib/dnd";
 import { useEditorStore } from "@/stores/useEditorStore";
 
 export function LayersPanel() {
@@ -23,6 +33,8 @@ export function LayersPanel() {
   const activeLayerId = useEditorStore((state) => state.activeLayerId);
   const activeFrameId = useEditorStore((state) => state.activeFrameId);
   const setActiveLayer = useEditorStore((state) => state.setActiveLayer);
+  const sensors = useAppDndSensors();
+  const [draggingLayerId, setDraggingLayerId] = useState<string | null>(null);
 
   const activeIndex = snapshot.layers.findIndex((layer) => layer.id === activeLayerId);
 
@@ -57,6 +69,21 @@ export function LayersPanel() {
     },
   ];
 
+  // Rendered top-first: the topmost layer is the last entry in the underlying array.
+  const displayLayers = [...snapshot.layers].reverse();
+  const displayIds = displayLayers.map((layer) => layer.id);
+  const draggingLayer = draggingLayerId ? doc.getLayer(draggingLayerId) : null;
+
+  const handleDragEnd = ({ active, over }: DragEndEvent) => {
+    setDraggingLayerId(null);
+    if (!over || active.id === over.id) return;
+    // reorderLayerCommand resolves indices from ids itself (doc.layerIndex) — the reversed
+    // display order never enters this calculation, we just forward the two ids as-is.
+    dispatch(() =>
+      reorderLayerCommand(doc, doc.layerIndex(String(active.id)), doc.layerIndex(String(over.id))),
+    );
+  };
+
   return (
     <section
       aria-label="Layers"
@@ -82,27 +109,30 @@ export function LayersPanel() {
       </header>
 
       <ScrollArea className="min-h-0 flex-1">
-        {/* Rendered top-first: the topmost layer is the last entry in the array. */}
-        <ul>
-          {[...snapshot.layers].reverse().map((layer) => (
-            <LayerRow
-              key={layer.id}
-              layer={layer}
-              frameId={activeFrameId}
-              isActive={layer.id === activeLayerId}
-              onSelect={() => setActiveLayer(layer.id)}
-              onReorder={(sourceLayerId) =>
-                dispatch(() =>
-                  reorderLayerCommand(
-                    doc,
-                    doc.layerIndex(sourceLayerId),
-                    doc.layerIndex(layer.id),
-                  ),
-                )
-              }
-            />
-          ))}
-        </ul>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={(event: DragStartEvent) => setDraggingLayerId(String(event.active.id))}
+          onDragEnd={handleDragEnd}
+          onDragCancel={() => setDraggingLayerId(null)}
+        >
+          <SortableContext items={displayIds} strategy={verticalListSortingStrategy}>
+            <ul>
+              {displayLayers.map((layer) => (
+                <LayerRow
+                  key={layer.id}
+                  layer={layer}
+                  frameId={activeFrameId}
+                  isActive={layer.id === activeLayerId}
+                  onSelect={() => setActiveLayer(layer.id)}
+                />
+              ))}
+            </ul>
+          </SortableContext>
+          <DragOverlay>
+            {draggingLayer ? <LayerDragPreview layer={draggingLayer} frameId={activeFrameId} /> : null}
+          </DragOverlay>
+        </DndContext>
       </ScrollArea>
     </section>
   );
