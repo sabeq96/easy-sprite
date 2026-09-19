@@ -9,6 +9,7 @@ import {
 } from "@dnd-kit/core";
 import { horizontalListSortingStrategy, SortableContext } from "@dnd-kit/sortable";
 import { useDocumentSession } from "@/app/DocumentProvider";
+import { Panel } from "@/components/common/Panel";
 import { FrameCard, FrameDragPreview } from "@/components/editor/FrameCard";
 import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
@@ -48,7 +49,7 @@ export function FramesBar() {
   };
 
   return (
-    <div className="flex items-center gap-2 rounded-xl bg-card p-2 shadow-sm ring-1 ring-foreground/5">
+    <Panel className="flex items-center gap-2 p-2">
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -98,6 +99,6 @@ export function FramesBar() {
           <Kbd>{shortcutHint("frame.add")}</Kbd>
         </TooltipContent>
       </Tooltip>
-    </div>
+    </Panel>
   );
 }

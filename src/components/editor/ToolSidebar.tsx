@@ -1,3 +1,4 @@
+import { Panel } from "@/components/common/Panel";
 import { TooltipButton } from "@/components/common/TooltipButton";
 import { TOOL_ICONS } from "@/components/editor/toolIcons";
 import { Separator } from "@/components/ui/separator";
@@ -18,9 +19,9 @@ export function ToolSidebar() {
   const setTool = useEditorStore((state) => state.setTool);
 
   return (
-    <aside
-      aria-label="Tools"
-      className="flex flex-col items-center gap-1 rounded-xl bg-card py-2 shadow-sm ring-1 ring-foreground/5"
+    <Panel
+      render={<aside aria-label="Tools" />}
+      className="flex flex-col items-center gap-1 py-2"
     >
       {GROUPS.map((group, index) => (
         <div key={group[0]} className="flex flex-col items-center gap-1">
@@ -46,6 +47,6 @@ export function ToolSidebar() {
           })}
         </div>
       ))}
-    </aside>
+    </Panel>
   );
 }

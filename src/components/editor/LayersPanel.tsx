@@ -9,6 +9,7 @@ import {
 } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useDocumentSession } from "@/app/DocumentProvider";
+import { Panel } from "@/components/common/Panel";
 import { TooltipButton } from "@/components/common/TooltipButton";
 import { LayerDragPreview, LayerRow } from "@/components/editor/LayerRow";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -85,9 +86,9 @@ export function LayersPanel() {
   };
 
   return (
-    <section
-      aria-label="Layers"
-      className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl bg-card shadow-sm ring-1 ring-foreground/5"
+    <Panel
+      render={<section aria-label="Layers" />}
+      className="flex min-h-0 flex-1 flex-col overflow-hidden"
     >
       <header className="flex h-8 shrink-0 items-center gap-1 rounded-t-xl bg-muted/60 px-2 text-xs font-medium text-muted-foreground">
         <Layers className="size-3.5" />
@@ -134,6 +135,6 @@ export function LayersPanel() {
           </DragOverlay>
         </DndContext>
       </ScrollArea>
-    </section>
+    </Panel>
   );
 }

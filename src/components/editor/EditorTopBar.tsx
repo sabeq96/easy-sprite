@@ -1,6 +1,7 @@
 import { ArrowLeft, Keyboard, Redo2, Undo2 } from "lucide-react";
 import { Link } from "react-router";
 import { useDocumentSession } from "@/app/DocumentProvider";
+import { Panel } from "@/components/common/Panel";
 import { TooltipButton } from "@/components/common/TooltipButton";
 import { EditorMenu } from "@/components/editor/EditorMenu";
 import { SaveStatusBadge } from "@/components/editor/SaveStatusBadge";
@@ -20,7 +21,7 @@ export function EditorTopBar({ onShowHelp }: EditorTopBarProps) {
   const { canUndo, canRedo, undoLabel, redoLabel } = useHistoryState(history);
 
   return (
-    <header className="flex items-center gap-2 rounded-xl bg-card px-2 py-1.5 shadow-sm ring-1 ring-foreground/5">
+    <Panel render={<header />} className="flex items-center gap-2 px-2 py-1.5">
       <TooltipButton
         label="Back to sprites"
         shortcut={shortcutHint("app.backToLibrary")}
@@ -70,6 +71,6 @@ export function EditorTopBar({ onShowHelp }: EditorTopBarProps) {
         <Separator orientation="vertical" className="h-5" />
         <SaveStatusBadge status={saveStatus} />
       </div>
-    </header>
+    </Panel>
   );
 }

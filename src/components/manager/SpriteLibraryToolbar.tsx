@@ -1,4 +1,5 @@
 import { ChevronDown, LayoutGrid, Plus, Search, X } from "lucide-react";
+import { Panel } from "@/components/common/Panel";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import {
@@ -35,7 +36,7 @@ export function SpriteLibraryToolbar({
   onCreateSpritesheet,
 }: SpriteLibraryToolbarProps) {
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <Panel className="flex flex-wrap items-center gap-2 px-3 py-2">
       <h1 className="text-lg font-semibold">Sprites</h1>
 
       <div className="relative ml-auto">
@@ -112,6 +113,6 @@ export function SpriteLibraryToolbar({
           )}
         </div>
       )}
-    </div>
+    </Panel>
   );
 }

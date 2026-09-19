@@ -1,4 +1,5 @@
 import { useDocumentSession } from "@/app/DocumentProvider";
+import { Panel } from "@/components/common/Panel";
 import { Separator } from "@/components/ui/separator";
 import { useDocumentSnapshot } from "@/hooks/useDocumentSnapshot";
 import { rgbaToHex } from "@/lib/color";
@@ -23,7 +24,7 @@ export function EditorStatusBar() {
   const hex = color && color.a > 0 ? rgbaToHex(color) : null;
 
   return (
-    <footer className="flex items-center gap-2 rounded-xl bg-card px-3 py-1.5 text-xs text-muted-foreground shadow-sm ring-1 ring-foreground/5">
+    <Panel render={<footer />} className="flex items-center gap-2 px-3 py-1.5 text-xs text-muted-foreground">
       <span className="w-16 tabular-nums">
         {position ? `${position.x}, ${position.y}` : "–, –"}
       </span>
@@ -50,6 +51,6 @@ export function EditorStatusBar() {
       <span className="truncate">{layerName}</span>
 
       <span className="ml-auto tabular-nums">{Math.round(scale * 100)}%</span>
-    </footer>
+    </Panel>
   );
 }

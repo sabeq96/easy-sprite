@@ -2,6 +2,7 @@ import { FlipHorizontal, FlipVertical } from "lucide-react";
 import type { ToolId } from "@/constants/tools";
 import { BRUSH_SIZES } from "@/constants/tools";
 import { TOOLS } from "@/editor/tools";
+import { Panel } from "@/components/common/Panel";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
@@ -31,7 +32,7 @@ export function ToolOptionsBar() {
   const fields = TOOL_OPTION_FIELDS[toolId];
 
   return (
-    <div className="flex h-9 items-center gap-3 rounded-xl bg-card px-3 text-xs shadow-sm ring-1 ring-foreground/5">
+    <Panel className="flex h-9 items-center gap-3 px-3 text-xs">
       <span className="font-medium">{TOOLS[toolId].label}</span>
       {fields.length > 0 && <Separator orientation="vertical" className="h-4" />}
 
@@ -87,6 +88,6 @@ export function ToolOptionsBar() {
           Sample merged image
         </Label>
       )}
-    </div>
+    </Panel>
   );
 }

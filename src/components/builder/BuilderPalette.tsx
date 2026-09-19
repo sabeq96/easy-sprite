@@ -1,6 +1,7 @@
 import { useDraggable } from "@dnd-kit/core";
 import { Search } from "lucide-react";
 import type { DragData } from "@/components/builder/useBuilderDnd";
+import { Panel } from "@/components/common/Panel";
 import { Input } from "@/components/ui/input";
 import type { SpriteRecord } from "@/db/schema";
 import { useBlobUrl } from "@/hooks/useBlobUrl";
@@ -12,7 +13,7 @@ export function BuilderPalette() {
   const library = useSpriteLibrary();
 
   return (
-    <div className="flex h-32 shrink-0 flex-col gap-2 rounded-xl border bg-card p-2">
+    <Panel className="flex h-32 shrink-0 flex-col gap-2 p-2">
       <div className="relative">
         <Search className="pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-muted-foreground" />
         <Input
@@ -31,7 +32,7 @@ export function BuilderPalette() {
           library.sprites.map((sprite) => <PaletteItem key={sprite.id} sprite={sprite} />)
         )}
       </div>
-    </div>
+    </Panel>
   );
 }
 

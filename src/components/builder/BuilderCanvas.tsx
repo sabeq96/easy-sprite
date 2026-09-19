@@ -6,6 +6,7 @@ import type { SpritesheetBlockRecord } from "@/db/schema";
 import type { SpriteDocument } from "@/editor/document";
 import { computeBuilderBounds } from "@/export/spritesheetBuilderLayout";
 import { cn } from "@/lib/utils";
+import { Panel } from "@/components/common/Panel";
 
 export interface BuilderCanvasProps {
   canvasRef: RefObject<HTMLDivElement | null>;
@@ -21,7 +22,7 @@ export function BuilderCanvas({ canvasRef, blocks, docs, onRemoveBlock }: Builde
   const bounds = computeBuilderBounds(blocks, docs);
 
   return (
-    <div className="min-h-0 flex-1 overflow-auto rounded-xl border bg-muted/20 p-6">
+    <Panel variant="secondary" className="min-h-0 flex-1 overflow-auto p-6">
       <div
         ref={(node) => {
           setNodeRef(node);
@@ -46,6 +47,6 @@ export function BuilderCanvas({ canvasRef, blocks, docs, onRemoveBlock }: Builde
           />
         ))}
       </div>
-    </div>
+    </Panel>
   );
 }

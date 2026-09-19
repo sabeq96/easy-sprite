@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Pause, Play } from "lucide-react";
 import { useDocumentSession } from "@/app/DocumentProvider";
+import { Panel } from "@/components/common/Panel";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { MAX_FPS, MIN_FPS } from "@/constants/animation";
@@ -71,9 +72,9 @@ export function PreviewPanel() {
   }, [doc, snapshot, player.isPlaying, player.frameIndex, activeFrameId]);
 
   return (
-    <section
-      aria-label="Preview"
-      className="flex shrink-0 flex-col gap-2 rounded-xl bg-card p-2 shadow-sm ring-1 ring-foreground/5"
+    <Panel
+      render={<section aria-label="Preview" />}
+      className="flex shrink-0 flex-col gap-2 p-2"
     >
       <canvas
         ref={canvasRef}
@@ -111,6 +112,6 @@ export function PreviewPanel() {
           {snapshot.fps} fps
         </span>
       </div>
-    </section>
+    </Panel>
   );
 }

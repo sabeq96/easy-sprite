@@ -8,6 +8,7 @@ import { BuilderExportDialog } from "@/components/builder/BuilderExportDialog";
 import { BuilderPalette } from "@/components/builder/BuilderPalette";
 import { useBuilderDnd, type DragData } from "@/components/builder/useBuilderDnd";
 import { NotFoundPage } from "@/components/common/NotFoundPage";
+import { Panel } from "@/components/common/Panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
@@ -100,7 +101,7 @@ function SpritesheetBuilderShell({ spritesheet }: { spritesheet: SpritesheetReco
 
   return (
     <div className="grid h-dvh grid-rows-[auto_1fr_auto] gap-2 overflow-hidden bg-background p-2">
-      <header className="flex items-center gap-2 rounded-xl bg-card px-2 py-1.5 shadow-sm ring-1 ring-foreground/5">
+      <Panel render={<header />} className="flex items-center gap-2 px-2 py-1.5">
         <Button
           aria-label="Back to sprites"
           size="icon-sm"
@@ -137,7 +138,7 @@ function SpritesheetBuilderShell({ spritesheet }: { spritesheet: SpritesheetReco
             Export
           </Button>
         </div>
-      </header>
+      </Panel>
 
       {/* pointerWithin, because a drop is decided by where the cursor is — a palette tile's own
           rect sits down in the dock and says nothing about which part of the sheet it is over. */}
