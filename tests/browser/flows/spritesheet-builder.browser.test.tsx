@@ -54,6 +54,34 @@ test("the composer's palette lists project sprites to drag onto the canvas", asy
   await expect.element(screen.getByRole("button", { name: "Export" })).toBeVisible();
 });
 
+test("a sprite already on the sheet drops out of the palette until it is removed", async () => {
+  const placed = await createSprite({ name: "Hero", width: 8, height: 8 });
+  await createSprite({ name: "Villain", width: 8, height: 8 });
+  const sheet = await createSpritesheet({ name: "Composed" });
+  await updateSpritesheet(sheet.id, {
+    blocks: [{ id: "block-1", spriteId: placed.id, x: 0, y: 0 }],
+  });
+
+  const screen = render(<AppRoutes />, { route: `/spritesheets/${sheet.id}` });
+
+  // A sheet packs each sprite once, so only the unplaced one is still offered.
+  await expect
+    .element(screen.getByRole("button", { name: "Drag Villain onto the sheet" }))
+    .toBeVisible();
+  await expect
+    .element(screen.getByRole("button", { name: "Drag Hero onto the sheet" }))
+    .not.toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole("button", { name: "Remove Hero", exact: true }), {
+    force: true,
+  });
+
+  // Removing it from the canvas returns it to the palette.
+  await expect
+    .element(screen.getByRole("button", { name: "Drag Hero onto the sheet" }))
+    .toBeVisible();
+});
+
 test("a persisted block renders on the canvas and can be removed", async () => {
   const sprite = await createSprite({ name: "Hero", width: 8, height: 8 });
   const sheet = await createSpritesheet({ name: "Composed" });

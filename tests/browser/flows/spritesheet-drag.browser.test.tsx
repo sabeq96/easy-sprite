@@ -48,6 +48,9 @@ test("a drop lands on the grid, not between cells", async () => {
 
 test("dropping a sprite onto an occupied cell is rejected", async () => {
   const sprite = await createSprite({ name: "Hero", width: 8, height: 8 });
+  // A second sprite, because a placed one leaves the palette — only a different sprite can
+  // still be dropped onto the cell Hero occupies.
+  await createSprite({ name: "Villain", width: 8, height: 8 });
   const sheet = await createSpritesheet({ name: "Composed" });
   await updateSpritesheet(sheet.id, {
     blocks: [{ id: "block-1", spriteId: sprite.id, x: 0, y: 0 }],
@@ -59,7 +62,7 @@ test("dropping a sprite onto an occupied cell is rejected", async () => {
     .element(screen.getByRole("button", { name: "Remove Hero", exact: true }))
     .toBeInTheDocument();
 
-  const palette = screen.getByRole("button", { name: "Drag Hero onto the sheet" });
+  const palette = screen.getByRole("button", { name: "Drag Villain onto the sheet" });
   await dragElementOnto(palette.element(), screen.getByTestId("builder-canvas").element(), {
     x: 0,
     y: 0,

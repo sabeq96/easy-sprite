@@ -15,6 +15,7 @@ export const pencilTool: Tool = {
   id: "pencil",
   label: "Pencil",
   continuous: true,
+  options: ["brushSize", "mirror"],
 
   onPointerDown(ctx, point) {
     ctx.stroke.touch(ctx.layerId, ctx.frameId);

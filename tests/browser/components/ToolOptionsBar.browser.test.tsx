@@ -2,6 +2,8 @@ import { expect, test } from "vitest";
 import { userEvent } from "@vitest/browser/context";
 import { ToolOptionsBar } from "@/components/editor/ToolOptionsBar";
 import { ToolSidebar } from "@/components/editor/ToolSidebar";
+import { TOOL_IDS } from "@/constants/tools";
+import { TOOLS } from "@/editor/tools";
 import { useEditorStore } from "@/stores/useEditorStore";
 import { render } from "@test/render";
 
@@ -36,6 +38,22 @@ test("the pencil tool keeps brush size and its own mirror option", async () => {
   await expect.element(screen.getByRole("group", { name: "Brush size" })).toBeVisible();
   await expect.element(screen.getByRole("button", { name: "Mirror horizontally" })).toBeVisible();
   await expect.element(screen.getByRole("button", { name: "Mirror vertically" })).toBeVisible();
+});
+
+test.each(TOOL_IDS)("the %s bar shows exactly the options that tool declares", async (toolId) => {
+  useEditorStore.getState().setTool(toolId);
+  const screen = render(<ToolOptionsBar />);
+  const declared = TOOLS[toolId].options;
+
+  // Each control appears only when the tool itself claims to honour it — the guard against a
+  // control drifting onto a tool that ignores it, which is how the inert Mirror toggle happened.
+  const brushSize = screen.getByRole("group", { name: "Brush size" }).elements().length;
+  const mirror = screen.getByRole("button", { name: "Mirror horizontally" }).elements().length;
+  const pickSource = screen.getByText("Sample merged image").elements().length;
+
+  expect(brushSize).toBe(declared.includes("brushSize") ? 1 : 0);
+  expect(mirror).toBe(declared.includes("mirror") ? 1 : 0);
+  expect(pickSource).toBe(declared.includes("pickSource") ? 1 : 0);
 });
 
 test("picking another tool turns mirroring off, so it can't linger unapplied", async () => {

@@ -10,8 +10,8 @@ import { screenToSprite } from "@/editor/viewport";
 import { useCursorStore } from "@/stores/useCursorStore";
 import { useEditorStore } from "@/stores/useEditorStore";
 
-/** Tools whose brush footprint is worth previewing under the cursor. */
-const BRUSH_PREVIEW_TOOLS = new Set(["pencil", "eraser"]);
+// Which tools preview a brush footprint, and whether that preview mirrors, both come from the
+// tool's own declared options — a tool that ignores an option can never have it drawn for it.
 
 interface ActiveStroke {
   pointerId: number;
@@ -72,16 +72,18 @@ export function usePointerPaint(
 
     const showBrushPreview = () => {
       const state = useEditorStore.getState();
-      if (active || !BRUSH_PREVIEW_TOOLS.has(state.toolId)) return;
+      const toolOptions = getTool(state.toolId).options;
+      if (active || !toolOptions.includes("brushSize")) return;
 
+      const mirrors = toolOptions.includes("mirror");
       renderer.setOverlayPainter(
         brushCursorPainter(
           () => hover,
           () => useEditorStore.getState().toolOptions.brushSize,
           { width: doc.width, height: doc.height },
           {
-            horizontal: state.toolOptions.mirrorHorizontal,
-            vertical: state.toolOptions.mirrorVertical,
+            horizontal: mirrors && state.toolOptions.mirrorHorizontal,
+            vertical: mirrors && state.toolOptions.mirrorVertical,
           },
         ),
         true,

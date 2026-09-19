@@ -1,5 +1,4 @@
 import { FlipHorizontal, FlipVertical } from "lucide-react";
-import type { ToolId } from "@/constants/tools";
 import { BRUSH_SIZES } from "@/constants/tools";
 import { TOOLS } from "@/editor/tools";
 import { Panel } from "@/components/common/Panel";
@@ -11,25 +10,13 @@ import { ToggleGroup } from "@/components/ui/toggle-group";
 import { Button } from "@/components/ui/button";
 import { useEditorStore } from "@/stores/useEditorStore";
 
-type OptionField = "brushSize" | "mirror" | "pickSource";
-
-/** Declarative per-tool option list beats a chain of conditionals in the JSX. */
-const TOOL_OPTION_FIELDS: Record<ToolId, readonly OptionField[]> = {
-  pencil: ["brushSize", "mirror"],
-  eraser: ["brushSize"],
-  bucket: [],
-  fillSimilar: [],
-  picker: ["pickSource"],
-  select: [],
-  move: [],
-};
-
 export function ToolOptionsBar() {
   const toolId = useEditorStore((state) => state.toolId);
   const options = useEditorStore((state) => state.toolOptions);
   const setToolOptions = useEditorStore((state) => state.setToolOptions);
 
-  const fields = TOOL_OPTION_FIELDS[toolId];
+  // The tool declares what it honours; the bar never decides that for itself.
+  const fields = TOOLS[toolId].options;
 
   return (
     <Panel className="flex h-9 items-center gap-3 px-3 text-xs">

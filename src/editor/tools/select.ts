@@ -47,6 +47,7 @@ export const selectTool: Tool = {
   id: "select",
   label: "Select",
   continuous: true,
+  options: [],
 
   onPointerDown(_ctx, point) {
     drag = { origin: point, lifted: null, offset: { x: 0, y: 0 } };
@@ -83,6 +84,7 @@ export const moveTool: Tool = {
   id: "move",
   label: "Move selection",
   continuous: true,
+  options: [],
 
   onPointerDown(ctx, point, modifiers) {
     const selection = bridge.get();

@@ -8,6 +8,7 @@ function createFill(id: "bucket" | "fillSimilar", label: string, contiguous: boo
     label,
     // A drag must not repeat the fill.
     continuous: false,
+    options: [],
 
     onPointerDown(ctx, point) {
       ctx.stroke.touch(ctx.layerId, ctx.frameId);

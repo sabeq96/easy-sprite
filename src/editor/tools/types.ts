@@ -26,6 +26,13 @@ export interface ToolOptions {
   pickFromComposite: boolean;
 }
 
+/**
+ * The option groups a tool can support. A tool declares these on itself (see `Tool.options`),
+ * and both the options bar and the brush preview read that declaration — so an option can never
+ * be offered or previewed by a surface that the tool itself ignores.
+ */
+export type ToolOptionField = "brushSize" | "mirror" | "pickSource";
+
 export interface ToolContext {
   readonly doc: SpriteDocument;
   readonly layerId: string;
@@ -46,6 +53,12 @@ export interface Tool {
   readonly label: string;
   /** Whether a drag continues the operation (pencil) or is a one-shot (bucket). */
   readonly continuous: boolean;
+  /**
+   * The options this tool actually reads from `ctx.options`. Declaring one it ignores is what
+   * put an inert Mirror toggle (and its mirrored brush preview) on the eraser, so keep this
+   * list honest: it is the only thing the UI consults.
+   */
+  readonly options: readonly ToolOptionField[];
 
   onPointerDown(ctx: ToolContext, point: ToolPoint, modifiers: PointerModifiers): void;
   onPointerMove?(

@@ -71,6 +71,22 @@ describe("toolSlice", () => {
     expect(store.getState().toolOptions.mirrorHorizontal).toBe(true);
   });
 
+  it("a selection survives switching tools, including away from the select tool", () => {
+    // Selection is canvas geometry, not tool state: only a resize or leaving the sprite drops
+    // it. Resetting tool options on switch must never reach it.
+    const store = createTestStore();
+    store.getState().setTool("select");
+    store.getState().selectAllPixels({ width: 4, height: 4 });
+    const mask = store.getState().selectionMask;
+
+    store.getState().setTool("pencil");
+    expect(store.getState().selectionMask).toBe(mask);
+
+    store.getState().setTool("bucket");
+    expect(store.getState().selection).not.toBeNull();
+    expect(store.getState().selectionMask).toBe(mask);
+  });
+
   it("cycleBrushSize wraps back to 1 after the cycle cap", () => {
     const store = createTestStore();
     const sizes = [1, 2, 3, 4].map(() => {

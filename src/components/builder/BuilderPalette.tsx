@@ -8,9 +8,20 @@ import { useBlobUrl } from "@/hooks/useBlobUrl";
 import { useSpriteLibrary } from "@/hooks/useSpriteLibrary";
 import { cn } from "@/lib/utils";
 
-/** Every sprite in the project, searchable — drag one onto the canvas above to place it. */
-export function BuilderPalette() {
+export interface BuilderPaletteProps {
+  /** Sprites already on the sheet, which drop out of the list until they are removed again. */
+  placedSpriteIds: ReadonlySet<string>;
+}
+
+/**
+ * The sprites still available to place, searchable — drag one onto the canvas above.
+ *
+ * A sheet packs each sprite once: placing the same one twice would duplicate its pixels in the
+ * exported texture, so a placed sprite leaves the list rather than inviting a second copy.
+ */
+export function BuilderPalette({ placedSpriteIds }: BuilderPaletteProps) {
   const library = useSpriteLibrary();
+  const available = library.sprites.filter((sprite) => !placedSpriteIds.has(sprite.id));
 
   return (
     <Panel className="flex h-32 shrink-0 flex-col gap-2 p-2">
@@ -26,10 +37,14 @@ export function BuilderPalette() {
       </div>
 
       <div className="flex flex-1 items-center gap-2 overflow-x-auto">
-        {library.sprites.length === 0 ? (
-          <p className="text-xs text-muted-foreground">No sprites match.</p>
+        {available.length === 0 ? (
+          <p className="text-xs text-muted-foreground">
+            {library.sprites.length > 0
+              ? "Every matching sprite is already on this sheet."
+              : "No sprites match."}
+          </p>
         ) : (
-          library.sprites.map((sprite) => <PaletteItem key={sprite.id} sprite={sprite} />)
+          available.map((sprite) => <PaletteItem key={sprite.id} sprite={sprite} />)
         )}
       </div>
     </Panel>

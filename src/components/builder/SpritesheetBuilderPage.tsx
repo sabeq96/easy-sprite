@@ -146,7 +146,7 @@ function SpritesheetBuilderShell({ spritesheet }: { spritesheet: SpritesheetReco
           docs={docs}
           onRemoveBlock={removeBlock}
         />
-        <BuilderPalette />
+        <BuilderPalette placedSpriteIds={new Set(spriteIds)} />
 
         {/* A palette tile lives inside a horizontally scrolling dock, so dragging it would be
             clipped at the dock's edge. The overlay is portalled out, so it can cross the page. */}

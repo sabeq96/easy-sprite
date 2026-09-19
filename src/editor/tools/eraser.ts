@@ -9,6 +9,7 @@ export const eraserTool: Tool = {
   id: "eraser",
   label: "Eraser",
   continuous: true,
+  options: ["brushSize"],
 
   onPointerDown(ctx, point) {
     ctx.stroke.touch(ctx.layerId, ctx.frameId);
