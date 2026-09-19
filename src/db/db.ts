@@ -6,6 +6,7 @@ import type {
   PaletteRecord,
   SettingRecord,
   SpriteRecord,
+  SpritesheetRecord,
 } from "@/db/schema";
 
 export type SpriteEditorDB = Dexie & {
@@ -14,6 +15,7 @@ export type SpriteEditorDB = Dexie & {
   cels: EntityTable<CelRecord, "id">;
   palettes: EntityTable<PaletteRecord, "id">;
   settings: EntityTable<SettingRecord, "key">;
+  spritesheets: EntityTable<SpritesheetRecord, "id">;
 };
 
 export const db = new Dexie(DB_NAME) as SpriteEditorDB;
@@ -26,4 +28,8 @@ db.version(1).stores({
   cels: "id, spriteId, layerId, frameId, [layerId+frameId]",
   palettes: "id, name, builtIn, updatedAt",
   settings: "key",
+});
+
+db.version(2).stores({
+  spritesheets: "id, name, updatedAt, createdAt, *tags",
 });

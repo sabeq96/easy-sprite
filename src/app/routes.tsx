@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from "react-router";
 import { AppLayout } from "@/app/AppLayout";
+import { SpritesheetBuilderPage } from "@/components/builder/SpritesheetBuilderPage";
 import { NotFoundPage } from "@/components/common/NotFoundPage";
 import { EditorPage } from "@/components/editor/EditorPage";
 import { SpriteManagerPage } from "@/components/manager/SpriteManagerPage";
@@ -16,8 +17,9 @@ export function AppRoutes() {
         <Route path="*" element={<NotFoundPage />} />
       </Route>
 
-      {/* The editor is full-bleed, so it sits outside the padded app shell. */}
+      {/* The editor and the spritesheet builder are full-bleed, so they sit outside the padded app shell. */}
       <Route path="sprites/:spriteId" element={<EditorPage />} />
+      <Route path="spritesheets/:spritesheetId" element={<SpritesheetBuilderPage />} />
     </Routes>
   );
 }

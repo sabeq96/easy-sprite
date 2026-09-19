@@ -1,5 +1,12 @@
-import { Plus, Search, X } from "lucide-react";
+import { ChevronDown, LayoutGrid, Plus, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -8,20 +15,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { SpriteLibrary, SpriteSort } from "@/hooks/useSpriteLibrary";
+import type { Library, LibrarySort } from "@/hooks/useLibrary";
 
-const SORT_LABELS: Record<SpriteSort, string> = {
+const SORT_LABELS: Record<LibrarySort, string> = {
   updated: "Last edited",
   created: "Newest",
   name: "Name",
 };
 
 export interface SpriteLibraryToolbarProps {
-  library: SpriteLibrary;
-  onCreate: () => void;
+  library: Library;
+  onCreateSprite: () => void;
+  onCreateSpritesheet: () => void;
 }
 
-export function SpriteLibraryToolbar({ library, onCreate }: SpriteLibraryToolbarProps) {
+export function SpriteLibraryToolbar({
+  library,
+  onCreateSprite,
+  onCreateSpritesheet,
+}: SpriteLibraryToolbarProps) {
   return (
     <div className="flex flex-wrap items-center gap-2">
       <h1 className="text-lg font-semibold">Sprites</h1>
@@ -30,8 +42,8 @@ export function SpriteLibraryToolbar({ library, onCreate }: SpriteLibraryToolbar
         <Search className="pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-muted-foreground" />
         <Input
           className="h-8 w-56 pl-7"
-          placeholder="Search sprites"
-          aria-label="Search sprites"
+          placeholder="Search"
+          aria-label="Search library"
           value={library.search}
           onChange={(event) => library.setSearch(event.target.value)}
         />
@@ -39,11 +51,11 @@ export function SpriteLibraryToolbar({ library, onCreate }: SpriteLibraryToolbar
 
       <Select
         value={library.sort}
-        onValueChange={(value) => library.setSort(value as SpriteSort)}
+        onValueChange={(value) => library.setSort(value as LibrarySort)}
       >
-        <SelectTrigger size="sm" className="w-36" aria-label="Sort sprites">
+        <SelectTrigger size="sm" className="w-36" aria-label="Sort library">
           <SelectValue>
-            {(value: SpriteSort) => SORT_LABELS[value] ?? "Sort"}
+            {(value: LibrarySort) => SORT_LABELS[value] ?? "Sort"}
           </SelectValue>
         </SelectTrigger>
         <SelectContent>
@@ -55,10 +67,30 @@ export function SpriteLibraryToolbar({ library, onCreate }: SpriteLibraryToolbar
         </SelectContent>
       </Select>
 
-      <Button size="sm" onClick={onCreate}>
-        <Plus />
-        New sprite
-      </Button>
+      {/* A split button: the common action stays one click away, and the rarer spritesheet
+          sits behind the chevron rather than competing with it for attention. */}
+      <ButtonGroup>
+        <Button size="sm" onClick={onCreateSprite}>
+          <Plus />
+          New sprite
+        </Button>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button size="icon-sm" aria-label="More ways to create">
+                <ChevronDown />
+              </Button>
+            }
+          />
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={onCreateSpritesheet}>
+              <LayoutGrid />
+              New spritesheet
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </ButtonGroup>
 
       {library.allTags.length > 0 && (
         <div className="flex w-full flex-wrap items-center gap-1">

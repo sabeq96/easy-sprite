@@ -6,8 +6,9 @@ import { render } from "@test/render";
 test("creating a sprite from the library opens it in the editor, and it lists on the way back", async () => {
   const screen = render(<AppRoutes />, { route: "/sprites" });
 
-  // The empty state and the toolbar both offer a "New sprite" button.
-  await userEvent.click(screen.getByRole("button", { name: "New sprite" }).first());
+  // The empty state and the toolbar both offer a "New sprite" button. Exact, because the
+  // toolbar also has a "New spritesheet" button whose name contains "New sprite" as a substring.
+  await userEvent.click(screen.getByRole("button", { name: "New sprite", exact: true }).first());
   await expect.element(screen.getByRole("dialog", { name: "New sprite" })).toBeVisible();
 
   await userEvent.fill(screen.getByLabelText("Name"), "Hero walk");
@@ -22,7 +23,7 @@ test("creating a sprite from the library opens it in the editor, and it lists on
 test("deleting a sprite through its menu removes it from the library", async () => {
   const screen = render(<AppRoutes />, { route: "/sprites" });
 
-  await userEvent.click(screen.getByRole("button", { name: "New sprite" }).first());
+  await userEvent.click(screen.getByRole("button", { name: "New sprite", exact: true }).first());
   await userEvent.fill(screen.getByLabelText("Name"), "Throwaway");
   await userEvent.click(screen.getByRole("button", { name: "Create" }));
   await expect.element(screen.getByRole("application", { name: "Sprite canvas" })).toBeVisible();

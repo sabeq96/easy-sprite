@@ -13,7 +13,13 @@ import { spriteToScreen, type Point, type Viewport } from "@/editor/viewport";
  */
 const POINTER_ID = 1;
 
-function fire(target: Element, type: string, clientX: number, clientY: number, buttons: number) {
+function fire(
+  target: Element | Document,
+  type: string,
+  clientX: number,
+  clientY: number,
+  buttons: number,
+) {
   target.dispatchEvent(
     new PointerEvent(type, {
       pointerId: POINTER_ID,
@@ -42,6 +48,40 @@ export function clickSpritePixel(container: Element, viewport: Viewport, point: 
   const { clientX, clientY } = clientPointFor(container, viewport, point);
   fire(container, "pointerdown", clientX, clientY, 1);
   fire(container, "pointerup", clientX, clientY, 0);
+}
+
+function nextFrame(): Promise<void> {
+  return new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 0)));
+}
+
+/**
+ * Drags one element onto a point inside another, the way dnd-kit's PointerSensor sees it: the
+ * `pointerdown` lands on the drag source, and the moves/up go to the document, where the sensor
+ * attaches its listeners once a drag is live. The first move clears the sensor's 4px activation
+ * distance, and a frame is awaited between events because dnd-kit measures rects asynchronously.
+ */
+export async function dragElementOnto(
+  source: Element,
+  target: Element,
+  offset: Point = { x: 0, y: 0 },
+): Promise<void> {
+  const from = source.getBoundingClientRect();
+  const to = target.getBoundingClientRect();
+  const startX = from.left + from.width / 2;
+  const startY = from.top + from.height / 2;
+  const endX = to.left + offset.x;
+  const endY = to.top + offset.y;
+
+  fire(source, "pointerdown", startX, startY, 1);
+  await nextFrame();
+  fire(document, "pointermove", startX + 8, startY + 8, 1); // clears the activation distance
+  await nextFrame();
+  fire(document, "pointermove", (startX + endX) / 2, (startY + endY) / 2, 1);
+  await nextFrame();
+  fire(document, "pointermove", endX, endY, 1);
+  await nextFrame();
+  fire(document, "pointerup", endX, endY, 0);
+  await nextFrame();
 }
 
 /** A pointer down, a sequence of moves, then up — one continuous stroke over sprite pixels. */

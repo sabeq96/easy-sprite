@@ -60,3 +60,23 @@ export interface SettingRecord<T = unknown> {
   key: string;
   value: T;
 }
+
+export interface SpritesheetBlockRecord {
+  /** Block instance id — not the sprite id, so one sprite can appear more than once. */
+  id: string;
+  spriteId: string;
+  /** Sprite-resolution px, top-left corner, snapped to BUILDER_GRID_SIZE. */
+  x: number;
+  y: number;
+}
+
+export interface SpritesheetRecord {
+  id: string;
+  name: string;
+  blocks: SpritesheetBlockRecord[];
+  tags: string[];
+  createdAt: number;
+  updatedAt: number;
+  /** PNG preview of the composed sheet, max 128px on the long edge. */
+  thumbnail: Blob | null;
+}

@@ -28,6 +28,49 @@ describe("toolSlice", () => {
     expect(store.getState()).toMatchObject({ toolId: "picker", previousToolId: "pencil" });
   });
 
+  it("setTool clears mirroring, which only the pencil applies", () => {
+    const store = createTestStore();
+    store.getState().setToolOptions({ mirrorHorizontal: true, mirrorVertical: true });
+
+    store.getState().setTool("eraser");
+
+    expect(store.getState().toolOptions).toMatchObject({
+      mirrorHorizontal: false,
+      mirrorVertical: false,
+    });
+  });
+
+  it("setTool leaves other tool options alone", () => {
+    const store = createTestStore();
+    store.getState().setToolOptions({ brushSize: 3, mirrorHorizontal: true });
+
+    store.getState().setTool("eraser");
+
+    expect(store.getState().toolOptions).toMatchObject({ brushSize: 3, pickFromComposite: true });
+  });
+
+  it("re-selecting the tool already in use keeps mirroring on", () => {
+    const store = createTestStore();
+    store.getState().setTool("pencil");
+    store.getState().setToolOptions({ mirrorHorizontal: true });
+
+    store.getState().setTool("pencil");
+
+    expect(store.getState().toolOptions.mirrorHorizontal).toBe(true);
+  });
+
+  it("a held modifier tool keeps mirroring for the tool it returns to", () => {
+    const store = createTestStore();
+    store.getState().setTool("pencil");
+    store.getState().setToolOptions({ mirrorHorizontal: true });
+
+    store.getState().pushTemporaryTool("picker");
+    store.getState().popTemporaryTool();
+
+    expect(store.getState()).toMatchObject({ toolId: "pencil" });
+    expect(store.getState().toolOptions.mirrorHorizontal).toBe(true);
+  });
+
   it("cycleBrushSize wraps back to 1 after the cycle cap", () => {
     const store = createTestStore();
     const sizes = [1, 2, 3, 4].map(() => {

@@ -136,9 +136,21 @@ export async function duplicateSprite(id: string): Promise<SpriteRecord> {
 }
 
 export function removeSprite(id: string): Promise<void> {
-  return db.transaction("rw", db.sprites, db.layers, db.cels, async () => {
+  return db.transaction("rw", db.sprites, db.layers, db.cels, db.spritesheets, async () => {
     await db.cels.where("spriteId").equals(id).delete();
     await db.layers.where("spriteId").equals(id).delete();
     await db.sprites.delete(id);
+
+    // A spritesheet block pointing at this sprite would otherwise be a dangling reference.
+    const affected = await db.spritesheets
+      .filter((sheet) => sheet.blocks.some((block) => block.spriteId === id))
+      .toArray();
+    await Promise.all(
+      affected.map((sheet) =>
+        db.spritesheets.update(sheet.id, {
+          blocks: sheet.blocks.filter((block) => block.spriteId !== id),
+        }),
+      ),
+    );
   });
 }

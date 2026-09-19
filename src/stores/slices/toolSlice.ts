@@ -25,7 +25,27 @@ export const createToolSlice: SliceCreator<ToolSlice> = (set, get) => ({
     pickFromComposite: true,
   },
 
-  setTool: (toolId) => set({ toolId, previousToolId: null }),
+  /**
+   * Mirror is a pencil-only option, but the brush preview draws its mirrored cells for any tool
+   * that has a brush cursor — so leaving it set while switching to the eraser highlights pixels
+   * that will never be touched. Clearing it on a real tool change keeps the preview honest.
+   * Re-selecting the current tool leaves it alone, and so does a held modifier tool, which
+   * restores the previous tool rather than choosing a new one.
+   */
+  setTool: (toolId) =>
+    set((state) =>
+      state.toolId === toolId
+        ? { toolId, previousToolId: null }
+        : {
+            toolId,
+            previousToolId: null,
+            toolOptions: {
+              ...state.toolOptions,
+              mirrorHorizontal: false,
+              mirrorVertical: false,
+            },
+          },
+    ),
 
   pushTemporaryTool: (toolId) => {
     const { previousToolId, toolId: current } = get();

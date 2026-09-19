@@ -12,18 +12,21 @@ import {
 } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
 import { NewSpriteDialog } from "@/components/manager/NewSpriteDialog";
+import { NewSpritesheetDialog } from "@/components/manager/NewSpritesheetDialog";
 import { SpriteCard } from "@/components/manager/SpriteCard";
 import { SpriteLibraryToolbar } from "@/components/manager/SpriteLibraryToolbar";
+import { SpritesheetCard } from "@/components/manager/SpritesheetCard";
 import { DEFAULT_EXPORT_OPTIONS } from "@/constants/export";
 import type { SpriteRecord } from "@/db/schema";
 import { downloadBlob, toFilenameSlug } from "@/export/download";
 import { exportSpritesheet } from "@/export/spritesheet";
 import { openDocument } from "@/services/documentService";
-import { useSpriteLibrary } from "@/hooks/useSpriteLibrary";
+import { useLibrary } from "@/hooks/useLibrary";
 
 export function SpriteManagerPage() {
-  const library = useSpriteLibrary();
-  const [isCreating, setCreating] = useState(false);
+  const library = useLibrary();
+  const [isCreatingSprite, setCreatingSprite] = useState(false);
+  const [isCreatingSpritesheet, setCreatingSpritesheet] = useState(false);
 
   // Quick export straight from the gallery, at defaults; the editor dialog has the options.
   const exportSprite = async (sprite: SpriteRecord) => {
@@ -39,18 +42,22 @@ export function SpriteManagerPage() {
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-4">
-      <SpriteLibraryToolbar library={library} onCreate={() => setCreating(true)} />
+      <SpriteLibraryToolbar
+        library={library}
+        onCreateSprite={() => setCreatingSprite(true)}
+        onCreateSpritesheet={() => setCreatingSpritesheet(true)}
+      />
 
       {library.isLoading ? (
         <SpriteGridSkeleton />
-      ) : library.sprites.length === 0 ? (
+      ) : library.items.length === 0 ? (
         <Empty>
           <EmptyHeader>
             <EmptyMedia variant="icon">
               <Images />
             </EmptyMedia>
             <EmptyTitle>
-              {library.search || library.tag ? "No sprites match" : "No sprites yet"}
+              {library.search || library.tag ? "Nothing matches" : "No sprites yet"}
             </EmptyTitle>
             <EmptyDescription>
               {library.search || library.tag
@@ -59,7 +66,7 @@ export function SpriteManagerPage() {
             </EmptyDescription>
           </EmptyHeader>
           <EmptyContent>
-            <Button onClick={() => setCreating(true)}>
+            <Button onClick={() => setCreatingSprite(true)}>
               <Plus />
               New sprite
             </Button>
@@ -67,15 +74,23 @@ export function SpriteManagerPage() {
         </Empty>
       ) : (
         <ul className="grid grid-cols-[repeat(auto-fill,minmax(10rem,1fr))] gap-3">
-          {library.sprites.map((sprite) => (
-            <li key={sprite.id}>
-              <SpriteCard sprite={sprite} onExport={exportSprite} />
+          {library.items.map((item) => (
+            <li key={item.record.id}>
+              {item.kind === "sprite" ? (
+                <SpriteCard sprite={item.record} onExport={exportSprite} />
+              ) : (
+                <SpritesheetCard spritesheet={item.record} />
+              )}
             </li>
           ))}
         </ul>
       )}
 
-      <NewSpriteDialog open={isCreating} onOpenChange={setCreating} />
+      <NewSpriteDialog open={isCreatingSprite} onOpenChange={setCreatingSprite} />
+      <NewSpritesheetDialog
+        open={isCreatingSpritesheet}
+        onOpenChange={setCreatingSpritesheet}
+      />
     </div>
   );
 }
