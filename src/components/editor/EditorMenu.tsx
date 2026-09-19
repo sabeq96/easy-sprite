@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { Crop, Download, Menu, Save } from "lucide-react";
+import { Crop, Menu, Save } from "lucide-react";
 import { toast } from "sonner";
 import { useDocumentSession } from "@/app/DocumentProvider";
-import { ExportDialog } from "@/components/editor/ExportDialog";
 import { ResizeCanvasDialog } from "@/components/editor/ResizeCanvasDialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,8 +15,7 @@ import {
 import { shortcutHint } from "@/constants/shortcuts";
 
 export function EditorMenu() {
-  const { doc, autosave } = useDocumentSession();
-  const [isExporting, setExporting] = useState(false);
+  const { autosave } = useDocumentSession();
   const [isResizing, setResizing] = useState(false);
 
   return (
@@ -31,13 +29,10 @@ export function EditorMenu() {
           }
         />
         <DropdownMenuContent align="start" className="min-w-56">
+          {/* Export is not here: it is a primary action, so it has its own button in the bar. */}
           <DropdownMenuItem onClick={() => setResizing(true)}>
             <Crop />
             Resize canvas…
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setExporting(true)}>
-            <Download />
-            Export spritesheet…
           </DropdownMenuItem>
 
           <DropdownMenuSeparator />
@@ -52,12 +47,6 @@ export function EditorMenu() {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <ExportDialog
-        doc={doc}
-        open={isExporting}
-        onOpenChange={setExporting}
-        onBeforeExport={() => autosave.flush()}
-      />
       <ResizeCanvasDialog open={isResizing} onOpenChange={setResizing} />
     </>
   );

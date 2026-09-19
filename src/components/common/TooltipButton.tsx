@@ -8,7 +8,8 @@ export interface TooltipButtonProps extends ComponentProps<typeof Button> {
   label: string;
   shortcut?: string;
   side?: ComponentProps<typeof TooltipContent>["side"];
-  children: ReactNode;
+  /** Optional: a `render` element supplies its own content, as the back-links in the bars do. */
+  children?: ReactNode;
 }
 
 /**

@@ -5,6 +5,7 @@ import { updateSpritesheet } from "@/db/repositories/spritesheets";
 import type { SpritesheetBlockRecord, SpritesheetRecord } from "@/db/schema";
 import type { SpriteDocument } from "@/editor/document";
 import { blockRect } from "@/export/spritesheetBuilderLayout";
+import type { SaveStatusTracker } from "@/hooks/useSaveStatus";
 import { createId } from "@/lib/id";
 import { rectsIntersect, type Rect } from "@/lib/rect";
 import { saveSpritesheetThumbnail } from "@/services/thumbnails";
@@ -72,14 +73,17 @@ export function useBuilderDnd(
   spritesheet: SpritesheetRecord,
   docs: Map<string, SpriteDocument>,
   canvasRef: RefObject<HTMLDivElement | null>,
+  track: SaveStatusTracker["track"],
 ) {
   const persist = useCallback(
     (blocks: SpritesheetBlockRecord[]) => {
-      void updateSpritesheet(spritesheet.id, { blocks }).then(() =>
-        saveSpritesheetThumbnail(spritesheet.id, blocks, docs),
+      void track(
+        updateSpritesheet(spritesheet.id, { blocks }).then(() =>
+          saveSpritesheetThumbnail(spritesheet.id, blocks, docs),
+        ),
       );
     },
-    [spritesheet.id, docs],
+    [spritesheet.id, docs, track],
   );
 
   const removeBlock = useCallback(

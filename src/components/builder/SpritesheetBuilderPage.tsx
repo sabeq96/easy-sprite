@@ -7,10 +7,11 @@ import { BuilderCanvas } from "@/components/builder/BuilderCanvas";
 import { BuilderExportDialog } from "@/components/builder/BuilderExportDialog";
 import { BuilderPalette } from "@/components/builder/BuilderPalette";
 import { useBuilderDnd, type DragData } from "@/components/builder/useBuilderDnd";
+import { InlineNameField } from "@/components/common/InlineNameField";
 import { NotFoundPage } from "@/components/common/NotFoundPage";
 import { Panel } from "@/components/common/Panel";
+import { SaveStatusBadge } from "@/components/common/SaveStatusBadge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ROUTES } from "@/constants/routes";
@@ -18,6 +19,7 @@ import { db } from "@/db/db";
 import { getSpritesheet, updateSpritesheet } from "@/db/repositories/spritesheets";
 import type { SpritesheetRecord } from "@/db/schema";
 import type { SpriteDocument } from "@/editor/document";
+import { useSaveStatus } from "@/hooks/useSaveStatus";
 import { useAppDndSensors } from "@/lib/dnd";
 import { openDocument } from "@/services/documentService";
 
@@ -76,8 +78,8 @@ function useDocumentCache(spriteIds: string[]): Map<string, SpriteDocument> {
 function SpritesheetBuilderShell({ spritesheet }: { spritesheet: SpritesheetRecord }) {
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const sensors = useAppDndSensors();
+  const save = useSaveStatus();
   const [isExporting, setExporting] = useState(false);
-  const [nameDraft, setNameDraft] = useState<string | null>(null);
   const [draggedName, setDraggedName] = useState<string | null>(null);
 
   const spriteIds = useMemo(
@@ -85,13 +87,7 @@ function SpritesheetBuilderShell({ spritesheet }: { spritesheet: SpritesheetReco
     [spritesheet.blocks],
   );
   const docs = useDocumentCache(spriteIds);
-  const { handleDragEnd, removeBlock } = useBuilderDnd(spritesheet, docs, canvasRef);
-
-  const commitName = () => {
-    const next = nameDraft?.trim();
-    if (next && next !== spritesheet.name) void updateSpritesheet(spritesheet.id, { name: next });
-    setNameDraft(null);
-  };
+  const { handleDragEnd, removeBlock } = useBuilderDnd(spritesheet, docs, canvasRef, save.track);
 
   // Only palette drags need an overlay; a block already on the sheet moves under its own transform.
   const handleDragStart = (event: DragStartEvent) => {
@@ -114,29 +110,21 @@ function SpritesheetBuilderShell({ spritesheet }: { spritesheet: SpritesheetReco
           }
         />
 
-        <Input
-          aria-label="Spritesheet name"
-          className="h-7 w-48 border-transparent bg-transparent hover:border-border focus:border-border"
-          value={nameDraft ?? spritesheet.name}
-          onChange={(event) => setNameDraft(event.target.value)}
-          onBlur={commitName}
-          onKeyDown={(event) => {
-            event.stopPropagation();
-            if (event.key === "Enter") event.currentTarget.blur();
-            if (event.key === "Escape") {
-              setNameDraft(null);
-              event.currentTarget.blur();
-            }
-          }}
+        <InlineNameField
+          label="Spritesheet name"
+          name={spritesheet.name}
+          onCommit={(name) => void save.track(updateSpritesheet(spritesheet.id, { name }))}
         />
 
-        <Separator orientation="vertical" className="h-5" />
+        <div className="ml-auto flex items-center gap-2">
+          <Separator orientation="vertical" className="h-5" />
 
-        <div className="ml-auto">
           <Button size="sm" onClick={() => setExporting(true)}>
             <Download />
             Export
           </Button>
+
+          <SaveStatusBadge status={save.status} />
         </div>
       </Panel>
 

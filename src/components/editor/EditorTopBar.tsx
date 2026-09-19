@@ -1,12 +1,15 @@
-import { ArrowLeft, Keyboard, Redo2, Undo2 } from "lucide-react";
+import { useState } from "react";
+import { ArrowLeft, Download, Keyboard, Redo2, Undo2 } from "lucide-react";
 import { Link } from "react-router";
 import { useDocumentSession } from "@/app/DocumentProvider";
 import { Panel } from "@/components/common/Panel";
+import { SaveStatusBadge } from "@/components/common/SaveStatusBadge";
 import { TooltipButton } from "@/components/common/TooltipButton";
 import { EditorMenu } from "@/components/editor/EditorMenu";
-import { SaveStatusBadge } from "@/components/editor/SaveStatusBadge";
+import { ExportDialog } from "@/components/editor/ExportDialog";
 import { SpriteNameField } from "@/components/editor/SpriteNameField";
 import { ViewControls } from "@/components/editor/ViewControls";
+import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ROUTES } from "@/constants/routes";
 import { shortcutHint } from "@/constants/shortcuts";
@@ -17,8 +20,9 @@ export interface EditorTopBarProps {
 }
 
 export function EditorTopBar({ onShowHelp }: EditorTopBarProps) {
-  const { history, saveStatus } = useDocumentSession();
+  const { doc, history, autosave, saveStatus } = useDocumentSession();
   const { canUndo, canRedo, undoLabel, redoLabel } = useHistoryState(history);
+  const [isExporting, setExporting] = useState(false);
 
   return (
     <Panel render={<header />} className="flex items-center gap-2 px-2 py-1.5">
@@ -69,8 +73,21 @@ export function EditorTopBar({ onShowHelp }: EditorTopBarProps) {
         </TooltipButton>
 
         <Separator orientation="vertical" className="h-5" />
+
+        <Button size="sm" onClick={() => setExporting(true)}>
+          <Download />
+          Export
+        </Button>
+
         <SaveStatusBadge status={saveStatus} />
       </div>
+
+      <ExportDialog
+        doc={doc}
+        open={isExporting}
+        onOpenChange={setExporting}
+        onBeforeExport={() => autosave.flush()}
+      />
     </Panel>
   );
 }

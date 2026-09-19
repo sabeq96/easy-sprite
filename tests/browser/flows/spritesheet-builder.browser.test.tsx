@@ -2,7 +2,11 @@ import { expect, test, vi } from "vitest";
 import { userEvent } from "@vitest/browser/context";
 import { AppRoutes } from "@/app/routes";
 import { createSprite } from "@/db/repositories/sprites";
-import { createSpritesheet, updateSpritesheet } from "@/db/repositories/spritesheets";
+import {
+  createSpritesheet,
+  getSpritesheet,
+  updateSpritesheet,
+} from "@/db/repositories/spritesheets";
 import { render } from "@test/render";
 
 test("creating a spritesheet from the library opens the composer, and it lists with a sheet badge", async () => {
@@ -21,6 +25,23 @@ test("creating a spritesheet from the library opens the composer, and it lists w
   await userEvent.click(screen.getByRole("button", { name: "Back to sprites" }));
   await expect.element(screen.getByRole("button", { name: "Open Scene sheet" })).toBeVisible();
   await expect.element(screen.getByText("Sheet", { exact: true })).toBeVisible();
+});
+
+test("the composer header exposes export and a save indicator, like the sprite editor", async () => {
+  const sheet = await createSpritesheet({ name: "Composed" });
+  const screen = render(<AppRoutes />, { route: `/spritesheets/${sheet.id}` });
+
+  // Export is a button in both headers, never buried in a menu. The status dot is named by
+  // its state; dnd-kit's own live region is also role="status", hence the explicit name.
+  await expect.element(screen.getByRole("button", { name: "Export" })).toBeVisible();
+  await expect.element(screen.getByRole("status", { name: "Saved" })).toBeVisible();
+
+  await userEvent.fill(screen.getByLabelText("Spritesheet name"), "Renamed");
+  await userEvent.keyboard("{Enter}");
+
+  // The badge reports a real write, so the rename must land in the database behind it.
+  await expect.poll(async () => (await getSpritesheet(sheet.id)).name).toBe("Renamed");
+  await expect.element(screen.getByRole("status", { name: "Saved" })).toBeVisible();
 });
 
 test("the composer's palette lists project sprites to drag onto the canvas", async () => {

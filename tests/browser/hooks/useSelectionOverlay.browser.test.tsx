@@ -18,7 +18,7 @@ const PASTE = IS_APPLE ? "{Meta>}v{/Meta}" : "{Control>}v{/Control}";
 function hasOverlayInk(): boolean {
   const canvas = document.querySelector('canvas[data-canvas="overlay"]') as HTMLCanvasElement | null;
   const ctx = canvas?.getContext("2d");
-  if (!ctx) return false;
+  if (!canvas || !ctx) return false;
 
   const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
   for (let i = 3; i < data.length; i += 4) if (data[i] > 0) return true;
