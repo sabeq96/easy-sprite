@@ -1,10 +1,10 @@
-import { useDraggable } from "@dnd-kit/core";
 import { Search } from "lucide-react";
 import type { DragData } from "@/components/builder/useBuilderDnd";
 import { Panel } from "@/components/common/Panel";
 import { Input } from "@/components/ui/input";
 import type { SpriteRecord } from "@/db/schema";
 import { useBlobUrl } from "@/hooks/useBlobUrl";
+import { useDragSource } from "@/hooks/useDnd";
 import { useSpriteLibrary } from "@/hooks/useSpriteLibrary";
 import { cn } from "@/lib/utils";
 
@@ -53,47 +53,55 @@ export function BuilderPalette({ placedSpriteIds }: BuilderPaletteProps) {
 }
 
 function PaletteItem({ sprite }: { sprite: SpriteRecord }) {
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id: `palette:${sprite.id}`,
-    data: {
-      type: "palette",
-      spriteId: sprite.id,
-      name: sprite.name,
-      width: sprite.width,
-      height: sprite.height,
-      frameCount: sprite.frames.length,
-    } satisfies DragData,
-  });
-  const thumbnailUrl = useBlobUrl(sprite.thumbnail);
+  const { dragProps, dragClass } = useDragSource(`palette:${sprite.id}`, {
+    type: "palette",
+    spriteId: sprite.id,
+    name: sprite.name,
+    width: sprite.width,
+    height: sprite.height,
+    frameCount: sprite.frames.length,
+    thumbnail: sprite.thumbnail,
+  } satisfies DragData);
 
   return (
     <div
-      ref={setNodeRef}
-      {...attributes}
-      {...listeners}
+      {...dragProps}
       aria-label={`Drag ${sprite.name} onto the sheet`}
-      className={cn(
-        "flex h-20 w-20 shrink-0 touch-none flex-col items-center justify-center gap-1 rounded-md bg-checker-a p-1 ring-1 ring-border",
-        isDragging && "opacity-40",
-      )}
+      className={cn(TILE_CLASS, "shrink-0", dragClass)}
       title={sprite.name}
     >
+      <SpriteTile name={sprite.name} thumbnail={sprite.thumbnail} />
+    </div>
+  );
+}
+
+const TILE_CLASS =
+  "flex h-20 w-20 flex-col items-center justify-center gap-1 rounded-md bg-checker-a p-1 ring-1 ring-border";
+
+/** The tile's contents, shared by the dock item and its drag preview. */
+export function SpriteTile({ name, thumbnail }: { name: string; thumbnail: Blob | null }) {
+  const thumbnailUrl = useBlobUrl(thumbnail);
+
+  return (
+    <>
       {thumbnailUrl ? (
         // draggable={false}: an <img> is natively draggable, and the browser's own drag-and-drop
         // swallows the pointer stream that dnd-kit's sensor needs — grabbing the thumbnail (the
         // obvious place to grab) would otherwise start a ghost-image drag and never place anything.
-        <img
-          src={thumbnailUrl}
-          alt=""
-          draggable={false}
-          className="pixelated h-10 object-contain"
-        />
+        <img src={thumbnailUrl} alt="" draggable={false} className="pixelated h-10 object-contain" />
       ) : (
         <div className="h-10" />
       )}
-      <span className="w-full truncate text-center text-[10px] text-muted-foreground">
-        {sprite.name}
-      </span>
+      <span className="w-full truncate text-center text-[10px] text-muted-foreground">{name}</span>
+    </>
+  );
+}
+
+/** The dock tile's own visual, for the board's drag overlay. */
+export function SpriteTilePreview({ name, thumbnail }: { name: string; thumbnail: Blob | null }) {
+  return (
+    <div className={TILE_CLASS}>
+      <SpriteTile name={name} thumbnail={thumbnail} />
     </div>
   );
 }

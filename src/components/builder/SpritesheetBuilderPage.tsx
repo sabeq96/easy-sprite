@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { DndContext, DragOverlay, pointerWithin, type DragStartEvent } from "@dnd-kit/core";
+import { pointerWithin } from "@dnd-kit/core";
 import { useLiveQuery } from "dexie-react-hooks";
 import { ArrowLeft, Download } from "lucide-react";
 import { Link, useParams } from "react-router";
+import { BuilderBlockPreview } from "@/components/builder/BuilderBlock";
 import { BuilderCanvas } from "@/components/builder/BuilderCanvas";
 import { BuilderExportDialog } from "@/components/builder/BuilderExportDialog";
-import { BuilderPalette } from "@/components/builder/BuilderPalette";
+import { BuilderPalette, SpriteTilePreview } from "@/components/builder/BuilderPalette";
 import { useBuilderDnd, type DragData } from "@/components/builder/useBuilderDnd";
+import { DragBoard } from "@/components/common/DragBoard";
 import { InlineNameField } from "@/components/common/InlineNameField";
 import { NotFoundPage } from "@/components/common/NotFoundPage";
 import { Panel } from "@/components/common/Panel";
@@ -20,7 +22,6 @@ import { getSpritesheet, updateSpritesheet } from "@/db/repositories/spritesheet
 import type { SpritesheetRecord } from "@/db/schema";
 import type { SpriteDocument } from "@/editor/document";
 import { useSaveStatus } from "@/hooks/useSaveStatus";
-import { useAppDndSensors } from "@/lib/dnd";
 import { openDocument } from "@/services/documentService";
 
 export function SpritesheetBuilderPage() {
@@ -77,10 +78,8 @@ function useDocumentCache(spriteIds: string[]): Map<string, SpriteDocument> {
 
 function SpritesheetBuilderShell({ spritesheet }: { spritesheet: SpritesheetRecord }) {
   const canvasRef = useRef<HTMLDivElement | null>(null);
-  const sensors = useAppDndSensors();
   const save = useSaveStatus();
   const [isExporting, setExporting] = useState(false);
-  const [draggedName, setDraggedName] = useState<string | null>(null);
 
   const spriteIds = useMemo(
     () => [...new Set(spritesheet.blocks.map((block) => block.spriteId))],
@@ -89,10 +88,12 @@ function SpritesheetBuilderShell({ spritesheet }: { spritesheet: SpritesheetReco
   const docs = useDocumentCache(spriteIds);
   const { handleDragEnd, removeBlock } = useBuilderDnd(spritesheet, docs, canvasRef, save.track);
 
-  // Only palette drags need an overlay; a block already on the sheet moves under its own transform.
-  const handleDragStart = (event: DragStartEvent) => {
-    const data = event.active.data.current as DragData | undefined;
-    setDraggedName(data?.type === "palette" ? data.name : null);
+  const renderPreview = (data: DragData) => {
+    if (data.type === "palette") {
+      return <SpriteTilePreview name={data.name} thumbnail={data.thumbnail} />;
+    }
+    const block = spritesheet.blocks.find((entry) => entry.id === data.blockId);
+    return <BuilderBlockPreview doc={block && docs.get(block.spriteId)} />;
   };
 
   return (
@@ -129,16 +130,13 @@ function SpritesheetBuilderShell({ spritesheet }: { spritesheet: SpritesheetReco
       </Panel>
 
       {/* pointerWithin, because a drop is decided by where the cursor is — a palette tile's own
-          rect sits down in the dock and says nothing about which part of the sheet it is over. */}
-      <DndContext
-        sensors={sensors}
+          rect sits down in the dock and says nothing about which part of the sheet it is over.
+          No `items`: blocks sit at free x/y positions rather than in a reorderable list. */}
+      <DragBoard<DragData>
         collisionDetection={pointerWithin}
-        onDragStart={handleDragStart}
-        onDragCancel={() => setDraggedName(null)}
-        onDragEnd={(event) => {
-          setDraggedName(null);
-          handleDragEnd(event);
-        }}
+        animateDrop={false}
+        onDrop={handleDragEnd}
+        renderPreview={renderPreview}
       >
         <BuilderCanvas
           canvasRef={canvasRef}
@@ -147,17 +145,7 @@ function SpritesheetBuilderShell({ spritesheet }: { spritesheet: SpritesheetReco
           onRemoveBlock={removeBlock}
         />
         <BuilderPalette placedSpriteIds={new Set(spriteIds)} />
-
-        {/* A palette tile lives inside a horizontally scrolling dock, so dragging it would be
-            clipped at the dock's edge. The overlay is portalled out, so it can cross the page. */}
-        <DragOverlay dropAnimation={null}>
-          {draggedName && (
-            <div className="rounded-md border border-dashed border-ring bg-card/90 px-2 py-1 text-xs shadow-lg">
-              {draggedName}
-            </div>
-          )}
-        </DragOverlay>
-      </DndContext>
+      </DragBoard>
 
       <BuilderExportDialog
         name={spritesheet.name}

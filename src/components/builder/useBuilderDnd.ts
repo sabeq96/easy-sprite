@@ -23,6 +23,8 @@ export type DragData =
       width: number;
       height: number;
       frameCount: number;
+      /** Carried along so the drag preview can be the dock tile itself, thumbnail and all. */
+      thumbnail: Blob | null;
     }
   | { type: "block"; blockId: string };
 

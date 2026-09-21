@@ -1,10 +1,9 @@
 import { Copy, Trash2 } from "lucide-react";
-import { useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import { TooltipButton } from "@/components/common/TooltipButton";
 import { FrameThumbnail } from "@/components/editor/FrameThumbnail";
 import { Button } from "@/components/ui/button";
 import { shortcutHint } from "@/constants/shortcuts";
+import { useSortableItem } from "@/hooks/useDnd";
 import { cn } from "@/lib/utils";
 
 export interface FrameCardProps {
@@ -26,20 +25,15 @@ export function FrameCard({
   onDuplicate,
   onDelete,
 }: FrameCardProps) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: frameId,
-  });
+  const { dragProps, dragClass } = useSortableItem(frameId);
 
   return (
     <div
-      ref={setNodeRef}
-      style={{ transform: CSS.Transform.toString(transform), transition }}
-      {...attributes}
-      {...listeners}
+      {...dragProps}
       className={cn(
-        "group relative touch-none rounded-lg p-1 transition-colors",
+        "group relative rounded-lg p-1 transition-colors",
         isActive ? "bg-primary/10 shadow-sm" : "hover:bg-muted/50",
-        isDragging && "opacity-40",
+        dragClass,
       )}
     >
       <button
@@ -83,10 +77,10 @@ export function FrameCard({
   );
 }
 
-/** Floating preview rendered inside FramesBar's DragOverlay — no drag handlers, just the visual. */
+/** The card's own visual, for the board's drag overlay — DragBoard supplies the lift and ring. */
 export function FrameDragPreview({ frameId, index }: { frameId: string; index: number }) {
   return (
-    <div className="relative rounded-lg bg-card p-1 shadow-lg ring-2 ring-primary/60">
+    <div className="relative rounded-lg bg-card p-1">
       <FrameThumbnail frameId={frameId} />
       <span className="absolute bottom-1 left-1.5 text-[10px] tabular-nums text-muted-foreground">
         {index + 1}

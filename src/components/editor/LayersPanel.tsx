@@ -1,14 +1,8 @@
-import { useState } from "react";
 import { ChevronsDownUp, Copy, Layers, Plus, Trash2 } from "lucide-react";
-import {
-  closestCenter,
-  DndContext,
-  DragOverlay,
-  type DragEndEvent,
-  type DragStartEvent,
-} from "@dnd-kit/core";
-import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { type DragEndEvent } from "@dnd-kit/core";
+import { verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useDocumentSession } from "@/app/DocumentProvider";
+import { DragBoard } from "@/components/common/DragBoard";
 import { Panel } from "@/components/common/Panel";
 import { TooltipButton } from "@/components/common/TooltipButton";
 import { LayerDragPreview, LayerRow } from "@/components/editor/LayerRow";
@@ -21,9 +15,11 @@ import {
   removeLayerCommand,
   reorderLayerCommand,
 } from "@/editor/commands/layers";
+import type { LayerModel } from "@/editor/document";
 import { useCommandDispatch } from "@/hooks/useCommandDispatch";
+import { useDropZone } from "@/hooks/useDnd";
 import { useDocumentSnapshot } from "@/hooks/useDocumentSnapshot";
-import { useAppDndSensors } from "@/lib/dnd";
+import { cn } from "@/lib/utils";
 import { useEditorStore } from "@/stores/useEditorStore";
 
 export function LayersPanel() {
@@ -34,8 +30,6 @@ export function LayersPanel() {
   const activeLayerId = useEditorStore((state) => state.activeLayerId);
   const activeFrameId = useEditorStore((state) => state.activeFrameId);
   const setActiveLayer = useEditorStore((state) => state.setActiveLayer);
-  const sensors = useAppDndSensors();
-  const [draggingLayerId, setDraggingLayerId] = useState<string | null>(null);
 
   const activeIndex = snapshot.layers.findIndex((layer) => layer.id === activeLayerId);
 
@@ -73,10 +67,8 @@ export function LayersPanel() {
   // Rendered top-first: the topmost layer is the last entry in the underlying array.
   const displayLayers = [...snapshot.layers].reverse();
   const displayIds = displayLayers.map((layer) => layer.id);
-  const draggingLayer = draggingLayerId ? doc.getLayer(draggingLayerId) : null;
 
   const handleDragEnd = ({ active, over }: DragEndEvent) => {
-    setDraggingLayerId(null);
     if (!over || active.id === over.id) return;
     // reorderLayerCommand resolves indices from ids itself (doc.layerIndex) — the reversed
     // display order never enters this calculation, we just forward the two ids as-is.
@@ -110,31 +102,61 @@ export function LayersPanel() {
       </header>
 
       <ScrollArea className="min-h-0 flex-1">
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragStart={(event: DragStartEvent) => setDraggingLayerId(String(event.active.id))}
-          onDragEnd={handleDragEnd}
-          onDragCancel={() => setDraggingLayerId(null)}
+        <DragBoard
+          items={displayIds}
+          strategy={verticalListSortingStrategy}
+          onDrop={handleDragEnd}
+          renderPreview={(_data, id) => {
+            const layer = doc.getLayer(id);
+            return layer ? <LayerDragPreview layer={layer} frameId={activeFrameId} /> : null;
+          }}
         >
-          <SortableContext items={displayIds} strategy={verticalListSortingStrategy}>
-            <ul>
-              {displayLayers.map((layer) => (
-                <LayerRow
-                  key={layer.id}
-                  layer={layer}
-                  frameId={activeFrameId}
-                  isActive={layer.id === activeLayerId}
-                  onSelect={() => setActiveLayer(layer.id)}
-                />
-              ))}
-            </ul>
-          </SortableContext>
-          <DragOverlay>
-            {draggingLayer ? <LayerDragPreview layer={draggingLayer} frameId={activeFrameId} /> : null}
-          </DragOverlay>
-        </DndContext>
+          <LayerList
+            displayLayers={displayLayers}
+            displayIds={displayIds}
+            activeFrameId={activeFrameId}
+            activeLayerId={activeLayerId}
+            onSelect={setActiveLayer}
+          />
+        </DragBoard>
       </ScrollArea>
     </Panel>
+  );
+}
+
+interface LayerListProps {
+  displayLayers: LayerModel[];
+  displayIds: string[];
+  activeFrameId: string | null;
+  activeLayerId: string | null;
+  onSelect: (layerId: string) => void;
+}
+
+/**
+ * Its own component, rendered as DragBoard's child, so useDropZone's useDndMonitor runs inside
+ * the surrounding DndContext rather than above it (calling the hook back in LayersPanel would sit
+ * outside that context, since LayersPanel is what renders DragBoard, not what DragBoard renders).
+ *
+ * No separate droppable is registered for the list itself — inside a SortableContext, `over`
+ * always resolves to one of the item ids — so the ring is claimed via `owns` instead.
+ */
+function LayerList({ displayLayers, displayIds, activeFrameId, activeLayerId, onSelect }: LayerListProps) {
+  const { ref, dropClass } = useDropZone({
+    id: "layers-list",
+    owns: (overId) => displayIds.includes(overId),
+  });
+
+  return (
+    <ul ref={ref} className={cn("rounded-md", dropClass)}>
+      {displayLayers.map((layer) => (
+        <LayerRow
+          key={layer.id}
+          layer={layer}
+          frameId={activeFrameId}
+          isActive={layer.id === activeLayerId}
+          onSelect={() => onSelect(layer.id)}
+        />
+      ))}
+    </ul>
   );
 }

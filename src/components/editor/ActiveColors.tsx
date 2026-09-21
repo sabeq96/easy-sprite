@@ -1,9 +1,9 @@
 import { ArrowLeftRight } from "lucide-react";
-import { useDraggable } from "@dnd-kit/core";
 import { ColorPickerPopover } from "@/components/common/ColorPickerPopover";
 import { TooltipButton } from "@/components/common/TooltipButton";
 import type { PaletteDragData, PaletteDragSource } from "@/components/editor/PalettePanel";
 import { shortcutHint } from "@/constants/shortcuts";
+import { useDragSource } from "@/hooks/useDnd";
 import { rgbaToHex, type RGBA } from "@/lib/color";
 import { cn } from "@/lib/utils";
 import { useEditorStore } from "@/stores/useEditorStore";
@@ -61,23 +61,18 @@ function DraggableActiveSwatch({
   className: string;
 }) {
   const hex = rgbaToHex(color, true);
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id,
-    data: { hex, source } satisfies PaletteDragData,
-  });
+  const { dragProps, dragClass } = useDragSource(id, { hex, source } satisfies PaletteDragData);
 
   return (
     <ColorPickerPopover value={color} onChange={onChange}>
       <button
-        ref={setNodeRef}
         type="button"
         aria-label={`${source === "active-primary" ? "Primary" : "Secondary"} color ${hex}`}
-        {...attributes}
-        {...listeners}
+        {...dragProps}
         className={cn(
-          "touch-none rounded-full border border-black/30 bg-checker-a focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+          "rounded-full border border-black/30 bg-checker-a focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
           className,
-          isDragging && "opacity-40",
+          dragClass,
         )}
       >
         <span

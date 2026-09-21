@@ -1,12 +1,11 @@
 import { useEffect, useRef } from "react";
-import { useDraggable } from "@dnd-kit/core";
-import { CSS } from "@dnd-kit/utilities";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BUILDER_ZOOM } from "@/constants/builder";
 import type { SpritesheetBlockRecord } from "@/db/schema";
 import type { SpriteDocument } from "@/editor/document";
 import { renderSpriteStrip } from "@/export/spriteStrip";
+import { useDragSource } from "@/hooks/useDnd";
 import { cn } from "@/lib/utils";
 
 export interface BuilderBlockProps {
@@ -15,16 +14,17 @@ export interface BuilderBlockProps {
   onRemove: () => void;
 }
 
-export function BuilderBlock({ block, doc, onRemove }: BuilderBlockProps) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
-    id: block.id,
-    data: { type: "block", blockId: block.id },
-  });
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
+/** A block's footprint on the sheet, in screen pixels. */
+function blockSize(doc: SpriteDocument | undefined) {
   const frameCount = doc?.frames.length ?? 1;
-  const width = (doc?.width ?? 16) * frameCount;
-  const height = doc?.height ?? 16;
+  return {
+    width: (doc?.width ?? 16) * frameCount * BUILDER_ZOOM,
+    height: (doc?.height ?? 16) * BUILDER_ZOOM,
+  };
+}
+
+function SpriteStrip({ doc }: { doc: SpriteDocument | undefined }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -35,28 +35,20 @@ export function BuilderBlock({ block, doc, onRemove }: BuilderBlockProps) {
     canvas.getContext("2d")?.drawImage(strip, 0, 0);
   }, [doc]);
 
+  if (!doc) return <div className="h-full w-full animate-pulse bg-muted" />;
+  return <canvas ref={canvasRef} className="pixelated block h-full w-full" />;
+}
+
+export function BuilderBlock({ block, doc, onRemove }: BuilderBlockProps) {
+  const { dragProps, dragClass } = useDragSource(block.id, { type: "block", blockId: block.id });
+
   return (
     <div
-      ref={setNodeRef}
-      {...attributes}
-      {...listeners}
-      style={{
-        transform: CSS.Translate.toString(transform),
-        left: block.x * BUILDER_ZOOM,
-        top: block.y * BUILDER_ZOOM,
-        width: width * BUILDER_ZOOM,
-        height: height * BUILDER_ZOOM,
-      }}
-      className={cn(
-        "group absolute touch-none rounded-sm bg-checker-a ring-1 ring-border",
-        isDragging && "z-10 opacity-70",
-      )}
+      {...dragProps}
+      style={{ left: block.x * BUILDER_ZOOM, top: block.y * BUILDER_ZOOM, ...blockSize(doc) }}
+      className={cn("group absolute rounded-sm bg-checker-a ring-1 ring-border", dragClass)}
     >
-      {doc ? (
-        <canvas ref={canvasRef} className="pixelated block h-full w-full" />
-      ) : (
-        <div className="h-full w-full animate-pulse bg-muted" />
-      )}
+      <SpriteStrip doc={doc} />
 
       {/* Stays hidden until hover or keyboard focus, but stays in the a11y tree either way
           (unlike display:none, which drops it from the accessibility tree entirely). */}
@@ -75,6 +67,15 @@ export function BuilderBlock({ block, doc, onRemove }: BuilderBlockProps) {
       <span className="pointer-events-none absolute -bottom-5 left-0 truncate text-[10px] text-muted-foreground">
         {doc?.name ?? "Missing sprite"}
       </span>
+    </div>
+  );
+}
+
+/** The block's own visual, for the board's drag overlay — at its true size on the sheet. */
+export function BuilderBlockPreview({ doc }: { doc: SpriteDocument | undefined }) {
+  return (
+    <div className="rounded-sm bg-checker-a" style={blockSize(doc)}>
+      <SpriteStrip doc={doc} />
     </div>
   );
 }

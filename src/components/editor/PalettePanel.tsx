@@ -1,19 +1,10 @@
 import { useState } from "react";
 import { Palette as PaletteIcon } from "lucide-react";
-import {
-  DndContext,
-  DragOverlay,
-  pointerWithin,
-  useDraggable,
-  useDroppable,
-  type DragEndEvent,
-  type DragOverEvent,
-  type DragStartEvent,
-} from "@dnd-kit/core";
-import { rectSortingStrategy, SortableContext, useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
+import { pointerWithin, type DragEndEvent } from "@dnd-kit/core";
+import { rectSortingStrategy } from "@dnd-kit/sortable";
 import { useDocumentSession } from "@/app/DocumentProvider";
 import { ColorSwatch } from "@/components/common/ColorSwatch";
+import { DragBoard } from "@/components/common/DragBoard";
 import { ActiveColors } from "@/components/editor/ActiveColors";
 import { PaletteMenu } from "@/components/editor/PaletteMenu";
 import {
@@ -27,8 +18,8 @@ import { Separator } from "@/components/ui/separator";
 import { updatePalette } from "@/db/repositories/palettes";
 import { useColorUsage } from "@/hooks/useColorUsage";
 import { usePalettes } from "@/hooks/usePalettes";
+import { useDragSource, useDropZone, useSortableItem } from "@/hooks/useDnd";
 import { hexToRgba, rgbaToHex, rgbaEquals, type RGBA } from "@/lib/color";
-import { useAppDndSensors } from "@/lib/dnd";
 import { cn } from "@/lib/utils";
 import { useEditorStore } from "@/stores/useEditorStore";
 
@@ -55,55 +46,51 @@ export function PalettePanel() {
   const setPrimaryColor = useEditorStore((state) => state.setPrimaryColor);
   const setSecondaryColor = useEditorStore((state) => state.setSecondaryColor);
   const recentColors = useEditorStore((state) => state.recentColors);
-  const sensors = useAppDndSensors();
-  const [dragData, setDragData] = useState<PaletteDragData | null>(null);
-  // Purely a read of dnd-kit's own `over` result, for the highlight ring — never feeds back into
-  // layout or collision detection, so this can't create the kind of update loop a synthetic
-  // "make room" placeholder did.
-  const [isOverPalette, setIsOverPalette] = useState(false);
+  const [reordered, setReordered] = useState<{ paletteId: string; colors: string[] } | null>(null);
 
-  const handleDragOver = (event: DragOverEvent) => {
-    const overId = event.over?.id;
-    setIsOverPalette(
-      overId === PALETTE_DROP_ZONE_ID || (typeof overId === "string" && overId.startsWith("palette:")),
-    );
+  // A reorder is written to Dexie and only comes back through useLiveQuery a few async ticks
+  // later — long enough to watch a dropped swatch return to its old slot and animate over again.
+  // Rendering the new order straight away makes the drop land where it was released.
+  //
+  // The override stands only while the stored palette is the same colors in some other order, so
+  // the write arriving (or any real edit, from here or another surface) immediately takes over.
+  const stored = active?.colors ?? [];
+  const colors =
+    reordered && reordered.paletteId === active?.id && isReorderOf(reordered.colors, stored)
+      ? reordered.colors
+      : stored;
+
+  const paletteIds = colors.map(paletteSwatchId);
+  const editable = Boolean(active && !active.builtIn);
+
+  const writeColors = (next: string[]) => {
+    if (!active || !editable) return;
+    if (isReorderOf(next, colors)) setReordered({ paletteId: active.id, colors: next });
+    void updatePalette(active.id, { colors: next });
   };
 
   const handleDragEnd = ({ active: dragged, over }: DragEndEvent) => {
-    setDragData(null);
-    setIsOverPalette(false);
     const data = dragged.data.current as PaletteDragData | undefined;
     if (!data) return;
 
     if (!over) {
       // Dropped nowhere: only removes when dragged OUT of the (editable) palette itself.
-      if (data.source === "palette" && active && !active.builtIn) {
-        void updatePalette(active.id, { colors: active.colors.filter((entry) => entry !== data.hex) });
-      }
+      if (data.source === "palette") writeColors(colors.filter((entry) => entry !== data.hex));
       return;
     }
 
-    if (!active || active.builtIn) return; // read-only drop target
-
     const overHex = hexFromPaletteSwatchId(String(over.id));
-    const targetIndex = overHex ? Math.max(active.colors.indexOf(overHex), 0) : active.colors.length;
-    const hex = normalizePaletteHex(data.hex);
-    void updatePalette(active.id, { colors: upsertColorAt(active.colors, hex, targetIndex) });
+    const targetIndex = overHex ? Math.max(colors.indexOf(overHex), 0) : colors.length;
+    writeColors(upsertColorAt(colors, normalizePaletteHex(data.hex), targetIndex));
   };
 
   return (
-    <DndContext
-      sensors={sensors}
+    <DragBoard<PaletteDragData>
+      items={paletteIds}
+      strategy={rectSortingStrategy}
       collisionDetection={pointerWithin}
-      onDragStart={(event: DragStartEvent) =>
-        setDragData((event.active.data.current as PaletteDragData) ?? null)
-      }
-      onDragOver={handleDragOver}
-      onDragEnd={handleDragEnd}
-      onDragCancel={() => {
-        setDragData(null);
-        setIsOverPalette(false);
-      }}
+      onDrop={handleDragEnd}
+      renderPreview={(data) => <PaletteDragPreview hex={data.hex} />}
     >
       <section aria-label="Colors" className="flex shrink-0 flex-col gap-2 p-2">
         <div className="flex items-center gap-2">
@@ -136,21 +123,15 @@ export function PalettePanel() {
 
         <SwatchGrid
           label="Palette colors"
-          colors={active?.colors ?? []}
+          colors={colors}
           activeColor={primaryColor}
           showIndexHints
           source="palette"
-          sortable={Boolean(active && !active.builtIn)}
-          isOverPalette={isOverPalette}
+          sortable={editable}
           onPick={setPrimaryColor}
           onPickSecondary={setSecondaryColor}
           onRemove={
-            active && !active.builtIn
-              ? (hex) =>
-                  void updatePalette(active.id, {
-                    colors: active.colors.filter((entry) => entry !== hex),
-                  })
-              : undefined
+            editable ? (hex) => writeColors(colors.filter((entry) => entry !== hex)) : undefined
           }
         />
 
@@ -176,9 +157,7 @@ export function PalettePanel() {
           />
         )}
       </section>
-
-      <DragOverlay>{dragData ? <PaletteDragPreview hex={dragData.hex} /> : null}</DragOverlay>
-    </DndContext>
+    </DragBoard>
   );
 }
 
@@ -186,6 +165,11 @@ export function PalettePanel() {
 function normalizePaletteHex(hex: string): string {
   const rgba = hexToRgba(hex);
   return rgbaToHex(rgba, rgba.a !== 255);
+}
+
+/** The same colors in some other order — the one case an optimistic reorder may stand in for. */
+function isReorderOf(a: string[], b: string[]): boolean {
+  return a.length === b.length && [...a].sort().join() === [...b].sort().join();
 }
 
 /** Drops `hex` at `targetIndex`, removing any earlier occurrence first — dedupe via move. */
@@ -196,10 +180,11 @@ function upsertColorAt(colors: string[], hex: string, targetIndex: number): stri
   return next;
 }
 
+/** The swatch's own visual, for the board's drag overlay — DragBoard supplies the lift and ring. */
 function PaletteDragPreview({ hex }: { hex: string }) {
   const color = hexToRgba(hex);
   return (
-    <div className="pointer-events-none relative size-7 scale-110 rounded-full border border-black/30 bg-checker-a shadow-lg ring-2 ring-ring">
+    <div className="relative size-7 rounded-full border border-black/30 bg-checker-a">
       <span
         aria-hidden
         className="absolute inset-0 rounded-full"
@@ -215,10 +200,8 @@ interface SwatchGridProps {
   activeColor: RGBA;
   showIndexHints?: boolean;
   source: "palette" | "recent" | "used";
-  /** true only for the editable "Palette colors" grid — enables SortableContext + drop zone. */
+  /** true only for the editable "Palette colors" grid — enables sorting + the drop zone. */
   sortable?: boolean;
-  /** Highlight the drop zone — true whenever a drag is over the palette, on any swatch or not. */
-  isOverPalette?: boolean;
   onPick: (color: RGBA) => void;
   onPickSecondary: (color: RGBA) => void;
   onRemove?: (hex: string) => void;
@@ -231,17 +214,22 @@ function SwatchGrid({
   showIndexHints,
   source,
   sortable,
-  isOverPalette,
   onPick,
   onPickSecondary,
   onRemove,
 }: SwatchGridProps) {
   const idFor = source === "palette" ? paletteSwatchId : source === "recent" ? recentSwatchId : usedSwatchId;
   const ids = colors.map(idFor);
-  // Every SwatchGrid instance calls useDroppable (rules of hooks), but only "palette" ever has
+  // Every SwatchGrid instance calls useDropZone (rules of hooks), but only "palette" ever has
   // sortable=true — give the other two their own id so they can never shadow the real drop zone.
   const dropZoneId = source === "palette" ? PALETTE_DROP_ZONE_ID : `${source}-drop-zone`;
-  const dropZone = useDroppable({ id: dropZoneId, disabled: !sortable });
+  // `owns`: a swatch is itself a drop target and wins the collision over the grid behind it, so the
+  // grid has to claim its own swatches to stay highlighted while the pointer is on one of them.
+  const dropZone = useDropZone({
+    id: dropZoneId,
+    disabled: !sortable,
+    owns: (overId) => overId.startsWith("palette:"),
+  });
 
   const swatches = colors.map((hex, index) => {
     const color = hexToRgba(hex);
@@ -271,26 +259,17 @@ function SwatchGrid({
 
       {colors.length === 0 ? (
         <p
-          ref={sortable ? dropZone.setNodeRef : undefined}
-          className="text-xs text-muted-foreground"
+          ref={sortable ? dropZone.ref : undefined}
+          className={cn("rounded-md p-0.5 text-xs text-muted-foreground", dropZone.dropClass)}
         >
           {sortable ? "Drag colors here to add them." : "No colors yet."}
         </p>
       ) : (
         <div
-          ref={sortable ? dropZone.setNodeRef : undefined}
-          className={cn(
-            "flex flex-wrap rounded-md p-0.5 transition-colors",
-            sortable && isOverPalette && "bg-primary/10 ring-1 ring-primary/40",
-          )}
+          ref={sortable ? dropZone.ref : undefined}
+          className={cn("flex flex-wrap rounded-md p-0.5", dropZone.dropClass)}
         >
-          {sortable ? (
-            <SortableContext items={ids} strategy={rectSortingStrategy}>
-              {swatches}
-            </SortableContext>
-          ) : (
-            swatches
-          )}
+          {swatches}
         </div>
       )}
     </div>
@@ -320,22 +299,17 @@ function DraggableSwatch({
   onRemove,
   source,
 }: BaseSwatchProps & { source: PaletteDragSource }) {
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id,
-    data: { hex, source } satisfies PaletteDragData,
-  });
+  const { dragProps, dragClass } = useDragSource(id, { hex, source } satisfies PaletteDragData);
 
   return (
     <div
-      ref={setNodeRef}
-      {...attributes}
-      {...listeners}
+      {...dragProps}
       className={cn(
         // Padding (not the container's gap) makes the interactive hitbox touch its neighbor,
         // so pointerWithin always resolves to a specific swatch — never the vague gap between
         // two of them — which is what makes "drop between two colors" land precisely.
-        "touch-none p-0.5",
-        isDragging && "opacity-40",
+        "rounded-full p-0.5",
+        dragClass,
       )}
       onDoubleClick={() => onRemove?.(hex)}
       title={onRemove ? `${hex} — drag out or double-click to remove` : hex}
@@ -362,23 +336,20 @@ function SortableSwatch({
   onPickSecondary,
   onRemove,
 }: BaseSwatchProps) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id,
-    data: { hex, source: "palette" } satisfies PaletteDragData,
-  });
+  const { dragProps, dragClass } = useSortableItem(id, {
+    hex,
+    source: "palette",
+  } satisfies PaletteDragData);
 
   return (
     <div
-      ref={setNodeRef}
-      style={{ transform: CSS.Transform.toString(transform), transition }}
-      {...attributes}
-      {...listeners}
+      {...dragProps}
       className={cn(
         // Padding (not the container's gap) makes the interactive hitbox touch its neighbor,
         // so pointerWithin always resolves to a specific swatch — never the vague gap between
         // two of them — which is what makes "drop between two colors" land precisely.
-        "touch-none p-0.5",
-        isDragging && "opacity-40",
+        "rounded-full p-0.5",
+        dragClass,
       )}
       onDoubleClick={() => onRemove?.(hex)}
       title={`${hex} — drag out or double-click to remove`}
