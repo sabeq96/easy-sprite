@@ -19,7 +19,7 @@ export interface Library {
   setSort: (value: LibrarySort) => void;
   tag: string | null;
   setTag: (value: string | null) => void;
-  allTags: string[];
+  allTags: { tag: string; count: number }[];
 }
 
 const COMPARATORS: Record<LibrarySort, (a: LibraryItem, b: LibraryItem) => number> = {
@@ -63,7 +63,15 @@ export function useLibrary(): Library {
         db.sprites.toArray(),
         db.spritesheets.toArray(),
       ]);
-      return [...new Set([...sprites, ...spritesheets].flatMap((record) => record.tags))].sort();
+
+      const counts = new Map<string, number>();
+      for (const record of [...sprites, ...spritesheets]) {
+        for (const entry of record.tags) counts.set(entry, (counts.get(entry) ?? 0) + 1);
+      }
+
+      return [...counts.entries()]
+        .map(([entry, count]) => ({ tag: entry, count }))
+        .sort((a, b) => a.tag.localeCompare(b.tag));
     },
     [],
     [],

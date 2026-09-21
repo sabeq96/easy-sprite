@@ -18,7 +18,11 @@ export interface SpriteCardMenuProps {
   onExport: () => void;
 }
 
-export function SpriteCardMenu({ sprite, onRename, onExport }: SpriteCardMenuProps) {
+export function SpriteCardMenu({
+  sprite,
+  onRename,
+  onExport,
+}: SpriteCardMenuProps) {
   const duplicate = async () => {
     const copy = await duplicateSprite(sprite.id);
     toast.success(`Duplicated as "${copy.name}"`);
@@ -28,12 +32,16 @@ export function SpriteCardMenu({ sprite, onRename, onExport }: SpriteCardMenuPro
     <DropdownMenu>
       <DropdownMenuTrigger
         render={
-          <Button size="icon-xs" variant="ghost" aria-label={`Actions for ${sprite.name}`}>
+          <Button
+            size="icon-xs"
+            variant="ghost"
+            aria-label={`Actions for ${sprite.name}`}
+          >
             <MoreVertical />
           </Button>
         }
       />
-      <DropdownMenuContent align="end">
+      <DropdownMenuContent align="end" className="min-w-48">
         <DropdownMenuItem onClick={onRename}>
           <Pencil />
           Rename

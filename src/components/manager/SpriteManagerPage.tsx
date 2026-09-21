@@ -21,6 +21,7 @@ import type { SpriteRecord } from "@/db/schema";
 import { downloadBlob, toFilenameSlug } from "@/export/download";
 import { exportSpritesheet } from "@/export/spritesheet";
 import { openDocument } from "@/services/documentService";
+import { importPngFiles } from "@/services/importPng";
 import { useLibrary } from "@/hooks/useLibrary";
 
 export function SpriteManagerPage() {
@@ -40,12 +41,28 @@ export function SpriteManagerPage() {
     }
   };
 
+  const importFiles = async (files: File[]) => {
+    const { imported, skipped } = await importPngFiles(files);
+
+    if (imported.length > 0) {
+      toast.success(
+        imported.length === 1
+          ? `Imported "${imported[0].name}"`
+          : `Imported ${imported.length} sprites`,
+      );
+    }
+    for (const { name, reason } of skipped) {
+      toast.error(`Couldn't import "${name}": ${reason}`);
+    }
+  };
+
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-4">
       <SpriteLibraryToolbar
         library={library}
         onCreateSprite={() => setCreatingSprite(true)}
         onCreateSpritesheet={() => setCreatingSpritesheet(true)}
+        onImportFiles={(files) => void importFiles(files)}
       />
 
       {library.isLoading ? (

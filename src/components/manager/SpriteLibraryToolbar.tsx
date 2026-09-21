@@ -1,4 +1,5 @@
-import { ChevronDown, LayoutGrid, Plus, Search, X } from "lucide-react";
+import { useRef } from "react";
+import { ChevronDown, LayoutGrid, Plus, Search, Upload, X } from "lucide-react";
 import { Panel } from "@/components/common/Panel";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
@@ -28,13 +29,17 @@ export interface SpriteLibraryToolbarProps {
   library: Library;
   onCreateSprite: () => void;
   onCreateSpritesheet: () => void;
+  onImportFiles: (files: File[]) => void;
 }
 
 export function SpriteLibraryToolbar({
   library,
   onCreateSprite,
   onCreateSpritesheet,
+  onImportFiles,
 }: SpriteLibraryToolbarProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   return (
     <Panel className="flex flex-wrap items-center gap-2 px-3 py-2">
       <h1 className="text-lg font-semibold">Sprites</h1>
@@ -85,18 +90,36 @@ export function SpriteLibraryToolbar({
               </Button>
             }
           />
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent align="end" className="min-w-40">
             <DropdownMenuItem onClick={onCreateSpritesheet}>
               <LayoutGrid />
               New spritesheet
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
+              <Upload />
+              Import PNG
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </ButtonGroup>
 
+      <input
+        ref={fileInputRef}
+        type="file"
+        aria-label="Import PNG files"
+        accept="image/png"
+        multiple
+        hidden
+        onChange={(event) => {
+          const files = Array.from(event.target.files ?? []);
+          event.target.value = "";
+          if (files.length > 0) onImportFiles(files);
+        }}
+      />
+
       {library.allTags.length > 0 && (
         <div className="flex w-full flex-wrap items-center gap-1">
-          {library.allTags.map((tag) => (
+          {library.allTags.map(({ tag, count }) => (
             <Button
               key={tag}
               size="xs"
@@ -104,10 +127,15 @@ export function SpriteLibraryToolbar({
               onClick={() => library.setTag(library.tag === tag ? null : tag)}
             >
               {tag}
+              <span className="text-muted-foreground">{count}</span>
             </Button>
           ))}
           {library.tag && (
-            <Button size="xs" variant="ghost" onClick={() => library.setTag(null)}>
+            <Button
+              size="xs"
+              variant="ghost"
+              onClick={() => library.setTag(null)}
+            >
               <X />
               Clear
             </Button>

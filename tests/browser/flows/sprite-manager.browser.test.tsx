@@ -56,8 +56,16 @@ test("renaming a sprite from its menu updates the card and its tags", async () =
   await userEvent.click(screen.getByRole("button", { name: "Save" }));
 
   await expect.element(screen.getByRole("button", { name: "Open Hero walk" })).toBeVisible();
-  // Tags are normalised to lowercase and become filter chips in the toolbar.
-  await expect.element(screen.getByRole("button", { name: "hero", exact: true })).toBeVisible();
+  // Tags are normalised to lowercase and become filter chips in the toolbar, each showing
+  // how many library items carry it.
+  await expect.element(screen.getByRole("button", { name: "hero 1", exact: true })).toBeVisible();
+});
+
+test("the create menu offers a way to import PNGs", async () => {
+  const screen = render(<AppRoutes />, { route: "/sprites" });
+
+  await userEvent.click(screen.getByRole("button", { name: "More ways to create" }));
+  await expect.element(screen.getByRole("menuitem", { name: "Import PNG" })).toBeVisible();
 });
 
 test("spritesheets rename through the same dialog as sprites", async () => {
