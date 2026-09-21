@@ -29,7 +29,7 @@ export function LibraryCard({
   const thumbnailUrl = useBlobUrl(thumbnail);
 
   return (
-    <Card className="group gap-0 overflow-hidden p-0 transition-colors hover:border-ring">
+    <Card size="flush" interactive className="group">
       <button
         type="button"
         className="relative block w-full bg-checker-a p-4 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"

@@ -28,7 +28,8 @@ export function BuilderPalette({ placedSpriteIds }: BuilderPaletteProps) {
       <div className="relative">
         <Search className="pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-muted-foreground" />
         <Input
-          className="h-7 w-56 pl-7"
+          className="h-7 w-56"
+          iconStart
           placeholder="Search sprites"
           aria-label="Search sprites"
           value={library.search}

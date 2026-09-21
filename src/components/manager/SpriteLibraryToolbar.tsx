@@ -42,7 +42,8 @@ export function SpriteLibraryToolbar({
       <div className="relative ml-auto">
         <Search className="pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-muted-foreground" />
         <Input
-          className="h-8 w-56 pl-7"
+          className="h-8 w-56"
+          iconStart
           placeholder="Search"
           aria-label="Search library"
           value={library.search}

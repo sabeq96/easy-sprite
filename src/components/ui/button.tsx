@@ -16,6 +16,7 @@ const buttonVariants = cva(
           "hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50",
         destructive:
           "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
+        "destructive-solid": "bg-destructive text-white hover:bg-destructive/90",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {
@@ -31,10 +32,20 @@ const buttonVariants = cva(
           "size-7 rounded-[min(var(--radius-md),12px)] in-data-[slot=button-group]:rounded-lg",
         "icon-lg": "size-9",
       },
+      numeric: {
+        true: "tabular-nums",
+        false: "",
+      },
+      revealOnHover: {
+        true: "opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100",
+        false: "",
+      },
     },
     defaultVariants: {
       variant: "default",
       size: "default",
+      numeric: false,
+      revealOnHover: false,
     },
   }
 )
@@ -43,12 +54,14 @@ function Button({
   className,
   variant = "default",
   size = "default",
+  numeric,
+  revealOnHover,
   ...props
 }: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
   return (
     <ButtonPrimitive
       data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
+      className={cn(buttonVariants({ variant, size, numeric, revealOnHover, className }))}
       {...props}
     />
   )

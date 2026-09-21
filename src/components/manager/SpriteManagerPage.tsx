@@ -100,7 +100,7 @@ function SpriteGridSkeleton() {
     <ul className="grid grid-cols-[repeat(auto-fill,minmax(10rem,1fr))] gap-3">
       {Array.from({ length: 8 }, (_, index) => (
         <li key={index}>
-          <Skeleton className="h-40 rounded-xl" />
+          <Skeleton className="h-40" shape="xl" />
         </li>
       ))}
     </ul>

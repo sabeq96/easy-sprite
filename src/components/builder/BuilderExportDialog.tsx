@@ -83,7 +83,7 @@ export function BuilderExportDialog({
           </ToggleGroup>
         </Field>
 
-        <Label className="flex items-center justify-between text-sm font-normal">
+        <Label weight="normal" className="justify-between">
           Also export frame data (.json)
           <Switch checked={includeMetadata} onCheckedChange={setIncludeMetadata} />
         </Label>

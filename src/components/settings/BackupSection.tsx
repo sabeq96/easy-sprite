@@ -77,7 +77,7 @@ export function BackupSection() {
         </CardDescription>
       </CardHeader>
 
-      <CardContent className="flex flex-wrap gap-2">
+      <CardContent gap="sm" className="flex flex-wrap">
         <Button variant="outline" onClick={runExport} disabled={isExporting}>
           <Download />
           {isExporting ? "Exporting…" : "Export backup"}

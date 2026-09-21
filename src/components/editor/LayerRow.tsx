@@ -110,7 +110,8 @@ function LayerNameInput({ layer, onDone }: { layer: LayerModel; onDone: () => vo
   return (
     <Input
       autoFocus
-      className="h-6 flex-1 text-xs"
+      className="h-6 flex-1"
+      inputSize="sm"
       aria-label="Layer name"
       value={draft}
       onChange={(event) => setDraft(event.target.value)}

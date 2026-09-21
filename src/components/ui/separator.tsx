@@ -4,14 +4,16 @@ import { cn } from "cn"
 function Separator({
   className,
   orientation = "horizontal",
+  tone = "border",
   ...props
-}: SeparatorPrimitive.Props) {
+}: SeparatorPrimitive.Props & { tone?: "border" | "input" }) {
   return (
     <SeparatorPrimitive
       data-slot="separator"
       orientation={orientation}
       className={cn(
-        "shrink-0 bg-border data-horizontal:h-px data-horizontal:w-full data-vertical:w-px data-vertical:self-center",
+        "shrink-0 data-horizontal:h-px data-horizontal:w-full data-vertical:w-px data-vertical:self-center",
+        tone === "border" ? "bg-border" : "bg-input",
         className
       )}
       {...props}

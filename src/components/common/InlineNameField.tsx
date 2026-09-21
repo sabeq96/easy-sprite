@@ -26,10 +26,8 @@ export function InlineNameField({ label, name, onCommit, className }: InlineName
   return (
     <Input
       aria-label={label}
-      className={cn(
-        "h-7 w-48 border-transparent bg-transparent hover:border-border focus:border-border",
-        className,
-      )}
+      ghost
+      className={cn("h-7 w-48", className)}
       value={draft ?? name}
       onChange={(event) => setDraft(event.target.value)}
       onBlur={commit}

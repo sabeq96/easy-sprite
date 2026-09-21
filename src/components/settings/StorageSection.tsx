@@ -33,7 +33,7 @@ export function StorageSection() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle>
           <HardDrive className="size-4" />
           Storage
         </CardTitle>
@@ -44,7 +44,7 @@ export function StorageSection() {
         </CardDescription>
       </CardHeader>
 
-      <CardContent className="flex flex-col gap-3">
+      <CardContent gap="md" className="flex flex-col">
         {estimate && (
           <div
             className="h-2 w-full overflow-hidden rounded-full bg-muted"

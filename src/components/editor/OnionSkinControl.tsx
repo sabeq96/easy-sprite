@@ -37,8 +37,8 @@ export function OnionSkinControl() {
           {shortcut && <Kbd>{shortcut}</Kbd>}
         </TooltipContent>
       </Tooltip>
-      <PopoverContent className="flex w-56 flex-col gap-3">
-        <Label className="flex items-center justify-between gap-2 text-xs font-normal">
+      <PopoverContent gap="md" className="w-56">
+        <Label size="sm" weight="normal" className="justify-between">
           Onion skin
           <Switch
             checked={onion.enabled}
@@ -48,7 +48,7 @@ export function OnionSkinControl() {
 
         <Separator />
 
-        <Label className="flex items-center justify-between gap-2 text-xs font-normal">
+        <Label size="sm" weight="normal" className="justify-between">
           <span className={onion.direction === "before" ? "text-foreground" : "text-muted-foreground"}>
             Before
           </span>
@@ -62,7 +62,7 @@ export function OnionSkinControl() {
           </span>
         </Label>
 
-        <Label className="flex flex-col gap-1.5 text-xs font-normal">
+        <Label size="sm" weight="normal" gap="sm" className="flex-col">
           Opacity
           <Slider
             min={10}

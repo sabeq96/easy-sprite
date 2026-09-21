@@ -25,7 +25,7 @@ export function ToolOptionsBar() {
 
       {fields.includes("brushSize") && (
         <div className="flex items-center gap-1.5">
-          <Label className="text-xs text-muted-foreground">Size</Label>
+          <Label size="sm" muted>Size</Label>
           <ToggleGroup
             value={[String(options.brushSize)]}
             onValueChange={([value]) => {
@@ -44,7 +44,7 @@ export function ToolOptionsBar() {
 
       {fields.includes("mirror") && (
         <div className="flex items-center gap-1">
-          <Label className="text-xs text-muted-foreground">Mirror</Label>
+          <Label size="sm" muted>Mirror</Label>
           <Button
             size="icon-xs"
             variant={options.mirrorHorizontal ? "secondary" : "ghost"}
@@ -67,7 +67,7 @@ export function ToolOptionsBar() {
       )}
 
       {fields.includes("pickSource") && (
-        <Label className="flex items-center gap-2 text-xs text-muted-foreground">
+        <Label size="sm" muted>
           <Switch
             checked={options.pickFromComposite}
             onCheckedChange={(checked) => setToolOptions({ pickFromComposite: checked })}

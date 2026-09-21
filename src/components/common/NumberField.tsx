@@ -13,7 +13,7 @@ export interface NumberFieldProps {
 
 export function NumberField({ label, value, min, max, step = 1, onChange }: NumberFieldProps) {
   return (
-    <Label className="flex items-center justify-between gap-2 text-xs font-normal">
+    <Label size="sm" weight="normal" className="justify-between">
       {label}
       <Input
         type="number"

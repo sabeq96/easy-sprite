@@ -63,7 +63,8 @@ export function BuilderBlock({ block, doc, onRemove }: BuilderBlockProps) {
       <Button
         size="icon-xs"
         variant="destructive"
-        className="pointer-events-none absolute -top-2 -right-2 opacity-0 transition-opacity group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100"
+        className="pointer-events-none absolute -top-2 -right-2 group-focus-within:pointer-events-auto group-hover:pointer-events-auto"
+        revealOnHover
         aria-label={`Remove ${doc?.name ?? "sprite"}`}
         onPointerDown={(event) => event.stopPropagation()}
         onClick={onRemove}

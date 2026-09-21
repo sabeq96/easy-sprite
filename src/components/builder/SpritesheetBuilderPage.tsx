@@ -173,7 +173,7 @@ function SpritesheetBuilderShell({ spritesheet }: { spritesheet: SpritesheetReco
 function BuilderSkeleton() {
   return (
     <div className="grid h-dvh place-items-center bg-background p-2">
-      <Skeleton className="h-40 w-64 rounded-xl" />
+      <Skeleton className="h-40 w-64" shape="xl" />
     </div>
   );
 }

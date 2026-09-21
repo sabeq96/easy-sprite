@@ -18,7 +18,8 @@ export function LayerOpacityControl({ layer }: { layer: LayerModel }) {
             size="xs"
             variant="ghost"
             aria-label={`Opacity of ${layer.name}`}
-            className="w-9 tabular-nums"
+            className="w-9"
+            numeric
           >
             {Math.round(layer.opacity * 100)}
           </Button>

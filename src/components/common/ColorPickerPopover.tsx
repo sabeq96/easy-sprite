@@ -90,10 +90,12 @@ function ColorPickerBody({ value, onChange }: { value: RGBA; onChange: (color: R
         <Marker left={`${(alpha / 255) * 100}%`} top="50%" />
       </div>
 
-      <Label className="flex items-center gap-2 text-xs font-normal">
+      <Label size="sm" weight="normal">
         Hex
         <Input
-          className="h-7 font-mono text-xs"
+          className="h-7"
+          inputSize="sm"
+          mono
           value={hexDraft ?? rgbaToHex(current, alpha !== 255)}
           onChange={(event) => {
             setHexDraft(event.target.value);

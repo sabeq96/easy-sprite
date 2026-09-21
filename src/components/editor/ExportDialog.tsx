@@ -173,7 +173,7 @@ export function ExportDialog({ doc, open, onOpenChange, onBeforeExport }: Export
           </Field>
         </div>
 
-        <Label className="flex items-center justify-between text-sm font-normal">
+        <Label weight="normal" className="justify-between">
           Include hidden layers
           <Switch
             checked={options.includeHidden ?? false}
@@ -181,7 +181,7 @@ export function ExportDialog({ doc, open, onOpenChange, onBeforeExport }: Export
           />
         </Label>
 
-        <Label className="flex items-center justify-between text-sm font-normal">
+        <Label weight="normal" className="justify-between">
           Also export frame data (.json)
           <Switch
             checked={options.includeMetadata}
