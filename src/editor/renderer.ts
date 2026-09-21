@@ -20,6 +20,7 @@ export interface RendererState {
   viewport: Viewport;
   frameId: string;
   gridEnabled: boolean;
+  gridSize: number;
   onion: OnionSettings;
   /** Onion skin is meaningless during playback and costs a composite per ghost frame. */
   isPlaying: boolean;
@@ -70,6 +71,9 @@ export class CanvasRenderer {
     }
     if (patch.frameId && patch.frameId !== previous.frameId) this.invalidate("main", "onion");
     if (patch.gridEnabled !== undefined && patch.gridEnabled !== previous.gridEnabled) {
+      this.invalidate("overlay");
+    }
+    if (patch.gridSize !== undefined && patch.gridSize !== previous.gridSize) {
       this.invalidate("overlay");
     }
     if (patch.onion && patch.onion !== previous.onion) this.invalidate("onion");
@@ -184,7 +188,8 @@ export class CanvasRenderer {
 
   private drawGrid(ctx: CanvasRenderingContext2D): void {
     const { scale, originX, originY } = this.state.viewport;
-    if (scale < GRID_MIN_SCALE) return; // a sub-pixel grid is just noise
+    const step = this.state.gridSize;
+    if (scale * step < GRID_MIN_SCALE) return; // a sub-pixel grid is just noise
 
     const width = this.doc.width * scale;
     const height = this.doc.height * scale;
@@ -195,12 +200,12 @@ export class CanvasRenderer {
     ctx.strokeStyle = "rgba(128,128,128,0.35)";
     ctx.beginPath();
 
-    for (let x = 0; x <= this.doc.width; x++) {
+    for (let x = 0; x <= this.doc.width; x += step) {
       const screenX = Math.round(originX + x * scale) + offset;
       ctx.moveTo(screenX, originY);
       ctx.lineTo(screenX, originY + height);
     }
-    for (let y = 0; y <= this.doc.height; y++) {
+    for (let y = 0; y <= this.doc.height; y += step) {
       const screenY = Math.round(originY + y * scale) + offset;
       ctx.moveTo(originX, screenY);
       ctx.lineTo(originX + width, screenY);

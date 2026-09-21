@@ -6,9 +6,11 @@ export const MAX_CANVAS_SIZE = 512;
 export const DEFAULT_CANVAS_SIZE = 32;
 export const CANVAS_SIZE_PRESETS = [8, 16, 32, 48, 64, 96, 128] as const;
 
-/** Below this zoom the pixel grid is noise, so it is hidden regardless of the toggle. */
+/** Below this effective cell size (scale * gridSize) the grid is noise, hidden regardless of the toggle. */
 export const GRID_MIN_SCALE = 6;
-export const CHECKER_TILE_PX = 8;
+
+export const GRID_SIZE_OPTIONS = [1, 2, 4, 8, 16, 32] as const;
+export const DEFAULT_GRID_SIZE = 1;
 
 export const LAYER_THUMB_PX = 48;
 export const FRAME_THUMB_PX = 64;

@@ -1,4 +1,4 @@
-import { DEFAULT_ZOOM } from "@/constants/canvas";
+import { DEFAULT_GRID_SIZE, DEFAULT_ZOOM } from "@/constants/canvas";
 import { ONION_DEFAULT, type OnionDirection } from "@/constants/animation";
 import { clampViewport, fitViewport, zoomStep, type Point, type Size, type Viewport } from "@/editor/viewport";
 import type { SliceCreator } from "@/stores/slices/types";
@@ -12,6 +12,7 @@ export interface OnionConfig {
 export interface ViewSlice {
   viewport: Viewport;
   gridEnabled: boolean;
+  gridSize: number;
   onion: OnionConfig;
   /** Last known container size, so zoom commands can clamp without a DOM read. */
   containerSize: Size;
@@ -27,6 +28,7 @@ export interface ViewSlice {
   fitToContainer: (container: Size, sprite: Size) => void;
   toggleGrid: () => void;
   setGridEnabled: (enabled: boolean) => void;
+  setGridSize: (size: number) => void;
   setOnion: (patch: Partial<OnionConfig>) => void;
   setActiveFrame: (frameId: string) => void;
   setActiveLayer: (layerId: string) => void;
@@ -36,6 +38,7 @@ export interface ViewSlice {
 export const createViewSlice: SliceCreator<ViewSlice> = (set, get) => ({
   viewport: { scale: DEFAULT_ZOOM, originX: 0, originY: 0 },
   gridEnabled: true,
+  gridSize: DEFAULT_GRID_SIZE,
   onion: { ...ONION_DEFAULT },
   containerSize: { width: 0, height: 0 },
   activeFrameId: null,
@@ -66,6 +69,7 @@ export const createViewSlice: SliceCreator<ViewSlice> = (set, get) => ({
 
   toggleGrid: () => set(({ gridEnabled }) => ({ gridEnabled: !gridEnabled })),
   setGridEnabled: (gridEnabled) => set({ gridEnabled }),
+  setGridSize: (gridSize) => set({ gridSize }),
   setOnion: (patch) => set(({ onion }) => ({ onion: { ...onion, ...patch } })),
   setActiveFrame: (activeFrameId) => set({ activeFrameId }),
   setActiveLayer: (activeLayerId) => set({ activeLayerId }),
