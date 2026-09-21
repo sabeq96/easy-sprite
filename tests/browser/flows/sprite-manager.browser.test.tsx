@@ -1,6 +1,8 @@
 import { expect, test } from "vitest";
 import { userEvent } from "@vitest/browser/context";
 import { AppRoutes } from "@/app/routes";
+import { createSprite } from "@/db/repositories/sprites";
+import { createSpritesheet } from "@/db/repositories/spritesheets";
 import { render } from "@test/render";
 
 test("creating a sprite from the library opens it in the editor, and it lists on the way back", async () => {
@@ -38,4 +40,36 @@ test("deleting a sprite through its menu removes it from the library", async () 
   await userEvent.click(screen.getByRole("button", { name: "Delete", exact: true }).last());
 
   await expect.element(screen.getByRole("button", { name: "Open Throwaway" })).not.toBeInTheDocument();
+});
+
+test("renaming a sprite from its menu updates the card and its tags", async () => {
+  await createSprite({ name: "Draft", width: 8, height: 8 });
+  const screen = render(<AppRoutes />, { route: "/sprites" });
+
+  await userEvent.click(screen.getByRole("button", { name: "Actions for Draft" }));
+  await userEvent.click(screen.getByRole("menuitem", { name: "Rename" }));
+
+  await expect.element(screen.getByRole("dialog", { name: "Rename sprite" })).toBeVisible();
+  // Exact: the dialog's own name, "Rename sprite", contains "name" as a substring.
+  await userEvent.fill(screen.getByLabelText("Name", { exact: true }), "Hero walk");
+  await userEvent.fill(screen.getByLabelText("Tags"), "Hero, Walk");
+  await userEvent.click(screen.getByRole("button", { name: "Save" }));
+
+  await expect.element(screen.getByRole("button", { name: "Open Hero walk" })).toBeVisible();
+  // Tags are normalised to lowercase and become filter chips in the toolbar.
+  await expect.element(screen.getByRole("button", { name: "hero", exact: true })).toBeVisible();
+});
+
+test("spritesheets rename through the same dialog as sprites", async () => {
+  await createSpritesheet({ name: "Sheet draft" });
+  const screen = render(<AppRoutes />, { route: "/sprites" });
+
+  await userEvent.click(screen.getByRole("button", { name: "Actions for Sheet draft" }));
+  await userEvent.click(screen.getByRole("menuitem", { name: "Rename" }));
+
+  await expect.element(screen.getByRole("dialog", { name: "Rename spritesheet" })).toBeVisible();
+  await userEvent.fill(screen.getByLabelText("Name", { exact: true }), "Enemies");
+  await userEvent.click(screen.getByRole("button", { name: "Save" }));
+
+  await expect.element(screen.getByRole("button", { name: "Open Enemies" })).toBeVisible();
 });

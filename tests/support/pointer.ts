@@ -43,6 +43,12 @@ function clientPointFor(container: Element, viewport: Viewport, point: Point) {
   return { clientX: box.left + screen.x, clientY: box.top + screen.y };
 }
 
+/** Moves the cursor over one sprite pixel without pressing — drives hover-only previews. */
+export function hoverSpritePixel(container: Element, viewport: Viewport, point: Point): void {
+  const { clientX, clientY } = clientPointFor(container, viewport, point);
+  fire(container, "pointermove", clientX, clientY, 0);
+}
+
 /** A pointer down + up over one sprite pixel — enough for a pencil stamp or a bucket fill. */
 export function clickSpritePixel(container: Element, viewport: Viewport, point: Point): void {
   const { clientX, clientY } = clientPointFor(container, viewport, point);
