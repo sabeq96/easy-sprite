@@ -1,5 +1,15 @@
 import { useRef, useState } from "react";
-import { Copy, Download, MoreHorizontal, Pencil, Plus, Trash2, Upload, Wand2 } from "lucide-react";
+import {
+  ArrowDownUp,
+  Copy,
+  Download,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+  Trash2,
+  Upload,
+  Wand2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useDocumentSession } from "@/app/DocumentProvider";
 import { Button } from "@/components/ui/button";
@@ -17,6 +27,7 @@ import { collectColorUsage } from "@/editor/colorUsage";
 import { downloadBlob } from "@/export/download";
 import { hexToRgba } from "@/lib/color";
 import { parsePaletteFile, toGpl } from "@/lib/paletteFormats";
+import { sortColorsByHue } from "@/lib/paletteSort";
 import { useEditorStore } from "@/stores/useEditorStore";
 
 export function PaletteMenu({ palette }: { palette: PaletteRecord | null }) {
@@ -38,17 +49,22 @@ export function PaletteMenu({ palette }: { palette: PaletteRecord | null }) {
 
   const duplicate = async () => {
     if (!palette) return;
-    // The only way to "edit" a built-in.
     const copy = await createPalette(`${palette.name} copy`, [...palette.colors]);
     setActivePalette(copy.id);
   };
 
   const addSpriteColors = async () => {
-    if (!palette || palette.builtIn) return;
+    if (!palette) return;
     const used = collectColorUsage(doc).map((entry) => entry.hex);
     const merged = [...new Set([...palette.colors, ...used])];
     await updatePalette(palette.id, { colors: merged });
     toast.success(`Added ${merged.length - palette.colors.length} colors`);
+  };
+
+  const autoSort = async () => {
+    if (!palette) return;
+    await updatePalette(palette.id, { colors: sortColorsByHue(palette.colors) });
+    toast.success("Sorted by hue");
   };
 
   const exportGpl = () => {
@@ -97,13 +113,17 @@ export function PaletteMenu({ palette }: { palette: PaletteRecord | null }) {
             <Copy />
             Duplicate
           </DropdownMenuItem>
-          <DropdownMenuItem disabled={!palette || palette.builtIn} onClick={() => setRenaming(true)}>
+          <DropdownMenuItem disabled={!palette} onClick={() => setRenaming(true)}>
             <Pencil />
             Rename…
           </DropdownMenuItem>
-          <DropdownMenuItem disabled={!palette || palette.builtIn} onClick={addSpriteColors}>
+          <DropdownMenuItem disabled={!palette} onClick={addSpriteColors}>
             <Wand2 />
             Add colors from sprite
+          </DropdownMenuItem>
+          <DropdownMenuItem disabled={!palette || palette.colors.length < 2} onClick={autoSort}>
+            <ArrowDownUp />
+            Auto-sort colors
           </DropdownMenuItem>
 
           <DropdownMenuSeparator />
@@ -119,11 +139,7 @@ export function PaletteMenu({ palette }: { palette: PaletteRecord | null }) {
 
           <DropdownMenuSeparator />
 
-          <DropdownMenuItem
-            variant="destructive"
-            disabled={!palette || palette.builtIn}
-            onClick={remove}
-          >
+          <DropdownMenuItem variant="destructive" disabled={!palette} onClick={remove}>
             <Trash2 />
             Delete palette
           </DropdownMenuItem>

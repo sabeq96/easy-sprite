@@ -1,7 +1,8 @@
 import { onionOffset, type OnionDirection } from "@/constants/animation";
-import { GRID_MIN_SCALE } from "@/constants/canvas";
+import { GRID_LINE_WIDTH, GRID_MIN_SCALE, MAX_GRID_SIZE } from "@/constants/canvas";
 import { compositeFrame } from "@/editor/composite";
 import type { SpriteDocument } from "@/editor/document";
+import { snapTileSize, tileSizeOptions } from "@/editor/grid";
 import type { Viewport } from "@/editor/viewport";
 
 export interface OnionSettings {
@@ -188,7 +189,8 @@ export class CanvasRenderer {
 
   private drawGrid(ctx: CanvasRenderingContext2D): void {
     const { scale, originX, originY } = this.state.viewport;
-    const step = this.state.gridSize;
+    const options = tileSizeOptions(this.doc.width, this.doc.height, MAX_GRID_SIZE);
+    const step = snapTileSize(this.state.gridSize, options);
     if (scale * step < GRID_MIN_SCALE) return; // a sub-pixel grid is just noise
 
     const width = this.doc.width * scale;
@@ -196,7 +198,7 @@ export class CanvasRenderer {
     // Half-pixel offset puts a 1px line on the boundary instead of straddling it.
     const offset = 0.5 / this.dpr;
 
-    ctx.lineWidth = 1 / this.dpr;
+    ctx.lineWidth = GRID_LINE_WIDTH;
     ctx.strokeStyle = "rgba(128,128,128,0.35)";
     ctx.beginPath();
 

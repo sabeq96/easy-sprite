@@ -54,7 +54,7 @@ async function openEditor() {
 }
 
 test("dragging a palette color shows a preview, rings the grid and opens an empty slot", async () => {
-  // An editable palette, because only a non-built-in one is a sortable drop zone.
+  // Every palette is a sortable drop zone now — this one just has predictable starting colors.
   const palette = await createPalette("Editable", ["#ff0000", "#00ff00", "#0000ff", "#ffff00"]);
   await openEditor();
   useEditorStore.getState().setActivePalette(palette.id);

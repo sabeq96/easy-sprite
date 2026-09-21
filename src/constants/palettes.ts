@@ -1,13 +1,15 @@
-export interface BuiltInPalette {
+export interface StarterPalette {
   id: string;
   name: string;
   colors: string[];
 }
 
-export const RECENT_COLORS_MAX = 16;
-
-/** Built-ins own the reserved `builtin-` id prefix and are re-seeded on every boot. */
-export const BUILT_IN_PALETTES: BuiltInPalette[] = [
+/**
+ * Inserted once into a fresh database and then owned by the user: editable, sortable, deletable,
+ * with nothing marking them apart from a palette the user made. Ids are fixed only so re-seeding
+ * the same database twice cannot duplicate them.
+ */
+export const STARTER_PALETTES: StarterPalette[] = [
   {
     id: "builtin-dawnbringer-16",
     name: "DawnBringer 16",

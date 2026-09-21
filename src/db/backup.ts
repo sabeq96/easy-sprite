@@ -1,13 +1,22 @@
 import { BACKUP_FORMAT_VERSION } from "@/constants/storage";
 import { db } from "@/db/db";
 import { withQuotaGuard } from "@/db/errors";
-import type { CelRecord, LayerRecord, PaletteRecord, SettingRecord, SpriteRecord } from "@/db/schema";
+import { seedDatabase } from "@/db/seed";
+import type {
+  CelRecord,
+  LayerRecord,
+  PaletteRecord,
+  SettingRecord,
+  SpriteRecord,
+  SpritesheetRecord,
+} from "@/db/schema";
 import { deflate, fromBase64, inflate, toBase64 } from "@/lib/binary";
 import { err, ok, type Result } from "@/types/result";
 import type {
   BackupCel,
   BackupFile,
   BackupSprite,
+  BackupSpritesheet,
   ImportMode,
   ImportSummary,
 } from "@/types/backup";
@@ -15,11 +24,12 @@ import type {
 export type ProgressCallback = (done: number, total: number) => void;
 
 export async function exportBackup(onProgress?: ProgressCallback): Promise<BackupFile> {
-  const [sprites, layers, cels, palettes, settings] = await Promise.all([
+  const [sprites, layers, cels, palettes, spritesheets, settings] = await Promise.all([
     db.sprites.toArray(),
     db.layers.toArray(),
     db.cels.toArray(),
     db.palettes.toArray(),
+    db.spritesheets.toArray(),
     db.settings.toArray(),
   ]);
 
@@ -43,6 +53,13 @@ export async function exportBackup(onProgress?: ProgressCallback): Promise<Backu
     })),
   );
 
+  const backupSpritesheets: BackupSpritesheet[] = await Promise.all(
+    spritesheets.map(async ({ thumbnail, ...sheet }) => ({
+      ...sheet,
+      ...(thumbnail ? { thumbnail: toBase64(new Uint8Array(await thumbnail.arrayBuffer())) } : {}),
+    })),
+  );
+
   return {
     format: "sprite-editor-backup",
     version: BACKUP_FORMAT_VERSION,
@@ -52,12 +69,14 @@ export async function exportBackup(onProgress?: ProgressCallback): Promise<Backu
       layers: layers.length,
       cels: cels.length,
       palettes: palettes.length,
+      spritesheets: spritesheets.length,
     },
     sprites: backupSprites,
     layers,
     cels: backupCels,
-    // Built-ins are re-seeded on boot, so shipping them would resurrect stale sets.
-    palettes: palettes.filter((palette) => !palette.builtIn),
+    // Seeded palettes are ordinary palettes now, so every one of them is user data.
+    palettes,
+    spritesheets: backupSpritesheets,
     settings,
   };
 }
@@ -77,6 +96,10 @@ export function validateBackup(file: unknown): Result<BackupFile> {
   }
   for (const key of ["sprites", "layers", "cels", "palettes"] as const) {
     if (!Array.isArray(candidate[key])) return err(`Backup is missing "${key}".`);
+  }
+  // Absent in a v1 backup, made before spritesheets existed — optional, not required.
+  if (candidate.spritesheets !== undefined && !Array.isArray(candidate.spritesheets)) {
+    return err(`Backup is missing "spritesheets".`);
   }
 
   return ok(candidate as BackupFile);
@@ -107,9 +130,17 @@ export async function importBackup(
     thumbnail: thumbnail ? new Blob([fromBase64(thumbnail)], { type: "image/png" }) : null,
   }));
 
+  const spritesheets: SpritesheetRecord[] = (backup.spritesheets ?? []).map(
+    ({ thumbnail, ...sheet }) => ({
+      ...sheet,
+      thumbnail: thumbnail ? new Blob([fromBase64(thumbnail)], { type: "image/png" }) : null,
+    }),
+  );
+
   let keptSprites = sprites;
   let keptLayers: LayerRecord[] = backup.layers;
   let keptCels = cels;
+  let keptSheets = spritesheets;
   let skipped = 0;
 
   if (mode === "merge") {
@@ -125,11 +156,27 @@ export async function importBackup(
       keptLayers = backup.layers.filter((layer) => !conflicts.has(layer.spriteId));
       keptCels = cels.filter((cel) => !conflicts.has(cel.spriteId));
     }
+
+    const existingSheets = new Set((await db.spritesheets.toArray()).map((sheet) => sheet.id));
+    keptSheets = spritesheets.filter((sheet) => !existingSheets.has(sheet.id));
   }
 
-  await applyImport(keptSprites, keptLayers, keptCels, backup.palettes, backup.settings, mode);
+  await applyImport(
+    keptSprites,
+    keptLayers,
+    keptCels,
+    backup.palettes,
+    keptSheets,
+    backup.settings,
+    mode,
+  );
 
-  return ok({ sprites: keptSprites.length, palettes: backup.palettes.length, skipped });
+  return ok({
+    sprites: keptSprites.length,
+    palettes: backup.palettes.length,
+    spritesheets: keptSheets.length,
+    skipped,
+  });
 }
 
 /** One transaction, so a failure halfway leaves the database untouched. */
@@ -138,6 +185,7 @@ function applyImport(
   layers: LayerRecord[],
   cels: CelRecord[],
   palettes: PaletteRecord[],
+  spritesheets: SpritesheetRecord[],
   settings: SettingRecord[],
   mode: ImportMode,
 ): Promise<void> {
@@ -148,31 +196,47 @@ function applyImport(
       db.layers,
       db.cels,
       db.palettes,
+      db.spritesheets,
       db.settings,
       async () => {
         if (mode === "replace") {
           await db.cels.clear();
           await db.layers.clear();
           await db.sprites.clear();
-          await db.palettes.filter((palette) => !palette.builtIn).delete();
+          await db.spritesheets.clear();
+          await db.palettes.clear();
         }
 
         await db.sprites.bulkPut(sprites);
         await db.layers.bulkPut(layers);
         await db.cels.bulkPut(cels);
         await db.palettes.bulkPut(palettes);
+        await db.spritesheets.bulkPut(spritesheets);
         await db.settings.bulkPut(settings);
       },
     ),
   );
 }
 
-/** Wipes user data, keeping built-in palettes (they are re-seeded anyway). */
-export function clearAllData(): Promise<void> {
-  return db.transaction("rw", db.sprites, db.layers, db.cels, db.palettes, async () => {
-    await db.cels.clear();
-    await db.layers.clear();
-    await db.sprites.clear();
-    await db.palettes.filter((palette) => !palette.builtIn).delete();
-  });
+/** Back to a first-run database: every table emptied, then starter content re-seeded. */
+export async function clearAllData(): Promise<void> {
+  await db.transaction(
+    "rw",
+    db.sprites,
+    db.layers,
+    db.cels,
+    db.palettes,
+    db.spritesheets,
+    db.settings,
+    async () => {
+      await db.cels.clear();
+      await db.layers.clear();
+      await db.sprites.clear();
+      await db.spritesheets.clear();
+      await db.palettes.clear();
+      // Drops the seed marker along with everything else, so seedDatabase() below runs fresh.
+      await db.settings.clear();
+    },
+  );
+  await seedDatabase();
 }

@@ -16,7 +16,6 @@ export async function createPalette(name: string, colors: string[]): Promise<Pal
     id: createId(),
     name: name.trim() || "New palette",
     colors,
-    builtIn: false,
     createdAt: now,
     updatedAt: now,
   };
@@ -31,11 +30,6 @@ export function updatePalette(
   return db.palettes.update(id, { ...patch, updatedAt: Date.now() });
 }
 
-/** Built-ins are re-seeded on every boot, so deleting one would be pointless. */
-export async function removePalette(id: string): Promise<void> {
-  const palette = await db.palettes.get(id);
-  if (palette?.builtIn) {
-    throw new Error("Built-in palettes cannot be deleted. Duplicate it instead.");
-  }
-  await db.palettes.delete(id);
+export function removePalette(id: string): Promise<void> {
+  return db.palettes.delete(id);
 }

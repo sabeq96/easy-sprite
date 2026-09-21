@@ -14,7 +14,7 @@ export function EditorCanvas() {
   const snapshot = useDocumentSnapshot(doc);
   const { containerRef, mainRef, onionRef, overlayRef, renderer } = useCanvasRenderer();
   const viewport = useEditorStore((state) => state.viewport);
-  const gridSize = useEditorStore((state) => state.gridSize);
+  const checkerSize = useEditorStore((state) => state.checkerSize);
 
   useSelectionBridge();
   useSelectionOverlay(renderer);
@@ -33,7 +33,7 @@ export function EditorCanvas() {
         viewport={viewport}
         width={snapshot.width}
         height={snapshot.height}
-        gridSize={gridSize}
+        tileSize={checkerSize}
       />
       {/* All canvases are pointer-events-none: hit testing happens on the container. */}
       <canvas ref={onionRef} data-canvas="onion" className="pointer-events-none absolute inset-0" />

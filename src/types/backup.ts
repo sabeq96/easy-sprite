@@ -1,4 +1,10 @@
-import type { LayerRecord, PaletteRecord, SettingRecord, SpriteRecord } from "@/db/schema";
+import type {
+  LayerRecord,
+  PaletteRecord,
+  SettingRecord,
+  SpriteRecord,
+  SpritesheetRecord,
+} from "@/db/schema";
 
 export interface BackupCel {
   id: string;
@@ -14,11 +20,17 @@ export type BackupSprite = Omit<SpriteRecord, "thumbnail"> & {
   thumbnail?: string;
 };
 
+export type BackupSpritesheet = Omit<SpritesheetRecord, "thumbnail"> & {
+  /** base64 PNG; omitted when the sheet has no thumbnail yet. */
+  thumbnail?: string;
+};
+
 export interface BackupCounts {
   sprites: number;
   layers: number;
   cels: number;
   palettes: number;
+  spritesheets: number;
 }
 
 export interface BackupFile {
@@ -30,6 +42,8 @@ export interface BackupFile {
   layers: LayerRecord[];
   cels: BackupCel[];
   palettes: PaletteRecord[];
+  /** Absent in a v1 backup, made before spritesheets existed. */
+  spritesheets?: BackupSpritesheet[];
   settings: SettingRecord[];
 }
 
@@ -38,6 +52,7 @@ export type ImportMode = "merge" | "replace";
 export interface ImportSummary {
   sprites: number;
   palettes: number;
+  spritesheets: number;
   /** Sprites already present locally, kept as-is in merge mode. */
   skipped: number;
 }

@@ -4,6 +4,7 @@ export const SETTING_KEYS = {
   onion: "view.onion",
   exportDefaults: "export.defaults",
   activePaletteId: "palette.active",
+  seeded: "app.seeded",
   defaultCanvasSize: "editor.defaultCanvasSize",
   defaultFps: "editor.defaultFps",
 } as const;

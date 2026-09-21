@@ -1,4 +1,5 @@
 import { Dexie, type EntityTable } from "dexie";
+import { SETTING_KEYS } from "@/constants/settings";
 import { DB_NAME } from "@/constants/storage";
 import type {
   CelRecord,
@@ -33,3 +34,20 @@ db.version(1).stores({
 db.version(2).stores({
   spritesheets: "id, name, updatedAt, createdAt, *tags",
 });
+
+// v3 drops `builtIn`: seeded palettes are ordinary palettes now (and a boolean index is a no-op
+// in IndexedDB anyway). Databases that already hold palettes are marked as seeded, so the first
+// boot after this upgrade does not re-stamp them.
+db.version(3)
+  .stores({ palettes: "id, name, updatedAt" })
+  .upgrade(async (tx) => {
+    await tx
+      .table<PaletteRecord & { builtIn?: boolean }>("palettes")
+      .toCollection()
+      .modify((palette) => {
+        delete palette.builtIn;
+      });
+    if ((await tx.table("palettes").count()) > 0) {
+      await tx.table("settings").put({ key: SETTING_KEYS.seeded, value: ["palettes"] });
+    }
+  });

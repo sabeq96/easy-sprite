@@ -60,11 +60,13 @@ export function BackupSection() {
       toast.error(result.error);
       return;
     }
-    const { sprites, skipped } = result.value;
+    const { sprites, spritesheets, skipped } = result.value;
+    const parts = [`${sprites} sprites`];
+    if (spritesheets > 0) parts.push(`${spritesheets} spritesheets`);
     toast.success(
       skipped > 0
-        ? `Imported ${sprites} sprites · kept ${skipped} existing`
-        : `Imported ${sprites} sprites`,
+        ? `Imported ${parts.join(", ")} · kept ${skipped} existing`
+        : `Imported ${parts.join(", ")}`,
     );
   };
 
@@ -89,8 +91,8 @@ export function BackupSection() {
         </Button>
 
         <ConfirmDialog
-          title="Delete all sprites?"
-          description="This permanently removes every sprite, layer and user palette from this browser. Export a backup first."
+          title="Delete all data?"
+          description="This permanently removes every sprite, spritesheet, layer and palette from this browser, and restores the starter palettes. Export a backup first."
           confirmLabel="Delete everything"
           destructive
           onConfirm={() => {

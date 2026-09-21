@@ -9,8 +9,16 @@ export const CANVAS_SIZE_PRESETS = [8, 16, 32, 48, 64, 96, 128] as const;
 /** Below this effective cell size (scale * gridSize) the grid is noise, hidden regardless of the toggle. */
 export const GRID_MIN_SCALE = 6;
 
-export const GRID_SIZE_OPTIONS = [1, 2, 4, 8, 16, 32] as const;
+/** CSS px width of the grid overlay lines, before DPR scaling. */
+export const GRID_LINE_WIDTH = 1.5;
+
+export const MIN_GRID_SIZE = 1;
+export const MAX_GRID_SIZE = 32;
 export const DEFAULT_GRID_SIZE = 1;
+
+export const MIN_CHECKER_SIZE = 1;
+export const MAX_CHECKER_SIZE = 32;
+export const DEFAULT_CHECKER_SIZE = 8;
 
 export const LAYER_THUMB_PX = 48;
 export const FRAME_THUMB_PX = 64;

@@ -23,15 +23,17 @@ import { hexToRgba, rgbaToHex, rgbaEquals, type RGBA } from "@/lib/color";
 import { cn } from "@/lib/utils";
 import { useEditorStore } from "@/stores/useEditorStore";
 
-export type PaletteDragSource = "palette" | "recent" | "used" | "active-primary" | "active-secondary";
+export type PaletteDragSource = "palette" | "used" | "active-primary" | "active-secondary";
 export interface PaletteDragData {
   hex: string;
   source: PaletteDragSource;
 }
 
 const PALETTE_DROP_ZONE_ID = "palette-drop-zone";
+// Stable reference for "no active palette", so the identity check below doesn't see a new []
+// every render (which would defeat the check and re-trigger the state adjustment endlessly).
+const NO_COLORS: string[] = [];
 const paletteSwatchId = (hex: string) => `palette:${hex}`;
-const recentSwatchId = (hex: string) => `recent:${hex}`;
 const usedSwatchId = (hex: string) => `used:${hex}`;
 const hexFromPaletteSwatchId = (id: string) =>
   id.startsWith("palette:") ? id.slice("palette:".length) : null;
@@ -45,23 +47,35 @@ export function PalettePanel() {
   const primaryColor = useEditorStore((state) => state.primaryColor);
   const setPrimaryColor = useEditorStore((state) => state.setPrimaryColor);
   const setSecondaryColor = useEditorStore((state) => state.setSecondaryColor);
-  const recentColors = useEditorStore((state) => state.recentColors);
   const [reordered, setReordered] = useState<{ paletteId: string; colors: string[] } | null>(null);
+  // usePalettes only hands back a new `active.colors` reference when the live query actually
+  // re-ran, so identity comparison below is a cheap, exact "has the read caught up yet".
+  const [seenStored, setSeenStored] = useState(active?.colors ?? NO_COLORS);
 
   // A reorder is written to Dexie and only comes back through useLiveQuery a few async ticks
   // later — long enough to watch a dropped swatch return to its old slot and animate over again.
   // Rendering the new order straight away makes the drop land where it was released.
   //
-  // The override stands only while the stored palette is the same colors in some other order, so
-  // the write arriving (or any real edit, from here or another surface) immediately takes over.
-  const stored = active?.colors ?? [];
+  // The override stands only until the *next* live read arrives, whatever it contains: our own
+  // write confirming (nothing visibly changes) or some other edit superseding it — auto-sort,
+  // another drag, another tab. Either way the guess has done its job. Adjusting state during
+  // render (rather than in an effect) keeps that other edit from ever flashing the stale guess
+  // first — see https://react.dev/learn/you-might-not-need-an-effect#adjusting-state-based-on-a-prop-change.
+  const stored = active?.colors ?? NO_COLORS;
+  if (stored !== seenStored) {
+    setSeenStored(stored);
+    if (reordered) setReordered(null);
+  }
   const colors =
-    reordered && reordered.paletteId === active?.id && isReorderOf(reordered.colors, stored)
+    stored === seenStored &&
+    reordered &&
+    reordered.paletteId === active?.id &&
+    isReorderOf(reordered.colors, stored)
       ? reordered.colors
       : stored;
 
   const paletteIds = colors.map(paletteSwatchId);
-  const editable = Boolean(active && !active.builtIn);
+  const editable = Boolean(active);
 
   const writeColors = (next: string[]) => {
     if (!active || !editable) return;
@@ -135,17 +149,6 @@ export function PalettePanel() {
           }
         />
 
-        {recentColors.length > 0 && (
-          <SwatchGrid
-            label="Recent"
-            colors={recentColors}
-            activeColor={primaryColor}
-            source="recent"
-            onPick={setPrimaryColor}
-            onPickSecondary={setSecondaryColor}
-          />
-        )}
-
         {usage.length > 0 && (
           <SwatchGrid
             label="Used in sprite"
@@ -199,7 +202,7 @@ interface SwatchGridProps {
   colors: string[];
   activeColor: RGBA;
   showIndexHints?: boolean;
-  source: "palette" | "recent" | "used";
+  source: "palette" | "used";
   /** true only for the editable "Palette colors" grid — enables sorting + the drop zone. */
   sortable?: boolean;
   onPick: (color: RGBA) => void;
@@ -218,10 +221,10 @@ function SwatchGrid({
   onPickSecondary,
   onRemove,
 }: SwatchGridProps) {
-  const idFor = source === "palette" ? paletteSwatchId : source === "recent" ? recentSwatchId : usedSwatchId;
+  const idFor = source === "palette" ? paletteSwatchId : usedSwatchId;
   const ids = colors.map(idFor);
-  // Every SwatchGrid instance calls useDropZone (rules of hooks), but only "palette" ever has
-  // sortable=true — give the other two their own id so they can never shadow the real drop zone.
+  // Every SwatchGrid instance calls useDropZone (rules of hooks), but only "palette" is sortable —
+  // give the other its own id so it can never shadow the real drop zone.
   const dropZoneId = source === "palette" ? PALETTE_DROP_ZONE_ID : `${source}-drop-zone`;
   // `owns`: a swatch is itself a drop target and wins the collision over the grid behind it, so the
   // grid has to claim its own swatches to stay highlighted while the pointer is on one of them.
@@ -287,7 +290,7 @@ interface BaseSwatchProps {
   onRemove?: (hex: string) => void;
 }
 
-/** Plain drag source — Recent, Used-in-sprite, and Palette-colors when the palette is built-in. */
+/** Plain drag source — the read-only "Used in sprite" grid. Every palette grid is sortable now. */
 function DraggableSwatch({
   id,
   hex,

@@ -51,7 +51,6 @@ export interface PaletteRecord {
   name: string;
   /** `#rrggbb` or `#rrggbbaa`, in display order. */
   colors: string[];
-  builtIn: boolean;
   createdAt: number;
   updatedAt: number;
 }

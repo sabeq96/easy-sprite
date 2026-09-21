@@ -1,9 +1,11 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import { STARTER_PALETTES } from "@/constants/palettes";
 import { db } from "@/db/db";
 import { clearAllData, exportBackup, importBackup, validateBackup } from "@/db/backup";
 import { flushCels } from "@/db/repositories/cels";
 import { createPalette } from "@/db/repositories/palettes";
 import { createSprite, loadSnapshot } from "@/db/repositories/sprites";
+import { createSpritesheet } from "@/db/repositories/spritesheets";
 import { writeSetting } from "@/db/repositories/settings";
 import { seedDatabase } from "@/db/seed";
 
@@ -70,13 +72,36 @@ describe("backup", () => {
     expect(backup.cels[0].data.length).toBeLessThan(500);
   });
 
-  it("excludes built-in palettes", async () => {
+  it("includes every palette, seeded or user-made", async () => {
     await seedDatabase();
     await createPalette("Mine", ["#ffffff"]);
 
     const backup = await exportBackup();
-    expect(backup.palettes.every((palette) => !palette.builtIn)).toBe(true);
-    expect(backup.palettes).toHaveLength(1);
+    expect(backup.palettes).toHaveLength(STARTER_PALETTES.length + 1);
+  });
+
+  it("clears spritesheets and re-seeds the starter palettes on delete-all", async () => {
+    await seedDatabase();
+    await createSpritesheet({ name: "Sheet" });
+
+    await clearAllData();
+
+    expect(await db.spritesheets.count()).toBe(0);
+    expect(await db.palettes.count()).toBe(STARTER_PALETTES.length);
+  });
+
+  it("round-trips a spritesheet through export and import", async () => {
+    await seedDatabase();
+    const sheet = await createSpritesheet({ name: "Sheet" });
+    const backup = await exportBackup();
+    expect(backup.spritesheets).toHaveLength(1);
+
+    await clearAllData();
+    const result = await importBackup(backup, "replace");
+    expect(result.ok).toBe(true);
+
+    const restored = await db.spritesheets.get(sheet.id);
+    expect(restored?.name).toBe("Sheet");
   });
 
   it("keeps local sprites and reports skips in merge mode", async () => {
@@ -128,8 +153,9 @@ describe("backup", () => {
 
   it("reports counts for the import dialog", async () => {
     await seedLibrary();
+    await createSpritesheet({ name: "Sheet" });
     const backup = await exportBackup();
 
-    expect(backup.counts).toMatchObject({ sprites: 1, layers: 1, cels: 1 });
+    expect(backup.counts).toMatchObject({ sprites: 1, layers: 1, cels: 1, spritesheets: 1 });
   });
 });
