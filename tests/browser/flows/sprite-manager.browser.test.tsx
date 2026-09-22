@@ -61,6 +61,27 @@ test("renaming a sprite from its menu updates the card and its tags", async () =
   await expect.element(screen.getByRole("button", { name: "hero 1", exact: true })).toBeVisible();
 });
 
+test("splitting a sprite from its menu replaces its frames with a grid", async () => {
+  await createSprite({ name: "Sheet", width: 4, height: 2 });
+  const screen = render(<AppRoutes />, { route: "/sprites" });
+
+  await userEvent.click(screen.getByRole("button", { name: "Actions for Sheet" }));
+  await userEvent.click(screen.getByRole("menuitem", { name: "Split into frames" }));
+
+  await expect
+    .element(screen.getByRole("dialog", { name: 'Split "Sheet" into frames' }))
+    .toBeVisible();
+
+  await userEvent.fill(screen.getByLabelText("Frame width"), "2");
+  await userEvent.fill(screen.getByLabelText("Frame height"), "2");
+  await expect.element(screen.getByText("2×1 grid → 2 frames")).toBeVisible();
+
+  await userEvent.click(screen.getByRole("button", { name: "Split" }));
+
+  await expect.element(screen.getByRole("button", { name: "Open Sheet" })).toBeVisible();
+  await expect.element(screen.getByText("2×2 · 2 frames")).toBeVisible();
+});
+
 test("the create menu offers a way to import PNGs", async () => {
   const screen = render(<AppRoutes />, { route: "/sprites" });
 

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { LibraryCard } from "@/components/common/LibraryCard";
 import { RenameDialog } from "@/components/common/RenameDialog";
 import { SpriteCardMenu } from "@/components/manager/SpriteCardMenu";
+import { SplitFramesDialog } from "@/components/manager/SplitFramesDialog";
 import { ROUTES } from "@/constants/routes";
 import { updateSprite } from "@/db/repositories/sprites";
 import type { SpriteRecord } from "@/db/schema";
@@ -15,6 +16,7 @@ export interface SpriteCardProps {
 export function SpriteCard({ sprite, onExport }: SpriteCardProps) {
   const navigate = useNavigate();
   const [isRenaming, setRenaming] = useState(false);
+  const [isSplitting, setSplitting] = useState(false);
 
   const frameLabel = `${sprite.frames.length} ${sprite.frames.length === 1 ? "frame" : "frames"}`;
 
@@ -29,6 +31,7 @@ export function SpriteCard({ sprite, onExport }: SpriteCardProps) {
           sprite={sprite}
           onRename={() => setRenaming(true)}
           onExport={() => onExport(sprite)}
+          onSplit={() => setSplitting(true)}
         />
       }
     >
@@ -41,6 +44,7 @@ export function SpriteCard({ sprite, onExport }: SpriteCardProps) {
         open={isRenaming}
         onOpenChange={setRenaming}
       />
+      <SplitFramesDialog sprite={sprite} open={isSplitting} onOpenChange={setSplitting} />
     </LibraryCard>
   );
 }

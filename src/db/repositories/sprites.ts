@@ -2,9 +2,10 @@ import { DEFAULT_CANVAS_SIZE } from "@/constants/canvas";
 import { DEFAULT_FPS } from "@/constants/animation";
 import { db } from "@/db/db";
 import { NotFoundError, withQuotaGuard } from "@/db/errors";
-import { celKey } from "@/db/repositories/cels";
-import type { CelRecord, LayerRecord, SpriteRecord } from "@/db/schema";
+import { celKey, isCelEmpty } from "@/db/repositories/cels";
+import type { CelRecord, FrameMeta, LayerRecord, SpriteRecord } from "@/db/schema";
 import { createId } from "@/lib/id";
+import type { PixelBuffer } from "@/types/pixels";
 
 export interface SpriteSnapshot {
   sprite: SpriteRecord;
@@ -133,6 +134,98 @@ export async function duplicateSprite(id: string): Promise<SpriteRecord> {
   );
 
   return copy;
+}
+
+/** Copies a `w`×`h` region out of a `srcWidth`-wide RGBA buffer, starting at (`x`, `y`). */
+function cropPixels(
+  src: PixelBuffer,
+  srcWidth: number,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+): PixelBuffer {
+  const out = new Uint8ClampedArray(w * h * 4) as PixelBuffer;
+  const rowBytes = w * 4;
+  for (let row = 0; row < h; row++) {
+    const from = ((y + row) * srcWidth + x) * 4;
+    out.set(src.subarray(from, from + rowBytes), row * rowBytes);
+  }
+  return out;
+}
+
+/**
+ * Replaces every frame with a grid of `frameWidth`×`frameHeight` tiles cut out of each existing
+ * frame, in reading order (left → right, top → bottom), then in frame order. Existing frames past
+ * the grid's right/bottom edge are cropped off. Destructive: the original frames are gone.
+ */
+export async function splitSpriteIntoFrames(
+  id: string,
+  frameWidth: number,
+  frameHeight: number,
+): Promise<SpriteRecord> {
+  const { sprite, layers, cels } = await loadSnapshot(id);
+  const columns = Math.floor(sprite.width / frameWidth);
+  const rows = Math.floor(sprite.height / frameHeight);
+  if (columns < 1 || rows < 1) {
+    throw new Error("Frame size is larger than the sprite.");
+  }
+
+  const celsByKey = new Map(cels.map((cel) => [celKey(cel.layerId, cel.frameId), cel]));
+
+  const newFrames: FrameMeta[] = [];
+  const newCels: CelRecord[] = [];
+
+  for (const frame of sprite.frames) {
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < columns; col++) {
+        const newFrameId = createId();
+        newFrames.push({ id: newFrameId });
+
+        for (const layer of layers) {
+          const source = celsByKey.get(celKey(layer.id, frame.id));
+          if (!source) continue;
+
+          const pixels = cropPixels(
+            source.pixels,
+            sprite.width,
+            col * frameWidth,
+            row * frameHeight,
+            frameWidth,
+            frameHeight,
+          );
+          if (isCelEmpty(pixels)) continue;
+
+          newCels.push({
+            id: celKey(layer.id, newFrameId),
+            spriteId: id,
+            layerId: layer.id,
+            frameId: newFrameId,
+            pixels,
+          });
+        }
+      }
+    }
+  }
+
+  const updated: SpriteRecord = {
+    ...sprite,
+    width: frameWidth,
+    height: frameHeight,
+    frames: newFrames,
+    thumbnail: null,
+    updatedAt: Date.now(),
+  };
+
+  await withQuotaGuard(() =>
+    db.transaction("rw", db.sprites, db.cels, async () => {
+      await db.cels.where("spriteId").equals(id).delete();
+      await db.cels.bulkAdd(newCels);
+      await db.sprites.put(updated);
+    }),
+  );
+
+  return updated;
 }
 
 export function removeSprite(id: string): Promise<void> {

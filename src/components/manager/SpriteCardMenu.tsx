@@ -1,4 +1,4 @@
-import { Copy, Download, MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { Copy, Download, Grid3x3, MoreVertical, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { Button } from "@/components/ui/button";
@@ -16,12 +16,14 @@ export interface SpriteCardMenuProps {
   sprite: SpriteRecord;
   onRename: () => void;
   onExport: () => void;
+  onSplit: () => void;
 }
 
 export function SpriteCardMenu({
   sprite,
   onRename,
   onExport,
+  onSplit,
 }: SpriteCardMenuProps) {
   const duplicate = async () => {
     const copy = await duplicateSprite(sprite.id);
@@ -53,6 +55,10 @@ export function SpriteCardMenu({
         <DropdownMenuItem onClick={onExport}>
           <Download />
           Export spritesheet
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={onSplit}>
+          <Grid3x3 />
+          Split into frames
         </DropdownMenuItem>
 
         <DropdownMenuSeparator />

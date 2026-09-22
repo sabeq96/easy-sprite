@@ -6,6 +6,7 @@ import {
   duplicateSprite,
   loadSnapshot,
   removeSprite,
+  splitSpriteIntoFrames,
   updateSprite,
 } from "@/db/repositories/sprites";
 
@@ -81,6 +82,62 @@ describe("sprite repository", () => {
     expect(await db.sprites.count()).toBe(0);
     expect(await db.layers.count()).toBe(0);
     expect(await db.cels.count()).toBe(0);
+  });
+
+  it("splits a sprite into a grid of frames, left to right then top to bottom", async () => {
+    const sprite = await createSprite({ width: 4, height: 2 });
+    const [layerId] = sprite.layerIds;
+    const frameId = sprite.frames[0].id;
+
+    // Left half (x: 0-1) red, right half (x: 2-3) blue, across both rows.
+    const pixels = new Uint8ClampedArray(4 * 2 * 4);
+    for (let y = 0; y < 2; y++) {
+      for (let x = 0; x < 4; x++) {
+        const index = (y * 4 + x) * 4;
+        const [r, g, b] = x < 2 ? [255, 0, 0] : [0, 0, 255];
+        pixels.set([r, g, b, 255], index);
+      }
+    }
+    await flushCels([{ spriteId: sprite.id, layerId, frameId, pixels }]);
+
+    const updated = await splitSpriteIntoFrames(sprite.id, 2, 2);
+
+    expect(updated.width).toBe(2);
+    expect(updated.height).toBe(2);
+    expect(updated.frames).toHaveLength(2);
+    expect(updated.thumbnail).toBeNull();
+
+    const snapshot = await loadSnapshot(sprite.id);
+    const byFrame = new Map(snapshot.cels.map((cel) => [cel.frameId, cel]));
+    const leftCel = byFrame.get(updated.frames[0].id)!;
+    const rightCel = byFrame.get(updated.frames[1].id)!;
+    expect(Array.from(leftCel.pixels)).toEqual([255, 0, 0, 255, 255, 0, 0, 255, 255, 0, 0, 255, 255, 0, 0, 255]);
+    expect(Array.from(rightCel.pixels)).toEqual([0, 0, 255, 255, 0, 0, 255, 255, 0, 0, 255, 255, 0, 0, 255, 255]);
+  });
+
+  it("drops tiles that end up fully transparent", async () => {
+    const sprite = await createSprite({ width: 4, height: 2 });
+    const [layerId] = sprite.layerIds;
+    const frameId = sprite.frames[0].id;
+
+    const pixels = new Uint8ClampedArray(4 * 2 * 4);
+    for (let y = 0; y < 2; y++) {
+      pixels.set([255, 0, 0, 255], (y * 4 + 0) * 4);
+      pixels.set([255, 0, 0, 255], (y * 4 + 1) * 4);
+      // Right half stays fully transparent.
+    }
+    await flushCels([{ spriteId: sprite.id, layerId, frameId, pixels }]);
+
+    await splitSpriteIntoFrames(sprite.id, 2, 2);
+    const snapshot = await loadSnapshot(sprite.id);
+
+    expect(snapshot.sprite.frames).toHaveLength(2);
+    expect(snapshot.cels).toHaveLength(1);
+  });
+
+  it("rejects a frame size larger than the sprite", async () => {
+    const sprite = await createSprite({ width: 4, height: 4 });
+    await expect(splitSpriteIntoFrames(sprite.id, 8, 8)).rejects.toThrow();
   });
 
   it("bumps updatedAt on update", async () => {
