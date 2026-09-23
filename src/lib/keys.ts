@@ -68,6 +68,12 @@ const MODIFIER_LABELS: Record<Modifier, [apple: string, other: string]> = {
   alt: ["⌥", "Alt"],
 };
 
+/**
+ * Modifiers that can be held on their own to borrow a tool. `mod` is excluded: it is a platform
+ * alias (⌘ or Ctrl), and a held key is matched on `event.key`, which reports "Meta"/"Control".
+ */
+export type HeldModifier = Exclude<Modifier, "mod">;
+
 export function formatModifier(modifier: Modifier): string {
   return MODIFIER_LABELS[modifier][IS_APPLE ? 0 : 1];
 }

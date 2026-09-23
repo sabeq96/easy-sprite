@@ -20,8 +20,6 @@ export const TOOL_LIST = [
 
 export type ToolId = (typeof TOOL_LIST)[number]["id"];
 
-export const TOOL_IDS: readonly ToolId[] = TOOL_LIST.map((tool) => tool.id);
-
 export const TOOLS = Object.fromEntries(TOOL_LIST.map((tool) => [tool.id, tool])) as Record<
   ToolId,
   Tool<ToolId>

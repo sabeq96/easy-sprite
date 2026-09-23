@@ -1,17 +1,10 @@
 import type { CommandGroup } from "@/constants/commands";
-import { formatBinding, formatModifier, type KeyBinding, type Modifier } from "@/lib/keys";
+import { formatModifier, type Modifier } from "@/lib/keys";
 
-export type PointerAction =
-  | "click"
-  | "drag"
-  | "right-click"
-  | "right-drag"
-  | "double-click"
-  | "middle-drag"
-  | "scroll";
+/** Only gestures worth teaching; a plain click needs no hint (see `Hint`). */
+export type PointerAction = "drag" | "right-drag" | "middle-drag";
 
 export type HintInput =
-  | { key: KeyBinding }
   | { hold: Modifier | "space" }
   | { pointer: PointerAction }
   /** For inputs no other form describes, like the range "1–9". */
@@ -39,17 +32,12 @@ export interface HintSection {
 }
 
 const POINTER_LABELS: Record<PointerAction, string> = {
-  click: "Click",
   drag: "Drag",
-  "right-click": "Right-click",
   "right-drag": "Right-drag",
-  "double-click": "Double-click",
   "middle-drag": "Middle-drag",
-  scroll: "Scroll",
 };
 
 function formatInput(input: HintInput): string {
-  if ("key" in input) return formatBinding(input.key);
   if ("hold" in input) return input.hold === "space" ? "Space" : formatModifier(input.hold);
   if ("pointer" in input) return POINTER_LABELS[input.pointer];
   return input.text;
@@ -57,4 +45,17 @@ function formatInput(input: HintInput): string {
 
 export function formatHint(hint: Hint): string {
   return hint.inputs.map(formatInput).join(" + ");
+}
+
+/** A label and the chords that do it — the one shape every shortcut list renders. */
+export interface ShortcutRow {
+  label: string;
+  keys: string[];
+}
+
+export function hintRow(hint: Hint): ShortcutRow {
+  return {
+    label: hint.where ? `${hint.action} · ${hint.where}` : hint.action,
+    keys: [formatHint(hint)],
+  };
 }

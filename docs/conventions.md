@@ -9,7 +9,7 @@ Before writing anything, answer one question: *what does it depend on?*
 
 | If it… | It goes in | Example |
 | --- | --- | --- |
-| is a literal value with no logic | `src/constants/` | `MAX_ZOOM`, `DEFAULT_FPS`, `TOOL_IDS` |
+| is a literal value with no logic | `src/constants/` | `MAX_ZOOM`, `DEFAULT_FPS`, `BRUSH_SIZES` |
 | is a pure function of its arguments | `src/lib/` | `hexToRgba()`, `rectUnion()`, `clamp()` |
 | manipulates pixels/documents, no React, no DB | `src/editor/` | `floodFill()`, `SpriteDocument` |
 | talks to IndexedDB | `src/db/repositories/` | `spriteRepo.duplicate()` |

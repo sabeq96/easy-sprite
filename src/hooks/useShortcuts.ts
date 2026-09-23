@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import type { CommandRegistry } from "@/commands/types";
 import type { CommandId } from "@/commands/types";
 import { HELD_TOOL_KEYS, SHORTCUTS } from "@/commands/keymap";
-import { isTypingTarget, matchesBinding, type Modifier } from "@/lib/keys";
+import { isTypingTarget, matchesBinding, type HeldModifier } from "@/lib/keys";
 import { useEditorStore } from "@/stores/useEditorStore";
 
 /** Keys that should keep firing while held. */
@@ -15,7 +15,7 @@ export function useShortcuts(commands: CommandRegistry): void {
       if (isTypingTarget(event.target) && event.key !== "Escape") return;
 
       // A tool's hold key borrows it (Alt → eyedropper, exactly like Piskel).
-      const heldTool = HELD_TOOL_KEYS[event.key.toLowerCase() as Modifier];
+      const heldTool = HELD_TOOL_KEYS[event.key.toLowerCase() as HeldModifier];
       if (heldTool) {
         useEditorStore.getState().pushTemporaryTool(heldTool);
         return;

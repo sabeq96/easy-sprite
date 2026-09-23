@@ -1,6 +1,7 @@
-import { formatHint, type Hint } from "@/commands/hints";
-import { commandKeys, SHORTCUTS } from "@/commands/keymap";
+import { hintRow, type ShortcutRow } from "@/commands/hints";
+import { commandKeys, SHORTCUTS, toolKeys } from "@/commands/keymap";
 import type { CommandId, CommandRegistry } from "@/commands/types";
+import { ShortcutList } from "@/components/common/ShortcutList";
 import {
   Dialog,
   DialogContent,
@@ -8,11 +9,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { CommandGroup } from "@/constants/commands";
 import { TOOL_LIST } from "@/editor/tools";
-import { formatModifier } from "@/lib/keys";
 import { CANVAS_VIEW_HINTS } from "@/hooks/useCanvasViewControls";
 import { COLOR_HOTKEY_HINTS } from "@/hooks/useColorHotkeys";
 import { POINTER_PAINT_HINTS } from "@/hooks/usePointerPaint";
@@ -37,29 +36,16 @@ const TOOL_OWNED_COMMANDS = new Set<string>(
  */
 const FEATURE_HINTS = [COLOR_HOTKEY_HINTS, POINTER_PAINT_HINTS, CANVAS_VIEW_HINTS];
 
-interface Row {
-  label: string;
-  keys: string[];
-}
-
-const hintRow = (hint: Hint): Row => ({
-  label: hint.where ? `${hint.action} · ${hint.where}` : hint.action,
-  keys: [formatHint(hint)],
-});
-
 /** One row per tool: its key, plus the key held to borrow it from any other tool. */
-const TOOLS_ROWS: Row[] = TOOL_LIST.map((tool) => ({
+const TOOLS_ROWS: ShortcutRow[] = TOOL_LIST.map((tool) => ({
   label: tool.label,
-  keys: [
-    ...commandKeys(`tool.${tool.id}`),
-    ...(tool.holdKey ? [`Hold ${formatModifier(tool.holdKey)}`] : []),
-  ],
+  keys: toolKeys(tool),
 }));
 
 /** Only tools with more to say than their key — their commands and hints — get a section. */
 function toolSections(commands: CommandRegistry) {
   return TOOL_LIST.flatMap((tool) => {
-    const rows: Row[] = (tool.commands ?? []).flatMap((id) => {
+    const rows: ShortcutRow[] = (tool.commands ?? []).flatMap((id) => {
       const command = commands[id];
       return command ? [{ label: command.label, keys: commandKeys(id) }] : [];
     });
@@ -77,7 +63,7 @@ export function ShortcutHelpDialog({
   open,
   onOpenChange,
 }: ShortcutHelpDialogProps) {
-  const groups = new Map<CommandGroup, Row[]>();
+  const groups = new Map<CommandGroup, ShortcutRow[]>();
 
   for (const commandId of Object.keys(SHORTCUTS) as CommandId[]) {
     const command = commands[commandId];
@@ -122,31 +108,13 @@ export function ShortcutHelpDialog({
   );
 }
 
-function Section({ title, rows }: { title: string; rows: Row[] }) {
+function Section({ title, rows }: { title: string; rows: ShortcutRow[] }) {
   return (
     <section>
       <h3 className="mb-1 text-xs font-semibold text-muted-foreground uppercase">
         {title}
       </h3>
-      <ul className="flex flex-col gap-1">
-        {rows.map((row, index) => (
-          // Labels repeat when there are two ways to do one thing ("Pan").
-          <li key={index} className="flex items-center justify-between gap-2">
-            <span className="text-sm">{row.label}</span>
-            <Keys keys={row.keys} />
-          </li>
-        ))}
-      </ul>
+      <ShortcutList rows={rows} />
     </section>
-  );
-}
-
-function Keys({ keys }: { keys: string[] }) {
-  return (
-    <KbdGroup>
-      {keys.map((key) => (
-        <Kbd key={key}>{key}</Kbd>
-      ))}
-    </KbdGroup>
   );
 }

@@ -3,9 +3,10 @@ import { Palette as PaletteIcon } from "lucide-react";
 import { arrayMove } from "@dnd-kit/helpers";
 import { isSortable } from "@dnd-kit/react/sortable";
 import { useDocumentSession } from "@/app/DocumentProvider";
+import { hintRow } from "@/commands/hints";
 import { ColorSwatch } from "@/components/common/ColorSwatch";
 import { DragBoard, type DragEndEvent, type DragOverEvent } from "@/components/common/DragBoard";
-import { HintList } from "@/components/common/HintList";
+import { ShortcutList } from "@/components/common/ShortcutList";
 import { ActiveColors } from "@/components/editor/ActiveColors";
 import { PaletteMenu } from "@/components/editor/PaletteMenu";
 import {
@@ -183,7 +184,7 @@ export function PalettePanel() {
             />
           </TooltipTrigger>
           <TooltipContent side="left" align="start" className="block">
-            <HintList hints={COLOR_HOTKEY_HINTS.hints} />
+            <ShortcutList rows={COLOR_HOTKEY_HINTS.hints.map(hintRow)} />
           </TooltipContent>
         </Tooltip>
 

@@ -55,11 +55,6 @@ export function rgbaEquals(a: RGBA, b: RGBA): boolean {
   return a.r === b.r && a.g === b.g && a.b === b.b && a.a === b.a;
 }
 
-/** Perceptual-ish luminance, used to pick readable text over a swatch. */
-export function luminance({ r, g, b }: RGBA): number {
-  return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
-}
-
 /** Returns null instead of throwing, so it can validate user input directly. */
 export function parseHex(value: string): RGBA | null {
   const trimmed = value.trim();

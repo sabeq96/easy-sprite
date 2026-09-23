@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { TOOL_IDS, TOOLS } from "@/editor/tools";
+import { TOOL_LIST, TOOLS } from "@/editor/tools";
+
+const TOOL_IDS = TOOL_LIST.map((tool) => tool.id);
 
 /**
  * The declarations the options bar and the brush preview both read. An option listed here but

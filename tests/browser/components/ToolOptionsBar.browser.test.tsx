@@ -4,7 +4,7 @@ import { ToolOptionsBar } from "@/components/editor/ToolOptionsBar";
 import { CommandsProvider } from "@/commands/CommandsContext";
 import { createToolCommands } from "@/commands/toolCommands";
 import { ToolSidebar } from "@/components/editor/ToolSidebar";
-import { TOOL_IDS, TOOLS } from "@/editor/tools";
+import { TOOL_LIST, TOOLS } from "@/editor/tools";
 import { useEditorStore } from "@/stores/useEditorStore";
 import { render } from "@test/render";
 
@@ -41,7 +41,7 @@ test("the pencil tool keeps brush size and its own mirror option", async () => {
   await expect.element(screen.getByRole("button", { name: "Mirror vertically" })).toBeVisible();
 });
 
-test.each(TOOL_IDS)("the %s bar shows exactly the options that tool declares", async (toolId) => {
+test.each(TOOL_LIST.map((tool) => tool.id))("the %s bar shows exactly the options that tool declares", async (toolId) => {
   useEditorStore.getState().setTool(toolId);
   const screen = render(<ToolOptionsBar />);
   const declared = TOOLS[toolId].options;

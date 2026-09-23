@@ -8,8 +8,8 @@ export interface CommandButtonProps extends Omit<TooltipButtonProps, "label" | "
   command: CommandId;
   /** Overrides the registry label, e.g. "Undo stroke". */
   label?: string;
-  /** Non-binding hints shown after the keys, e.g. "Hold ⌥". */
-  extraShortcuts?: readonly string[];
+  /** Overrides the keys shown; defaults to every binding of the command. */
+  keys?: readonly string[];
 }
 
 /**
@@ -23,7 +23,7 @@ export interface CommandButtonProps extends Omit<TooltipButtonProps, "label" | "
 export function CommandButton({
   command: id,
   label,
-  extraShortcuts = [],
+  keys,
   disabled,
   onClick,
   variant,
@@ -37,7 +37,7 @@ export function CommandButton({
   return (
     <TooltipButton
       label={label ?? command.label}
-      shortcut={[...commandKeys(id), ...extraShortcuts]}
+      shortcut={keys ?? commandKeys(id)}
       disabled={disabled ?? command.isEnabled?.() === false}
       aria-pressed={toggles ? isActive : undefined}
       variant={variant ?? (isActive ? "secondary" : "ghost")}

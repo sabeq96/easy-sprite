@@ -1,10 +1,10 @@
+import { toolKeys } from "@/commands/keymap";
 import { Panel } from "@/components/common/Panel";
 import { CommandButton } from "@/components/common/CommandButton";
 import { TOOL_ICONS } from "@/components/editor/toolIcons";
 import { Separator } from "@/components/ui/separator";
 import { TOOL_LIST, type ToolId } from "@/editor/tools";
 import type { Tool } from "@/editor/tools/types";
-import { formatModifier } from "@/lib/keys";
 
 /** Consecutive tools of the same group share a section; the registry order is the sidebar order. */
 function groupTools(): Tool<ToolId>[][] {
@@ -35,7 +35,7 @@ export function ToolSidebar() {
               <CommandButton
                 key={tool.id}
                 command={`tool.${tool.id}`}
-                extraShortcuts={tool.holdKey && [`Hold ${formatModifier(tool.holdKey)}`]}
+                keys={toolKeys(tool)}
                 side="right"
                 size="icon"
               >

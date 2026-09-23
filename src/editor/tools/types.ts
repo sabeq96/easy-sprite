@@ -4,7 +4,7 @@ import type { SpriteDocument } from "@/editor/document";
 import type { History, StrokeRecorder } from "@/editor/history";
 import type { OverlayPainter } from "@/editor/renderer";
 import type { RGBA } from "@/lib/color";
-import type { KeyBinding, Modifier } from "@/lib/keys";
+import type { HeldModifier, KeyBinding } from "@/lib/keys";
 
 /** Integer sprite-space pixel. */
 export interface ToolPoint {
@@ -68,7 +68,7 @@ export interface Tool<Id extends string = string> {
   /** The binding that activates the tool; merged into the keymap as `tool.<id>`. */
   readonly shortcut?: KeyBinding;
   /** Held from any tool to borrow this one; releasing it goes back. */
-  readonly holdKey?: Modifier;
+  readonly holdKey?: HeldModifier;
   /**
    * Gestures worth teaching in the shortcut sheet — only the non-obvious ones (a modifier, a
    * special zone); "drag to draw" goes without saying. Keep it honest with the handlers.
