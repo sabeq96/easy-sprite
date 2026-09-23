@@ -14,7 +14,6 @@ const EXPECTED: Record<string, readonly string[]> = {
   fillSimilar: [],
   picker: ["pickSource"],
   select: [],
-  move: [],
 };
 
 describe("tool option declarations", () => {
@@ -32,7 +31,7 @@ describe("tool option declarations", () => {
 
   it("a tool with no brush footprint never claims a brush size", () => {
     // The brush preview keys off "brushSize"; a one-shot fill has no footprint to preview.
-    for (const id of ["bucket", "fillSimilar", "picker", "select", "move"] as const) {
+    for (const id of ["bucket", "fillSimilar", "picker", "select"] as const) {
       expect(TOOLS[id].options).not.toContain("brushSize");
     }
   });

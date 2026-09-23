@@ -55,7 +55,7 @@ test("holding Space does not set a custom cursor either", async () => {
 test("switching tools never applies a per-tool cursor", async () => {
   const { screen, canvas } = await openEditor();
 
-  for (const name of ["Pencil", "Eraser", "Paint bucket", "Color picker", "Select", "Move selection"]) {
+  for (const name of ["Pencil", "Eraser", "Paint bucket", "Color picker", "Select & move"]) {
     await userEvent.click(screen.getByRole("button", { name, exact: true }));
     expect(canvas.style.cursor).toBe("");
   }

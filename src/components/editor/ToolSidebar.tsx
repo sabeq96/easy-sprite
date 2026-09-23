@@ -7,11 +7,11 @@ import type { ToolId } from "@/constants/tools";
 import { TOOLS } from "@/editor/tools";
 import { useEditorStore } from "@/stores/useEditorStore";
 
-// Drawing tools first, then fills and sampling, then the selection pair.
+// Drawing tools first, then fills and sampling, then selection.
 const GROUPS: ToolId[][] = [
   ["pencil", "eraser"],
   ["bucket", "fillSimilar", "picker"],
-  ["select", "move"],
+  ["select"],
 ];
 
 export function ToolSidebar() {

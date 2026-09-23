@@ -2,7 +2,6 @@ import {
   Blend,
   Brush,
   Eraser,
-  Move,
   PaintBucket,
   Pipette,
   SquareDashed,
@@ -18,5 +17,4 @@ export const TOOL_ICONS: Record<ToolId, LucideIcon> = {
   fillSimilar: Blend,
   picker: Pipette,
   select: SquareDashed,
-  move: Move,
 };

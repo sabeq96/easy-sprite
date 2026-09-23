@@ -13,8 +13,11 @@ export interface Command {
   redo(): void;
 }
 
+/** What changed, so listeners can tell a new entry apart from stepping through history. */
+export type HistoryChange = "push" | "undo" | "redo" | "clear";
+
 export interface HistoryEvents {
-  change: void;
+  change: HistoryChange;
 }
 
 export class History {
@@ -48,7 +51,7 @@ export class History {
     this.bytes += command.sizeBytes;
     this.redoStack.length = 0;
     this.trim();
-    this.changed();
+    this.changed("push");
   }
 
   undo(): void {
@@ -56,7 +59,7 @@ export class History {
     if (!command) return;
     command.undo();
     this.redoStack.push(command);
-    this.changed();
+    this.changed("undo");
   }
 
   redo(): void {
@@ -64,19 +67,19 @@ export class History {
     if (!command) return;
     command.redo();
     this.undoStack.push(command);
-    this.changed();
+    this.changed("redo");
   }
 
   clear(): void {
     this.undoStack = [];
     this.redoStack = [];
     this.bytes = 0;
-    this.changed();
+    this.changed("clear");
   }
 
-  private changed(): void {
+  private changed(kind: HistoryChange): void {
     this.revision++;
-    this.events.emit("change", undefined);
+    this.events.emit("change", kind);
   }
 
   private trim(): void {

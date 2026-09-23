@@ -4,7 +4,7 @@ import type { ToolContext, ToolPoint } from "@/editor/tools/types";
 import type { RGBA } from "@/lib/color";
 import { rectUnion, type Rect } from "@/lib/rect";
 
-/** Writes one pixel if it is in bounds and inside the selection. Returns true if written. */
+/** Writes one pixel if it is in bounds. Returns true if written. */
 export function writePixel(
   ctx: ToolContext,
   x: number,
@@ -14,7 +14,6 @@ export function writePixel(
 ): boolean {
   const { doc } = ctx;
   if (x < 0 || y < 0 || x >= doc.width || y >= doc.height) return false;
-  if (ctx.mask && ctx.mask[y * doc.width + x] === 0) return false;
 
   const cel = doc.ensureCel(ctx.layerId, ctx.frameId);
   // `replace` for the eraser; blending only matters for a semi-transparent colour.

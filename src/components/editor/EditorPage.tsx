@@ -15,7 +15,6 @@ import { ToolSidebar } from "@/components/editor/ToolSidebar";
 import { useEditorCommands } from "@/commands/useEditorCommands";
 import { useActiveTargets } from "@/hooks/useActiveTargets";
 import { useColorHotkeys } from "@/hooks/useColorHotkeys";
-import { useSelectionLifecycle } from "@/hooks/useSelectionLifecycle";
 import { useShortcuts } from "@/hooks/useShortcuts";
 
 export function EditorPage() {
@@ -38,7 +37,6 @@ function EditorShell() {
   const [showHelp, setShowHelp] = useState(false);
 
   useActiveTargets();
-  useSelectionLifecycle();
   useColorHotkeys();
 
   const commands = useEditorCommands();

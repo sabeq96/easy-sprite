@@ -3,9 +3,8 @@ import { CheckerboardLayer } from "@/components/editor/CheckerboardLayer";
 import { useCanvasRenderer } from "@/hooks/useCanvasRenderer";
 import { useCanvasViewControls } from "@/hooks/useCanvasViewControls";
 import { usePointerPaint } from "@/hooks/usePointerPaint";
-import { useSelectionBridge } from "@/hooks/useSelectionBridge";
-import { useSelectionOverlay } from "@/hooks/useSelectionOverlay";
 import { useDocumentSnapshot } from "@/hooks/useDocumentSnapshot";
+import { useToolLifecycle } from "@/hooks/useToolLifecycle";
 import { useEditorStore } from "@/stores/useEditorStore";
 
 /** The only component in the app that holds canvas refs. */
@@ -16,8 +15,7 @@ export function EditorCanvas() {
   const viewport = useEditorStore((state) => state.viewport);
   const checkerSize = useEditorStore((state) => state.checkerSize);
 
-  useSelectionBridge();
-  useSelectionOverlay(renderer);
+  useToolLifecycle(containerRef, renderer);
   useCanvasViewControls(containerRef);
   usePointerPaint(containerRef, renderer);
 

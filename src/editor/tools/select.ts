@@ -1,144 +1,199 @@
+import type { SpriteDocument } from "@/editor/document";
+import { selectionPainter, type SelectionView } from "@/editor/overlays/selectionOverlay";
+import { liftRegion, stampRegion, type LiftedRegion } from "@/editor/selection";
+import type { Tool, ToolPoint, ToolSession } from "@/editor/tools/types";
 import {
-  createRectSelection,
-  liftRegion,
-  stampRegion,
-  type LiftedRegion,
-  type Selection,
-} from "@/editor/selection";
-import { floatingPainter } from "@/editor/overlays/selectionOverlay";
-import type { Tool, ToolPoint } from "@/editor/tools/types";
-import { rectContains, rectFromPoints, rectUnion } from "@/lib/rect";
+  rectClamp,
+  rectContains,
+  rectFromPoints,
+  rectIsEmpty,
+  rectUnion,
+  type Rect,
+} from "@/lib/rect";
 
-/**
- * The React-free core cannot read the store, so the editor injects accessors once.
- * Two functions, no coupling, and tools stay unit-testable with a fake bridge.
- */
-export interface SelectionBridge {
-  get(): Selection | null;
-  set(selection: Selection | null): void;
-  getPending(): { x: number; y: number; w: number; h: number } | null;
-  setPending(rect: { x: number; y: number; w: number; h: number } | null): void;
-}
-
-let bridge: SelectionBridge = {
-  get: () => null,
-  set: () => {},
-  getPending: () => null,
-  setPending: () => {},
-};
-
-export function configureSelectionBridge(next: SelectionBridge): void {
-  bridge = next;
-}
-
-/**
- * Per-drag state, scoped to this module: pointer capture guarantees only one stroke is
- * active at a time, so a single slot is safe.
- */
-interface DragState {
+interface MarqueeDrag {
+  kind: "marquee";
   origin: ToolPoint;
+  rect: Rect;
+}
+
+interface MoveDrag {
+  kind: "move";
+  origin: ToolPoint;
+  /** Ctrl/⌘ held at press: duplicate instead of cutting. */
+  copy: boolean;
+  layerId: string;
+  frameId: string;
+  /** Lifted on the first pixel of movement, so a click inside the selection is a no-op. */
   lifted: LiftedRegion | null;
   offset: { x: number; y: number };
 }
 
-let drag: DragState | null = null;
+/**
+ * Everything the tool knows. `session` is non-null exactly between onActivate and its cleanup,
+ * and the cleanup resets the rest: a selection cannot outlive the tool. Pointer capture means
+ * only one gesture runs at a time, so module scope is safe.
+ */
+const state = {
+  session: null as ToolSession | null,
+  rect: null as Rect | null,
+  drag: null as MarqueeDrag | MoveDrag | null,
+  hover: null as ToolPoint | null,
+};
 
-export const selectTool: Tool = {
-  id: "select",
-  label: "Select",
-  continuous: true,
-  options: [],
+function clampTo(doc: SpriteDocument, rect: Rect): Rect | null {
+  const clamped = rectClamp(rect, doc.width, doc.height);
+  return rectIsEmpty(clamped) ? null : clamped;
+}
 
-  onPointerDown(_ctx, point) {
-    drag = { origin: point, lifted: null, offset: { x: 0, y: 0 } };
-    bridge.setPending({ x: point.x, y: point.y, w: 1, h: 1 });
+function isOverSelection(point: ToolPoint | null): boolean {
+  return !!point && !!state.rect && rectContains(state.rect, point.x, point.y);
+}
+
+function changed(): void {
+  state.session?.requestRender();
+}
+
+/**
+ * The tool's public face — the only way commands (copy, cut, delete, select all, paste) reach
+ * the selection. Writes are ignored while the tool is inactive, so callers switch tools first.
+ */
+export const selection = {
+  get: (): Rect | null => state.rect,
+  set(rect: Rect | null): void {
+    if (!state.session) return;
+    state.rect = rect && clampTo(state.session.doc, rect);
+    changed();
   },
-
-  onPointerMove(_ctx, point) {
-    if (!drag) return;
-    bridge.setPending(rectFromPoints(drag.origin.x, drag.origin.y, point.x, point.y));
-  },
-
-  onPointerUp(ctx, point) {
-    if (!drag) return;
-
-    const rect = rectFromPoints(drag.origin.x, drag.origin.y, point.x, point.y);
-    // A click without a drag clears the selection — the standard "click to deselect".
-    const selection =
-      rect.w > 1 || rect.h > 1
-        ? createRectSelection(ctx.doc.width, ctx.doc.height, rect)
-        : null;
-
-    bridge.set(selection);
-    bridge.setPending(null);
-    drag = null;
-  },
-
-  onCancel() {
-    drag = null;
-    bridge.setPending(null);
+  clear(): void {
+    selection.set(null);
   },
 };
 
-export const moveTool: Tool = {
-  id: "move",
-  label: "Move selection",
+function view(): SelectionView | null {
+  const { session, drag, hover } = state;
+  if (!session) return null;
+  const { doc } = session;
+
+  if (drag?.kind === "marquee") {
+    return { rect: clampTo(doc, drag.rect), floating: null, hover: null };
+  }
+
+  if (drag?.kind === "move" && drag.lifted) {
+    const { lifted, offset } = drag;
+    const moved = { ...lifted.rect, x: lifted.rect.x + offset.x, y: lifted.rect.y + offset.y };
+    return { rect: clampTo(doc, moved), floating: { region: lifted, offset }, hover: null };
+  }
+
+  const inSprite =
+    hover !== null && hover.x >= 0 && hover.y >= 0 && hover.x < doc.width && hover.y < doc.height;
+  return {
+    rect: state.rect,
+    floating: null,
+    hover: inSprite && !isOverSelection(hover) ? hover : null,
+  };
+}
+
+/** A tool switch mid-drag must not lose the cut pixels: put them back where they came from. */
+function abandonDrag(doc: SpriteDocument): void {
+  const drag = state.drag;
+  // The cut left the rect transparent, so stamping only opaque pixels restores it exactly.
+  if (drag?.kind === "move" && drag.lifted && !drag.copy) {
+    stampRegion(doc, drag.layerId, drag.frameId, drag.lifted, drag.lifted.rect);
+  }
+  state.drag = null;
+}
+
+export const selectTool: Tool = {
+  id: "select",
+  label: "Select & move",
   continuous: true,
   options: [],
 
-  onPointerDown(ctx, point, modifiers) {
-    const selection = bridge.get();
-    if (!selection || !rectContains(selection.rect, point.x, point.y)) return;
+  onActivate(session) {
+    state.session = session;
+    session.setOverlay(selectionPainter(view));
 
-    ctx.stroke.touch(ctx.layerId, ctx.frameId);
-    // Alt copies: lift without cutting the source.
-    const lifted = liftRegion(ctx.doc, ctx.layerId, ctx.frameId, selection, !modifiers.alt);
-    if (!lifted) return;
+    let { width, height } = session.doc;
+    // The rect is geometry over the old canvas — meaningless after a resize.
+    const offMeta = session.doc.events.on("meta", () => {
+      if (session.doc.width === width && session.doc.height === height) return;
+      ({ width, height } = session.doc);
+      selection.clear();
+    });
+    // Undo/redo moves pixels out from under the rect. Our own moves arrive as "push".
+    const offHistory = session.history.events.on("change", (kind) => {
+      if (kind !== "push") selection.clear();
+    });
 
-    drag = { origin: point, lifted, offset: { x: 0, y: 0 } };
-    // The floating preview below is the selection while it's moving; the static marching-ants
-    // channel would otherwise keep showing the (now hollow) source rect underneath it.
-    bridge.set(null);
-    ctx.setOverlay(
-      floatingPainter(() => (drag?.lifted ? { region: drag.lifted, offset: drag.offset } : null)),
-      true,
-    );
+    return () => {
+      offMeta();
+      offHistory();
+      abandonDrag(session.doc);
+      state.session = null;
+      state.rect = null;
+      state.hover = null;
+    };
   },
 
-  onPointerMove(_ctx, point) {
-    if (!drag?.lifted) return;
-    drag.offset = { x: point.x - drag.origin.x, y: point.y - drag.origin.y };
+  onHover(point) {
+    state.hover = point;
+    changed();
+    return isOverSelection(point) ? "grab" : null;
+  },
+
+  onPointerDown(ctx, point, modifiers) {
+    state.hover = null;
+    if (isOverSelection(point)) {
+      state.drag = {
+        kind: "move",
+        origin: point,
+        copy: modifiers.ctrl,
+        layerId: ctx.layerId,
+        frameId: ctx.frameId,
+        lifted: null,
+        offset: { x: 0, y: 0 },
+      };
+    } else {
+      state.rect = null;
+      state.drag = { kind: "marquee", origin: point, rect: rectFromPoints(point.x, point.y, point.x, point.y) };
+    }
+    changed();
+  },
+
+  onPointerMove(ctx, point) {
+    const drag = state.drag;
+    if (!drag) return;
+
+    if (drag.kind === "marquee") {
+      drag.rect = rectFromPoints(drag.origin.x, drag.origin.y, point.x, point.y);
+    } else if (state.rect) {
+      if (!drag.lifted) {
+        ctx.stroke.touch(ctx.layerId, ctx.frameId);
+        drag.lifted = liftRegion(ctx.doc, ctx.layerId, ctx.frameId, state.rect, !drag.copy);
+      }
+      drag.offset = { x: point.x - drag.origin.x, y: point.y - drag.origin.y };
+    }
+    changed();
   },
 
   onPointerUp(ctx) {
-    if (!drag?.lifted) {
-      drag = null;
-      return;
+    const drag = state.drag;
+    state.drag = null;
+    if (!drag) return;
+
+    if (drag.kind === "marquee") {
+      // A click is a 1×1 marquee: one pixel. Entirely off-canvas selects nothing.
+      state.rect = clampTo(ctx.doc, drag.rect);
+    } else if (drag.lifted) {
+      const { lifted, offset } = drag;
+      const target = { x: lifted.rect.x + offset.x, y: lifted.rect.y + offset.y };
+      const written = stampRegion(ctx.doc, ctx.layerId, ctx.frameId, lifted, target);
+      // Lift + drop share the stroke: one drag, one undo step (even when dropped off-canvas).
+      ctx.stroke.extend(ctx.layerId, ctx.frameId, rectUnion(written, lifted.rect));
+      // The selection follows the pixels.
+      state.rect = clampTo(ctx.doc, { ...lifted.rect, ...target });
     }
-
-    const { lifted, offset } = drag;
-    const target = { x: lifted.rect.x + offset.x, y: lifted.rect.y + offset.y };
-    const written = stampRegion(ctx.doc, ctx.layerId, ctx.frameId, lifted, target);
-
-    // The stroke covers both the lift and the drop, so one drag is one undo step.
-    if (written) ctx.stroke.extend(ctx.layerId, ctx.frameId, rectUnion(lifted.rect, written));
-
-    // The selection follows the pixels.
-    const moved = createRectSelection(ctx.doc.width, ctx.doc.height, {
-      ...lifted.rect,
-      x: target.x,
-      y: target.y,
-    });
-    bridge.set(moved);
-    ctx.setOverlay(null);
-    drag = null;
-  },
-
-  onCancel(ctx) {
-    ctx.setOverlay(null);
-    // onPointerDown cleared the selection for the floating preview's sake; a cancelled drag
-    // never reached onPointerUp to restore it, so put it back at its original spot.
-    if (drag?.lifted) bridge.set(createRectSelection(ctx.doc.width, ctx.doc.height, drag.lifted.rect));
-    drag = null;
+    changed();
   },
 };

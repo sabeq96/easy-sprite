@@ -6,7 +6,6 @@ export const COMMAND_IDS = [
   "tool.fillSimilar",
   "tool.picker",
   "tool.select",
-  "tool.move",
   "tool.cycleBrushSize",
   // edit
   "edit.undo",

@@ -47,7 +47,6 @@ export function makeToolContext(
       pickFromComposite: false,
     },
     stroke,
-    mask: null,
     setColor: (color) => {
       picked.color = color;
     },

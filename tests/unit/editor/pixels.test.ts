@@ -96,18 +96,6 @@ describe("floodFill", () => {
     expect(getPixel(area.buffer, 1, 0, 3)).toEqual(BLUE);
   });
 
-  it("stays inside a selection mask", () => {
-    const area = target(4, 1);
-    const mask = new Uint8Array(4);
-    mask[0] = 1;
-    mask[1] = 1;
-
-    floodFill(area, 0, 0, RED, { mask });
-
-    expect(getPixel(area.buffer, 1, 0, 4)).toEqual(RED);
-    expect(getPixel(area.buffer, 2, 0, 4)).not.toEqual(RED);
-  });
-
   it("ignores a click outside the canvas", () => {
     expect(floodFill(target(2, 2), 5, 5, RED)).toBeNull();
   });

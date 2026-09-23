@@ -78,8 +78,6 @@ export function colorDistance(a: RGBA, b: RGBA): number {
 export interface FillOptions {
   /** false = replace the matching colour across the whole layer ("fill similar"). */
   contiguous?: boolean;
-  /** Restricts the fill to a selection mask, when one exists. */
-  mask?: Uint8Array | null;
 }
 
 /**
@@ -95,7 +93,6 @@ export function floodFill(
 ): Rect | null {
   const { buffer, width, height } = target;
   if (startX < 0 || startY < 0 || startX >= width || startY >= height) return null;
-  if (options.mask && options.mask[startY * width + startX] === 0) return null;
 
   const contiguous = options.contiguous ?? true;
   const seed = getPixel(buffer, startX, startY, width);
@@ -103,10 +100,8 @@ export function floodFill(
   // Filling with the colour already there would record an empty undo step.
   if (colorDistance(seed, color) === 0) return null;
 
-  const matches = (x: number, y: number) => {
-    if (options.mask && options.mask[y * width + x] === 0) return false;
-    return colorDistance(getPixel(buffer, x, y, width), seed) === 0;
-  };
+  const matches = (x: number, y: number) =>
+    colorDistance(getPixel(buffer, x, y, width), seed) === 0;
 
   let dirty: Rect | null = null;
   const paint = (x: number, y: number) => {

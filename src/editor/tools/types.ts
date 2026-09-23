@@ -1,6 +1,6 @@
 import type { ToolId } from "@/constants/tools";
 import type { SpriteDocument } from "@/editor/document";
-import type { StrokeRecorder } from "@/editor/history";
+import type { History, StrokeRecorder } from "@/editor/history";
 import type { OverlayPainter } from "@/editor/renderer";
 import type { RGBA } from "@/lib/color";
 
@@ -41,11 +41,19 @@ export interface ToolContext {
   readonly color: RGBA;
   readonly options: ToolOptions;
   readonly stroke: StrokeRecorder;
-  /** Null when nothing is selected; otherwise 1 byte per pixel, 1 = editable. */
-  readonly mask: Uint8Array | null;
 
   setColor(color: RGBA): void;
   setOverlay(painter: OverlayPainter | null, animate?: boolean): void;
+}
+
+/** Long-lived services a tool gets while it is the active tool (see `Tool.onActivate`). */
+export interface ToolSession {
+  readonly doc: SpriteDocument;
+  readonly history: History;
+  /** This tool's persistent overlay, drawn under the per-gesture one. Removed on deactivate. */
+  setOverlay(painter: OverlayPainter | null): void;
+  /** Repaints the overlay after the tool's own state changed. */
+  requestRender(): void;
 }
 
 export interface Tool {
@@ -68,5 +76,14 @@ export interface Tool {
     modifiers: PointerModifiers,
   ): void;
   onPointerUp?(ctx: ToolContext, point: ToolPoint, modifiers: PointerModifiers): void;
-  onCancel?(ctx: ToolContext): void;
+
+  /**
+   * Runs when the tool becomes active; the returned cleanup runs when it stops being active
+   * (tool switch, held-key swap, editor unmount). Anything a tool remembers between gestures
+   * lives between these two calls and is reset by the cleanup — so no other tool, slice or hook
+   * can ever observe it.
+   */
+  onActivate?(session: ToolSession): () => void;
+  /** Hover with no button held (`null` = pointer left). Returns a CSS cursor, or null for the default. */
+  onHover?(point: ToolPoint | null): string | null;
 }

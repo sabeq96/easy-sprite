@@ -19,7 +19,7 @@ function createFill(id: "bucket" | "fillSimilar", label: string, contiguous: boo
         point.x,
         point.y,
         ctx.color,
-        { contiguous, mask: ctx.mask },
+        { contiguous },
       );
 
       commitWrite(ctx, dirty);

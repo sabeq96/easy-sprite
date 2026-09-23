@@ -2,7 +2,6 @@ import { clearRegion, cropRegion, pasteRegion } from "@/editor/buffer";
 import { getClipboard, setClipboard } from "@/editor/clipboard";
 import type { SpriteDocument } from "@/editor/document";
 import type { Command } from "@/editor/history";
-import type { Selection } from "@/editor/selection";
 import type { Rect } from "@/lib/rect";
 
 export interface EditTarget {
@@ -11,28 +10,24 @@ export interface EditTarget {
   frameId: string;
 }
 
-export function copySelection(target: EditTarget, selection: Selection): boolean {
+export function copySelection(target: EditTarget, rect: Rect): boolean {
   const cel = target.doc.getCel(target.layerId, target.frameId);
   if (!cel) return false;
 
-  setClipboard({
-    rect: selection.rect,
-    pixels: cropRegion(cel.pixels, target.doc.width, selection.rect),
-  });
+  setClipboard({ rect, pixels: cropRegion(cel.pixels, target.doc.width, rect) });
   return true;
 }
 
 /** Shared by cut and delete: they differ only in whether the clipboard is filled first. */
 export function clearSelectionCommand(
   target: EditTarget,
-  selection: Selection,
+  rect: Rect,
   label: string,
 ): Command | null {
   const { doc, layerId, frameId } = target;
   const cel = doc.getCel(layerId, frameId);
   if (!cel) return null;
 
-  const rect = selection.rect;
   const before = cropRegion(cel.pixels, doc.width, rect);
 
   const apply = () => {
@@ -52,9 +47,9 @@ export function clearSelectionCommand(
   };
 }
 
-export function cutSelectionCommand(target: EditTarget, selection: Selection): Command | null {
-  if (!copySelection(target, selection)) return null;
-  return clearSelectionCommand(target, selection, "Cut");
+export function cutSelectionCommand(target: EditTarget, rect: Rect): Command | null {
+  if (!copySelection(target, rect)) return null;
+  return clearSelectionCommand(target, rect, "Cut");
 }
 
 /**

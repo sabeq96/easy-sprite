@@ -27,7 +27,7 @@ export interface RendererState {
   isPlaying: boolean;
 }
 
-/** Tools install a painter to draw cursors, previews and selection ants. */
+/** Tools install a painter to draw cursors, previews and selections. */
 export type OverlayPainter = (ctx: CanvasRenderingContext2D, viewport: Viewport) => void;
 
 type Channel = "main" | "onion" | "overlay";
@@ -45,13 +45,10 @@ export class CanvasRenderer {
   private overlayPainter: OverlayPainter | null = null;
   private overlayAnimating = false;
   /**
-   * The committed selection's marching ants, drawn underneath the tool preview. Kept on its
-   * own channel and driven straight from store state (see `useSelectionOverlay`) rather than
-   * from tool pointer handlers, so it stays correct no matter how the selection changed —
-   * a drag, Ctrl+A, paste, or Escape all look the same from here.
+   * The active tool's persistent overlay (installed via `ToolSession.setOverlay`), drawn under
+   * the per-gesture preview. It lives for as long as the tool is active, independent of hover.
    */
-  private selectionPainter: OverlayPainter | null = null;
-  private selectionAnimating = false;
+  private toolPainter: OverlayPainter | null = null;
   private rafId = 0;
   private dpr = 1;
   private disposed = false;
@@ -89,9 +86,8 @@ export class CanvasRenderer {
     this.invalidate("overlay");
   }
 
-  setSelectionOverlay(painter: OverlayPainter | null, animate = false): void {
-    this.selectionPainter = painter;
-    this.selectionAnimating = painter !== null && animate;
+  setToolOverlay(painter: OverlayPainter | null): void {
+    this.toolPainter = painter;
     this.invalidate("overlay");
   }
 
@@ -137,8 +133,8 @@ export class CanvasRenderer {
     if (this.dirty.has("overlay")) this.renderOverlay();
     this.dirty.clear();
 
-    // Marching ants and brush previews need a continuous repaint while active.
-    if (this.overlayAnimating || this.selectionAnimating) this.invalidate("overlay");
+    // Brush previews need a continuous repaint while active.
+    if (this.overlayAnimating) this.invalidate("overlay");
   }
 
   private context(canvas: HTMLCanvasElement): CanvasRenderingContext2D | null {
@@ -176,7 +172,7 @@ export class CanvasRenderer {
     const ctx = this.context(this.targets.overlay);
     if (!ctx) return;
     if (this.state.gridEnabled) this.drawGrid(ctx);
-    this.selectionPainter?.(ctx, this.state.viewport);
+    this.toolPainter?.(ctx, this.state.viewport);
     this.overlayPainter?.(ctx, this.state.viewport);
   }
 

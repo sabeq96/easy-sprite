@@ -74,19 +74,6 @@ describe("pencil", () => {
     expect(getPixel(pixels, 3, 2, 4)).toEqual(RED);
   });
 
-  it("honours a selection mask", () => {
-    const doc = makeDocument();
-    const mask = new Uint8Array(16);
-    mask[0] = 1; // only pixel (0,0) is editable
-    const { ctx } = makeToolContext(doc, { mask });
-
-    pencilTool.onPointerDown(ctx, { x: 0, y: 0 }, NO_MODIFIERS);
-    pencilTool.onPointerDown(ctx, { x: 1, y: 0 }, NO_MODIFIERS);
-
-    const pixels = doc.getCel("l1", "f1")!.pixels;
-    expect(getPixel(pixels, 0, 0, 4)).toEqual(RED);
-    expect(getPixel(pixels, 1, 0, 4).a).toBe(0);
-  });
 });
 
 describe("eraser", () => {

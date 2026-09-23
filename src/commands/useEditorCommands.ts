@@ -24,7 +24,7 @@ import {
   pasteCommand,
   type EditTarget,
 } from "@/editor/commands/selection";
-import { createRectSelection } from "@/editor/selection";
+import { selection } from "@/editor/tools/select";
 import { useCommandDispatch } from "@/hooks/useCommandDispatch";
 import { useEditorStore } from "@/stores/useEditorStore";
 
@@ -48,7 +48,7 @@ export function useEditorCommands(): CommandRegistry {
   };
 
   const spriteSize = () => ({ width: doc.width, height: doc.height });
-  const hasSelection = () => store.getState().selection !== null;
+  const hasSelection = () => selection.get() !== null;
 
   const stepFrame = (offset: number) => {
     const { activeFrameId, setActiveFrame } = store.getState();
@@ -89,8 +89,8 @@ export function useEditorCommands(): CommandRegistry {
       isEnabled: hasSelection,
       run: () => {
         const context = target();
-        const selection = store.getState().selection;
-        if (context && selection) copySelection(context, selection);
+        const rect = selection.get();
+        if (context && rect) copySelection(context, rect);
       },
     },
     "edit.cut": {
@@ -100,8 +100,8 @@ export function useEditorCommands(): CommandRegistry {
       isEnabled: hasSelection,
       run: () => {
         const context = target();
-        const selection = store.getState().selection;
-        if (context && selection) dispatch(() => cutSelectionCommand(context, selection));
+        const rect = selection.get();
+        if (context && rect) dispatch(() => cutSelectionCommand(context, rect));
       },
     },
     "edit.paste": {
@@ -115,24 +115,26 @@ export function useEditorCommands(): CommandRegistry {
         const pasted = pasteCommand(context);
         if (!pasted) return;
         history.push(pasted.command);
-        // Select what was just pasted, so it can be moved straight away.
-        store.getState().setSelection(
-          createRectSelection(doc.width, doc.height, pasted.rect),
-        );
+        // Select what was just pasted, so it can be dragged straight away.
+        store.getState().setTool("select");
+        selection.set(pasted.rect);
       },
     },
     "edit.selectAll": {
       id: "edit.selectAll",
       label: "Select all",
       group: "Edit",
-      run: () => store.getState().selectAllPixels(spriteSize()),
+      run: () => {
+        store.getState().setTool("select");
+        selection.set({ x: 0, y: 0, w: doc.width, h: doc.height });
+      },
     },
     "edit.deselect": {
       id: "edit.deselect",
       label: "Deselect",
       group: "Edit",
       isEnabled: hasSelection,
-      run: () => store.getState().clearSelection(),
+      run: () => selection.clear(),
     },
     "edit.deleteSelection": {
       id: "edit.deleteSelection",
@@ -141,10 +143,8 @@ export function useEditorCommands(): CommandRegistry {
       isEnabled: hasSelection,
       run: () => {
         const context = target();
-        const selection = store.getState().selection;
-        if (context && selection) {
-          dispatch(() => clearSelectionCommand(context, selection, "Delete"));
-        }
+        const rect = selection.get();
+        if (context && rect) dispatch(() => clearSelectionCommand(context, rect, "Delete"));
       },
     },
     "edit.save": {

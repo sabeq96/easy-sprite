@@ -57,8 +57,9 @@ src/
     composite.ts            # layer compositing + onion skin passes
     viewport.ts             # zoom/pan math, screen↔sprite coordinate mapping
     renderer.ts             # canvas stack, rAF loop, dirty-rect redraw
-    selection.ts            # mask, floating buffer, marching ants
-    tools/                  # types.ts + one file per tool + index registry
+    selection.ts            # lift/stamp helpers for moving a rect of pixels
+    tools/                  # types.ts + one file per tool + index registry; a tool owns its own
+                            # state via onActivate → cleanup (the selection lives in tools/select.ts)
   db/
     schema.ts               # record types (the persisted shape)
     db.ts                   # Dexie instance + versions
@@ -127,7 +128,7 @@ Four stacked `<canvas>` elements, identical CSS box, `position:absolute`, painte
 | 0 | `checker` | viewport changes | transparency checkerboard (CSS gradient div, not canvas) |
 | 1 | `onion` | frame/onion config changes | previous/next frame composites, tinted + faded |
 | 2 | `main` | any dirty cel, frame or layer change | composite of visible layers of current frame |
-| 3 | `overlay` | pointer move, selection, grid toggle | grid, brush preview, selection ants, mirror axis |
+| 3 | `overlay` | pointer move, active tool's state, grid toggle | grid, active tool's persistent overlay (e.g. the selection), brush preview |
 
 Per-frame work:
 

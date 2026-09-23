@@ -7,32 +7,8 @@ import {
   pasteCommand,
 } from "@/editor/commands/selection";
 import { setClipboard } from "@/editor/clipboard";
-import { createRectSelection, liftRegion, selectAll, stampRegion } from "@/editor/selection";
+import { liftRegion, stampRegion } from "@/editor/selection";
 import { BLUE, makeDocument, RED } from "@test/factories";
-
-describe("selection geometry", () => {
-  it("builds a mask matching the rect", () => {
-    const selection = createRectSelection(4, 4, { x: 1, y: 1, w: 2, h: 2 })!;
-    expect(selection.mask[1 * 4 + 1]).toBe(1);
-    expect(selection.mask[0]).toBe(0);
-    expect(selection.mask.reduce((sum, value) => sum + value, 0)).toBe(4);
-  });
-
-  it("clamps a rect that runs off the canvas", () => {
-    const selection = createRectSelection(4, 4, { x: 3, y: 3, w: 10, h: 10 })!;
-    expect(selection.rect).toEqual({ x: 3, y: 3, w: 1, h: 1 });
-  });
-
-  it("returns null for a rect entirely outside", () => {
-    expect(createRectSelection(4, 4, { x: 9, y: 9, w: 2, h: 2 })).toBeNull();
-  });
-
-  it("selects everything", () => {
-    const selection = selectAll(3, 2);
-    expect(selection.rect).toEqual({ x: 0, y: 0, w: 3, h: 2 });
-    expect(selection.mask.every((value) => value === 1)).toBe(true);
-  });
-});
 
 describe("lift and stamp", () => {
   it("cuts the source and stamps it elsewhere", () => {
@@ -40,8 +16,8 @@ describe("lift and stamp", () => {
     const cel = doc.ensureCel("l1", "f1");
     setPixel(cel.pixels, 0, 0, 4, RED);
 
-    const selection = createRectSelection(4, 4, { x: 0, y: 0, w: 2, h: 2 })!;
-    const lifted = liftRegion(doc, "l1", "f1", selection, true)!;
+    const rect = { x: 0, y: 0, w: 2, h: 2 };
+    const lifted = liftRegion(doc, "l1", "f1", rect, true);
 
     expect(getPixel(cel.pixels, 0, 0, 4).a).toBe(0);
 
@@ -54,8 +30,8 @@ describe("lift and stamp", () => {
     const cel = doc.ensureCel("l1", "f1");
     setPixel(cel.pixels, 1, 1, 4, RED);
 
-    const selection = createRectSelection(4, 4, { x: 1, y: 1, w: 1, h: 1 })!;
-    liftRegion(doc, "l1", "f1", selection, false);
+    const rect = { x: 1, y: 1, w: 1, h: 1 };
+    liftRegion(doc, "l1", "f1", rect, false);
 
     expect(getPixel(cel.pixels, 1, 1, 4)).toEqual(RED);
   });
@@ -66,8 +42,8 @@ describe("lift and stamp", () => {
     setPixel(cel.pixels, 0, 0, 4, RED); // lifted region covers (0,0)-(1,1), only (0,0) painted
     setPixel(cel.pixels, 2, 2, 4, BLUE); // destination pixel that must survive
 
-    const selection = createRectSelection(4, 4, { x: 0, y: 0, w: 2, h: 2 })!;
-    const lifted = liftRegion(doc, "l1", "f1", selection, false)!;
+    const rect = { x: 0, y: 0, w: 2, h: 2 };
+    const lifted = liftRegion(doc, "l1", "f1", rect, false);
 
     stampRegion(doc, "l1", "f1", lifted, { x: 2, y: 2 });
 
@@ -75,13 +51,22 @@ describe("lift and stamp", () => {
     expect(getPixel(cel.pixels, 3, 3, 4).a).toBe(0); // transparent pixel wrote nothing
   });
 
+  it("lifts transparent pixels from a layer with no cel yet", () => {
+    const doc = makeDocument();
+
+    const lifted = liftRegion(doc, "l1", "f1", { x: 0, y: 0, w: 2, h: 2 }, true);
+
+    expect(lifted.pixels.every((value) => value === 0)).toBe(true);
+    expect(doc.getCel("l1", "f1")).toBeDefined();
+  });
+
   it("clamps a stamp that runs off the edge", () => {
     const doc = makeDocument();
     const cel = doc.ensureCel("l1", "f1");
     setPixel(cel.pixels, 0, 0, 4, RED);
 
-    const selection = createRectSelection(4, 4, { x: 0, y: 0, w: 2, h: 2 })!;
-    const lifted = liftRegion(doc, "l1", "f1", selection, false)!;
+    const rect = { x: 0, y: 0, w: 2, h: 2 };
+    const lifted = liftRegion(doc, "l1", "f1", rect, false);
 
     const written = stampRegion(doc, "l1", "f1", lifted, { x: 3, y: 3 });
     expect(written).toEqual({ x: 3, y: 3, w: 1, h: 1 });
@@ -95,8 +80,8 @@ describe("clipboard commands", () => {
     setPixel(cel.pixels, 0, 0, 4, { r: 12, g: 34, b: 56, a: 200 });
 
     const target = { doc, layerId: "l1", frameId: "f1" };
-    const selection = createRectSelection(4, 4, { x: 0, y: 0, w: 1, h: 1 })!;
-    copySelection(target, selection);
+    const rect = { x: 0, y: 0, w: 1, h: 1 };
+    copySelection(target, rect);
 
     setClipboard({
       rect: { x: 2, y: 2, w: 1, h: 1 },
@@ -116,8 +101,8 @@ describe("clipboard commands", () => {
     setPixel(cel.pixels, 1, 1, 4, RED);
 
     const target = { doc, layerId: "l1", frameId: "f1" };
-    const selection = createRectSelection(4, 4, { x: 1, y: 1, w: 1, h: 1 })!;
-    const command = cutSelectionCommand(target, selection)!;
+    const rect = { x: 1, y: 1, w: 1, h: 1 };
+    const command = cutSelectionCommand(target, rect)!;
 
     expect(getPixel(cel.pixels, 1, 1, 4).a).toBe(0);
 
@@ -130,10 +115,10 @@ describe("clipboard commands", () => {
     const cel = doc.ensureCel("l1", "f1");
     setPixel(cel.pixels, 2, 0, 4, BLUE);
 
-    const selection = createRectSelection(4, 4, { x: 2, y: 0, w: 1, h: 1 })!;
+    const rect = { x: 2, y: 0, w: 1, h: 1 };
     const command = clearSelectionCommand(
       { doc, layerId: "l1", frameId: "f1" },
-      selection,
+      rect,
       "Delete",
     )!;
 

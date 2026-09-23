@@ -12,7 +12,6 @@ export const SHORTCUTS: Partial<Record<CommandId, KeyBinding[]>> = {
   "tool.fillSimilar": [{ key: "g" }],
   "tool.picker": [{ key: "o" }],
   "tool.select": [{ key: "s" }],
-  "tool.move": [{ key: "m" }],
 
   "edit.undo": [{ key: "z", mod: true }],
   "edit.redo": [{ key: "z", mod: true, shift: true }, { key: "y", mod: true }],

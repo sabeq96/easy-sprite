@@ -5,7 +5,6 @@ export const TOOL_IDS = [
   "fillSimilar",
   "picker",
   "select",
-  "move",
 ] as const;
 
 export type ToolId = (typeof TOOL_IDS)[number];

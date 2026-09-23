@@ -3,12 +3,6 @@ import type { SpriteDocument } from "@/editor/document";
 import { rectClamp, type Rect } from "@/lib/rect";
 import type { PixelBuffer } from "@/types/pixels";
 
-export interface Selection {
-  rect: Rect;
-  /** width*height bytes, 1 = selected. Rect-shaped today; shape tools can fill it later. */
-  mask: Uint8Array;
-}
-
 export interface LiftedRegion {
   rect: Rect;
   pixels: PixelBuffer;
@@ -16,63 +10,26 @@ export interface LiftedRegion {
   canvas: OffscreenCanvas;
 }
 
-export function createRectSelection(width: number, height: number, rect: Rect): Selection | null {
-  const clamped = rectClamp(rect, width, height);
-  if (clamped.w <= 0 || clamped.h <= 0) return null;
-
-  const mask = new Uint8Array(width * height);
-  for (let y = clamped.y; y < clamped.y + clamped.h; y++) {
-    const rowStart = y * width + clamped.x;
-    mask.fill(1, rowStart, rowStart + clamped.w);
-  }
-
-  return { rect: clamped, mask };
-}
-
-export function selectAll(width: number, height: number): Selection {
-  return {
-    rect: { x: 0, y: 0, w: width, h: height },
-    mask: new Uint8Array(width * height).fill(1),
-  };
-}
-
-export function translateSelection(
-  selection: Selection,
-  dx: number,
-  dy: number,
-  width: number,
-  height: number,
-): Selection | null {
-  return createRectSelection(width, height, {
-    ...selection.rect,
-    x: selection.rect.x + dx,
-    y: selection.rect.y + dy,
-  });
-}
-
-/** Copies — and optionally clears — the selected region of one cel. */
+/** Copies — and optionally clears — a region of one cel. */
 export function liftRegion(
   doc: SpriteDocument,
   layerId: string,
   frameId: string,
-  selection: Selection,
+  rect: Rect,
   cut: boolean,
-): LiftedRegion | null {
-  const cel = doc.getCel(layerId, frameId);
-  if (!cel) return null;
-
-  const pixels = cropRegion(cel.pixels, doc.width, selection.rect);
+): LiftedRegion {
+  // ensureCel, not getCel: an empty layer still lifts (transparent) so the selection can move.
+  const cel = doc.ensureCel(layerId, frameId);
+  const pixels = cropRegion(cel.pixels, doc.width, rect);
   if (cut) {
-    clearRegion(cel.pixels, doc.width, selection.rect);
-    doc.markPixelsChanged(cel, selection.rect);
+    clearRegion(cel.pixels, doc.width, rect);
+    doc.markPixelsChanged(cel, rect);
   }
 
-  const canvas = new OffscreenCanvas(selection.rect.w, selection.rect.h);
-  canvas
-    .getContext("2d")
-    ?.putImageData(new ImageData(pixels, selection.rect.w, selection.rect.h), 0, 0);
+  const canvas = new OffscreenCanvas(rect.w, rect.h);
+  canvas.getContext("2d")?.putImageData(new ImageData(pixels, rect.w, rect.h), 0, 0);
 
-  return { rect: selection.rect, pixels, canvas };
+  return { rect, pixels, canvas };
 }
 
 /** Stamps a lifted region back, skipping transparent pixels so it does not punch holes. */

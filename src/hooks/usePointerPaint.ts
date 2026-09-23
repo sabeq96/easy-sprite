@@ -5,7 +5,7 @@ import { StrokeRecorder } from "@/editor/history";
 import { brushCursorPainter } from "@/editor/overlays/brushCursor";
 import type { CanvasRenderer } from "@/editor/renderer";
 import { getTool } from "@/editor/tools";
-import type { PointerModifiers, ToolContext, ToolPoint } from "@/editor/tools/types";
+import type { PointerModifiers, Tool, ToolContext, ToolPoint } from "@/editor/tools/types";
 import { screenToSprite } from "@/editor/viewport";
 import { useCursorStore } from "@/stores/useCursorStore";
 import { useEditorStore } from "@/stores/useEditorStore";
@@ -14,6 +14,8 @@ import { useEditorStore } from "@/stores/useEditorStore";
 // tool's own declared options — a tool that ignores an option can never have it drawn for it.
 
 interface ActiveStroke {
+  /** Pinned at pointerdown, so a tool switch mid-drag cannot hand the gesture to another tool. */
+  tool: Tool;
   pointerId: number;
   button: number;
   last: ToolPoint;
@@ -63,7 +65,6 @@ export function usePointerPaint(
         color: button === 2 ? state.secondaryColor : state.primaryColor,
         options: state.toolOptions,
         stroke: recorder,
-        mask: state.selectionMask,
         setColor: (color) =>
           button === 2 ? state.setSecondaryColor(color) : state.setPrimaryColor(color),
         setOverlay: (painter, animate) => renderer.setOverlayPainter(painter, animate),
@@ -89,6 +90,11 @@ export function usePointerPaint(
         true,
       );
       renderer.invalidate("overlay");
+    };
+
+    const updateHover = (point: ToolPoint | null) => {
+      const tool = getTool(useEditorStore.getState().toolId);
+      element.style.cursor = tool.onHover?.(point) ?? "";
     };
 
     const reportCursor = (point: ToolPoint | null) => {
@@ -119,7 +125,7 @@ export function usePointerPaint(
       if (!ctx) return;
 
       const point = toSprite(event);
-      active = { pointerId: event.pointerId, button: event.button, last: point, recorder };
+      active = { tool, pointerId: event.pointerId, button: event.button, last: point, recorder };
 
       // Capture so a stroke that leaves the canvas keeps painting until pointerup.
       element.setPointerCapture(event.pointerId);
@@ -130,11 +136,12 @@ export function usePointerPaint(
       if (!active) {
         hover = toSprite(event);
         reportCursor(hover);
+        updateHover(hover);
         showBrushPreview();
         return;
       }
 
-      const tool = getTool(useEditorStore.getState().toolId);
+      const { tool } = active;
       const ctx = buildContext(active.recorder, active.button);
       if (!ctx || !tool.onPointerMove) return;
 
@@ -154,7 +161,7 @@ export function usePointerPaint(
     const endStroke = (event: PointerEvent) => {
       if (!active) return;
 
-      const tool = getTool(useEditorStore.getState().toolId);
+      const { tool } = active;
       const ctx = buildContext(active.recorder, active.button);
       if (ctx) tool.onPointerUp?.(ctx, toSprite(event), modifiersOf(event));
 
@@ -166,6 +173,7 @@ export function usePointerPaint(
         element.releasePointerCapture(active.pointerId);
       }
       active = null;
+      updateHover(toSprite(event));
       showBrushPreview();
     };
 
@@ -173,6 +181,7 @@ export function usePointerPaint(
       if (active) return;
       hover = null;
       reportCursor(null);
+      updateHover(null);
       renderer.setOverlayPainter(null);
     };
 

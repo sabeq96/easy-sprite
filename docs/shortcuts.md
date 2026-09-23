@@ -14,9 +14,8 @@ in code as `src/constants/shortcuts.ts`.
 | `B` | Paint bucket | contiguous fill |
 | `G` | Fill similar | replaces matching colour across the whole layer |
 | `O` | Color picker | samples the composite; `Alt` held = temporary picker from any tool |
-| `S` | Rectangle select | |
-| `M` | Move selection | `Alt`+drag copies instead of moving |
-| `Esc` | Cancel / deselect | also drops a floating selection in place |
+| `S` | Select & move | click selects a pixel, drag selects a rectangle; drag inside the selection moves it, `Ctrl/⌘`+drag copies. The selection only exists while this tool is active |
+| `Esc` | Cancel / deselect | |
 
 ## Colors
 
@@ -34,8 +33,8 @@ in code as `src/constants/shortcuts.ts`.
 | --- | --- |
 | `Ctrl/⌘`+`Z` | Undo |
 | `Ctrl/⌘`+`Shift`+`Z` / `Ctrl`+`Y` | Redo |
-| `Ctrl/⌘`+`C` / `X` / `V` | Copy / cut / paste selection |
-| `Ctrl/⌘`+`A` | Select all |
+| `Ctrl/⌘`+`C` / `X` / `V` | Copy / cut / paste selection (paste switches to Select & move) |
+| `Ctrl/⌘`+`A` | Select all (switches to Select & move) |
 | `Delete` / `Backspace` | Clear selection contents |
 | `Ctrl/⌘`+`S` | Force save (autosave already runs; this is for peace of mind) |
 
