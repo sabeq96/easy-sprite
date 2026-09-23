@@ -1,8 +1,10 @@
-import type { ToolId } from "@/constants/tools";
+import type { Hint } from "@/commands/hints";
+import type { AppCommandId } from "@/constants/commands";
 import type { SpriteDocument } from "@/editor/document";
 import type { History, StrokeRecorder } from "@/editor/history";
 import type { OverlayPainter } from "@/editor/renderer";
 import type { RGBA } from "@/lib/color";
+import type { KeyBinding, Modifier } from "@/lib/keys";
 
 /** Integer sprite-space pixel. */
 export interface ToolPoint {
@@ -56,9 +58,24 @@ export interface ToolSession {
   requestRender(): void;
 }
 
-export interface Tool {
-  readonly id: ToolId;
+/** Sidebar section; the order within a section is the order of `TOOL_LIST`. */
+export type ToolGroup = "draw" | "color" | "select";
+
+export interface Tool<Id extends string = string> {
+  readonly id: Id;
   readonly label: string;
+  readonly group: ToolGroup;
+  /** The binding that activates the tool; merged into the keymap as `tool.<id>`. */
+  readonly shortcut?: KeyBinding;
+  /** Held from any tool to borrow this one; releasing it goes back. */
+  readonly holdKey?: Modifier;
+  /**
+   * Gestures worth teaching in the shortcut sheet — only the non-obvious ones (a modifier, a
+   * special zone); "drag to draw" goes without saying. Keep it honest with the handlers.
+   */
+  readonly hints?: readonly Hint[];
+  /** Commands that act on this tool's state; the sheet lists them in its section, not their group. */
+  readonly commands?: readonly AppCommandId[];
   /** Whether a drag continues the operation (pencil) or is a one-shot (bucket). */
   readonly continuous: boolean;
   /**
@@ -86,4 +103,9 @@ export interface Tool {
   onActivate?(session: ToolSession): () => void;
   /** Hover with no button held (`null` = pointer left). Returns a CSS cursor, or null for the default. */
   onHover?(point: ToolPoint | null): string | null;
+}
+
+/** Keeps the literal id, so `ToolId` can be derived from the registry. */
+export function defineTool<const Id extends string>(tool: Tool<Id>): Tool<Id> {
+  return tool;
 }

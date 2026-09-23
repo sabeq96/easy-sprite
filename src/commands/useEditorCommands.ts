@@ -177,6 +177,7 @@ export function useEditorCommands(): CommandRegistry {
       id: "layer.duplicate",
       label: "Duplicate layer",
       group: "Layers",
+      isEnabled: () => store.getState().activeLayerId !== null,
       run: () => {
         const layerId = store.getState().activeLayerId;
         if (layerId) dispatch(() => duplicateLayerCommand(doc, layerId));

@@ -1,6 +1,7 @@
 import { expect, test } from "vitest";
 import { userEvent } from "@vitest/browser/context";
 import { AppRoutes } from "@/app/routes";
+import { createPalette } from "@/db/repositories/palettes";
 import { createSprite } from "@/db/repositories/sprites";
 import { IS_APPLE } from "@/lib/keys";
 import { useEditorStore } from "@/stores/useEditorStore";
@@ -63,12 +64,12 @@ test("layers and frames panels reflect document structure", async () => {
   // Anchored to the toggle's whole name: the draggable row is itself role="button", and its
   // computed name also starts with "Hide Layer 1…".
   await expect.element(screen.getByRole("button", { name: /^(Hide|Show) Layer \d+$/u })).toBeVisible();
-  await userEvent.click(screen.getByRole("button", { name: "Add layer" }));
+  await userEvent.click(screen.getByRole("button", { name: "New layer" }));
   await expect
     .poll(() => screen.getByRole("button", { name: /^(Hide|Show) Layer \d+$/u }).elements().length)
     .toBe(2);
 
-  await userEvent.click(screen.getByRole("button", { name: "Frame", exact: true }));
+  await userEvent.click(screen.getByRole("button", { name: "New frame" }));
   await expect
     .poll(() => screen.getByRole("button", { name: /^Frame \d+$/ }).elements().length)
     .toBe(2);
@@ -109,6 +110,34 @@ test("? opens the shortcut cheat sheet listing a bound command", async () => {
 
   await expect.element(screen.getByRole("dialog", { name: "Keyboard shortcuts" })).toBeVisible();
   await expect.element(screen.getByText("Undo")).toBeVisible();
+});
+
+test("the cheat sheet lists tool gestures once, and feature keys inside their command group", async () => {
+  const { screen } = await openEditor();
+
+  await userEvent.keyboard("?");
+  const dialog = screen.getByRole("dialog", { name: "Keyboard shortcuts" });
+
+  await expect.element(dialog.getByRole("heading", { name: /Select & move/ })).toBeVisible();
+  await expect.element(dialog.getByText(/^Duplicate selection/)).toBeVisible();
+  // Every tool is one row of a single Tools section, the picker's hold key alongside its own.
+  await expect.element(dialog.getByRole("heading", { name: "Tools" })).toBeVisible();
+  await expect.element(dialog.getByText(/^Hold /)).toBeInTheDocument();
+  expect(dialog.getByRole("heading", { name: "Pencil" }).elements()).toHaveLength(0);
+  await expect.element(dialog.getByText("Pick primary", { exact: true })).toBeInTheDocument();
+  // Selection commands are listed once, in the Select & move section, not again under Edit.
+  expect(dialog.getByText("Deselect", { exact: true }).elements()).toHaveLength(1);
+  expect(dialog.getByRole("heading", { name: /^(Palette|Colors|Canvas)$/ }).elements()).toHaveLength(0);
+});
+
+test("hovering the palette shows its 1–9 keys", async () => {
+  const palette = await createPalette("Hints", ["#ff0000", "#00ff00"]);
+  const { screen } = await openEditor();
+  useEditorStore.getState().setActivePalette(palette.id);
+
+  await userEvent.hover(screen.getByRole("button", { name: /^Color #ff0000/ }).first());
+
+  await expect.element(screen.getByText("Pick primary", { exact: true })).toBeVisible();
 });
 
 test("a sprite survives a remount (the persistence a page reload would exercise)", async () => {

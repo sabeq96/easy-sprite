@@ -58,8 +58,11 @@ src/
     viewport.ts             # zoom/pan math, screen↔sprite coordinate mapping
     renderer.ts             # canvas stack, rAF loop, dirty-rect redraw
     selection.ts            # lift/stamp helpers for moving a rect of pixels
-    tools/                  # types.ts + one file per tool + index registry; a tool owns its own
-                            # state via onActivate → cleanup (the selection lives in tools/select.ts)
+    tools/                  # types.ts + one file per tool + index.ts (TOOL_LIST, the only list of
+                            # tools; ToolId, tool commands, their keys and sidebar sections derive
+                            # from it). A tool declares its key, hold key and gesture hints, and
+                            # owns its state via onActivate → cleanup (the selection lives in
+                            # tools/select.ts). Adding a tool: its file, TOOL_LIST, its icon.
   db/
     schema.ts               # record types (the persisted shape)
     db.ts                   # Dexie instance + versions
@@ -79,6 +82,9 @@ src/
     useAnimationPlayer.ts
     useShortcuts.ts
     usePointerPaint.ts      # pointer events → tool calls
+  commands/                 # useEditorCommands (id → run/enabled/active/label), keymap.ts (tool +
+                            # app keys merged), hints.ts (gesture hints), CommandsContext (useCommand,
+                            # read by components/common/CommandButton)
   stores/
     useEditorStore.ts       # zustand: tool + options + colors + view prefs
     useCommands.ts          # command registry (id → run/enabled/label)

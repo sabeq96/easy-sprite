@@ -2,15 +2,11 @@ import { Plus } from "lucide-react";
 import { isSortable } from "@dnd-kit/react/sortable";
 import { useDocumentSession } from "@/app/DocumentProvider";
 import { DragBoard, type DragEndEvent } from "@/components/common/DragBoard";
+import { CommandButton } from "@/components/common/CommandButton";
 import { Panel } from "@/components/common/Panel";
 import { FrameCard, FrameDragPreview } from "@/components/editor/FrameCard";
-import { Button } from "@/components/ui/button";
-import { Kbd } from "@/components/ui/kbd";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { shortcutHint } from "@/constants/shortcuts";
 import {
-  addFrameCommand,
   duplicateFrameCommand,
   moveFrameCommand,
   removeFrameCommand,
@@ -59,22 +55,10 @@ export function FramesBar() {
         </ScrollArea>
       </DragBoard>
 
-      <Tooltip>
-        <TooltipTrigger render={<span className="inline-flex" />}>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => dispatch(() => addFrameCommand(doc, activeFrameId ?? undefined))}
-          >
-            <Plus />
-            Frame
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>
-          Add frame
-          <Kbd>{shortcutHint("frame.add")}</Kbd>
-        </TooltipContent>
-      </Tooltip>
+      <CommandButton command="frame.add" size="sm" variant="outline">
+        <Plus />
+        Frame
+      </CommandButton>
     </Panel>
   );
 }

@@ -1,11 +1,26 @@
 import { floodFill } from "@/editor/pixels";
 import { commitWrite } from "@/editor/tools/paint";
-import type { Tool } from "@/editor/tools/types";
+import { defineTool, type Tool } from "@/editor/tools/types";
+import type { KeyBinding } from "@/lib/keys";
 
-function createFill(id: "bucket" | "fillSimilar", label: string, contiguous: boolean): Tool {
-  return {
+interface FillSpec<Id extends string> {
+  id: Id;
+  label: string;
+  shortcut: KeyBinding;
+  contiguous: boolean;
+}
+
+function createFill<const Id extends string>({
+  id,
+  label,
+  shortcut,
+  contiguous,
+}: FillSpec<Id>): Tool<Id> {
+  return defineTool({
     id,
     label,
+    group: "color",
+    shortcut,
     // A drag must not repeat the fill.
     continuous: false,
     options: [],
@@ -24,8 +39,19 @@ function createFill(id: "bucket" | "fillSimilar", label: string, contiguous: boo
 
       commitWrite(ctx, dirty);
     },
-  };
+  });
 }
 
-export const bucketTool = createFill("bucket", "Paint bucket", true);
-export const fillSimilarTool = createFill("fillSimilar", "Fill similar", false);
+export const bucketTool = createFill({
+  id: "bucket",
+  label: "Paint bucket",
+  shortcut: { key: "b" },
+  contiguous: true,
+});
+
+export const fillSimilarTool = createFill({
+  id: "fillSimilar",
+  label: "Fill similar",
+  shortcut: { key: "g" },
+  contiguous: false,
+});

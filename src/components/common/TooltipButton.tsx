@@ -1,12 +1,13 @@
 import type { ComponentProps, ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import { Kbd } from "@/components/ui/kbd";
+import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 export interface TooltipButtonProps extends ComponentProps<typeof Button> {
   /** Tooltip text; also the accessible name for these icon-only buttons. */
   label: string;
-  shortcut?: string;
+  /** Every chord that triggers the action; all of them are shown. */
+  shortcut?: readonly string[];
   side?: ComponentProps<typeof TooltipContent>["side"];
   /** Optional: a `render` element supplies its own content, as the back-links in the bars do. */
   children?: ReactNode;
@@ -38,7 +39,13 @@ export function TooltipButton({
       </TooltipTrigger>
       <TooltipContent side={side}>
         {label}
-        {shortcut && <Kbd>{shortcut}</Kbd>}
+        {shortcut && shortcut.length > 0 && (
+          <KbdGroup>
+            {shortcut.map((keys) => (
+              <Kbd key={keys}>{keys}</Kbd>
+            ))}
+          </KbdGroup>
+        )}
       </TooltipContent>
     </Tooltip>
   );

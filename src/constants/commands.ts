@@ -1,11 +1,6 @@
-export const COMMAND_IDS = [
+/** Every command that is not "activate tool X" — those are derived from the tool registry. */
+const APP_COMMAND_IDS = [
   // tools
-  "tool.pencil",
-  "tool.eraser",
-  "tool.bucket",
-  "tool.fillSimilar",
-  "tool.picker",
-  "tool.select",
   "tool.cycleBrushSize",
   // edit
   "edit.undo",
@@ -46,6 +41,10 @@ export const COMMAND_IDS = [
   "app.backToLibrary",
 ] as const;
 
-export type CommandId = (typeof COMMAND_IDS)[number];
+/**
+ * Commands that exist independently of the tool registry. The full `CommandId` (in
+ * `@/commands/types`) adds one `tool.<id>` per registered tool.
+ */
+export type AppCommandId = (typeof APP_COMMAND_IDS)[number];
 
 export type CommandGroup = "Tools" | "Edit" | "Color" | "Layers" | "Frames" | "View" | "App";

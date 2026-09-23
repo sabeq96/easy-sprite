@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { TOOL_IDS } from "@/constants/tools";
-import { TOOLS } from "@/editor/tools";
+import { TOOL_IDS, TOOLS } from "@/editor/tools";
 
 /**
  * The declarations the options bar and the brush preview both read. An option listed here but

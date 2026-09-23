@@ -5,6 +5,7 @@ import { isSortable } from "@dnd-kit/react/sortable";
 import { useDocumentSession } from "@/app/DocumentProvider";
 import { ColorSwatch } from "@/components/common/ColorSwatch";
 import { DragBoard, type DragEndEvent, type DragOverEvent } from "@/components/common/DragBoard";
+import { HintList } from "@/components/common/HintList";
 import { ActiveColors } from "@/components/editor/ActiveColors";
 import { PaletteMenu } from "@/components/editor/PaletteMenu";
 import {
@@ -15,7 +16,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { updatePalette } from "@/db/repositories/palettes";
+import { COLOR_HOTKEY_HINTS } from "@/hooks/useColorHotkeys";
 import { useColorUsage } from "@/hooks/useColorUsage";
 import { useOptimisticOrder } from "@/hooks/useOptimisticOrder";
 import { usePalettes } from "@/hooks/usePalettes";
@@ -163,19 +166,26 @@ export function PalettePanel() {
           </div>
         </div>
 
-        <SwatchGrid
-          label="Palette colors"
-          entries={entries}
-          activeColor={primaryColor}
-          showIndexHints
-          source="palette"
-          sortable={editable}
-          onPick={setPrimaryColor}
-          onPickSecondary={setSecondaryColor}
-          onRemove={
-            editable ? (hex) => writeColors(colors.filter((entry) => entry !== hex)) : undefined
-          }
-        />
+        {/* One card for the whole grid (not a badge or tooltip per swatch) teaching the 1–9 keys. */}
+        <Tooltip>
+          <TooltipTrigger render={<div />}>
+            <SwatchGrid
+              label="Palette colors"
+              entries={entries}
+              activeColor={primaryColor}
+              source="palette"
+              sortable={editable}
+              onPick={setPrimaryColor}
+              onPickSecondary={setSecondaryColor}
+              onRemove={
+                editable ? (hex) => writeColors(colors.filter((entry) => entry !== hex)) : undefined
+              }
+            />
+          </TooltipTrigger>
+          <TooltipContent side="left" align="start" className="block">
+            <HintList hints={COLOR_HOTKEY_HINTS.hints} />
+          </TooltipContent>
+        </Tooltip>
 
         {usage.length > 0 && (
           <SwatchGrid
@@ -240,7 +250,6 @@ interface SwatchGridProps {
   label: string;
   entries: SwatchEntry[];
   activeColor: RGBA;
-  showIndexHints?: boolean;
   source: "palette" | "used";
   /** true only for the editable "Palette colors" grid — enables sorting + the drop zone. */
   sortable?: boolean;
@@ -253,7 +262,6 @@ function SwatchGrid({
   label,
   entries,
   activeColor,
-  showIndexHints,
   source,
   sortable,
   onPick,
@@ -281,7 +289,6 @@ function SwatchGrid({
       id,
       hex,
       color,
-      index: showIndexHints ? index : undefined,
       isActive: rgbaEquals(color, activeColor),
       onPick,
       onPickSecondary,
@@ -324,7 +331,6 @@ interface BaseSwatchProps {
   id: string;
   hex: string;
   color: RGBA;
-  index?: number;
   isActive: boolean;
   onPick: (color: RGBA) => void;
   onPickSecondary: (color: RGBA) => void;
@@ -336,7 +342,6 @@ function DraggableSwatch({
   id,
   hex,
   color,
-  index,
   isActive,
   onPick,
   onPickSecondary,
@@ -358,11 +363,9 @@ function DraggableSwatch({
         dragClass,
       )}
       onDoubleClick={() => onRemove?.(hex)}
-      title={onRemove ? `${hex} — drag out or double-click to remove` : hex}
     >
       <ColorSwatch
         color={color}
-        index={index}
         isActive={isActive}
         onPick={onPick}
         onPickSecondary={onPickSecondary}
@@ -376,7 +379,6 @@ function SortableSwatch({
   id,
   hex,
   color,
-  index,
   position,
   isIncoming,
   isActive,
@@ -403,11 +405,9 @@ function SortableSwatch({
         dragClass,
       )}
       onDoubleClick={() => onRemove?.(hex)}
-      title={`${hex} — drag out or double-click to remove`}
     >
       <ColorSwatch
         color={color}
-        index={index}
         isActive={isActive}
         onPick={onPick}
         onPickSecondary={onPickSecondary}

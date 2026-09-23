@@ -1,6 +1,15 @@
 import { useEffect, type RefObject } from "react";
 import { useDocumentSession } from "@/app/DocumentProvider";
+import type { HintSection } from "@/commands/hints";
 import { useEditorStore } from "@/stores/useEditorStore";
+
+export const CANVAS_VIEW_HINTS: HintSection = {
+  group: "View",
+  hints: [
+    { action: "Pan", inputs: [{ hold: "space" }, { pointer: "drag" }] },
+    { action: "Pan", inputs: [{ pointer: "middle-drag" }] },
+  ],
+};
 
 /** Wheel zoom, space-drag and middle-drag panning. Pointer painting lives elsewhere. */
 export function useCanvasViewControls(containerRef: RefObject<HTMLElement | null>): void {

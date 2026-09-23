@@ -1,6 +1,6 @@
 import { getPixel } from "@/editor/buffer";
 import { compositeFrame } from "@/editor/composite";
-import type { Tool, ToolContext, ToolPoint } from "@/editor/tools/types";
+import { defineTool, type ToolContext, type ToolPoint } from "@/editor/tools/types";
 
 function sample(ctx: ToolContext, point: ToolPoint): void {
   const { doc } = ctx;
@@ -18,9 +18,12 @@ function sample(ctx: ToolContext, point: ToolPoint): void {
   if (data) ctx.setColor({ r: data[0], g: data[1], b: data[2], a: data[3] });
 }
 
-export const pickerTool: Tool = {
+export const pickerTool = defineTool({
   id: "picker",
   label: "Color picker",
+  group: "color",
+  shortcut: { key: "o" },
+  holdKey: "alt",
   options: ["pickSource"],
   // Dragging keeps sampling, like Piskel.
   continuous: true,
@@ -32,4 +35,4 @@ export const pickerTool: Tool = {
   onPointerMove(ctx, point) {
     sample(ctx, point);
   },
-};
+});

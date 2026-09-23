@@ -1,7 +1,5 @@
 import { useState } from "react";
 import { Crop, Menu, Save } from "lucide-react";
-import { toast } from "sonner";
-import { useDocumentSession } from "@/app/DocumentProvider";
 import { ResizeCanvasDialog } from "@/components/editor/ResizeCanvasDialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,10 +10,11 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { shortcutHint } from "@/constants/shortcuts";
+import { useCommand } from "@/commands/CommandsContext";
+import { commandKeys } from "@/commands/keymap";
 
 export function EditorMenu() {
-  const { autosave } = useDocumentSession();
+  const save = useCommand("edit.save");
   const [isResizing, setResizing] = useState(false);
 
   return (
@@ -37,12 +36,10 @@ export function EditorMenu() {
 
           <DropdownMenuSeparator />
 
-          <DropdownMenuItem
-            onClick={() => void autosave.flush().then(() => toast.success("Saved"))}
-          >
+          <DropdownMenuItem onClick={save.run}>
             <Save />
-            Save now
-            <DropdownMenuShortcut>{shortcutHint("edit.save")}</DropdownMenuShortcut>
+            {save.label}
+            <DropdownMenuShortcut>{commandKeys("edit.save").join(" ")}</DropdownMenuShortcut>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

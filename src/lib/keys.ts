@@ -60,12 +60,24 @@ const KEY_LABELS: Record<string, string> = {
   " ": "Space",
 };
 
+export type Modifier = "mod" | "shift" | "alt";
+
+const MODIFIER_LABELS: Record<Modifier, [apple: string, other: string]> = {
+  mod: ["⌘", "Ctrl"],
+  shift: ["⇧", "Shift"],
+  alt: ["⌥", "Alt"],
+};
+
+export function formatModifier(modifier: Modifier): string {
+  return MODIFIER_LABELS[modifier][IS_APPLE ? 0 : 1];
+}
+
 /** `⌘⇧Z` on Apple, `Ctrl+Shift+Z` elsewhere. */
 export function formatBinding(binding: KeyBinding): string {
   const parts: string[] = [];
-  if (binding.mod) parts.push(IS_APPLE ? "⌘" : "Ctrl");
-  if (binding.shift) parts.push(IS_APPLE ? "⇧" : "Shift");
-  if (binding.alt) parts.push(IS_APPLE ? "⌥" : "Alt");
+  if (binding.mod) parts.push(formatModifier("mod"));
+  if (binding.shift) parts.push(formatModifier("shift"));
+  if (binding.alt) parts.push(formatModifier("alt"));
 
   const label =
     KEY_LABELS[binding.key] ??

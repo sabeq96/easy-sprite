@@ -1,8 +1,6 @@
 import { Copy, Trash2 } from "lucide-react";
-import { TooltipButton } from "@/components/common/TooltipButton";
+import { CommandButton } from "@/components/common/CommandButton";
 import { FrameThumbnail } from "@/components/editor/FrameThumbnail";
-import { Button } from "@/components/ui/button";
-import { shortcutHint } from "@/constants/shortcuts";
 import { useSortableItem } from "@/hooks/useDnd";
 import { cn } from "@/lib/utils";
 
@@ -54,25 +52,19 @@ export function FrameCard({
       {/* Actions stay hidden until hover or keyboard focus to keep the strip calm. The
           background pill keeps the icons legible over dark or busy frame art. */}
       <div className="pointer-events-none absolute top-0.5 right-0.5 flex gap-0.5 rounded-md bg-background/85 p-0.5 opacity-0 shadow-sm ring-1 ring-border/60 backdrop-blur-sm transition-opacity group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
-        <TooltipButton
-          label="Duplicate frame"
-          shortcut={shortcutHint("frame.duplicate")}
+        {/* This card's frame, not the active one — so the commands' actions are overridden. */}
+        <CommandButton command="frame.duplicate" side="top" size="icon-xs" onClick={onDuplicate}>
+          <Copy />
+        </CommandButton>
+        <CommandButton
+          command="frame.delete"
           side="top"
           size="icon-xs"
-          variant="ghost"
-          onClick={onDuplicate}
-        >
-          <Copy />
-        </TooltipButton>
-        <Button
-          size="icon-xs"
-          variant="ghost"
-          aria-label="Delete frame"
           disabled={!canDelete}
           onClick={onDelete}
         >
           <Trash2 />
-        </Button>
+        </CommandButton>
       </div>
     </li>
   );

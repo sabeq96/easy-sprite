@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ArrowLeft, Download, Keyboard, Redo2, Undo2 } from "lucide-react";
 import { Link } from "react-router";
 import { useDocumentSession } from "@/app/DocumentProvider";
+import { CommandButton } from "@/components/common/CommandButton";
 import { Panel } from "@/components/common/Panel";
 import { SaveStatusBadge } from "@/components/common/SaveStatusBadge";
 import { TooltipButton } from "@/components/common/TooltipButton";
@@ -12,23 +13,20 @@ import { ViewControls } from "@/components/editor/ViewControls";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ROUTES } from "@/constants/routes";
-import { shortcutHint } from "@/constants/shortcuts";
+import { commandKeys } from "@/commands/keymap";
 import { useHistoryState } from "@/hooks/useHistoryState";
 
-export interface EditorTopBarProps {
-  onShowHelp: () => void;
-}
-
-export function EditorTopBar({ onShowHelp }: EditorTopBarProps) {
+export function EditorTopBar() {
   const { doc, history, autosave, saveStatus } = useDocumentSession();
   const { canUndo, canRedo, undoLabel, redoLabel } = useHistoryState(history);
   const [isExporting, setExporting] = useState(false);
 
   return (
     <Panel render={<header />} className="flex items-center gap-2 px-2 py-1.5">
+      {/* A link, not a command button: navigation belongs to the <Link>. */}
       <TooltipButton
         label="Back to sprites"
-        shortcut={shortcutHint("app.backToLibrary")}
+        shortcut={commandKeys("app.backToLibrary")}
         size="icon-sm"
         variant="ghost"
         nativeButton={false}
@@ -43,34 +41,28 @@ export function EditorTopBar({ onShowHelp }: EditorTopBarProps) {
       <SpriteNameField />
       <Separator orientation="vertical" className="h-5" />
 
-      <TooltipButton
-        label={undoLabel ? `Undo ${undoLabel.toLowerCase()}` : "Undo"}
-        shortcut={shortcutHint("edit.undo")}
+      <CommandButton
+        command="edit.undo"
+        label={undoLabel ? `Undo ${undoLabel.toLowerCase()}` : undefined}
         disabled={!canUndo}
-        onClick={() => history.undo()}
       >
         <Undo2 />
-      </TooltipButton>
+      </CommandButton>
 
-      <TooltipButton
-        label={redoLabel ? `Redo ${redoLabel.toLowerCase()}` : "Redo"}
-        shortcut={shortcutHint("edit.redo")}
+      <CommandButton
+        command="edit.redo"
+        label={redoLabel ? `Redo ${redoLabel.toLowerCase()}` : undefined}
         disabled={!canRedo}
-        onClick={() => history.redo()}
       >
         <Redo2 />
-      </TooltipButton>
+      </CommandButton>
 
       <div className="ml-auto flex items-center gap-2">
         <ViewControls />
 
-        <TooltipButton
-          label="Keyboard shortcuts"
-          shortcut={shortcutHint("app.shortcutHelp")}
-          onClick={onShowHelp}
-        >
+        <CommandButton command="app.shortcutHelp">
           <Keyboard />
-        </TooltipButton>
+        </CommandButton>
 
         <Separator orientation="vertical" className="h-5" />
 

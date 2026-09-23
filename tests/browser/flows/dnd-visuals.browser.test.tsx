@@ -101,6 +101,11 @@ test("dragging a palette color shows a preview, rings the grid and opens an empt
   await expect.poll(() => document.querySelector(".pointer-events-none.opacity-70")).toBeNull();
 });
 
+/** The swatch's own color, read from its accessible name ("Color #rrggbbaa"). */
+function swatchHex(node: Element): string | undefined {
+  return node.querySelector("[aria-label^='Color #']")?.getAttribute("aria-label")?.slice(6, 13);
+}
+
 test("a reordered palette shows its new order before the write returns from Dexie", async () => {
   const palette = await createPalette("Editable", ["#ff0000", "#00ff00", "#0000ff", "#ffff00"]);
   await openEditor();
@@ -109,7 +114,7 @@ test("a reordered palette shows its new order before the write returns from Dexi
   const gridColors = () =>
     [...document.querySelectorAll('[data-drag-item="sortable"]')]
       .filter((node) => node.closest("[aria-label='Colors']"))
-      .map((node) => node.getAttribute("title")?.slice(0, 7));
+      .map((node) => swatchHex(node));
 
   await expect.poll(() => gridColors().length).toBe(4);
   expect(gridColors()).toEqual(["#ff0000", "#00ff00", "#0000ff", "#ffff00"]);
@@ -274,7 +279,7 @@ test("a color dragged in from outside the palette opens a slot for itself before
   await expect.poll(() => paletteSwatches().length).toBe(4);
   const standIn = paletteSwatches()[1];
   expect(standIn.className).toContain("opacity-50");
-  expect(standIn.getAttribute("title")).toContain("#123456");
+  expect(swatchHex(standIn)).toBe("#123456");
 
   await release(to);
 

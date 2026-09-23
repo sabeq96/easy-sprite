@@ -1,18 +1,12 @@
-import type { CommandId } from "@/constants/commands";
-import { bindingSignature, formatBinding, type KeyBinding } from "@/lib/keys";
+import type { AppCommandId } from "@/constants/commands";
+import type { KeyBinding } from "@/lib/keys";
 
 /**
- * The single source of truth for the keymap. Every entry maps to a command id, not a handler,
- * so a shortcut for a command that does not exist is a type error.
+ * Every key that is not a tool's. Entries map to a command id, not a handler, so a shortcut for a
+ * command that does not exist is a type error. Tool keys live on the tool
+ * (`Tool.shortcut`); `@/commands/keymap` merges both.
  */
-export const SHORTCUTS: Partial<Record<CommandId, KeyBinding[]>> = {
-  "tool.pencil": [{ key: "p" }],
-  "tool.eraser": [{ key: "e" }],
-  "tool.bucket": [{ key: "b" }],
-  "tool.fillSimilar": [{ key: "g" }],
-  "tool.picker": [{ key: "o" }],
-  "tool.select": [{ key: "s" }],
-
+export const APP_SHORTCUTS: Partial<Record<AppCommandId, KeyBinding[]>> = {
   "edit.undo": [{ key: "z", mod: true }],
   "edit.redo": [{ key: "z", mod: true, shift: true }, { key: "y", mod: true }],
   "edit.copy": [{ key: "c", mod: true }],
@@ -47,27 +41,3 @@ export const SHORTCUTS: Partial<Record<CommandId, KeyBinding[]>> = {
   "app.shortcutHelp": [{ key: "?" }],
   "app.backToLibrary": [{ key: "escape", shift: true }],
 };
-
-/** Keys held to temporarily swap tools, released back to the previous tool. */
-export const HELD_TOOL_KEYS = { Alt: "picker" } as const;
-
-/** The first bound chord for a command, formatted for a tooltip — reads the one keymap table. */
-export function shortcutHint(commandId: CommandId): string | undefined {
-  const binding = SHORTCUTS[commandId]?.[0];
-  return binding && formatBinding(binding);
-}
-
-// Dev-only guard: two features must never silently claim the same chord.
-if (import.meta.env.DEV) {
-  const seen = new Map<string, CommandId>();
-  for (const [commandId, bindings] of Object.entries(SHORTCUTS)) {
-    for (const binding of bindings ?? []) {
-      const signature = bindingSignature(binding);
-      const existing = seen.get(signature);
-      if (existing) {
-        console.error(`Duplicate shortcut "${signature}": ${existing} and ${commandId}`);
-      }
-      seen.set(signature, commandId as CommandId);
-    }
-  }
-}

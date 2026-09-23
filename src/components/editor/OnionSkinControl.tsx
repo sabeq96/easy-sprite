@@ -1,42 +1,32 @@
 import { Layers2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Kbd } from "@/components/ui/kbd";
+import { TooltipButton } from "@/components/common/TooltipButton";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { shortcutHint } from "@/constants/shortcuts";
+import { commandKeys } from "@/commands/keymap";
 import { useEditorStore } from "@/stores/useEditorStore";
 
 export function OnionSkinControl() {
   const onion = useEditorStore((state) => state.onion);
   const setOnion = useEditorStore((state) => state.setOnion);
-  const shortcut = shortcutHint("view.toggleOnion");
 
   return (
     <Popover>
-      <Tooltip>
-        <TooltipTrigger render={<span className="inline-flex" />}>
-          <PopoverTrigger
-            render={
-              <Button
-                size="icon-sm"
-                variant={onion.enabled ? "secondary" : "ghost"}
-                aria-label="Onion skin settings"
-                aria-pressed={onion.enabled}
-              >
-                <Layers2 />
-              </Button>
-            }
-          />
-        </TooltipTrigger>
-        <TooltipContent>
-          Onion skin settings
-          {shortcut && <Kbd>{shortcut}</Kbd>}
-        </TooltipContent>
-      </Tooltip>
+      {/* Opens the settings; the tooltip still teaches the key that toggles it directly. */}
+      <PopoverTrigger
+        render={
+          <TooltipButton
+            label="Onion skin settings"
+            shortcut={commandKeys("view.toggleOnion")}
+            variant={onion.enabled ? "secondary" : "ghost"}
+            aria-pressed={onion.enabled}
+          >
+            <Layers2 />
+          </TooltipButton>
+        }
+      />
       <PopoverContent gap="md" className="w-56">
         <Label size="sm" weight="normal" className="justify-between">
           Onion skin

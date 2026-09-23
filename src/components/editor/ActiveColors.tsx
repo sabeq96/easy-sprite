@@ -1,8 +1,7 @@
 import { ArrowLeftRight } from "lucide-react";
 import { ColorPickerPopover } from "@/components/common/ColorPickerPopover";
-import { TooltipButton } from "@/components/common/TooltipButton";
+import { CommandButton } from "@/components/common/CommandButton";
 import type { PaletteDragData, PaletteDragSource } from "@/components/editor/PalettePanel";
-import { shortcutHint } from "@/constants/shortcuts";
 import { useDragSource } from "@/hooks/useDnd";
 import { rgbaToHex, type RGBA } from "@/lib/color";
 import { cn } from "@/lib/utils";
@@ -14,7 +13,6 @@ export function ActiveColors() {
   const secondaryColor = useEditorStore((state) => state.secondaryColor);
   const setPrimaryColor = useEditorStore((state) => state.setPrimaryColor);
   const setSecondaryColor = useEditorStore((state) => state.setSecondaryColor);
-  const swapColors = useEditorStore((state) => state.swapColors);
 
   return (
     <div className="flex items-center gap-2">
@@ -35,14 +33,9 @@ export function ActiveColors() {
         />
       </div>
 
-      <TooltipButton
-        label="Swap colors"
-        shortcut={shortcutHint("color.swap")}
-        size="icon-xs"
-        onClick={swapColors}
-      >
+      <CommandButton command="color.swap" size="icon-xs">
         <ArrowLeftRight />
-      </TooltipButton>
+      </CommandButton>
     </div>
   );
 }

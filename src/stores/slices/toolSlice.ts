@@ -1,4 +1,5 @@
-import { DEFAULT_BRUSH_SIZE, MAX_CYCLE_BRUSH_SIZE, type ToolId } from "@/constants/tools";
+import { DEFAULT_BRUSH_SIZE, MAX_CYCLE_BRUSH_SIZE } from "@/constants/tools";
+import type { ToolId } from "@/editor/tools";
 import type { ToolOptions } from "@/editor/tools/types";
 import type { SliceCreator } from "@/stores/slices/types";
 

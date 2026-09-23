@@ -1,18 +1,25 @@
-import { Grid3x3, Maximize, ZoomIn, ZoomOut } from "lucide-react";
+import { Grid3x3, Maximize, ZoomIn, ZoomOut, type LucideIcon } from "lucide-react";
 import { useDocumentSession } from "@/app/DocumentProvider";
+import { CommandButton } from "@/components/common/CommandButton";
 import { TooltipButton } from "@/components/common/TooltipButton";
 import { OnionSkinControl } from "@/components/editor/OnionSkinControl";
-import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { MAX_CHECKER_SIZE, MAX_GRID_SIZE } from "@/constants/canvas";
-import { shortcutHint } from "@/constants/shortcuts";
+import type { CommandId } from "@/commands/types";
+import { commandKeys } from "@/commands/keymap";
 import { snapTileSize, tileSizeOptions } from "@/editor/grid";
 import { useDocumentSnapshot } from "@/hooks/useDocumentSnapshot";
 import { useEditorStore } from "@/stores/useEditorStore";
+
+const ZOOM_ACTIONS: { command: CommandId; icon: LucideIcon }[] = [
+  { command: "view.zoomOut", icon: ZoomOut },
+  { command: "view.zoomIn", icon: ZoomIn },
+  { command: "view.fit", icon: Maximize },
+];
 
 export function ViewControls() {
   const { doc } = useDocumentSession();
@@ -23,12 +30,8 @@ export function ViewControls() {
   const setGridSize = useEditorStore((state) => state.setGridSize);
   const checkerSize = useEditorStore((state) => state.checkerSize);
   const setCheckerSize = useEditorStore((state) => state.setCheckerSize);
-  const zoom = useEditorStore((state) => state.zoom);
-  const containerSize = useEditorStore((state) => state.containerSize);
-  const fitToContainer = useEditorStore((state) => state.fitToContainer);
 
   const sprite = { width: snapshot.width, height: snapshot.height };
-  const centre = { x: containerSize.width / 2, y: containerSize.height / 2 };
 
   // Only sizes that evenly divide the sprite's width and height, so the grid/checkerboard never
   // clips a partial cell at the right or bottom edge.
@@ -37,46 +40,26 @@ export function ViewControls() {
   const effectiveGridSize = snapTileSize(gridSize, gridOptions);
   const effectiveCheckerSize = snapTileSize(checkerSize, checkerOptions);
 
-  const buttons = [
-    {
-      label: "Zoom out",
-      shortcut: shortcutHint("view.zoomOut"),
-      icon: ZoomOut,
-      run: () => zoom(centre, -1, sprite),
-    },
-    {
-      label: "Zoom in",
-      shortcut: shortcutHint("view.zoomIn"),
-      icon: ZoomIn,
-      run: () => zoom(centre, 1, sprite),
-    },
-    {
-      label: "Fit to window",
-      shortcut: shortcutHint("view.fit"),
-      icon: Maximize,
-      run: () => fitToContainer(containerSize, sprite),
-    },
-  ];
-
   return (
     <div className="flex items-center gap-0.5">
-      {buttons.map(({ label, shortcut, icon: Icon, run }) => (
-        <TooltipButton key={label} label={label} shortcut={shortcut} onClick={run}>
+      {ZOOM_ACTIONS.map(({ command, icon: Icon }) => (
+        <CommandButton key={command} command={command}>
           <Icon />
-        </TooltipButton>
+        </CommandButton>
       ))}
 
       <Popover>
         <PopoverTrigger
           render={
-            <Button
-              size="icon-sm"
+            // Opens the options; the tooltip still teaches the key that toggles the grid.
+            <TooltipButton
+              label="Grid options"
+              shortcut={commandKeys("view.toggleGrid")}
               variant={gridEnabled ? "secondary" : "ghost"}
-              aria-label="Grid options"
               aria-pressed={gridEnabled}
             >
               <Grid3x3 />
-            </Button>
+            </TooltipButton>
           }
         />
         <PopoverContent gap="md" align="start" className="w-56">

@@ -1,4 +1,8 @@
-import type { CommandGroup, CommandId } from "@/constants/commands";
+import type { AppCommandId, CommandGroup } from "@/constants/commands";
+import type { ToolId } from "@/editor/tools";
+
+export type ToolCommandId = `tool.${ToolId}`;
+export type CommandId = AppCommandId | ToolCommandId;
 
 export interface CommandDefinition {
   id: CommandId;

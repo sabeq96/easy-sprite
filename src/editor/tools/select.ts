@@ -1,7 +1,7 @@
 import type { SpriteDocument } from "@/editor/document";
 import { selectionPainter, type SelectionView } from "@/editor/overlays/selectionOverlay";
 import { liftRegion, stampRegion, type LiftedRegion } from "@/editor/selection";
-import type { Tool, ToolPoint, ToolSession } from "@/editor/tools/types";
+import { defineTool, type ToolPoint, type ToolSession } from "@/editor/tools/types";
 import {
   rectClamp,
   rectContains,
@@ -104,9 +104,27 @@ function abandonDrag(doc: SpriteDocument): void {
   state.drag = null;
 }
 
-export const selectTool: Tool = {
+export const selectTool = defineTool({
   id: "select",
   label: "Select & move",
+  group: "select",
+  shortcut: { key: "s" },
+  // `mod`: the move gesture reads `modifiers.ctrl`, which is Ctrl or ⌘.
+  hints: [
+    {
+      action: "Duplicate selection",
+      inputs: [{ hold: "mod" }, { pointer: "drag" }],
+      where: "inside selection",
+    },
+  ],
+  commands: [
+    "edit.selectAll",
+    "edit.deselect",
+    "edit.copy",
+    "edit.cut",
+    "edit.paste",
+    "edit.deleteSelection",
+  ],
   continuous: true,
   options: [],
 
@@ -196,4 +214,4 @@ export const selectTool: Tool = {
     }
     changed();
   },
-};
+});

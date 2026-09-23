@@ -1,8 +1,9 @@
 # Keymap reference
 
 Modelled on Piskel so muscle memory transfers, with the gaps filled in sensibly. Implemented in
-[phase 11](phases/phase-11-shortcuts-polish.md); the table here is the source of truth and lives
-in code as `src/constants/shortcuts.ts`.
+[phase 11](phases/phase-11-shortcuts-polish.md). The tables below are a human-readable reference;
+in code, each key lives next to what it triggers (see *Implementation contract*), and the in-app
+cheat sheet (`?`) is generated from that.
 
 ## Tools
 
@@ -65,14 +66,34 @@ in code as `src/constants/shortcuts.ts`.
 
 ## Implementation contract
 
-Three rules keep this table honest:
+Where things live:
 
-1. **Every entry maps to a command id, not to a handler.** `src/constants/shortcuts.ts` is a
-   `Record<CommandId, KeyBinding[]>`; the key handler resolves the id in the command registry
-   and calls `run()`. A shortcut for a command that does not exist is a type error.
-2. **Bindings are checked for duplicates at module load** (dev only) so two features cannot
-   silently claim the same chord.
-3. **Typing is never intercepted.** The global handler bails when the event target is an
+- **Tool keys and gestures live on the tool.** Each tool declares `shortcut` (the key that activates
+  it), an optional `holdKey` (held to borrow it from any tool) and `hints` (its non-obvious gestures,
+  e.g. `⌘ + Drag` to duplicate a selection) — see `src/editor/tools/*.ts`.
+- **Every other key** is in `APP_SHORTCUTS` in `src/constants/shortcuts.ts`.
+- **`src/commands/keymap.ts`** merges both into `SHORTCUTS`, derives `HELD_TOOL_KEYS`, and exposes
+  `commandKeys(id)` — every chord for a command, formatted for display.
+- **Inputs that are neither a tool's nor a command** (1–9, pan/zoom, right-drag for the secondary
+  colour) are `HintSection`s exported next to the code that implements them. Each names the
+  command group it belongs to, so the cheat sheet lists it there rather than in a section of its
+  own.
+- **A tool can claim commands** (`Tool.commands`): Select & move lists select all, deselect, copy,
+  cut, paste and delete in its own section, and they are not repeated under Edit.
+- **Hints are only for what you can't discover by clicking the obvious thing** — keys, modifiers,
+  hidden zones, non-primary buttons. No "drag to draw" or "click to pick".
+
+Rules that keep it honest:
+
+1. **Every entry maps to a command id, not to a handler.** The key handler resolves the id in the
+   command registry and calls `run()`. A shortcut for a command that does not exist is a type
+   error.
+2. **No chord is bound twice** — a unit test (`tests/unit/commands/keymap.test.ts`) walks the
+   merged table.
+3. **Every control that runs a command is a `CommandButton`**, which reads the label, all keys,
+   enabled and active state from the registry — so a button cannot show a stale or missing
+   shortcut. Popover triggers show their toggle command's keys via `commandKeys`.
+4. **Typing is never intercepted.** The global handler bails when the event target is an
    `input`, `textarea`, `[contenteditable]`, or inside an open dialog — except for `Escape`.
 
 `Ctrl` and `⌘` are normalised to a single `mod` modifier so one table serves both platforms;

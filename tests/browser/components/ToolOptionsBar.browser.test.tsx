@@ -1,9 +1,10 @@
 import { expect, test } from "vitest";
 import { userEvent } from "@vitest/browser/context";
 import { ToolOptionsBar } from "@/components/editor/ToolOptionsBar";
+import { CommandsProvider } from "@/commands/CommandsContext";
+import { createToolCommands } from "@/commands/toolCommands";
 import { ToolSidebar } from "@/components/editor/ToolSidebar";
-import { TOOL_IDS } from "@/constants/tools";
-import { TOOLS } from "@/editor/tools";
+import { TOOL_IDS, TOOLS } from "@/editor/tools";
 import { useEditorStore } from "@/stores/useEditorStore";
 import { render } from "@test/render";
 
@@ -59,10 +60,10 @@ test.each(TOOL_IDS)("the %s bar shows exactly the options that tool declares", a
 test("picking another tool turns mirroring off, so it can't linger unapplied", async () => {
   useEditorStore.getState().setTool("pencil");
   const screen = render(
-    <>
+    <CommandsProvider value={createToolCommands(useEditorStore)}>
       <ToolSidebar />
       <ToolOptionsBar />
-    </>,
+    </CommandsProvider>,
   );
 
   const mirror = screen.getByRole("button", { name: "Mirror horizontally" });

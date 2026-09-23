@@ -1,8 +1,18 @@
 import { useEffect } from "react";
+import type { HintSection } from "@/commands/hints";
 import { usePalettes } from "@/hooks/usePalettes";
 import { hexToRgba } from "@/lib/color";
 import { isTypingTarget } from "@/lib/keys";
 import { useEditorStore } from "@/stores/useEditorStore";
+
+/** Shown in the shortcut sheet and as the palette's hover card. */
+export const COLOR_HOTKEY_HINTS: HintSection = {
+  group: "Color",
+  hints: [
+    { action: "Pick primary", inputs: [{ text: "1–9" }] },
+    { action: "Pick secondary", inputs: [{ hold: "shift" }, { text: "1–9" }] },
+  ],
+};
 
 /**
  * Keys 1–9 pick palette slots. These live outside the static keymap because they depend on

@@ -7,7 +7,7 @@ import {
   SquareDashed,
   type LucideIcon,
 } from "lucide-react";
-import type { ToolId } from "@/constants/tools";
+import type { ToolId } from "@/editor/tools";
 
 /** The React-side half of the tool registry: icons cannot live in the React-free core. */
 export const TOOL_ICONS: Record<ToolId, LucideIcon> = {

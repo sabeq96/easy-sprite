@@ -1,5 +1,6 @@
 import { useEffect, type RefObject } from "react";
 import { useDocumentSession } from "@/app/DocumentProvider";
+import type { HintSection } from "@/commands/hints";
 import { compositeFrame } from "@/editor/composite";
 import { StrokeRecorder } from "@/editor/history";
 import { brushCursorPainter } from "@/editor/overlays/brushCursor";
@@ -9,6 +10,11 @@ import type { PointerModifiers, Tool, ToolContext, ToolPoint } from "@/editor/to
 import { screenToSprite } from "@/editor/viewport";
 import { useCursorStore } from "@/stores/useCursorStore";
 import { useEditorStore } from "@/stores/useEditorStore";
+
+export const POINTER_PAINT_HINTS: HintSection = {
+  group: "Color",
+  hints: [{ action: "Paint with secondary color", inputs: [{ pointer: "right-drag" }] }],
+};
 
 // Which tools preview a brush footprint, and whether that preview mirrors, both come from the
 // tool's own declared options — a tool that ignores an option can never have it drawn for it.

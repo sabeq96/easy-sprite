@@ -1,25 +1,26 @@
-import { ChevronsDownUp, Copy, Layers, Plus, Trash2 } from "lucide-react";
+import { ChevronsDownUp, Copy, Layers, Plus, Trash2, type LucideIcon } from "lucide-react";
 import { isSortable } from "@dnd-kit/react/sortable";
 import { useDocumentSession } from "@/app/DocumentProvider";
 import { DragBoard, type DragEndEvent } from "@/components/common/DragBoard";
 import { Panel } from "@/components/common/Panel";
-import { TooltipButton } from "@/components/common/TooltipButton";
+import { CommandButton } from "@/components/common/CommandButton";
 import { LayerDragPreview, LayerRow } from "@/components/editor/LayerRow";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { shortcutHint } from "@/constants/shortcuts";
-import {
-  addLayerCommand,
-  duplicateLayerCommand,
-  mergeLayerDownCommand,
-  removeLayerCommand,
-  reorderLayerCommand,
-} from "@/editor/commands/layers";
+import type { CommandId } from "@/commands/types";
+import { reorderLayerCommand } from "@/editor/commands/layers";
 import type { LayerModel } from "@/editor/document";
 import { useCommandDispatch } from "@/hooks/useCommandDispatch";
 import { useDropZone } from "@/hooks/useDnd";
 import { useDocumentSnapshot } from "@/hooks/useDocumentSnapshot";
 import { cn } from "@/lib/utils";
 import { useEditorStore } from "@/stores/useEditorStore";
+
+const ACTIONS: { command: CommandId; icon: LucideIcon }[] = [
+  { command: "layer.add", icon: Plus },
+  { command: "layer.duplicate", icon: Copy },
+  { command: "layer.mergeDown", icon: ChevronsDownUp },
+  { command: "layer.delete", icon: Trash2 },
+];
 
 export function LayersPanel() {
   const { doc } = useDocumentSession();
@@ -29,39 +30,6 @@ export function LayersPanel() {
   const activeLayerId = useEditorStore((state) => state.activeLayerId);
   const activeFrameId = useEditorStore((state) => state.activeFrameId);
   const setActiveLayer = useEditorStore((state) => state.setActiveLayer);
-
-  const activeIndex = snapshot.layers.findIndex((layer) => layer.id === activeLayerId);
-
-  const actions = [
-    {
-      label: "Add layer",
-      shortcut: shortcutHint("layer.add"),
-      icon: Plus,
-      disabled: false,
-      run: () => dispatch(() => addLayerCommand(doc, activeLayerId ?? undefined)),
-    },
-    {
-      label: "Duplicate layer",
-      shortcut: undefined,
-      icon: Copy,
-      disabled: !activeLayerId,
-      run: () => activeLayerId && dispatch(() => duplicateLayerCommand(doc, activeLayerId)),
-    },
-    {
-      label: "Merge down",
-      shortcut: shortcutHint("layer.mergeDown"),
-      icon: ChevronsDownUp,
-      disabled: activeIndex <= 0,
-      run: () => activeLayerId && dispatch(() => mergeLayerDownCommand(doc, activeLayerId)),
-    },
-    {
-      label: "Delete layer",
-      shortcut: undefined,
-      icon: Trash2,
-      disabled: snapshot.layers.length <= 1 || !activeLayerId,
-      run: () => activeLayerId && dispatch(() => removeLayerCommand(doc, activeLayerId)),
-    },
-  ];
 
   // Rendered top-first: the topmost layer is the last entry in the underlying array.
   const displayLayers = [...snapshot.layers].reverse();
@@ -88,17 +56,10 @@ export function LayersPanel() {
         <Layers className="size-3.5" />
         Layers
         <div className="ml-auto flex gap-0.5">
-          {actions.map(({ label, shortcut, icon: Icon, disabled, run }) => (
-            <TooltipButton
-              key={label}
-              label={label}
-              shortcut={shortcut}
-              size="icon-xs"
-              disabled={disabled}
-              onClick={run}
-            >
+          {ACTIONS.map(({ command, icon: Icon }) => (
+            <CommandButton key={command} command={command} size="icon-xs">
               <Icon />
-            </TooltipButton>
+            </CommandButton>
           ))}
         </div>
       </header>

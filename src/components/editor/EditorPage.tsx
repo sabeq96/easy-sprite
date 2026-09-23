@@ -12,6 +12,7 @@ import { RightSidebar } from "@/components/editor/RightSidebar";
 import { ShortcutHelpDialog } from "@/components/editor/ShortcutHelpDialog";
 import { ToolOptionsBar } from "@/components/editor/ToolOptionsBar";
 import { ToolSidebar } from "@/components/editor/ToolSidebar";
+import { CommandsProvider } from "@/commands/CommandsContext";
 import { useEditorCommands } from "@/commands/useEditorCommands";
 import { useActiveTargets } from "@/hooks/useActiveTargets";
 import { useColorHotkeys } from "@/hooks/useColorHotkeys";
@@ -57,18 +58,20 @@ function EditorShell() {
   useShortcuts(withHelp);
 
   return (
-    <div className="grid h-dvh grid-cols-1 grid-rows-[auto_auto_1fr_auto_auto] gap-2 overflow-hidden bg-background p-2">
-      <EditorTopBar onShowHelp={() => setShowHelp(true)} />
-      <ToolOptionsBar />
-      <div className="grid min-h-0 grid-cols-[3.5rem_1fr_18rem] gap-2">
-        <ToolSidebar />
-        <EditorCanvas />
-        <RightSidebar />
-      </div>
-      <FramesBar />
-      <EditorStatusBar />
+    <CommandsProvider value={withHelp}>
+      <div className="grid h-dvh grid-cols-1 grid-rows-[auto_auto_1fr_auto_auto] gap-2 overflow-hidden bg-background p-2">
+        <EditorTopBar />
+        <ToolOptionsBar />
+        <div className="grid min-h-0 grid-cols-[3.5rem_1fr_18rem] gap-2">
+          <ToolSidebar />
+          <EditorCanvas />
+          <RightSidebar />
+        </div>
+        <FramesBar />
+        <EditorStatusBar />
 
-      <ShortcutHelpDialog commands={withHelp} open={showHelp} onOpenChange={setShowHelp} />
-    </div>
+        <ShortcutHelpDialog commands={withHelp} open={showHelp} onOpenChange={setShowHelp} />
+      </div>
+    </CommandsProvider>
   );
 }

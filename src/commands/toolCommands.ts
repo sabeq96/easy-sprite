@@ -1,5 +1,4 @@
-import { TOOL_IDS } from "@/constants/tools";
-import { TOOLS } from "@/editor/tools";
+import { TOOL_LIST } from "@/editor/tools";
 import type { CommandRegistry } from "@/commands/types";
 import type { EditorStore } from "@/stores/slices/types";
 import type { StoreApi, UseBoundStore } from "zustand";
@@ -17,11 +16,11 @@ export function createToolCommands(store: Store): CommandRegistry {
     },
   };
 
-  for (const toolId of TOOL_IDS) {
+  for (const { id: toolId, label } of TOOL_LIST) {
     const commandId = `tool.${toolId}` as const;
     registry[commandId] = {
       id: commandId,
-      label: TOOLS[toolId].label,
+      label,
       group: "Tools",
       isActive: () => store.getState().toolId === toolId,
       run: () => store.getState().setTool(toolId),

@@ -1,11 +1,9 @@
-import { luminance, rgbaToHex, type RGBA } from "@/lib/color";
+import { rgbaToHex, type RGBA } from "@/lib/color";
 import { cn } from "@/lib/utils";
 
 export interface ColorSwatchProps {
   color: RGBA;
   isActive?: boolean;
-  /** Renders the 1–9 hotkey hint on the first nine slots. */
-  index?: number;
   size?: "sm" | "md";
   onPick: (color: RGBA) => void;
   onPickSecondary?: (color: RGBA) => void;
@@ -18,7 +16,6 @@ export interface ColorSwatchProps {
 export function ColorSwatch({
   color,
   isActive,
-  index,
   size = "md",
   onPick,
   onPickSecondary,
@@ -28,7 +25,6 @@ export function ColorSwatch({
   return (
     <button
       type="button"
-      title={hex}
       aria-label={`Color ${hex}`}
       aria-pressed={isActive}
       className={cn(
@@ -48,17 +44,6 @@ export function ColorSwatch({
         className="absolute inset-0 rounded-full"
         style={{ backgroundColor: rgbaToHex(color), opacity: color.a / 255 }}
       />
-      {index !== undefined && index < 9 && (
-        <span
-          aria-hidden
-          className={cn(
-            "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[8px] leading-none",
-            luminance(color) > 0.5 ? "text-black/60" : "text-white/70",
-          )}
-        >
-          {index + 1}
-        </span>
-      )}
     </button>
   );
 }

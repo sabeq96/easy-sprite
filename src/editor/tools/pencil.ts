@@ -1,6 +1,6 @@
 import type { StampOptions } from "@/editor/tools/paint";
 import { commitWrite, stamp, stampLine } from "@/editor/tools/paint";
-import type { Tool, ToolContext } from "@/editor/tools/types";
+import { defineTool, type ToolContext } from "@/editor/tools/types";
 
 function stampOptions(ctx: ToolContext): StampOptions {
   return {
@@ -11,9 +11,11 @@ function stampOptions(ctx: ToolContext): StampOptions {
   };
 }
 
-export const pencilTool: Tool = {
+export const pencilTool = defineTool({
   id: "pencil",
   label: "Pencil",
+  group: "draw",
+  shortcut: { key: "p" },
   continuous: true,
   options: ["brushSize", "mirror"],
 
@@ -25,4 +27,4 @@ export const pencilTool: Tool = {
   onPointerMove(ctx, point, previous) {
     commitWrite(ctx, stampLine(ctx, previous, point, stampOptions(ctx)));
   },
-};
+});

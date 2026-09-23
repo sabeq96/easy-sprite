@@ -1,6 +1,6 @@
 import { useEffect, type RefObject } from "react";
 import { useDocumentSession } from "@/app/DocumentProvider";
-import type { ToolId } from "@/constants/tools";
+import type { ToolId } from "@/editor/tools";
 import type { CanvasRenderer } from "@/editor/renderer";
 import { getTool } from "@/editor/tools";
 import type { ToolSession } from "@/editor/tools/types";
