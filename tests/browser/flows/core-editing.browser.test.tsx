@@ -60,10 +60,12 @@ test("the bucket tool fills the whole (empty) canvas", async () => {
 test("layers and frames panels reflect document structure", async () => {
   const { screen } = await openEditor();
 
-  await expect.element(screen.getByRole("button", { name: /^(Hide|Show) /u })).toBeVisible();
+  // Anchored to the toggle's whole name: the draggable row is itself role="button", and its
+  // computed name also starts with "Hide Layer 1…".
+  await expect.element(screen.getByRole("button", { name: /^(Hide|Show) Layer \d+$/u })).toBeVisible();
   await userEvent.click(screen.getByRole("button", { name: "Add layer" }));
   await expect
-    .poll(() => screen.getByRole("button", { name: /^(Hide|Show) /u }).elements().length)
+    .poll(() => screen.getByRole("button", { name: /^(Hide|Show) Layer \d+$/u }).elements().length)
     .toBe(2);
 
   await userEvent.click(screen.getByRole("button", { name: "Frame", exact: true }));

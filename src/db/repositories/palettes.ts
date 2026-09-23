@@ -10,12 +10,20 @@ export function getPalette(id: string): Promise<PaletteRecord | undefined> {
   return db.palettes.get(id);
 }
 
+/**
+ * A palette holds each color once. Imported .gpl/.hex files can repeat one, and a repeated color
+ * would be two swatches with one identity — the sortable grid keys and tracks swatches by color.
+ */
+function uniqueColors(colors: string[]): string[] {
+  return [...new Set(colors)];
+}
+
 export async function createPalette(name: string, colors: string[]): Promise<PaletteRecord> {
   const now = Date.now();
   const palette: PaletteRecord = {
     id: createId(),
     name: name.trim() || "New palette",
-    colors,
+    colors: uniqueColors(colors),
     createdAt: now,
     updatedAt: now,
   };
@@ -27,7 +35,8 @@ export function updatePalette(
   id: string,
   patch: Partial<Pick<PaletteRecord, "name" | "colors">>,
 ): Promise<number> {
-  return db.palettes.update(id, { ...patch, updatedAt: Date.now() });
+  const colors = patch.colors && uniqueColors(patch.colors);
+  return db.palettes.update(id, { ...patch, ...(colors && { colors }), updatedAt: Date.now() });
 }
 
 export function removePalette(id: string): Promise<void> {

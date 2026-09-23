@@ -70,6 +70,9 @@ export async function dragElementOnto(
   source: Element,
   target: Element,
   offset: Point = { x: 0, y: 0 },
+  /** Extra 1px moves at the destination before release, the way a real hand never holds still —
+   *  needed to catch a layout that shifts under the pointer once the drag arrives. */
+  { settleMoves = 0 }: { settleMoves?: number } = {},
 ): Promise<void> {
   const from = source.getBoundingClientRect();
   const to = target.getBoundingClientRect();
@@ -86,6 +89,10 @@ export async function dragElementOnto(
   await nextFrame();
   fire(document, "pointermove", endX, endY, 1);
   await nextFrame();
+  for (let move = 1; move <= settleMoves; move += 1) {
+    fire(document, "pointermove", endX + (move % 2), endY, 1);
+    await nextFrame();
+  }
   fire(document, "pointerup", endX, endY, 0);
   await nextFrame();
 }

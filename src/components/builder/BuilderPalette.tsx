@@ -1,10 +1,10 @@
 import { Search } from "lucide-react";
-import type { DragData } from "@/components/builder/useBuilderDnd";
+import { PALETTE_DROP_ID, type DragData } from "@/components/builder/useBuilderDnd";
 import { Panel } from "@/components/common/Panel";
 import { Input } from "@/components/ui/input";
 import type { SpriteRecord } from "@/db/schema";
 import { useBlobUrl } from "@/hooks/useBlobUrl";
-import { useDragSource } from "@/hooks/useDnd";
+import { useDragSource, useDropZone } from "@/hooks/useDnd";
 import { useSpriteLibrary } from "@/hooks/useSpriteLibrary";
 import { cn } from "@/lib/utils";
 
@@ -14,7 +14,8 @@ export interface BuilderPaletteProps {
 }
 
 /**
- * The sprites still available to place, searchable — drag one onto the canvas above.
+ * The sprites still available to place, searchable — drag one onto the canvas above. It is also a
+ * drop target: a block dragged back down here leaves the sheet and reappears in the list.
  *
  * A sheet packs each sprite once: placing the same one twice would duplicate its pixels in the
  * exported texture, so a placed sprite leaves the list rather than inviting a second copy.
@@ -22,9 +23,13 @@ export interface BuilderPaletteProps {
 export function BuilderPalette({ placedSpriteIds }: BuilderPaletteProps) {
   const library = useSpriteLibrary();
   const available = library.sprites.filter((sprite) => !placedSpriteIds.has(sprite.id));
+  const { ref, dropClass } = useDropZone({ id: PALETTE_DROP_ID, collision: "pointer" });
 
   return (
-    <Panel className="flex h-32 shrink-0 flex-col gap-2 p-2">
+    <Panel
+      render={<div ref={ref} data-testid="builder-palette" />}
+      className={cn("flex h-32 shrink-0 flex-col gap-2 p-2", dropClass)}
+    >
       <div className="relative">
         <Search className="pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-muted-foreground" />
         <Input
@@ -54,14 +59,13 @@ export function BuilderPalette({ placedSpriteIds }: BuilderPaletteProps) {
 
 function PaletteItem({ sprite }: { sprite: SpriteRecord }) {
   const { dragProps, dragClass } = useDragSource(`palette:${sprite.id}`, {
-    type: "palette",
-    spriteId: sprite.id,
-    name: sprite.name,
-    width: sprite.width,
-    height: sprite.height,
-    frameCount: sprite.frames.length,
-    thumbnail: sprite.thumbnail,
-  } satisfies DragData);
+    data: {
+      type: "palette",
+      spriteId: sprite.id,
+      name: sprite.name,
+      thumbnail: sprite.thumbnail,
+    } satisfies DragData,
+  });
 
   return (
     <div

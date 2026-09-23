@@ -1,6 +1,7 @@
 import { afterEach } from "vitest";
 import { DB_NAME } from "@/constants/storage";
 import { db } from "@/db/db";
+import { useBuilderViewStore } from "@/stores/useBuilderViewStore";
 import { useCursorStore } from "@/stores/useCursorStore";
 import { useEditorStore } from "@/stores/useEditorStore";
 // Component tests never go through main.tsx, so nothing else loads Tailwind's base layer —
@@ -14,6 +15,7 @@ afterEach(async () => {
   // import the singleton directly, not through a hook that could be swapped in tests.
   useEditorStore.setState(useEditorStore.getInitialState(), true);
   useCursorStore.setState(useCursorStore.getInitialState(), true);
+  useBuilderViewStore.setState(useBuilderViewStore.getInitialState(), true);
 
   // `db` is a module-level singleton that stays open across every test in this file. Deleting
   // the database while it is still open leaves the delete request queued ("blocked") behind it,

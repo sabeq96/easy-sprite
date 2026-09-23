@@ -6,6 +6,7 @@ import { celKey, isCelEmpty } from "@/db/repositories/cels";
 import type { CelRecord, FrameMeta, LayerRecord, SpriteRecord } from "@/db/schema";
 import { createId } from "@/lib/id";
 import type { PixelBuffer } from "@/types/pixels";
+import { fromRows, toRows } from "@/lib/sheetRows";
 
 export interface SpriteSnapshot {
   sprite: SpriteRecord;
@@ -241,7 +242,10 @@ export function removeSprite(id: string): Promise<void> {
     await Promise.all(
       affected.map((sheet) =>
         db.spritesheets.update(sheet.id, {
-          blocks: sheet.blocks.filter((block) => block.spriteId !== id),
+          // Through fromRows, so a row this empties collapses instead of leaving a gap.
+          blocks: fromRows(
+            toRows(sheet.blocks).map((row) => row.filter((block) => block.spriteId !== id)),
+          ),
         }),
       ),
     );

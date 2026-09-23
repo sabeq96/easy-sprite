@@ -25,10 +25,11 @@ export function FrameCard({
   onDuplicate,
   onDelete,
 }: FrameCardProps) {
-  const { dragProps, dragClass } = useSortableItem(frameId);
+  const { dragProps, dragClass } = useSortableItem(frameId, { index, collision: "nearest" });
 
   return (
-    <div
+    // The <li> itself is the sortable: optimistic sorting moves the list's direct children.
+    <li
       {...dragProps}
       className={cn(
         "group relative rounded-lg p-1 transition-colors",
@@ -73,7 +74,7 @@ export function FrameCard({
           <Trash2 />
         </Button>
       </div>
-    </div>
+    </li>
   );
 }
 

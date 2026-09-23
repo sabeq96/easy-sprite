@@ -27,7 +27,9 @@ export function InlineNameField({ label, name, onCommit, className }: InlineName
     <Input
       aria-label={label}
       ghost
-      className={cn("h-7 w-48", className)}
+      // min-w-0: an <input>'s automatic minimum size otherwise stops it shrinking in a flex header,
+      // which pushes everything after it past the header's edge and out of view.
+      className={cn("h-7 w-48 min-w-0", className)}
       value={draft ?? name}
       onChange={(event) => setDraft(event.target.value)}
       onBlur={commit}

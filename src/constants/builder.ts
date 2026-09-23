@@ -1,5 +1,35 @@
-/** Snap increment for placing/moving blocks, in sprite-resolution px. */
-export const BUILDER_GRID_SIZE = 8;
+/** On-screen display scales. Sprite-resolution px are too small to drag comfortably at 1×. */
+export const BUILDER_ZOOM_LEVELS = [1, 2, 3, 4, 6, 8] as const;
+export const DEFAULT_BUILDER_ZOOM = 4;
 
-/** On-screen display scale — sprite-resolution px are too small to drag comfortably at 1×. */
-export const BUILDER_ZOOM = 4;
+/**
+ * Ruler grid cell, in sprite px. Blocks pack tight, so a block may straddle a grid line — the
+ * grid is there to read row alignment and "no gap" off, not a snap target. Snapping is structural:
+ * a block's position is its place in a row, so there are no off-grid coordinates to snap.
+ */
+export const BUILDER_GRID_CELLS = [4, 8, 16, 32] as const;
+export const DEFAULT_BUILDER_GRID_CELL = 16;
+
+/** Below this many screen px per cell the ruler is noise, hidden regardless of the toggle. */
+export const BUILDER_GRID_MIN_SCALE = 6;
+
+/** Theme-independent, matching the pixel editor's grid (see `renderer.drawGrid`). */
+export const BUILDER_GRID_LINE = "rgba(128,128,128,0.35)";
+
+/**
+ * How far a row boundary's "new row" strip reaches into each neighbouring row, in screen px — at
+ * most this, and never more than ROW_GUTTER_MAX_SHARE of that row's height, so a short row at low
+ * zoom keeps a middle you can still drop into.
+ */
+export const ROW_GUTTER_REACH_PX = 4;
+export const ROW_GUTTER_MAX_SHARE = 0.25;
+
+/**
+ * Below this many screen px in either dimension a block draws no remove button or name caption:
+ * they would cover the whole block, and the block itself is the drag handle. The button stays
+ * reachable by keyboard; dragging the block onto the dock removes it by pointer.
+ */
+export const BUILDER_BLOCK_CHROME_MIN_PX = 48;
+
+/** A block whose sprite record hasn't been read yet still needs some footprint to render at. */
+export const BUILDER_FALLBACK_BLOCK_PX = 16;

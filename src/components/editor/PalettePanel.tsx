@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Palette as PaletteIcon } from "lucide-react";
-import { pointerWithin, type DragEndEvent } from "@dnd-kit/core";
-import { rectSortingStrategy } from "@dnd-kit/sortable";
+import { arrayMove } from "@dnd-kit/helpers";
+import { isSortable } from "@dnd-kit/react/sortable";
 import { useDocumentSession } from "@/app/DocumentProvider";
 import { ColorSwatch } from "@/components/common/ColorSwatch";
-import { DragBoard } from "@/components/common/DragBoard";
+import { DragBoard, type DragEndEvent, type DragOverEvent } from "@/components/common/DragBoard";
 import { ActiveColors } from "@/components/editor/ActiveColors";
 import { PaletteMenu } from "@/components/editor/PaletteMenu";
 import {
@@ -17,6 +17,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { updatePalette } from "@/db/repositories/palettes";
 import { useColorUsage } from "@/hooks/useColorUsage";
+import { useOptimisticOrder } from "@/hooks/useOptimisticOrder";
 import { usePalettes } from "@/hooks/usePalettes";
 import { useDragSource, useDropZone, useSortableItem } from "@/hooks/useDnd";
 import { hexToRgba, rgbaToHex, rgbaEquals, type RGBA } from "@/lib/color";
@@ -29,9 +30,17 @@ export interface PaletteDragData {
   source: PaletteDragSource;
 }
 
+/** Where a color copied in from outside the palette would land, shown live while it is dragged. */
+interface IncomingColor {
+  hex: string;
+  index: number;
+}
+
 const PALETTE_DROP_ZONE_ID = "palette-drop-zone";
-// Stable reference for "no active palette", so the identity check below doesn't see a new []
-// every render (which would defeat the check and re-trigger the state adjustment endlessly).
+/** The stand-in swatch for a color being copied in. Never a real palette entry. */
+const INCOMING_SWATCH_ID = "palette-incoming";
+// Stable reference for "no active palette", so the live read's identity check doesn't see a new []
+// every render.
 const NO_COLORS: string[] = [];
 const paletteSwatchId = (hex: string) => `palette:${hex}`;
 const usedSwatchId = (hex: string) => `used:${hex}`;
@@ -47,62 +56,81 @@ export function PalettePanel() {
   const primaryColor = useEditorStore((state) => state.primaryColor);
   const setPrimaryColor = useEditorStore((state) => state.setPrimaryColor);
   const setSecondaryColor = useEditorStore((state) => state.setSecondaryColor);
-  const [reordered, setReordered] = useState<{ paletteId: string; colors: string[] } | null>(null);
+
   // usePalettes only hands back a new `active.colors` reference when the live query actually
-  // re-ran, so identity comparison below is a cheap, exact "has the read caught up yet".
-  const [seenStored, setSeenStored] = useState(active?.colors ?? NO_COLORS);
-
-  // A reorder is written to Dexie and only comes back through useLiveQuery a few async ticks
-  // later — long enough to watch a dropped swatch return to its old slot and animate over again.
-  // Rendering the new order straight away makes the drop land where it was released.
-  //
-  // The override stands only until the *next* live read arrives, whatever it contains: our own
-  // write confirming (nothing visibly changes) or some other edit superseding it — auto-sort,
-  // another drag, another tab. Either way the guess has done its job. Adjusting state during
-  // render (rather than in an effect) keeps that other edit from ever flashing the stale guess
-  // first — see https://react.dev/learn/you-might-not-need-an-effect#adjusting-state-based-on-a-prop-change.
-  const stored = active?.colors ?? NO_COLORS;
-  if (stored !== seenStored) {
-    setSeenStored(stored);
-    if (reordered) setReordered(null);
-  }
-  const colors =
-    stored === seenStored &&
-    reordered &&
-    reordered.paletteId === active?.id &&
-    isReorderOf(reordered.colors, stored)
-      ? reordered.colors
-      : stored;
-
-  const paletteIds = colors.map(paletteSwatchId);
+  // re-ran, which is exactly the "has the read caught up" signal useOptimisticOrder keys on — so a
+  // drop renders its new order (or its new color) at once instead of snapping back for a few ticks.
+  const stored = useOptimisticOrder(active?.colors ?? NO_COLORS);
+  const colors = stored.items;
   const editable = Boolean(active);
 
+  const [incoming, setIncoming] = useState<IncomingColor | null>(null);
+  // The drop handler reads this rather than `incoming`: the last dragover's state update is a
+  // transition, and may not have rendered yet when a quick release lands.
+  const incomingRef = useRef<IncomingColor | null>(null);
+  const showIncoming = (next: IncomingColor | null) => {
+    const current = incomingRef.current;
+    if (current?.hex === next?.hex && current?.index === next?.index) return;
+    incomingRef.current = next;
+    setIncoming(next);
+  };
+
   const writeColors = (next: string[]) => {
-    if (!active || !editable) return;
-    if (isReorderOf(next, colors)) setReordered({ paletteId: active.id, colors: next });
+    if (!active) return;
+    stored.propose(next);
     void updatePalette(active.id, { colors: next });
   };
 
-  const handleDragEnd = ({ active: dragged, over }: DragEndEvent) => {
-    const data = dragged.data.current as PaletteDragData | undefined;
-    if (!data) return;
+  // Palette swatches are sorted by the library itself; only a color copied in from outside the
+  // palette (a "used" swatch, the active colors) needs a stand-in injected at its landing slot.
+  const handleDragOver = ({ operation }: DragOverEvent) => {
+    const data = operation.source?.data as PaletteDragData | undefined;
+    if (!data || data.source === "palette" || !editable) return;
 
-    if (!over) {
-      // Dropped nowhere: only removes when dragged OUT of the (editable) palette itself.
-      if (data.source === "palette") writeColors(colors.filter((entry) => entry !== data.hex));
+    const overId = operation.target ? String(operation.target.id) : null;
+    if (overId === INCOMING_SWATCH_ID) return; // already sitting under the pointer
+
+    const hex = normalizePaletteHex(data.hex);
+    const others = colors.filter((entry) => entry !== hex);
+    const overHex = overId ? hexFromPaletteSwatchId(overId) : null;
+
+    if (overHex !== null && others.includes(overHex)) {
+      showIncoming({ hex, index: others.indexOf(overHex) });
+    } else if (overId === PALETTE_DROP_ZONE_ID) {
+      showIncoming({ hex, index: others.length });
+    } else {
+      showIncoming(null);
+    }
+  };
+
+  const handleDragEnd = ({ operation, canceled }: DragEndEvent) => {
+    const data = operation.source?.data as PaletteDragData | undefined;
+    const landing = incomingRef.current;
+    showIncoming(null);
+    if (!data || canceled || !editable) return;
+
+    if (data.source !== "palette") {
+      if (landing) writeColors(upsertColorAt(colors, landing.hex, landing.index));
       return;
     }
 
-    const overHex = hexFromPaletteSwatchId(String(over.id));
-    const targetIndex = overHex ? Math.max(colors.indexOf(overHex), 0) : colors.length;
-    writeColors(upsertColorAt(colors, normalizePaletteHex(data.hex), targetIndex));
+    // Dropped nowhere: a palette swatch dragged out of the palette is removed from it.
+    if (!operation.target) {
+      writeColors(colors.filter((entry) => entry !== data.hex));
+      return;
+    }
+
+    const { source } = operation;
+    if (isSortable(source) && source.initialIndex !== source.index) {
+      writeColors(arrayMove([...colors], source.initialIndex, source.index));
+    }
   };
+
+  const entries = withIncoming(colors, incoming);
 
   return (
     <DragBoard<PaletteDragData>
-      items={paletteIds}
-      strategy={rectSortingStrategy}
-      collisionDetection={pointerWithin}
+      onDragOver={handleDragOver}
       onDrop={handleDragEnd}
       renderPreview={(data) => <PaletteDragPreview hex={data.hex} />}
     >
@@ -137,7 +165,7 @@ export function PalettePanel() {
 
         <SwatchGrid
           label="Palette colors"
-          colors={colors}
+          entries={entries}
           activeColor={primaryColor}
           showIndexHints
           source="palette"
@@ -152,7 +180,7 @@ export function PalettePanel() {
         {usage.length > 0 && (
           <SwatchGrid
             label="Used in sprite"
-            colors={usage.map((entry) => entry.hex)}
+            entries={usage.map((entry) => ({ hex: entry.hex, isIncoming: false }))}
             activeColor={primaryColor}
             source="used"
             onPick={setPrimaryColor}
@@ -164,15 +192,26 @@ export function PalettePanel() {
   );
 }
 
+interface SwatchEntry {
+  hex: string;
+  /** The stand-in for a color being copied in — rendered, but not yet in the palette. */
+  isIncoming: boolean;
+}
+
+/** The palette as it should look right now: with the copied-in color's stand-in at its landing
+ *  slot, and without any earlier occurrence of that color (a drop moves it, never duplicates it). */
+function withIncoming(colors: string[], incoming: IncomingColor | null): SwatchEntry[] {
+  const entries = colors
+    .filter((hex) => hex !== incoming?.hex)
+    .map((hex) => ({ hex, isIncoming: false }));
+  if (incoming) entries.splice(incoming.index, 0, { hex: incoming.hex, isIncoming: true });
+  return entries;
+}
+
 /** Re-encodes any incoming hex (with or without alpha) to this app's storage convention. */
 function normalizePaletteHex(hex: string): string {
   const rgba = hexToRgba(hex);
   return rgbaToHex(rgba, rgba.a !== 255);
-}
-
-/** The same colors in some other order — the one case an optimistic reorder may stand in for. */
-function isReorderOf(a: string[], b: string[]): boolean {
-  return a.length === b.length && [...a].sort().join() === [...b].sort().join();
 }
 
 /** Drops `hex` at `targetIndex`, removing any earlier occurrence first — dedupe via move. */
@@ -199,7 +238,7 @@ function PaletteDragPreview({ hex }: { hex: string }) {
 
 interface SwatchGridProps {
   label: string;
-  colors: string[];
+  entries: SwatchEntry[];
   activeColor: RGBA;
   showIndexHints?: boolean;
   source: "palette" | "used";
@@ -212,7 +251,7 @@ interface SwatchGridProps {
 
 function SwatchGrid({
   label,
-  colors,
+  entries,
   activeColor,
   showIndexHints,
   source,
@@ -222,22 +261,24 @@ function SwatchGrid({
   onRemove,
 }: SwatchGridProps) {
   const idFor = source === "palette" ? paletteSwatchId : usedSwatchId;
-  const ids = colors.map(idFor);
   // Every SwatchGrid instance calls useDropZone (rules of hooks), but only "palette" is sortable —
   // give the other its own id so it can never shadow the real drop zone.
   const dropZoneId = source === "palette" ? PALETTE_DROP_ZONE_ID : `${source}-drop-zone`;
   // `owns`: a swatch is itself a drop target and wins the collision over the grid behind it, so the
   // grid has to claim its own swatches to stay highlighted while the pointer is on one of them.
+  // Low priority for the same reason: a swatch under the pointer must win over the grid.
   const dropZone = useDropZone({
     id: dropZoneId,
     disabled: !sortable,
-    owns: (overId) => overId.startsWith("palette:"),
+    priority: "low",
+    owns: (overId) => overId.startsWith("palette:") || overId === INCOMING_SWATCH_ID,
   });
 
-  const swatches = colors.map((hex, index) => {
+  const swatches = entries.map(({ hex, isIncoming }, index) => {
     const color = hexToRgba(hex);
+    const id = isIncoming ? INCOMING_SWATCH_ID : idFor(hex);
     const commonProps = {
-      id: ids[index],
+      id,
       hex,
       color,
       index: showIndexHints ? index : undefined,
@@ -247,9 +288,9 @@ function SwatchGrid({
       onRemove: source === "palette" ? onRemove : undefined,
     };
     return sortable ? (
-      <SortableSwatch key={ids[index]} {...commonProps} />
+      <SortableSwatch key={id} {...commonProps} position={index} isIncoming={isIncoming} />
     ) : (
-      <DraggableSwatch key={ids[index]} {...commonProps} source={source} />
+      <DraggableSwatch key={id} {...commonProps} source={source} />
     );
   });
 
@@ -260,7 +301,7 @@ function SwatchGrid({
         {label}
       </div>
 
-      {colors.length === 0 ? (
+      {entries.length === 0 ? (
         <p
           ref={sortable ? dropZone.ref : undefined}
           className={cn("rounded-md p-0.5 text-xs text-muted-foreground", dropZone.dropClass)}
@@ -302,15 +343,17 @@ function DraggableSwatch({
   onRemove,
   source,
 }: BaseSwatchProps & { source: PaletteDragSource }) {
-  const { dragProps, dragClass } = useDragSource(id, { hex, source } satisfies PaletteDragData);
+  const { dragProps, dragClass } = useDragSource(id, {
+    data: { hex, source } satisfies PaletteDragData,
+  });
 
   return (
     <div
       {...dragProps}
       className={cn(
-        // Padding (not the container's gap) makes the interactive hitbox touch its neighbor,
-        // so pointerWithin always resolves to a specific swatch — never the vague gap between
-        // two of them — which is what makes "drop between two colors" land precisely.
+        // Padding (not the container's gap) makes the interactive hitbox touch its neighbor, so the
+        // pointer always resolves to a specific swatch — never the vague gap between two of them —
+        // which is what makes "drop between two colors" land precisely.
         "rounded-full p-0.5",
         dragClass,
       )}
@@ -334,24 +377,29 @@ function SortableSwatch({
   hex,
   color,
   index,
+  position,
+  isIncoming,
   isActive,
   onPick,
   onPickSecondary,
   onRemove,
-}: BaseSwatchProps) {
+}: BaseSwatchProps & { position: number; isIncoming: boolean }) {
   const { dragProps, dragClass } = useSortableItem(id, {
-    hex,
-    source: "palette",
-  } satisfies PaletteDragData);
+    index: position,
+    group: "palette",
+    data: { hex, source: "palette" } satisfies PaletteDragData,
+  });
 
   return (
     <div
       {...dragProps}
       className={cn(
-        // Padding (not the container's gap) makes the interactive hitbox touch its neighbor,
-        // so pointerWithin always resolves to a specific swatch — never the vague gap between
-        // two of them — which is what makes "drop between two colors" land precisely.
+        // Padding (not the container's gap) makes the interactive hitbox touch its neighbor, so the
+        // pointer always resolves to a specific swatch — never the vague gap between two of them —
+        // which is what makes "drop between two colors" land precisely.
         "rounded-full p-0.5",
+        // The stand-in for a color being copied in: already in its slot, visibly not yet committed.
+        isIncoming && "opacity-50",
         dragClass,
       )}
       onDoubleClick={() => onRemove?.(hex)}

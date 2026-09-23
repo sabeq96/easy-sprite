@@ -1,8 +1,7 @@
 import { ChevronsDownUp, Copy, Layers, Plus, Trash2 } from "lucide-react";
-import { type DragEndEvent } from "@dnd-kit/core";
-import { verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { isSortable } from "@dnd-kit/react/sortable";
 import { useDocumentSession } from "@/app/DocumentProvider";
-import { DragBoard } from "@/components/common/DragBoard";
+import { DragBoard, type DragEndEvent } from "@/components/common/DragBoard";
 import { Panel } from "@/components/common/Panel";
 import { TooltipButton } from "@/components/common/TooltipButton";
 import { LayerDragPreview, LayerRow } from "@/components/editor/LayerRow";
@@ -68,12 +67,15 @@ export function LayersPanel() {
   const displayLayers = [...snapshot.layers].reverse();
   const displayIds = displayLayers.map((layer) => layer.id);
 
-  const handleDragEnd = ({ active, over }: DragEndEvent) => {
-    if (!over || active.id === over.id) return;
-    // reorderLayerCommand resolves indices from ids itself (doc.layerIndex) — the reversed
-    // display order never enters this calculation, we just forward the two ids as-is.
+  const handleDragEnd = ({ operation, canceled }: DragEndEvent) => {
+    const { source } = operation;
+    if (canceled || !isSortable(source) || source.initialIndex === source.index) return;
+    // Indices are in display (top-first) order. The layer that sat at the landing slot before the
+    // drag is the one to trade places with; reorderLayerCommand then resolves both ids to their
+    // indices in the underlying bottom-first array itself, so the reversal never enters the maths.
+    const overId = displayIds[source.index];
     dispatch(() =>
-      reorderLayerCommand(doc, doc.layerIndex(String(active.id)), doc.layerIndex(String(over.id))),
+      reorderLayerCommand(doc, doc.layerIndex(String(source.id)), doc.layerIndex(overId)),
     );
   };
 
@@ -103,8 +105,6 @@ export function LayersPanel() {
 
       <ScrollArea className="min-h-0 flex-1">
         <DragBoard
-          items={displayIds}
-          strategy={verticalListSortingStrategy}
           onDrop={handleDragEnd}
           renderPreview={(_data, id) => {
             const layer = doc.getLayer(id);
@@ -133,24 +133,26 @@ interface LayerListProps {
 }
 
 /**
- * Its own component, rendered as DragBoard's child, so useDropZone's useDndMonitor runs inside
- * the surrounding DndContext rather than above it (calling the hook back in LayersPanel would sit
- * outside that context, since LayersPanel is what renders DragBoard, not what DragBoard renders).
+ * Its own component, rendered as DragBoard's child, so useDropZone's monitor runs inside the
+ * surrounding provider rather than above it (calling the hook back in LayersPanel would sit outside
+ * it, since LayersPanel is what renders DragBoard, not what DragBoard renders).
  *
- * No separate droppable is registered for the list itself — inside a SortableContext, `over`
- * always resolves to one of the item ids — so the ring is claimed via `owns` instead.
+ * The list registers no droppable of its own — its rows are the targets — so the ring is claimed
+ * via `owns` instead.
  */
 function LayerList({ displayLayers, displayIds, activeFrameId, activeLayerId, onSelect }: LayerListProps) {
   const { ref, dropClass } = useDropZone({
     id: "layers-list",
+    ringOnly: true,
     owns: (overId) => displayIds.includes(overId),
   });
 
   return (
     <ul ref={ref} className={cn("rounded-md", dropClass)}>
-      {displayLayers.map((layer) => (
+      {displayLayers.map((layer, index) => (
         <LayerRow
           key={layer.id}
+          index={index}
           layer={layer}
           frameId={activeFrameId}
           isActive={layer.id === activeLayerId}

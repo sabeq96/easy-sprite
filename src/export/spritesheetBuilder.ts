@@ -1,6 +1,6 @@
 import type { SpritesheetBlockRecord } from "@/db/schema";
 import type { SpriteDocument } from "@/editor/document";
-import { computeBuilderBounds } from "@/export/spritesheetBuilderLayout";
+import { packSheet, sizesFromDocs } from "@/export/spritesheetBuilderLayout";
 import { renderSpriteStrip } from "@/export/spriteStrip";
 
 export interface BuilderExportOptions {
@@ -32,16 +32,16 @@ export interface BuilderSheetResult {
   metadata: BuilderSheetMetadata;
 }
 
-/** Composes every placed block's sprite strip onto one sheet, at its stored position. */
+/** Composes every placed block's sprite strip onto one sheet, at its packed position. */
 export async function exportBuilderSheet(
   blocks: SpritesheetBlockRecord[],
   docs: Map<string, SpriteDocument>,
   options: BuilderExportOptions,
 ): Promise<BuilderSheetResult> {
-  const bounds = computeBuilderBounds(blocks, docs);
+  const sheet = packSheet(blocks, sizesFromDocs(docs));
   const scale = options.scale;
-  const width = Math.max(1, Math.round(bounds.width * scale));
-  const height = Math.max(1, Math.round(bounds.height * scale));
+  const width = Math.max(1, Math.round(sheet.width * scale));
+  const height = Math.max(1, Math.round(sheet.height * scale));
 
   const canvas = new OffscreenCanvas(width, height);
   const ctx = canvas.getContext("2d");
@@ -57,19 +57,20 @@ export async function exportBuilderSheet(
 
   const metadataBlocks: BuilderBlockMetadata[] = [];
 
-  for (const block of blocks) {
-    const doc = docs.get(block.spriteId);
+  // Row-major, as packed — so the metadata reads in the same order as the sheet does.
+  for (const packed of sheet.blocks) {
+    const doc = docs.get(packed.spriteId);
     if (!doc) continue; // dangling reference — shouldn't happen, skip defensively
 
     const strip = renderSpriteStrip(doc, { includeHidden: options.includeHidden });
-    const destX = block.x * scale;
-    const destY = block.y * scale;
+    const destX = packed.x * scale;
+    const destY = packed.y * scale;
     ctx.drawImage(strip, destX, destY, strip.width * scale, strip.height * scale);
 
     const frameWidth = doc.width * scale;
     const frameHeight = doc.height * scale;
     metadataBlocks.push({
-      spriteId: block.spriteId,
+      spriteId: packed.spriteId,
       name: doc.name,
       x: destX,
       y: destY,

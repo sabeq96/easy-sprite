@@ -16,7 +16,7 @@ test("renderSpriteStrip lays every frame out left-to-right at sprite resolution"
   expect(strip.height).toBe(4);
 });
 
-test("exportBuilderSheet composes every block at its stored position", async () => {
+test("exportBuilderSheet composes every block at its packed position", async () => {
   const a = makeDocument({ id: "a", width: 4, height: 4, frames: [{ id: "f1" }] });
   const b = makeDocument({
     id: "b",
@@ -29,8 +29,8 @@ test("exportBuilderSheet composes every block at its stored position", async () 
     [b.id, b],
   ]);
   const blocks: SpritesheetBlockRecord[] = [
-    { id: "block-a", spriteId: a.id, x: 0, y: 0 },
-    { id: "block-b", spriteId: b.id, x: 0, y: 4 },
+    { id: "block-a", spriteId: a.id, row: 0 },
+    { id: "block-b", spriteId: b.id, row: 1 },
   ];
 
   const { blob, metadata } = await exportBuilderSheet(blocks, docs, { scale: 1 });
@@ -41,12 +41,16 @@ test("exportBuilderSheet composes every block at its stored position", async () 
   expect(metadata.height).toBe(8); // a's row (4px) + b's row (4px)
   expect(metadata.blocks).toHaveLength(2);
   expect(metadata.blocks[1].frames).toHaveLength(2);
+  expect(metadata.blocks.map(({ x, y }) => ({ x, y }))).toEqual([
+    { x: 0, y: 0 },
+    { x: 0, y: 4 },
+  ]);
 });
 
 test("exportBuilderSheet scales every dimension", async () => {
   const doc = makeDocument({ width: 4, height: 4, frames: [{ id: "f1" }] });
   const docs = new Map([[doc.id, doc]]);
-  const blocks: SpritesheetBlockRecord[] = [{ id: "block-1", spriteId: doc.id, x: 0, y: 0 }];
+  const blocks: SpritesheetBlockRecord[] = [{ id: "block-1", spriteId: doc.id, row: 0 }];
 
   const { metadata } = await exportBuilderSheet(blocks, docs, { scale: 4 });
 

@@ -61,14 +61,15 @@ describe("spritesheet repository", () => {
     const sheet = await createSpritesheet({ name: "Scene" });
     await updateSpritesheet(sheet.id, {
       blocks: [
-        { id: "block-1", spriteId: sprite.id, x: 0, y: 0 },
-        { id: "block-2", spriteId: other.id, x: 16, y: 0 },
+        { id: "block-1", spriteId: sprite.id, row: 0 },
+        { id: "block-2", spriteId: other.id, row: 1 },
       ],
     });
 
     await removeSprite(sprite.id);
 
+    // Hero was alone in row 0, so that row collapses rather than leaving a gap above Villain.
     const after = await getSpritesheet(sheet.id);
-    expect(after.blocks).toEqual([{ id: "block-2", spriteId: other.id, x: 16, y: 0 }]);
+    expect(after.blocks).toEqual([{ id: "block-2", spriteId: other.id, row: 0 }]);
   });
 });

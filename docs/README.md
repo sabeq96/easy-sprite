@@ -108,6 +108,7 @@ browser. Phases are ordered by dependency — do not reorder 1→4.
 | 11 | Shortcuts, command palette, polish, perf | [phase-11-shortcuts-polish.md](phases/phase-11-shortcuts-polish.md) | all | 1.5 d |
 | 12 | Test infrastructure: browser mode & test tree | [phase-12-test-infrastructure.md](phases/phase-12-test-infrastructure.md) | all | 1 d |
 | 13 | Component, interaction & flow coverage | [phase-13-test-coverage.md](phases/phase-13-test-coverage.md) | 12 | 2 d |
+| 14 | Spritesheet composer: row layout, zoom & responsive shell | [phase-14-spritesheet-editor.md](phases/phase-14-spritesheet-editor.md) | 9, 10 | 1.5 d |
 
 **Critical path:** 0 → 1 → 2 → 3 → 4. After phase 4 you have a usable single-frame editor.
 Phases 6–9 are largely parallelisable if more than one person works on it. Phases 12–13 don't

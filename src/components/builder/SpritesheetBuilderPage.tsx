@@ -1,5 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { pointerWithin } from "@dnd-kit/core";
+import { useEffect, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { ArrowLeft, Download } from "lucide-react";
 import { Link, useParams } from "react-router";
@@ -7,6 +6,8 @@ import { BuilderBlockPreview } from "@/components/builder/BuilderBlock";
 import { BuilderCanvas } from "@/components/builder/BuilderCanvas";
 import { BuilderExportDialog } from "@/components/builder/BuilderExportDialog";
 import { BuilderPalette, SpriteTilePreview } from "@/components/builder/BuilderPalette";
+import { BuilderStatusBar } from "@/components/builder/BuilderStatusBar";
+import { BuilderViewControls } from "@/components/builder/BuilderViewControls";
 import { useBuilderDnd, type DragData } from "@/components/builder/useBuilderDnd";
 import { DragBoard } from "@/components/common/DragBoard";
 import { InlineNameField } from "@/components/common/InlineNameField";
@@ -20,9 +21,9 @@ import { ROUTES } from "@/constants/routes";
 import { db } from "@/db/db";
 import { getSpritesheet, updateSpritesheet } from "@/db/repositories/spritesheets";
 import type { SpritesheetRecord } from "@/db/schema";
-import type { SpriteDocument } from "@/editor/document";
+import { packSheet } from "@/export/spritesheetBuilderLayout";
 import { useSaveStatus } from "@/hooks/useSaveStatus";
-import { openDocument } from "@/services/documentService";
+import { useSpriteSizes } from "@/hooks/useSpriteSizes";
 
 export function SpritesheetBuilderPage() {
   const { spritesheetId } = useParams<{ spritesheetId: string }>();
@@ -49,60 +50,37 @@ function SpritesheetBuilderLoader({ spritesheetId }: { spritesheetId: string }) 
   return <SpritesheetBuilderShell spritesheet={spritesheet} />;
 }
 
-/** Opens (and caches) a SpriteDocument per distinct sprite referenced by the current blocks. */
-function useDocumentCache(spriteIds: string[]): Map<string, SpriteDocument> {
-  const [docs, setDocs] = useState<Map<string, SpriteDocument>>(new Map());
-
-  useEffect(() => {
-    const missing = spriteIds.filter((id) => !docs.has(id));
-    if (missing.length === 0) return;
-
-    let cancelled = false;
-    void Promise.all(
-      missing.map((id) => openDocument(id).then((doc) => [id, doc] as const)),
-    ).then((entries) => {
-      if (cancelled) return;
-      setDocs((current) => {
-        const next = new Map(current);
-        for (const [id, doc] of entries) next.set(id, doc);
-        return next;
-      });
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [spriteIds, docs]);
-
-  return docs;
-}
-
 function SpritesheetBuilderShell({ spritesheet }: { spritesheet: SpritesheetRecord }) {
-  const canvasRef = useRef<HTMLDivElement | null>(null);
   const save = useSaveStatus();
   const [isExporting, setExporting] = useState(false);
+  const sizes = useSpriteSizes();
+  const dnd = useBuilderDnd(spritesheet, sizes, save.track);
+  const { docs } = dnd;
 
-  const spriteIds = useMemo(
-    () => [...new Set(spritesheet.blocks.map((block) => block.spriteId))],
-    [spritesheet.blocks],
-  );
-  const docs = useDocumentCache(spriteIds);
-  const { handleDragEnd, removeBlock } = useBuilderDnd(spritesheet, docs, canvasRef, save.track);
+  const sheet = packSheet(dnd.blocks, sizes);
+  const placedSpriteIds = new Set(dnd.blocks.map((block) => block.spriteId));
 
   const renderPreview = (data: DragData) => {
     if (data.type === "palette") {
       return <SpriteTilePreview name={data.name} thumbnail={data.thumbnail} />;
     }
-    const block = spritesheet.blocks.find((entry) => entry.id === data.blockId);
-    return <BuilderBlockPreview doc={block && docs.get(block.spriteId)} />;
+    const block = dnd.blocks.find((entry) => entry.id === data.blockId);
+    return (
+      <BuilderBlockPreview
+        size={block && sizes.get(block.spriteId)}
+        doc={block && docs.get(block.spriteId)}
+      />
+    );
   };
 
   return (
-    <div className="grid h-dvh grid-rows-[auto_1fr_auto] gap-2 overflow-hidden bg-background p-2">
-      <Panel render={<header />} className="flex items-center gap-2 px-2 py-1.5">
+    <div className="grid h-dvh grid-rows-[auto_1fr_auto_auto] gap-2 overflow-hidden bg-background p-2">
+      <Panel render={<header />} className="flex min-w-0 items-center gap-2 px-2 py-1.5">
         <Button
           aria-label="Back to sprites"
           size="icon-sm"
           variant="ghost"
+          className="shrink-0"
           nativeButton={false}
           render={
             <Link to={ROUTES.sprites}>
@@ -114,42 +92,50 @@ function SpritesheetBuilderShell({ spritesheet }: { spritesheet: SpritesheetReco
         <InlineNameField
           label="Spritesheet name"
           name={spritesheet.name}
+          className="flex-1 sm:max-w-48"
           onCommit={(name) => void save.track(updateSpritesheet(spritesheet.id, { name }))}
         />
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex shrink-0 items-center gap-1">
+          <BuilderViewControls sheet={sheet} />
+
           <Separator orientation="vertical" className="h-5" />
 
-          <Button size="sm" onClick={() => setExporting(true)}>
+          {/* aria-label, because the label below is display:none at small widths — which would
+              otherwise empty the button's accessible name along with it. */}
+          <Button size="sm" aria-label="Export" onClick={() => setExporting(true)}>
             <Download />
-            Export
+            <span className="hidden sm:inline">Export</span>
           </Button>
 
           <SaveStatusBadge status={save.status} />
         </div>
       </Panel>
 
-      {/* pointerWithin, because a drop is decided by where the cursor is — a palette tile's own
-          rect sits down in the dock and says nothing about which part of the sheet it is over.
-          No `items`: blocks sit at free x/y positions rather than in a reorderable list. */}
+      {/* No animated drop: a block lands in the slot the drag already opened for it. */}
       <DragBoard<DragData>
-        collisionDetection={pointerWithin}
         animateDrop={false}
-        onDrop={handleDragEnd}
+        onDragStart={dnd.handleDragStart}
+        onDragOver={dnd.handleDragOver}
+        onDragMove={dnd.handleDragMove}
+        onDrop={dnd.handleDragEnd}
         renderPreview={renderPreview}
       >
         <BuilderCanvas
-          canvasRef={canvasRef}
-          blocks={spritesheet.blocks}
+          rows={dnd.rows}
+          sizes={sizes}
           docs={docs}
-          onRemoveBlock={removeBlock}
+          ghostId={dnd.ghostId}
+          onRemoveBlock={dnd.removeBlock}
         />
-        <BuilderPalette placedSpriteIds={new Set(spriteIds)} />
+        <BuilderPalette placedSpriteIds={placedSpriteIds} />
       </DragBoard>
+
+      <BuilderStatusBar sheet={sheet} blockCount={dnd.blocks.length} />
 
       <BuilderExportDialog
         name={spritesheet.name}
-        blocks={spritesheet.blocks}
+        blocks={dnd.blocks}
         docs={docs}
         open={isExporting}
         onOpenChange={setExporting}

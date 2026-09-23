@@ -5,7 +5,7 @@ import type { SpritesheetBlockRecord } from "@/db/schema";
 import { compositeFrame } from "@/editor/composite";
 import type { SpriteDocument } from "@/editor/document";
 import { exportBuilderSheet } from "@/export/spritesheetBuilder";
-import { computeBuilderBounds } from "@/export/spritesheetBuilderLayout";
+import { computeBuilderBounds, sizesFromDocs } from "@/export/spritesheetBuilderLayout";
 
 export async function generateThumbnail(doc: SpriteDocument): Promise<Blob | null> {
   const frame = doc.frames[0];
@@ -33,7 +33,7 @@ export async function generateSpritesheetThumbnail(
   blocks: SpritesheetBlockRecord[],
   docs: Map<string, SpriteDocument>,
 ): Promise<Blob | null> {
-  const bounds = computeBuilderBounds(blocks, docs);
+  const bounds = computeBuilderBounds(blocks, sizesFromDocs(docs));
   if (bounds.width === 0 || bounds.height === 0) return null;
 
   const scale = Math.max(1, Math.floor(THUMBNAIL_MAX_PX / Math.max(bounds.width, bounds.height)));

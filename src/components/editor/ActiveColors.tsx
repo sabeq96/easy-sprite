@@ -61,7 +61,9 @@ function DraggableActiveSwatch({
   className: string;
 }) {
   const hex = rgbaToHex(color, true);
-  const { dragProps, dragClass } = useDragSource(id, { hex, source } satisfies PaletteDragData);
+  const { dragProps, dragClass } = useDragSource(id, {
+    data: { hex, source } satisfies PaletteDragData,
+  });
 
   return (
     <ColorPickerPopover value={color} onChange={onChange}>

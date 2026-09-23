@@ -1,5 +1,5 @@
 import { expect, test, vi } from "vitest";
-import { userEvent } from "@vitest/browser/context";
+import { page, userEvent } from "@vitest/browser/context";
 import { AppRoutes } from "@/app/routes";
 import { createSprite } from "@/db/repositories/sprites";
 import {
@@ -7,6 +7,7 @@ import {
   getSpritesheet,
   updateSpritesheet,
 } from "@/db/repositories/spritesheets";
+import { builderSaveSettled } from "@test/builder";
 import { render } from "@test/render";
 
 test("creating a spritesheet from the library opens the composer, and it lists with a sheet badge", async () => {
@@ -59,7 +60,7 @@ test("a sprite already on the sheet drops out of the palette until it is removed
   await createSprite({ name: "Villain", width: 8, height: 8 });
   const sheet = await createSpritesheet({ name: "Composed" });
   await updateSpritesheet(sheet.id, {
-    blocks: [{ id: "block-1", spriteId: placed.id, x: 0, y: 0 }],
+    blocks: [{ id: "block-1", spriteId: placed.id, row: 0 }],
   });
 
   const screen = render(<AppRoutes />, { route: `/spritesheets/${sheet.id}` });
@@ -72,21 +73,22 @@ test("a sprite already on the sheet drops out of the palette until it is removed
     .element(screen.getByRole("button", { name: "Drag Hero onto the sheet" }))
     .not.toBeInTheDocument();
 
-  await userEvent.click(screen.getByRole("button", { name: "Remove Hero", exact: true }), {
-    force: true,
-  });
+  // An 8×8 sprite is a 32px block at 4× — too small to draw its ✕, which stays keyboard-reachable.
+  (screen.getByRole("button", { name: "Remove Hero", exact: true }).element() as HTMLElement).focus();
+  await userEvent.keyboard("{Enter}");
 
   // Removing it from the canvas returns it to the palette.
   await expect
     .element(screen.getByRole("button", { name: "Drag Hero onto the sheet" }))
     .toBeVisible();
+  await builderSaveSettled();
 });
 
 test("a persisted block renders on the canvas and can be removed", async () => {
-  const sprite = await createSprite({ name: "Hero", width: 8, height: 8 });
+  const sprite = await createSprite({ name: "Hero", width: 16, height: 16 });
   const sheet = await createSpritesheet({ name: "Composed" });
   await updateSpritesheet(sheet.id, {
-    blocks: [{ id: "block-1", spriteId: sprite.id, x: 0, y: 0 }],
+    blocks: [{ id: "block-1", spriteId: sprite.id, row: 0 }],
   });
 
   const screen = render(<AppRoutes />, { route: `/spritesheets/${sheet.id}` });
@@ -96,15 +98,18 @@ test("a persisted block renders on the canvas and can be removed", async () => {
   const removeButton = screen.getByRole("button", { name: "Remove Hero", exact: true });
   await expect.element(removeButton).toBeInTheDocument();
 
-  await userEvent.click(removeButton, { force: true });
+  // 16×16 at 4× is a 64px block, big enough to draw its ✕ — clicked with the pointer, on hover.
+  await userEvent.hover(document.querySelector("[data-block-id]")!);
+  await userEvent.click(removeButton);
   await expect.element(removeButton).not.toBeInTheDocument();
+  await builderSaveSettled();
 });
 
 test("exporting the composed sheet produces a PNG blob", async () => {
   const sprite = await createSprite({ name: "Hero", width: 8, height: 8 });
   const sheet = await createSpritesheet({ name: "Composed" });
   await updateSpritesheet(sheet.id, {
-    blocks: [{ id: "block-1", spriteId: sprite.id, x: 0, y: 0 }],
+    blocks: [{ id: "block-1", spriteId: sprite.id, row: 0 }],
   });
 
   const createObjectURL = vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:mock");
@@ -121,4 +126,75 @@ test("exporting the composed sheet produces a PNG blob", async () => {
   expect(blob.size).toBeGreaterThan(0);
 
   createObjectURL.mockRestore();
+});
+
+test("the composer header keeps Export reachable in a narrow window", async () => {
+  await page.viewport(640, 720);
+  const sheet = await createSpritesheet({ name: "A spritesheet with a rather long name indeed" });
+  const screen = render(<AppRoutes />, { route: `/spritesheets/${sheet.id}` });
+
+  const exportButton = screen.getByRole("button", { name: "Export" });
+  await expect.element(exportButton).toBeVisible();
+  // Visible *and* inside the viewport — the old header pushed it past the edge, where it was
+  // clipped rather than hidden, so a visibility check alone would not have caught it.
+  const rect = exportButton.element().getBoundingClientRect();
+  expect(rect.right).toBeLessThanOrEqual(window.innerWidth);
+  await expect.element(screen.getByRole("button", { name: "Zoom in" })).toBeVisible();
+});
+
+test("zoom steps change the readout and the size every block renders at", async () => {
+  const sprite = await createSprite({ name: "Hero", width: 8, height: 8 });
+  const sheet = await createSpritesheet({ name: "Composed" });
+  await updateSpritesheet(sheet.id, { blocks: [{ id: "block-1", spriteId: sprite.id, row: 0 }] });
+  const screen = render(<AppRoutes />, { route: `/spritesheets/${sheet.id}` });
+
+  const block = () => document.querySelector('[data-block-id="block-1"]');
+  await expect.poll(block).toBeTruthy();
+  await expect.element(screen.getByLabelText("Zoom level")).toHaveTextContent("4×");
+  expect(block()!.getBoundingClientRect().width).toBe(32);
+
+  await userEvent.click(screen.getByRole("button", { name: "Zoom in" }));
+
+  await expect.element(screen.getByLabelText("Zoom level")).toHaveTextContent("6×");
+  expect(block()!.getBoundingClientRect().width).toBe(48);
+  // The status bar carries the same level as a percentage, like the sprite editor's.
+  await expect.element(screen.getByText("600%")).toBeVisible();
+});
+
+test("the grid is on when a sheet is first opened", async () => {
+  const sheet = await createSpritesheet({ name: "Composed" });
+  const screen = render(<AppRoutes />, { route: `/spritesheets/${sheet.id}` });
+
+  await expect.element(screen.getByTestId("builder-grid")).toBeInTheDocument();
+  await expect
+    .element(screen.getByRole("button", { name: "Grid options" }))
+    .toHaveAttribute("aria-pressed", "true");
+});
+
+test("on a block too small to show it, the remove button appears in the corner when focused", async () => {
+  const sprite = await createSprite({ name: "Hero", width: 8, height: 8 });
+  const other = await createSprite({ name: "Villain", width: 8, height: 8 });
+  const sheet = await createSpritesheet({ name: "Composed" });
+  await updateSpritesheet(sheet.id, {
+    blocks: [
+      { id: "a", spriteId: sprite.id, row: 0 },
+      { id: "b", spriteId: other.id, row: 1 },
+    ],
+  });
+  const screen = render(<AppRoutes />, { route: `/spritesheets/${sheet.id}` });
+  const remove = screen.getByRole("button", { name: "Remove Hero", exact: true });
+  await expect.element(remove).toBeInTheDocument();
+
+  const button = remove.element() as HTMLElement;
+  expect(getComputedStyle(button).opacity).toBe("0");
+
+  await userEvent.keyboard("{Tab}"); // move keyboard modality on, then focus the button directly
+  button.focus();
+
+  // Inside its own block's box, not pushed below it into the next row.
+  const blockRect = document.querySelector('[data-block-id="a"]')!.getBoundingClientRect();
+  const rect = button.getBoundingClientRect();
+  expect(rect.top).toBeGreaterThanOrEqual(blockRect.top);
+  expect(rect.bottom).toBeLessThanOrEqual(blockRect.bottom);
+  await expect.poll(() => getComputedStyle(button).opacity).toBe("1");
 });

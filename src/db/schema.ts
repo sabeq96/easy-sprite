@@ -61,12 +61,14 @@ export interface SettingRecord<T = unknown> {
 }
 
 export interface SpritesheetBlockRecord {
-  /** Block instance id — not the sprite id, so one sprite can appear more than once. */
+  /** Block instance id — not the sprite id, so one sprite could appear more than once. */
   id: string;
   spriteId: string;
-  /** Sprite-resolution px, top-left corner, snapped to BUILDER_GRID_SIZE. */
-  x: number;
-  y: number;
+  /**
+   * 0-based row on the sheet. Rows are gapless (an emptied row collapses) and a block's position
+   * *within* its row is this array's own order — the sheet stores no coordinates at all.
+   */
+  row: number;
 }
 
 export interface SpritesheetRecord {

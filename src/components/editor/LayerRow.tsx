@@ -13,16 +13,18 @@ import { cn } from "@/lib/utils";
 
 export interface LayerRowProps {
   layer: LayerModel;
+  /** Position in the displayed (top-first) list. */
+  index: number;
   frameId: string | null;
   isActive: boolean;
   onSelect: () => void;
 }
 
-export function LayerRow({ layer, frameId, isActive, onSelect }: LayerRowProps) {
+export function LayerRow({ layer, index, frameId, isActive, onSelect }: LayerRowProps) {
   const { doc } = useDocumentSession();
   const dispatch = useCommandDispatch();
   const [isRenaming, setRenaming] = useState(false);
-  const { dragProps, dragClass } = useSortableItem(layer.id);
+  const { dragProps, dragClass } = useSortableItem(layer.id, { index, collision: "nearest" });
 
   const toggle = (patch: Partial<LayerModel>, label: string) =>
     dispatch(() => setLayerPropsCommand(doc, layer.id, patch, label));

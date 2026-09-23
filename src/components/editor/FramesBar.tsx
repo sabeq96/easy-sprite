@@ -1,8 +1,7 @@
 import { Plus } from "lucide-react";
-import { type DragEndEvent } from "@dnd-kit/core";
-import { horizontalListSortingStrategy } from "@dnd-kit/sortable";
+import { isSortable } from "@dnd-kit/react/sortable";
 import { useDocumentSession } from "@/app/DocumentProvider";
-import { DragBoard } from "@/components/common/DragBoard";
+import { DragBoard, type DragEndEvent } from "@/components/common/DragBoard";
 import { Panel } from "@/components/common/Panel";
 import { FrameCard, FrameDragPreview } from "@/components/editor/FrameCard";
 import { Button } from "@/components/ui/button";
@@ -32,19 +31,17 @@ export function FramesBar() {
 
   const frameIds = snapshot.frames.map((frame) => frame.id);
 
-  const handleDragEnd = ({ active, over }: DragEndEvent) => {
-    if (!over || active.id === over.id) return;
-    const from = frameIds.indexOf(String(active.id));
-    const to = frameIds.indexOf(String(over.id));
-    if (from === -1 || to === -1) return;
-    dispatch(() => moveFrameCommand(doc, from, to));
+  // The strip was already reordered live during the drag (and restored on cancel), so a drop only
+  // has to commit where the card ended up.
+  const handleDragEnd = ({ operation, canceled }: DragEndEvent) => {
+    const { source } = operation;
+    if (canceled || !isSortable(source) || source.initialIndex === source.index) return;
+    dispatch(() => moveFrameCommand(doc, source.initialIndex, source.index));
   };
 
   return (
     <Panel className="flex items-center gap-2 p-2">
       <DragBoard
-        items={frameIds}
-        strategy={horizontalListSortingStrategy}
         onDrop={handleDragEnd}
         renderPreview={(_data, id) => (
           <FrameDragPreview frameId={id} index={Math.max(frameIds.indexOf(id), 0)} />
@@ -92,12 +89,12 @@ interface FrameStripProps {
 }
 
 /**
- * Its own component, rendered as DragBoard's child, so useDropZone's useDndMonitor runs inside
- * the surrounding DndContext rather than above it (calling the hook back in FramesBar would sit
- * outside that context, since FramesBar is what renders DragBoard, not what DragBoard renders).
+ * Its own component, rendered as DragBoard's child, so useDropZone's monitor runs inside the
+ * surrounding provider rather than above it (calling the hook back in FramesBar would sit outside
+ * it, since FramesBar is what renders DragBoard, not what DragBoard renders).
  *
- * No separate droppable is registered for the strip itself — inside a SortableContext, `over`
- * always resolves to one of the item ids — so the ring is claimed via `owns` instead.
+ * The strip registers no droppable of its own — its cards are the targets — so the ring is claimed
+ * via `owns` instead.
  */
 function FrameStrip({
   frames,
@@ -109,23 +106,23 @@ function FrameStrip({
 }: FrameStripProps) {
   const { ref, dropClass } = useDropZone({
     id: "frames-strip",
+    ringOnly: true,
     owns: (overId) => frameIds.includes(overId),
   });
 
   return (
     <ol ref={ref} className={cn("flex gap-2 rounded-md", dropClass)}>
       {frames.map((frame, index) => (
-        <li key={frame.id}>
-          <FrameCard
-            frameId={frame.id}
-            index={index}
-            isActive={frame.id === activeFrameId}
-            canDelete={frames.length > 1}
-            onSelect={() => onSelect(frame.id)}
-            onDuplicate={() => onDuplicate(frame.id)}
-            onDelete={() => onDelete(frame.id)}
-          />
-        </li>
+        <FrameCard
+          key={frame.id}
+          frameId={frame.id}
+          index={index}
+          isActive={frame.id === activeFrameId}
+          canDelete={frames.length > 1}
+          onSelect={() => onSelect(frame.id)}
+          onDuplicate={() => onDuplicate(frame.id)}
+          onDelete={() => onDelete(frame.id)}
+        />
       ))}
     </ol>
   );
