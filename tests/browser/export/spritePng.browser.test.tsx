@@ -1,5 +1,6 @@
 import { expect, test, vi } from "vitest";
-import { downloadSpritePng, exportSpritePng, spritePngFilename } from "@/export/spritePng";
+import { pngFilename } from "@/export/download";
+import { downloadSpritePng, exportSpritePng } from "@/export/spritePng";
 import { makeDocument } from "@test/factories";
 
 test("exportSpritePng is a 1× horizontal strip of every frame", async () => {
@@ -13,9 +14,9 @@ test("exportSpritePng is a 1× horizontal strip of every frame", async () => {
   expect(bitmap.height).toBe(4);
 });
 
-test("the file is named after the sprite", () => {
-  expect(spritePngFilename("Hero Walk")).toBe("Hero Walk.png");
-  expect(spritePngFilename("  ")).toBe("sprite.png");
+test("the file is named after the item", () => {
+  expect(pngFilename("Hero Walk")).toBe("Hero Walk.png");
+  expect(pngFilename("  ")).toBe("Untitled.png");
 });
 
 test("downloadSpritePng downloads the PNG as <sprite name>.png", async () => {

@@ -90,7 +90,7 @@ src/
     useCommands.ts          # command registry (id → run/enabled/label)
   lib/                      # pure utils: color.ts, rect.ts, id.ts, array.ts, math.ts, cn.ts
   constants/                # frozen config: tools.ts, shortcuts.ts, canvas.ts,
-                            # palettes.ts, storage.ts, export.ts — no logic, no imports
+                            # palettes.ts, storage.ts — no logic, no imports
   types/                    # shared domain types (non-persisted)
 ```
 

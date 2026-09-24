@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { ArrowLeft, Download } from "lucide-react";
 import { Link, useParams } from "react-router";
+import { toast } from "sonner";
 import { BuilderBlockPreview } from "@/components/builder/BuilderBlock";
 import { BuilderCanvas } from "@/components/builder/BuilderCanvas";
-import { BuilderExportDialog } from "@/components/builder/BuilderExportDialog";
 import { BuilderPalette, SpriteTilePreview } from "@/components/builder/BuilderPalette";
 import { BuilderStatusBar } from "@/components/builder/BuilderStatusBar";
 import { BuilderViewControls } from "@/components/builder/BuilderViewControls";
@@ -21,6 +21,7 @@ import { ROUTES } from "@/constants/routes";
 import { db } from "@/db/db";
 import { getSpritesheet, updateSpritesheet } from "@/db/repositories/spritesheets";
 import type { SpritesheetRecord } from "@/db/schema";
+import { downloadBuilderSheetPng } from "@/export/spritesheetBuilder";
 import { packSheet } from "@/export/spritesheetBuilderLayout";
 import { useSaveStatus } from "@/hooks/useSaveStatus";
 import { useSpriteSizes } from "@/hooks/useSpriteSizes";
@@ -59,6 +60,18 @@ function SpritesheetBuilderShell({ spritesheet }: { spritesheet: SpritesheetReco
 
   const sheet = packSheet(dnd.blocks, sizes);
   const placedSpriteIds = new Set(dnd.blocks.map((block) => block.spriteId));
+
+  const exportSheet = async () => {
+    setExporting(true);
+    try {
+      const filename = await downloadBuilderSheetPng(spritesheet.name, dnd.blocks, docs);
+      toast.success(`Exported ${filename}`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Export failed.");
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const renderPreview = (data: DragData) => {
     if (data.type === "palette") {
@@ -103,7 +116,12 @@ function SpritesheetBuilderShell({ spritesheet }: { spritesheet: SpritesheetReco
 
           {/* aria-label, because the label below is display:none at small widths — which would
               otherwise empty the button's accessible name along with it. */}
-          <Button size="sm" aria-label="Export" onClick={() => setExporting(true)}>
+          <Button
+            size="sm"
+            aria-label="Export"
+            onClick={() => void exportSheet()}
+            disabled={isExporting || dnd.blocks.length === 0}
+          >
             <Download />
             <span className="hidden sm:inline">Export</span>
           </Button>
@@ -132,14 +150,6 @@ function SpritesheetBuilderShell({ spritesheet }: { spritesheet: SpritesheetReco
       </DragBoard>
 
       <BuilderStatusBar sheet={sheet} blockCount={dnd.blocks.length} />
-
-      <BuilderExportDialog
-        name={spritesheet.name}
-        blocks={dnd.blocks}
-        docs={docs}
-        open={isExporting}
-        onOpenChange={setExporting}
-      />
     </div>
   );
 }
