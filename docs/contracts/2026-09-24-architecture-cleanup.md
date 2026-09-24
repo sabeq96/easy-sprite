@@ -79,14 +79,14 @@ repositories uniform, and update the docs to describe the code that exists.
 - [x] repos: palettes quota guard + `find`/`get` semantics, spritesheet `find`, drop dead barrel
 
 **Batch 2 — hooks layer** (DW 2, 3, 5)
-- [ ] `useAsyncAction`; `useLibrary({ kinds })`, delete `useSpriteLibrary`; `useSpriteSizes` via repo
-- [ ] action hooks: sprites, spritesheets (+ `useSpritesheet(id)`), palettes, backup
-- [ ] move `components/builder/useBuilderDnd.ts` → `hooks/`
+- [x] `useAsyncAction`; `useLibrary({ kinds })`, delete `useSpriteLibrary`; `useSpriteSizes` via repo
+- [x] action hooks: sprites, spritesheets (+ `useSpritesheet(id)`), palettes, backup
+- [x] move `components/builder/useBuilderDnd.ts` → `hooks/`
 
 **Batch 3 — components** (DW 1, 2, 4, 6)
-- [ ] shared `NameDialog` (name + optional tags + extra body), used by the 4 dialogs; test
-- [ ] `LibraryItemMenu` shared by the two card menus
-- [ ] rewire components to the action hooks; lint overrides for components/hooks; BuilderBlock lint
+- [x] shared `NameDialog` (name + optional tags + extra body), used by the 4 dialogs; test
+- [x] `LibraryItemMenu` shared by the two card menus
+- [x] rewire components to the action hooks; lint overrides for components/hooks; BuilderBlock lint
 
 **Batch 4 — robustness & docs** (DW 7–10)
 - [ ] route error boundary + browser test
@@ -95,4 +95,15 @@ repositories uniform, and update the docs to describe the code that exists.
 
 ## Drift log
 
-_(empty)_
+- **DW 2 grep**: components keep 7 `import type` lines from `@/db/schema` (record shapes) and one
+  from `@/services/autosave` (`SaveStatus`). Types carry no behaviour, so the lint rule sets
+  `allowTypeImports: true`; the literal grep in DW 2 would still match these lines.
+- **useLibrary API**: `useLibrary(kind?)` (one optional kind) instead of `useLibrary({ kinds })` —
+  an array argument would change identity each render and re-run the live query.
+- **Shared dialog**: split into `FormDialog` (shell, fresh form per open), `NameForm` (name/tags
+  fields + footer, extra fields as children) and `NameDialog` (the two composed), because
+  `NewSpriteDialog` needs extra size fields that must also reset on open.
+- **Button variant**: added `revealOnFocus` to `ui/button.tsx` to clear the `no-restyle` error.
+- **Pre-existing browser failures**: `dnd-visuals › a reordered palette shows its new order…` and
+  `spritesheet-drag › a sprite dropped on the empty sheet…` fail on untouched `main` too in this
+  container (Chromium 1194 vs the headless shell Playwright expects); not addressed here.

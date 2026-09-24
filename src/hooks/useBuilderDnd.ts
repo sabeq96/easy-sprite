@@ -4,7 +4,7 @@ import type {
   DragMoveEvent,
   DragOverEvent,
   DragStartEvent,
-} from "@/components/common/DragBoard";
+} from "@dnd-kit/dom";
 import { updateSpritesheet } from "@/db/repositories/spritesheets";
 import type { SpritesheetBlockRecord, SpritesheetRecord } from "@/db/schema";
 import type { SpriteDocument } from "@/editor/document";

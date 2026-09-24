@@ -18,7 +18,7 @@ export interface ConfirmDialogProps {
   destructive?: boolean;
   onConfirm: () => void;
   children: ReactElement;
-  /** False when the trigger isn't a real `<button>` (SpriteCardMenu passes a DropdownMenuItem)
+  /** False when the trigger isn't a real `<button>` (LibraryItemMenu passes a DropdownMenuItem)
    * — see conventions.md §6d. */
   nativeButton?: boolean;
 }

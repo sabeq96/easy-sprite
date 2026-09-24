@@ -1,5 +1,6 @@
 import { Panel } from "@/components/common/Panel";
 import { Separator } from "@/components/ui/separator";
+import { plural } from "@/lib/format";
 import type { PackedSheet } from "@/lib/sheetLayout";
 import { useBuilderViewStore } from "@/stores/useBuilderViewStore";
 
@@ -23,11 +24,11 @@ export function BuilderStatusBar({ sheet, blockCount }: BuilderStatusBarProps) {
       </span>
       <Separator orientation="vertical" className="h-3" />
       <span className="tabular-nums">
-        {blockCount} {blockCount === 1 ? "sprite" : "sprites"}
+        {plural(blockCount, "sprite")}
       </span>
       <Separator orientation="vertical" className="h-3" />
       <span className="tabular-nums">
-        {rowCount} {rowCount === 1 ? "row" : "rows"}
+        {plural(rowCount, "row")}
       </span>
       <span className="ml-auto tabular-nums">{Math.round(zoom * 100)}%</span>
     </Panel>

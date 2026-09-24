@@ -1,6 +1,5 @@
 import { useRef, useState } from "react";
 import { Download, Upload } from "lucide-react";
-import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,61 +12,21 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { clearAllData, exportBackup, importBackup, validateBackup } from "@/db/backup";
-import { downloadJson } from "@/export/download";
+import { useBackupActions } from "@/hooks/useBackupActions";
 import type { BackupFile, ImportMode } from "@/types/backup";
 
 export function BackupSection() {
   const fileRef = useRef<HTMLInputElement>(null);
-  const [isExporting, setExporting] = useState(false);
+  const backup = useBackupActions();
+  // Shown in the import dialog before anything touches the database.
   const [pending, setPending] = useState<BackupFile | null>(null);
 
-  const runExport = async () => {
-    setExporting(true);
-    try {
-      const backup = await exportBackup();
-      const date = new Date().toISOString().slice(0, 10);
-      downloadJson(backup, `sprite-editor-backup-${date}.json`);
-      toast.success(`Exported ${backup.counts.sprites} sprites`);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Backup failed.");
-    } finally {
-      setExporting(false);
-    }
-  };
-
-  const readFile = async (file: File) => {
-    try {
-      // Validate before touching the database, and show what is in the file first.
-      const parsed: unknown = JSON.parse(await file.text());
-      const validated = validateBackup(parsed);
-      if (!validated.ok) {
-        toast.error(validated.error);
-        return;
-      }
-      setPending(validated.value);
-    } catch {
-      toast.error("That file is not valid JSON.");
-    }
-  };
+  const readFile = async (file: File) => setPending(await backup.readFile(file));
 
   const runImport = async (mode: ImportMode) => {
     if (!pending) return;
-    const result = await importBackup(pending, mode);
+    await backup.restore(pending, mode);
     setPending(null);
-
-    if (!result.ok) {
-      toast.error(result.error);
-      return;
-    }
-    const { sprites, spritesheets, skipped } = result.value;
-    const parts = [`${sprites} sprites`];
-    if (spritesheets > 0) parts.push(`${spritesheets} spritesheets`);
-    toast.success(
-      skipped > 0
-        ? `Imported ${parts.join(", ")} · kept ${skipped} existing`
-        : `Imported ${parts.join(", ")}`,
-    );
   };
 
   return (
@@ -80,9 +39,13 @@ export function BackupSection() {
       </CardHeader>
 
       <CardContent gap="sm" className="flex flex-wrap">
-        <Button variant="outline" onClick={runExport} disabled={isExporting}>
+        <Button
+          variant="outline"
+          onClick={() => void backup.exportAll.run()}
+          disabled={backup.exportAll.isRunning}
+        >
           <Download />
-          {isExporting ? "Exporting…" : "Export backup"}
+          {backup.exportAll.isRunning ? "Exporting…" : "Export backup"}
         </Button>
 
         <Button variant="outline" onClick={() => fileRef.current?.click()}>
@@ -95,9 +58,7 @@ export function BackupSection() {
           description="This permanently removes every sprite, spritesheet, layer and palette from this browser, and restores the starter palettes. Export a backup first."
           confirmLabel="Delete everything"
           destructive
-          onConfirm={() => {
-            void clearAllData().then(() => toast.success("All data deleted"));
-          }}
+          onConfirm={() => void backup.clearAll()}
         >
           <Button variant="destructive">Delete all data</Button>
         </ConfirmDialog>

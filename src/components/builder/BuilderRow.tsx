@@ -1,5 +1,5 @@
 import { BuilderBlock } from "@/components/builder/BuilderBlock";
-import { gutterDropId, type BuilderRowView } from "@/components/builder/useBuilderDnd";
+import { gutterDropId, type BuilderRowView } from "@/hooks/useBuilderDnd";
 
 import type { SpriteDocument } from "@/editor/document";
 import type { BlockSizes } from "@/lib/sheetLayout";

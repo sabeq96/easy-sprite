@@ -1,14 +1,10 @@
-import { useEffect, useState } from "react";
-import { useLiveQuery } from "dexie-react-hooks";
 import { ArrowLeft, Download } from "lucide-react";
 import { Link, useParams } from "react-router";
-import { toast } from "sonner";
 import { BuilderBlockPreview } from "@/components/builder/BuilderBlock";
 import { BuilderCanvas } from "@/components/builder/BuilderCanvas";
 import { BuilderPalette, SpriteTilePreview } from "@/components/builder/BuilderPalette";
 import { BuilderStatusBar } from "@/components/builder/BuilderStatusBar";
 import { BuilderViewControls } from "@/components/builder/BuilderViewControls";
-import { useBuilderDnd, type DragData } from "@/components/builder/useBuilderDnd";
 import { DragBoard } from "@/components/common/DragBoard";
 import { InlineNameField } from "@/components/common/InlineNameField";
 import { NotFoundPage } from "@/components/common/NotFoundPage";
@@ -18,13 +14,13 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ROUTES } from "@/constants/routes";
-import { db } from "@/db/db";
-import { getSpritesheet, updateSpritesheet } from "@/db/repositories/spritesheets";
 import type { SpritesheetRecord } from "@/db/schema";
-import { downloadBuilderSheetPng } from "@/export/spritesheetBuilder";
-import { packSheet } from "@/lib/sheetLayout";
+import { useBuilderDnd, type DragData } from "@/hooks/useBuilderDnd";
 import { useSaveStatus } from "@/hooks/useSaveStatus";
 import { useSpriteSizes } from "@/hooks/useSpriteSizes";
+import { useSpritesheet } from "@/hooks/useSpritesheet";
+import { useSpritesheetActions, useSpritesheetExport } from "@/hooks/useSpritesheetActions";
+import { packSheet } from "@/lib/sheetLayout";
 
 export function SpritesheetBuilderPage() {
   const { spritesheetId } = useParams<{ spritesheetId: string }>();
@@ -33,45 +29,22 @@ export function SpritesheetBuilderPage() {
 }
 
 function SpritesheetBuilderLoader({ spritesheetId }: { spritesheetId: string }) {
-  const [notFound, setNotFound] = useState(false);
-  const spritesheet = useLiveQuery(() => db.spritesheets.get(spritesheetId), [spritesheetId]);
-
-  useEffect(() => {
-    let cancelled = false;
-    getSpritesheet(spritesheetId).catch(() => {
-      if (!cancelled) setNotFound(true);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [spritesheetId]);
-
-  if (notFound) return <NotFoundPage />;
-  if (!spritesheet) return <BuilderSkeleton />;
-  return <SpritesheetBuilderShell spritesheet={spritesheet} />;
+  const state = useSpritesheet(spritesheetId);
+  if (state.status === "missing") return <NotFoundPage />;
+  if (state.status === "loading") return <BuilderSkeleton />;
+  return <SpritesheetBuilderShell spritesheet={state.spritesheet} />;
 }
 
 function SpritesheetBuilderShell({ spritesheet }: { spritesheet: SpritesheetRecord }) {
   const save = useSaveStatus();
-  const [isExporting, setExporting] = useState(false);
+  const actions = useSpritesheetActions();
+  const exportSheet = useSpritesheetExport();
   const sizes = useSpriteSizes();
   const dnd = useBuilderDnd(spritesheet, sizes, save.track);
   const { docs } = dnd;
 
   const sheet = packSheet(dnd.blocks, sizes);
   const placedSpriteIds = new Set(dnd.blocks.map((block) => block.spriteId));
-
-  const exportSheet = async () => {
-    setExporting(true);
-    try {
-      const filename = await downloadBuilderSheetPng(spritesheet.name, dnd.blocks, docs);
-      toast.success(`Exported ${filename}`);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Export failed.");
-    } finally {
-      setExporting(false);
-    }
-  };
 
   const renderPreview = (data: DragData) => {
     if (data.type === "palette") {
@@ -106,7 +79,7 @@ function SpritesheetBuilderShell({ spritesheet }: { spritesheet: SpritesheetReco
           label="Spritesheet name"
           name={spritesheet.name}
           className="flex-1 sm:max-w-48"
-          onCommit={(name) => void save.track(updateSpritesheet(spritesheet.id, { name }))}
+          onCommit={(name) => void save.track(actions.update(spritesheet.id, { name }))}
         />
 
         <div className="ml-auto flex shrink-0 items-center gap-1">
@@ -119,8 +92,8 @@ function SpritesheetBuilderShell({ spritesheet }: { spritesheet: SpritesheetReco
           <Button
             size="sm"
             aria-label="Export"
-            onClick={() => void exportSheet()}
-            disabled={isExporting || dnd.blocks.length === 0}
+            onClick={() => void exportSheet.run(spritesheet.name, dnd.blocks, docs)}
+            disabled={exportSheet.isRunning || dnd.blocks.length === 0}
           >
             <Download />
             <span className="hidden sm:inline">Export</span>

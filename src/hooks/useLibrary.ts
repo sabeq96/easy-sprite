@@ -1,13 +1,17 @@
 import { useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { db } from "@/db/db";
+import { listSprites } from "@/db/repositories/sprites";
+import { listSpritesheets } from "@/db/repositories/spritesheets";
 import type { SpriteRecord, SpritesheetRecord } from "@/db/schema";
+import { countTags, queryLibrary, type LibrarySort, type TagCount } from "@/lib/library";
 
-export type LibrarySort = "updated" | "created" | "name";
+export type { LibrarySort };
 
 export type LibraryItem =
   | { kind: "sprite"; record: SpriteRecord }
   | { kind: "spritesheet"; record: SpritesheetRecord };
+
+export type LibraryKind = LibraryItem["kind"];
 
 export interface Library {
   items: LibraryItem[];
@@ -19,62 +23,39 @@ export interface Library {
   setSort: (value: LibrarySort) => void;
   tag: string | null;
   setTag: (value: string | null) => void;
-  allTags: { tag: string; count: number }[];
+  allTags: TagCount[];
 }
 
-const COMPARATORS: Record<LibrarySort, (a: LibraryItem, b: LibraryItem) => number> = {
-  updated: (a, b) => b.record.updatedAt - a.record.updatedAt,
-  created: (a, b) => b.record.createdAt - a.record.createdAt,
-  name: (a, b) => a.record.name.localeCompare(b.record.name),
-};
+const NO_TAGS: TagCount[] = [];
 
-/** Sprites and spritesheets, merged into one searchable/sortable gallery. */
-export function useLibrary(): Library {
+/** `kind` narrows to one kind of item; omitted, every kind is listed. */
+async function listItems(kind: LibraryKind | undefined, tag: string | null): Promise<LibraryItem[]> {
+  const [sprites, spritesheets] = await Promise.all([
+    kind === undefined || kind === "sprite" ? listSprites(tag) : [],
+    kind === undefined || kind === "spritesheet" ? listSpritesheets(tag) : [],
+  ]);
+  return [
+    ...sprites.map((record): LibraryItem => ({ kind: "sprite", record })),
+    ...spritesheets.map((record): LibraryItem => ({ kind: "spritesheet", record })),
+  ];
+}
+
+/** Library items (all kinds, or just `kind`) as one searchable, sortable, tag-filtered list. */
+export function useLibrary(kind?: LibraryKind): Library {
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<LibrarySort>("updated");
   const [tag, setTag] = useState<string | null>(null);
 
-  const items = useLiveQuery(async () => {
-    const [sprites, spritesheets] = await Promise.all([
-      tag ? db.sprites.where("tags").equals(tag).toArray() : db.sprites.toArray(),
-      tag ? db.spritesheets.where("tags").equals(tag).toArray() : db.spritesheets.toArray(),
-    ]);
-
-    const merged: LibraryItem[] = [
-      ...sprites.map((record): LibraryItem => ({ kind: "sprite", record })),
-      ...spritesheets.map((record): LibraryItem => ({ kind: "spritesheet", record })),
-    ];
-
-    const needle = search.trim().toLowerCase();
-    const filtered = needle
-      ? merged.filter(
-          (item) =>
-            item.record.name.toLowerCase().includes(needle) ||
-            item.record.tags.some((entry) => entry.toLowerCase().includes(needle)),
-        )
-      : merged;
-
-    return filtered.sort(COMPARATORS[sort]);
-  }, [search, sort, tag]);
+  // Dexie re-runs these whenever a row they read changes; deps behave like useEffect deps.
+  const items = useLiveQuery(
+    async () => queryLibrary(await listItems(kind, tag), { search, sort }, (item) => item.record),
+    [kind, search, sort, tag],
+  );
 
   const allTags = useLiveQuery(
-    async () => {
-      const [sprites, spritesheets] = await Promise.all([
-        db.sprites.toArray(),
-        db.spritesheets.toArray(),
-      ]);
-
-      const counts = new Map<string, number>();
-      for (const record of [...sprites, ...spritesheets]) {
-        for (const entry of record.tags) counts.set(entry, (counts.get(entry) ?? 0) + 1);
-      }
-
-      return [...counts.entries()]
-        .map(([entry, count]) => ({ tag: entry, count }))
-        .sort((a, b) => a.tag.localeCompare(b.tag));
-    },
-    [],
-    [],
+    async () => countTags((await listItems(kind, null)).map((item) => item.record)),
+    [kind],
+    NO_TAGS,
   );
 
   return {

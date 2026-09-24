@@ -1,6 +1,6 @@
 import { Fragment, useRef } from "react";
 import { BuilderRow, RowGutter } from "@/components/builder/BuilderRow";
-import type { BuilderRowView } from "@/components/builder/useBuilderDnd";
+import type { BuilderRowView } from "@/hooks/useBuilderDnd";
 import { Panel } from "@/components/common/Panel";
 import {
   BUILDER_GRID_LINE,

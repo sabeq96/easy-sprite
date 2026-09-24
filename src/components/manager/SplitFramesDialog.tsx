@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -13,10 +12,9 @@ import {
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { CANVAS_SIZE_PRESETS, MIN_CANVAS_SIZE } from "@/constants/canvas";
-import { splitSpriteIntoFrames } from "@/db/repositories/sprites";
 import type { SpriteRecord } from "@/db/schema";
-import { openDocument } from "@/services/documentService";
-import { saveThumbnail } from "@/services/thumbnails";
+import { useSpriteActions } from "@/hooks/useSpriteActions";
+import { plural } from "@/lib/format";
 import { clamp } from "@/lib/math";
 import { computeSplitGrid, isValidSplitFrameSize, type CanvasSize } from "@/lib/validation";
 
@@ -67,6 +65,7 @@ function SplitFramesForm({
 }) {
   const [frameSize, setFrameSize] = useState<CanvasSize>(() => guessFrameSize(sprite));
   const [isSplitting, setSplitting] = useState(false);
+  const actions = useSpriteActions();
 
   const spriteSize = { width: sprite.width, height: sprite.height };
   const valid = isValidSplitFrameSize(spriteSize, frameSize);
@@ -81,17 +80,9 @@ function SplitFramesForm({
   const split = async () => {
     if (!valid || !grid || grid.frameCount < 1) return;
     setSplitting(true);
-    try {
-      const updated = await splitSpriteIntoFrames(sprite.id, frameSize.width, frameSize.height);
-      const doc = await openDocument(updated.id);
-      await saveThumbnail(doc);
-      toast.success(`Split into ${grid.frameCount} frames`);
-      onDone();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Split failed.");
-    } finally {
-      setSplitting(false);
-    }
+    const isSplit = await actions.split(sprite, frameSize, grid.frameCount);
+    setSplitting(false);
+    if (isSplit) onDone();
   };
 
   return (
@@ -127,8 +118,7 @@ function SplitFramesForm({
         Sprite is {sprite.width}×{sprite.height}.{" "}
         {grid && grid.frameCount >= 1 ? (
           <>
-            {grid.columns}×{grid.rows} grid → {grid.frameCount}{" "}
-            {grid.frameCount === 1 ? "frame" : "frames"}
+            {grid.columns}×{grid.rows} grid → {plural(grid.frameCount, "frame")}
             {(grid.remainderX > 0 || grid.remainderY > 0) &&
               ` (${grid.remainderX}px right / ${grid.remainderY}px bottom left over)`}
           </>
