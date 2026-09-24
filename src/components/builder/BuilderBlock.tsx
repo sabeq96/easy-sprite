@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { BUILDER_BLOCK_CHROME_MIN_PX, BUILDER_FALLBACK_BLOCK_PX } from "@/constants/builder";
 import type { SpritesheetBlockRecord } from "@/db/schema";
 import type { SpriteDocument } from "@/editor/document";
-import type { BlockSize } from "@/export/spritesheetBuilderLayout";
+import type { BlockSize } from "@/lib/sheetLayout";
 import { renderSpriteStrip } from "@/export/spriteStrip";
 import { useSortableItem } from "@/hooks/useDnd";
 import { cn } from "@/lib/utils";

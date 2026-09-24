@@ -1,7 +1,7 @@
 import type { SpritesheetBlockRecord } from "@/db/schema";
 import type { SpriteDocument } from "@/editor/document";
 import { downloadBlob, pngFilename } from "@/export/download";
-import { packSheet, sizesFromDocs } from "@/export/spritesheetBuilderLayout";
+import { packSheet, sizesFromDocs } from "@/lib/sheetLayout";
 import { renderSpriteStrip } from "@/export/spriteStrip";
 
 /** Composes every placed block's sprite strip onto one 1× sheet, at its packed position. */

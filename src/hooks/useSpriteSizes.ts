@@ -1,7 +1,7 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/db/db";
 import type { SpriteRecord } from "@/db/schema";
-import { sizesFromRecords, type BlockSizes } from "@/export/spritesheetBuilderLayout";
+import { sizesFromRecords, type BlockSizes } from "@/lib/sheetLayout";
 
 const NO_SPRITES: SpriteRecord[] = [];
 

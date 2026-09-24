@@ -4,6 +4,8 @@ import { db } from "@/db/db";
 import { NotFoundError, withQuotaGuard } from "@/db/errors";
 import { celKey, isCelEmpty } from "@/db/repositories/cels";
 import type { CelRecord, FrameMeta, LayerRecord, SpriteRecord } from "@/db/schema";
+import { DEFAULT_ITEM_NAME, DEFAULT_LAYER_NAME } from "@/constants/names";
+import { nameOrDefault } from "@/lib/format";
 import { createId } from "@/lib/id";
 import type { PixelBuffer } from "@/types/pixels";
 import { fromRows, toRows } from "@/lib/sheetRows";
@@ -29,7 +31,7 @@ export async function createSprite(options: CreateSpriteOptions = {}): Promise<S
   const layerId = createId();
   const sprite: SpriteRecord = {
     id: createId(),
-    name: options.name?.trim() || "Untitled",
+    name: nameOrDefault(options.name, DEFAULT_ITEM_NAME),
     width: options.width ?? DEFAULT_CANVAS_SIZE,
     height: options.height ?? DEFAULT_CANVAS_SIZE,
     fps: options.fps ?? DEFAULT_FPS,
@@ -48,7 +50,7 @@ export async function createSprite(options: CreateSpriteOptions = {}): Promise<S
       await db.layers.add({
         id: layerId,
         spriteId: sprite.id,
-        name: "Layer 1",
+        name: DEFAULT_LAYER_NAME,
         opacity: 1,
         visible: true,
         locked: false,
@@ -60,7 +62,9 @@ export async function createSprite(options: CreateSpriteOptions = {}): Promise<S
   return sprite;
 }
 
-export function listSprites(): Promise<SpriteRecord[]> {
+/** Newest first; with a `tag`, only the sprites carrying it. */
+export function listSprites(tag: string | null = null): Promise<SpriteRecord[]> {
+  if (tag) return db.sprites.where("tags").equals(tag).reverse().sortBy("updatedAt");
   return db.sprites.orderBy("updatedAt").reverse().toArray();
 }
 

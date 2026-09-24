@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { makeDocument } from "@test/factories";
 import type { SpritesheetBlockRecord } from "@/db/schema";
-import { computeBuilderBounds, packSheet, sizesFromDocs } from "@/export/spritesheetBuilderLayout";
+import { computeBuilderBounds, packSheet, sizesFromDocs } from "@/lib/sheetLayout";
 
 const sizes = new Map([
   ["wide", { w: 32, h: 8 }],

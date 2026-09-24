@@ -1,3 +1,6 @@
+import { DEFAULT_ITEM_NAME } from "@/constants/names";
+import { nameOrDefault } from "@/lib/format";
+
 export function downloadBlob(blob: Blob, filename: string): void {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
@@ -17,5 +20,5 @@ export function downloadJson(value: unknown, filename: string): void {
 
 /** `Hero Walk` → `Hero Walk.png`: an export is named after the item, nothing more. */
 export function pngFilename(name: string): string {
-  return `${name.trim() || "Untitled"}.png`;
+  return `${nameOrDefault(name, DEFAULT_ITEM_NAME)}.png`;
 }

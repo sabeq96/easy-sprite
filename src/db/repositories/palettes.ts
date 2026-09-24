@@ -1,12 +1,16 @@
+import { DEFAULT_PALETTE_NAME } from "@/constants/names";
 import { db } from "@/db/db";
+import { withQuotaGuard } from "@/db/errors";
 import type { PaletteRecord } from "@/db/schema";
+import { nameOrDefault } from "@/lib/format";
 import { createId } from "@/lib/id";
 
 export function listPalettes(): Promise<PaletteRecord[]> {
   return db.palettes.orderBy("name").toArray();
 }
 
-export function getPalette(id: string): Promise<PaletteRecord | undefined> {
+/** Palettes can be deleted from under a stale id, so absence is an expected result here. */
+export function findPalette(id: string): Promise<PaletteRecord | undefined> {
   return db.palettes.get(id);
 }
 
@@ -22,12 +26,12 @@ export async function createPalette(name: string, colors: string[]): Promise<Pal
   const now = Date.now();
   const palette: PaletteRecord = {
     id: createId(),
-    name: name.trim() || "New palette",
+    name: nameOrDefault(name, DEFAULT_PALETTE_NAME),
     colors: uniqueColors(colors),
     createdAt: now,
     updatedAt: now,
   };
-  await db.palettes.add(palette);
+  await withQuotaGuard(() => db.palettes.add(palette));
   return palette;
 }
 
@@ -36,7 +40,9 @@ export function updatePalette(
   patch: Partial<Pick<PaletteRecord, "name" | "colors">>,
 ): Promise<number> {
   const colors = patch.colors && uniqueColors(patch.colors);
-  return db.palettes.update(id, { ...patch, ...(colors && { colors }), updatedAt: Date.now() });
+  return withQuotaGuard(() =>
+    db.palettes.update(id, { ...patch, ...(colors && { colors }), updatedAt: Date.now() }),
+  );
 }
 
 export function removePalette(id: string): Promise<void> {

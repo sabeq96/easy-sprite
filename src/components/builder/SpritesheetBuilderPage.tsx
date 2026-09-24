@@ -22,7 +22,7 @@ import { db } from "@/db/db";
 import { getSpritesheet, updateSpritesheet } from "@/db/repositories/spritesheets";
 import type { SpritesheetRecord } from "@/db/schema";
 import { downloadBuilderSheetPng } from "@/export/spritesheetBuilder";
-import { packSheet } from "@/export/spritesheetBuilderLayout";
+import { packSheet } from "@/lib/sheetLayout";
 import { useSaveStatus } from "@/hooks/useSaveStatus";
 import { useSpriteSizes } from "@/hooks/useSpriteSizes";
 

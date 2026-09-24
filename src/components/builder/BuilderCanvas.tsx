@@ -9,7 +9,7 @@ import {
   ROW_GUTTER_REACH_PX,
 } from "@/constants/builder";
 import type { SpriteDocument } from "@/editor/document";
-import type { BlockSizes } from "@/export/spritesheetBuilderLayout";
+import type { BlockSizes } from "@/lib/sheetLayout";
 import { useBuilderViewport } from "@/hooks/useBuilderViewport";
 import { useBuilderViewStore } from "@/stores/useBuilderViewStore";
 

@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 import { AppRoutes } from "@/app/routes";
-import { createPalette, getPalette } from "@/db/repositories/palettes";
+import { createPalette, findPalette } from "@/db/repositories/palettes";
 import { createSprite } from "@/db/repositories/sprites";
 import {
   createSpritesheet,
@@ -136,7 +136,7 @@ test("a reordered palette shows its new order before the write returns from Dexi
 
   // …and the stored palette agrees once the write lands, so the optimistic order was not a lie.
   await expect
-    .poll(async () => (await getPalette(palette.id))?.colors)
+    .poll(async () => (await findPalette(palette.id))?.colors)
     .toEqual(["#00ff00", "#0000ff", "#ffff00", "#ff0000"]);
 });
 
@@ -284,6 +284,6 @@ test("a color dragged in from outside the palette opens a slot for itself before
   await release(to);
 
   await expect
-    .poll(async () => (await getPalette(palette.id))?.colors)
+    .poll(async () => (await findPalette(palette.id))?.colors)
     .toEqual(["#ff0000", "#123456", "#00ff00", "#0000ff"]);
 });

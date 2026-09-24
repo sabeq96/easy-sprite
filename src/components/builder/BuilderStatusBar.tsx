@@ -1,6 +1,6 @@
 import { Panel } from "@/components/common/Panel";
 import { Separator } from "@/components/ui/separator";
-import type { PackedSheet } from "@/export/spritesheetBuilderLayout";
+import type { PackedSheet } from "@/lib/sheetLayout";
 import { useBuilderViewStore } from "@/stores/useBuilderViewStore";
 
 export interface BuilderStatusBarProps {
