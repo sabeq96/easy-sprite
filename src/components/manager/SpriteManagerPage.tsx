@@ -16,10 +16,8 @@ import { NewSpritesheetDialog } from "@/components/manager/NewSpritesheetDialog"
 import { SpriteCard } from "@/components/manager/SpriteCard";
 import { SpriteLibraryToolbar } from "@/components/manager/SpriteLibraryToolbar";
 import { SpritesheetCard } from "@/components/manager/SpritesheetCard";
-import { DEFAULT_EXPORT_OPTIONS } from "@/constants/export";
 import type { SpriteRecord } from "@/db/schema";
-import { downloadBlob, toFilenameSlug } from "@/export/download";
-import { exportSpritesheet } from "@/export/spritesheet";
+import { downloadSpritePng } from "@/export/spritePng";
 import { openDocument } from "@/services/documentService";
 import { importPngFiles } from "@/services/importPng";
 import { useLibrary } from "@/hooks/useLibrary";
@@ -29,13 +27,11 @@ export function SpriteManagerPage() {
   const [isCreatingSprite, setCreatingSprite] = useState(false);
   const [isCreatingSpritesheet, setCreatingSpritesheet] = useState(false);
 
-  // Quick export straight from the gallery, at defaults; the editor dialog has the options.
+  // Same one-click export as the editor's Export button.
   const exportSprite = async (sprite: SpriteRecord) => {
     try {
-      const doc = await openDocument(sprite.id);
-      const { blob } = await exportSpritesheet(doc, DEFAULT_EXPORT_OPTIONS);
-      downloadBlob(blob, `${toFilenameSlug(sprite.name)}-sheet.png`);
-      toast.success(`Exported ${doc.frames.length} frames`);
+      const filename = await downloadSpritePng(await openDocument(sprite.id));
+      toast.success(`Exported ${filename}`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Export failed.");
     }
