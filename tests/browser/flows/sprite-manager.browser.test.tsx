@@ -22,6 +22,20 @@ test("creating a sprite from the library opens it in the editor, and it lists on
   await expect.element(screen.getByRole("button", { name: "Open Hero walk" })).toBeVisible();
 });
 
+test("tags entered when creating a sprite show up in the library", async () => {
+  const screen = render(<AppRoutes />, { route: "/sprites" });
+
+  await userEvent.click(screen.getByRole("button", { name: "New sprite", exact: true }).first());
+  await userEvent.fill(screen.getByLabelText("Name"), "Hero walk");
+  await userEvent.fill(screen.getByLabelText("Tags"), "Hero, Walk");
+  await userEvent.click(screen.getByRole("button", { name: "Create" }));
+  await expect.element(screen.getByRole("application", { name: "Sprite canvas" })).toBeVisible();
+
+  await userEvent.click(screen.getByRole("button", { name: "Back to sprites" }));
+  await expect.element(screen.getByRole("button", { name: "hero 1", exact: true })).toBeVisible();
+  await expect.element(screen.getByRole("button", { name: "walk 1", exact: true })).toBeVisible();
+});
+
 test("deleting a sprite through its menu removes it from the library", async () => {
   const screen = render(<AppRoutes />, { route: "/sprites" });
 

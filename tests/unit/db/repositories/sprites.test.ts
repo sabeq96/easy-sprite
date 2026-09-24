@@ -31,6 +31,11 @@ describe("sprite repository", () => {
     expect(sprite.name).toBe("Untitled");
   });
 
+  it("stores the tags it is created with", async () => {
+    const sprite = await createSprite({ tags: ["hero", "walk"] });
+    expect((await loadSnapshot(sprite.id)).sprite.tags).toEqual(["hero", "walk"]);
+  });
+
   it("returns layers ordered bottom to top", async () => {
     const sprite = await createSprite();
     const extra = { spriteId: sprite.id, name: "Top", opacity: 1, visible: true, locked: false };
