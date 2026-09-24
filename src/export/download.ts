@@ -15,13 +15,7 @@ export function downloadJson(value: unknown, filename: string): void {
   );
 }
 
-/** `Hero Walk` → `hero-walk`, so filenames are portable. */
-export function toFilenameSlug(name: string): string {
-  return (
-    name
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "") || "sprite"
-  );
+/** `Hero Walk` → `Hero Walk.png`: an export is named after the item, nothing more. */
+export function pngFilename(name: string): string {
+  return `${name.trim() || "Untitled"}.png`;
 }

@@ -4,7 +4,7 @@ import type { SpriteDocument } from "@/editor/document";
 export interface CompositeOptions {
   /** Render a single layer only — used by layer thumbnails. */
   onlyLayerId?: string;
-  /** Ignore visibility flags — used by export and thumbnails. */
+  /** Ignore visibility flags — used by layer thumbnails. */
   includeHidden?: boolean;
 }
 

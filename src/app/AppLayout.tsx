@@ -1,6 +1,5 @@
 import { Images, Settings } from "lucide-react";
 import { Link, Outlet, useLocation } from "react-router";
-import { ThemeToggle } from "@/components/common/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ROUTES } from "@/constants/routes";
@@ -36,10 +35,6 @@ export function AppLayout() {
             />
           ))}
         </nav>
-
-        <div className="ml-auto">
-          <ThemeToggle />
-        </div>
       </header>
 
       <main className="flex-1 overflow-auto p-4">

@@ -1,4 +1,5 @@
 import { useId, useState } from "react";
+import { TagsField } from "@/components/common/TagsField";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -10,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { parseTags } from "@/lib/tags";
 
 export interface RenameDialogProps {
   title: string;
@@ -49,10 +51,7 @@ function RenameForm({ name, tags, tagsPlaceholder, onSave, onDone }: RenameFormP
   const save = async () => {
     await onSave({
       name: nameDraft.trim() || name,
-      tags: tagsDraft
-        .split(",")
-        .map((tag) => tag.trim().toLowerCase())
-        .filter(Boolean),
+      tags: parseTags(tagsDraft),
     });
     onDone();
   };
@@ -60,9 +59,9 @@ function RenameForm({ name, tags, tagsPlaceholder, onSave, onDone }: RenameFormP
   return (
     <>
       <Field>
-        <FieldLabel htmlFor={`${fieldId}-name`}>Name</FieldLabel>
+        <FieldLabel htmlFor={fieldId}>Name</FieldLabel>
         <Input
-          id={`${fieldId}-name`}
+          id={fieldId}
           autoFocus
           value={nameDraft}
           onChange={(event) => setNameDraft(event.target.value)}
@@ -73,16 +72,12 @@ function RenameForm({ name, tags, tagsPlaceholder, onSave, onDone }: RenameFormP
         />
       </Field>
 
-      <Field>
-        <FieldLabel htmlFor={`${fieldId}-tags`}>Tags</FieldLabel>
-        <Input
-          id={`${fieldId}-tags`}
-          placeholder={tagsPlaceholder}
-          value={tagsDraft}
-          onChange={(event) => setTagsDraft(event.target.value)}
-          onKeyDown={(event) => event.stopPropagation()}
-        />
-      </Field>
+      <TagsField
+        value={tagsDraft}
+        onChange={setTagsDraft}
+        placeholder={tagsPlaceholder}
+        onSubmit={() => void save()}
+      />
 
       <DialogFooter>
         <DialogClose render={<Button variant="ghost">Cancel</Button>} />

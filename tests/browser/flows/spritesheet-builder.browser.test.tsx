@@ -105,7 +105,7 @@ test("a persisted block renders on the canvas and can be removed", async () => {
   await builderSaveSettled();
 });
 
-test("exporting the composed sheet produces a PNG blob", async () => {
+test("Export downloads the composed sheet as a PNG in one click", async () => {
   const sprite = await createSprite({ name: "Hero", width: 8, height: 8 });
   const sheet = await createSpritesheet({ name: "Composed" });
   await updateSpritesheet(sheet.id, {
@@ -115,10 +115,8 @@ test("exporting the composed sheet produces a PNG blob", async () => {
   const createObjectURL = vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:mock");
   const screen = render(<AppRoutes />, { route: `/spritesheets/${sheet.id}` });
 
+  // One click, no dialog.
   await userEvent.click(screen.getByRole("button", { name: "Export" }));
-  await expect.element(screen.getByRole("dialog", { name: "Export spritesheet" })).toBeVisible();
-
-  await userEvent.click(screen.getByRole("button", { name: "Export PNG" }));
 
   await expect.poll(() => createObjectURL.mock.calls.length).toBe(1);
   const [blob] = createObjectURL.mock.calls[0] as [Blob];

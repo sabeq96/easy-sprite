@@ -54,7 +54,7 @@ export function SpriteCardMenu({
         </DropdownMenuItem>
         <DropdownMenuItem onClick={onExport}>
           <Download />
-          Export spritesheet
+          Export
         </DropdownMenuItem>
         <DropdownMenuItem onClick={onSplit}>
           <Grid3x3 />

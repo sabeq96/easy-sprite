@@ -16,11 +16,9 @@ function readStoredTheme(): Theme {
 export interface ThemeState {
   theme: Theme;
   setTheme: (theme: Theme) => void;
-  toggle: () => void;
 }
 
-export const useThemeStore = create<ThemeState>()((set, get) => ({
+export const useThemeStore = create<ThemeState>()((set) => ({
   theme: readStoredTheme(),
   setTheme: (theme) => set({ theme }),
-  toggle: () => set({ theme: get().theme === "dark" ? "light" : "dark" }),
 }));

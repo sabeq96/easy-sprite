@@ -21,6 +21,7 @@ export interface CreateSpriteOptions {
   height?: number;
   fps?: number;
   paletteId?: string | null;
+  tags?: string[];
 }
 
 export async function createSprite(options: CreateSpriteOptions = {}): Promise<SpriteRecord> {
@@ -35,7 +36,7 @@ export async function createSprite(options: CreateSpriteOptions = {}): Promise<S
     layerIds: [layerId],
     frames: [{ id: createId() }],
     paletteId: options.paletteId ?? null,
-    tags: [],
+    tags: options.tags ?? [],
     createdAt: now,
     updatedAt: now,
     thumbnail: null,

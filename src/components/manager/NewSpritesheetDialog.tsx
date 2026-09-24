@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import { TagsField } from "@/components/common/TagsField";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -14,6 +15,7 @@ import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { ROUTES } from "@/constants/routes";
 import { createSpritesheet } from "@/db/repositories/spritesheets";
+import { parseTags } from "@/lib/tags";
 
 export interface NewSpritesheetDialogProps {
   open: boolean;
@@ -23,11 +25,13 @@ export interface NewSpritesheetDialogProps {
 export function NewSpritesheetDialog({ open, onOpenChange }: NewSpritesheetDialogProps) {
   const navigate = useNavigate();
   const [name, setName] = useState("");
+  const [tags, setTags] = useState("");
 
   const create = async () => {
-    const spritesheet = await createSpritesheet({ name });
+    const spritesheet = await createSpritesheet({ name, tags: parseTags(tags) });
     onOpenChange(false);
     setName("");
+    setTags("");
     // Straight into the composer — creating a spritesheet is never the end goal.
     navigate(ROUTES.spritesheet(spritesheet.id));
   };
@@ -56,6 +60,13 @@ export function NewSpritesheetDialog({ open, onOpenChange }: NewSpritesheetDialo
             }}
           />
         </Field>
+
+        <TagsField
+          value={tags}
+          onChange={setTags}
+          placeholder="ui, tiles"
+          onSubmit={() => void create()}
+        />
 
         <DialogFooter>
           <DialogClose render={<Button variant="ghost">Cancel</Button>} />

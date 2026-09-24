@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { SizeFields } from "@/components/common/SizeFields";
+import { TagsField } from "@/components/common/TagsField";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -16,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { CANVAS_SIZE_PRESETS, DEFAULT_CANVAS_SIZE } from "@/constants/canvas";
 import { ROUTES } from "@/constants/routes";
 import { createSprite } from "@/db/repositories/sprites";
+import { parseTags } from "@/lib/tags";
 import { isSpriteOversized, isValidCanvasSize, type CanvasSize } from "@/lib/validation";
 
 export interface NewSpriteDialogProps {
@@ -26,6 +28,7 @@ export interface NewSpriteDialogProps {
 export function NewSpriteDialog({ open, onOpenChange }: NewSpriteDialogProps) {
   const navigate = useNavigate();
   const [name, setName] = useState("");
+  const [tags, setTags] = useState("");
   const [size, setSize] = useState<CanvasSize>({
     width: DEFAULT_CANVAS_SIZE,
     height: DEFAULT_CANVAS_SIZE,
@@ -33,9 +36,10 @@ export function NewSpriteDialog({ open, onOpenChange }: NewSpriteDialogProps) {
   const [linked, setLinked] = useState(true);
 
   const create = async () => {
-    const sprite = await createSprite({ name, ...size });
+    const sprite = await createSprite({ name, tags: parseTags(tags), ...size });
     onOpenChange(false);
     setName("");
+    setTags("");
     // Straight into the editor — creating a sprite is never the end goal.
     navigate(ROUTES.sprite(sprite.id));
   };
@@ -62,6 +66,15 @@ export function NewSpriteDialog({ open, onOpenChange }: NewSpriteDialogProps) {
             }}
           />
         </Field>
+
+        <TagsField
+          value={tags}
+          onChange={setTags}
+          placeholder="hero, walk, idle"
+          onSubmit={() => {
+            if (isValidCanvasSize(size)) void create();
+          }}
+        />
 
         <div className="flex flex-wrap gap-1">
           {CANVAS_SIZE_PRESETS.map((preset) => (

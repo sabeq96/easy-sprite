@@ -26,6 +26,11 @@ describe("spritesheet repository", () => {
     expect(sheet.name).toBe("Untitled");
   });
 
+  it("stores the tags it is created with", async () => {
+    const sheet = await createSpritesheet({ tags: ["ui"] });
+    expect((await getSpritesheet(sheet.id)).tags).toEqual(["ui"]);
+  });
+
   it("lists spritesheets newest-updated first", async () => {
     const first = await createSpritesheet({ name: "First" });
     await new Promise((resolve) => setTimeout(resolve, 2));

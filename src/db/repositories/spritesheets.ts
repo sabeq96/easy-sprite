@@ -5,6 +5,7 @@ import { createId } from "@/lib/id";
 
 export interface CreateSpritesheetOptions {
   name?: string;
+  tags?: string[];
 }
 
 export async function createSpritesheet(
@@ -15,7 +16,7 @@ export async function createSpritesheet(
     id: createId(),
     name: options.name?.trim() || "Untitled",
     blocks: [],
-    tags: [],
+    tags: options.tags ?? [],
     createdAt: now,
     updatedAt: now,
     thumbnail: null,
