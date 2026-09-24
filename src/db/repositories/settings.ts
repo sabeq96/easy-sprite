@@ -1,4 +1,5 @@
 import { db } from "@/db/db";
+import { withQuotaGuard } from "@/db/errors";
 
 export async function readSetting<T>(key: string, fallback: T): Promise<T> {
   const row = await db.settings.get(key);
@@ -6,7 +7,7 @@ export async function readSetting<T>(key: string, fallback: T): Promise<T> {
 }
 
 export function writeSetting<T>(key: string, value: T): Promise<string> {
-  return db.settings.put({ key, value });
+  return withQuotaGuard(() => db.settings.put({ key, value }));
 }
 
 export function listSettings() {

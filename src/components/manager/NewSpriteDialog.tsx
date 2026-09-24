@@ -47,7 +47,7 @@ function NewSpriteForm({ onDone }: { onDone: () => void }) {
       onSubmit={async ({ name, tags }) => {
         const sprite = await sprites.create({ name, tags, ...size });
         // Straight into the editor — creating a sprite is never the end goal.
-        navigate(ROUTES.sprite(sprite.id));
+        if (sprite) navigate(ROUTES.sprite(sprite.id));
       }}
       onDone={onDone}
     >

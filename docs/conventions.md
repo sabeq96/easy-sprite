@@ -233,8 +233,8 @@ which would drift. What it enforces, in intent:
 
 - **Layer boundaries** (`no-restricted-imports` overrides per folder): `editor/` is framework-free;
   `db/` never imports the editor or UI; `lib/` and `constants/` are pure; `services/`, `export/`
-  and `stores/` never import React code; `hooks/` never touch the raw Dexie instance or import
-  components; `components/` never import `db/`, `services/`, `export/` or Dexie (type-only
+  and `stores/` never import React code; `commands/` never reach the database or components; `types/`
+  holds types only; `hooks/` never touch the raw Dexie instance or import components; `components/` never import `db/`, `services/`, `export/` or Dexie (type-only
   imports allowed). The table in [architecture.md §9](architecture.md) marks which edges these
   cover.
 - **Hooks and imports**: `rules-of-hooks`, `consistent-type-imports`, `no-explicit-any`, `import/no-cycle`.

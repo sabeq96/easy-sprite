@@ -9,35 +9,51 @@ import { parsePaletteFile, toGpl } from "@/lib/paletteFormats";
 import { sortColorsByHue } from "@/lib/paletteSort";
 import { useEditorStore } from "@/stores/useEditorStore";
 
-/** Every palette mutation the UI can start. Creating one also makes it the active palette. */
+const SAVE_FAILED = "Could not save the palette.";
+
+/**
+ * Every palette mutation the UI can start. Creating one also makes it the active palette. Each one
+ * reports its own failure and then resolves to `undefined`, so callers never catch.
+ */
 export function usePaletteActions() {
   const setActivePalette = useEditorStore((state) => state.setActivePalette);
 
-  const createActive = async (name: string, colors: string[]) => {
-    const created = await createPalette(name, colors);
-    setActivePalette(created.id);
-    return created;
-  };
+  const createActive = (name: string, colors: string[], success?: string) =>
+    runWithToast(
+      async () => {
+        const created = await createPalette(name, colors);
+        setActivePalette(created.id);
+        return created;
+      },
+      { success: () => success, error: "Could not create the palette." },
+    );
+
+  const update = (
+    palette: PaletteRecord,
+    patch: { name?: string; colors?: string[] },
+    success?: string,
+  ) => runWithToast(() => updatePalette(palette.id, patch), { success: () => success, error: SAVE_FAILED });
 
   return {
     create: (name: string) => createActive(name, []),
 
     duplicate: (palette: PaletteRecord) => createActive(`${palette.name} copy`, [...palette.colors]),
 
-    rename: (palette: PaletteRecord, name: string) => updatePalette(palette.id, { name }),
+    rename: (palette: PaletteRecord, name: string) => update(palette, { name }),
 
-    setColors: (palette: PaletteRecord, colors: string[]) => updatePalette(palette.id, { colors }),
+    setColors: (palette: PaletteRecord, colors: string[]) => update(palette, { colors }),
 
-    addColors: async (palette: PaletteRecord, colors: string[]) => {
+    addColors: (palette: PaletteRecord, colors: string[]) => {
       const merged = [...new Set([...palette.colors, ...colors])];
-      await updatePalette(palette.id, { colors: merged });
-      toast.success(`Added ${plural(merged.length - palette.colors.length, "color")}`);
+      return update(
+        palette,
+        { colors: merged },
+        `Added ${plural(merged.length - palette.colors.length, "color")}`,
+      );
     },
 
-    sortByHue: async (palette: PaletteRecord) => {
-      await updatePalette(palette.id, { colors: sortColorsByHue(palette.colors) });
-      toast.success("Sorted by hue");
-    },
+    sortByHue: (palette: PaletteRecord) =>
+      update(palette, { colors: sortColorsByHue(palette.colors) }, "Sorted by hue"),
 
     exportGpl: (palette: PaletteRecord) => {
       const text = toGpl(palette.name, palette.colors.map(hexToRgba));
@@ -50,8 +66,11 @@ export function usePaletteActions() {
         toast.error(parsed.error);
         return;
       }
-      await createActive(file.name.replace(/\.[^.]+$/, ""), parsed.value);
-      toast.success(`Imported ${plural(parsed.value.length, "color")}`);
+      await createActive(
+        file.name.replace(/\.[^.]+$/, ""),
+        parsed.value,
+        `Imported ${plural(parsed.value.length, "color")}`,
+      );
     },
 
     remove: (palette: PaletteRecord) =>

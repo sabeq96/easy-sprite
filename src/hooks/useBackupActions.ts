@@ -35,7 +35,8 @@ export function useBackupActions() {
   };
 
   const restore = async (backup: BackupFile, mode: ImportMode) => {
-    const result = await importBackup(backup, mode);
+    const result = await runWithToast(() => importBackup(backup, mode), { error: "Import failed." });
+    if (!result) return;
     if (!result.ok) {
       toast.error(result.error);
       return;

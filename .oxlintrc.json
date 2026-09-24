@@ -1,39 +1,18 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": [
-    "react",
-    "typescript",
-    "oxc",
-    "import"
-  ],
-  "jsPlugins": [
-    "@shadcn/lint"
-  ],
+  "plugins": ["react", "typescript", "oxc", "import"],
+  "jsPlugins": ["@shadcn/lint"],
   "rules": {
     "react/rules-of-hooks": "error",
-    "react/only-export-components": [
-      "warn",
-      {
-        "allowConstantExport": true
-      }
-    ],
+    "react/only-export-components": ["warn", { "allowConstantExport": true }],
     "typescript/no-explicit-any": "error",
     "typescript/consistent-type-imports": "error",
     "import/no-cycle": "error",
-    "shadcn/no-restyle": [
-      "error",
-      {
-        "allow": [
-          "layout"
-        ]
-      }
-    ]
+    "shadcn/no-restyle": ["error", { "allow": ["layout"] }]
   },
   "overrides": [
     {
-      "files": [
-        "src/editor/**"
-      ],
+      "files": ["src/editor/**"],
       "rules": {
         "no-restricted-imports": [
           "error",
@@ -63,23 +42,14 @@
       }
     },
     {
-      "files": [
-        "src/db/**"
-      ],
+      "files": ["src/db/**"],
       "rules": {
         "no-restricted-imports": [
           "error",
           {
             "patterns": [
               {
-                "group": [
-                  "@/components/*",
-                  "@/editor/*",
-                  "@/hooks/*",
-                  "@/app/*",
-                  "react",
-                  "react-dom"
-                ],
+                "group": ["@/components/*", "@/editor/*", "@/hooks/*", "@/app/*", "react", "react-dom"],
                 "message": "src/db/** must not depend on the UI or the editor core."
               }
             ]
@@ -88,27 +58,14 @@
       }
     },
     {
-      "files": [
-        "src/lib/**",
-        "src/constants/**"
-      ],
+      "files": ["src/lib/**", "src/constants/**"],
       "rules": {
         "no-restricted-imports": [
           "error",
           {
             "patterns": [
               {
-                "group": [
-                  "@/components/*",
-                  "@/editor/*",
-                  "@/db/*",
-                  "@/hooks/*",
-                  "@/stores/*",
-                  "@/app/*",
-                  "react",
-                  "react-dom",
-                  "dexie"
-                ],
+                "group": ["@/components/*", "@/editor/*", "@/db/*", "@/hooks/*", "@/stores/*", "@/app/*", "react", "react-dom", "dexie"],
                 "message": "src/lib/** and src/constants/** are pure: they may only import each other and types."
               }
             ]
@@ -161,7 +118,6 @@
                 "group": [
                   "@/components/*"
                 ],
-                "allowTypeImports": false,
                 "message": "Hooks sit below components: move the shared piece into hooks/ or lib/."
               }
             ]
@@ -189,6 +145,62 @@
                   "react-dom"
                 ],
                 "message": "services/, export/ and stores/ sit below React: no components, hooks or app imports."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "src/commands/**"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "@/components/*",
+                  "@/db/*",
+                  "@/services/*",
+                  "@/export/*",
+                  "dexie"
+                ],
+                "message": "commands/ wires editor actions to keys and UI state; data goes through hooks."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "src/types/**"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "@/app/*",
+                  "@/commands/*",
+                  "@/components/*",
+                  "@/db/*",
+                  "@/editor/*",
+                  "@/export/*",
+                  "@/hooks/*",
+                  "@/lib/*",
+                  "@/services/*",
+                  "@/stores/*",
+                  "react",
+                  "dexie"
+                ],
+                "allowTypeImports": true,
+                "message": "src/types/** holds types only: it may import other types, never runtime code."
               }
             ]
           }

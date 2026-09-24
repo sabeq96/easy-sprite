@@ -196,13 +196,13 @@ says whether `.oxlintrc.json` enforces it, so the table never claims more than t
 ```
 constants/  ──►  constants; types from lib                                  lint
 lib/        ──►  lib, constants, types                                      lint
-types/      ──►  types from db/schema
+types/      ──►  types from db/schema                                       lint (types only)
 editor/     ──►  lib, constants, types; types from commands/hints           lint (no React/DB/UI)
 db/         ──►  lib, constants, types                                      lint (no editor/UI)
 export/     ──►  editor, lib, constants, types; types from db/schema        lint (no React/UI)
 services/   ──►  db, editor, export, lib, constants, types                  lint (no React/UI)
 stores/     ──►  editor, lib, constants, types                              lint (no React/UI)
-commands/   ──►  editor, stores, hooks, app (document context), lib, constants
+commands/   ──►  editor, stores, hooks, app (document context), lib, constants  lint (no db/UI)
 hooks/      ──►  services, export, db/repositories, stores, editor, commands,
                  app (document context), lib, constants                     lint (no raw db, no components)
 components/ ──►  hooks, stores, commands, editor, app (document context),

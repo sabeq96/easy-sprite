@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -28,17 +28,13 @@ function ColorPickerBody({ value, onChange }: { value: RGBA; onChange: (color: R
   const [alpha, setAlpha] = useState(value.a);
   const [hexDraft, setHexDraft] = useState<string | null>(null);
 
-  // Adjusting state during render when the prop changes, rather than in an effect: no extra
-  // render with stale HSV. Re-sync only when the incoming colour differs from what we produce.
-  const valueHex = rgbaToHex(value, true);
-  const [seenHex, setSeenHex] = useState(valueHex);
-  if (valueHex !== seenHex) {
-    setSeenHex(valueHex);
-    if (rgbaToHex(hsvToRgb(hsv, alpha), true) !== valueHex) {
-      setHsv(rgbToHsv(value));
-      setAlpha(value.a);
-    }
-  }
+  useEffect(() => {
+    // Re-sync only when the incoming colour is genuinely different from what we produce.
+    if (rgbaToHex(hsvToRgb(hsv, alpha), true) === rgbaToHex(value, true)) return;
+    setHsv(rgbToHsv(value));
+    setAlpha(value.a);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- syncing from the prop only
+  }, [value]);
 
   const commit = (nextHsv: HSV, nextAlpha: number) => {
     setHsv(nextHsv);

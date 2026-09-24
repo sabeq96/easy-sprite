@@ -26,7 +26,7 @@ export function NewSpritesheetDialog({ open, onOpenChange }: NewSpritesheetDialo
       onSubmit={async ({ name, tags }) => {
         const spritesheet = await spritesheets.create({ name, tags });
         // Straight into the composer — creating a spritesheet is never the end goal.
-        navigate(ROUTES.spritesheet(spritesheet.id));
+        if (spritesheet) navigate(ROUTES.spritesheet(spritesheet.id));
       }}
     />
   );

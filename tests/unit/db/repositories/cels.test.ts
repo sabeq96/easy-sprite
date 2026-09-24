@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db/db";
 import { createSprite } from "@/db/repositories/sprites";
-import { flushCels, getCel, isCelEmpty, removeCelsForFrame } from "@/db/repositories/cels";
+import { flushCels, findCel, isCelEmpty, removeCelsForFrame } from "@/db/repositories/cels";
 
 beforeEach(async () => {
   await db.delete();
@@ -38,7 +38,7 @@ describe("cel repository", () => {
     ]);
 
     pixels[0] = 99;
-    const stored = await getCel(sprite.layerIds[0], sprite.frames[0].id);
+    const stored = await findCel(sprite.layerIds[0], sprite.frames[0].id);
     expect(stored?.pixels[0]).toBe(10);
   });
 

@@ -22,12 +22,17 @@ export interface SpriteEdit {
   tags?: string[];
 }
 
-/** Every sprite mutation the UI can start, with its user-facing feedback built in. */
+/**
+ * Every sprite mutation the UI can start, with its user-facing feedback built in. Each one reports
+ * its own failure and then resolves to `undefined`, so callers never catch.
+ */
 export function useSpriteActions() {
   return {
-    create: (options: CreateSpriteOptions) => createSprite(options),
+    create: (options: CreateSpriteOptions) =>
+      runWithToast(() => createSprite(options), { error: "Could not create the sprite." }),
 
-    update: (id: string, edit: SpriteEdit) => updateSprite(id, edit),
+    update: (id: string, edit: SpriteEdit) =>
+      runWithToast(() => updateSprite(id, edit), { error: "Could not save that change." }),
 
     duplicate: (sprite: SpriteRecord) =>
       runWithToast(() => duplicateSprite(sprite.id), {
@@ -50,7 +55,9 @@ export function useSpriteActions() {
       ),
 
     importFiles: async (files: File[]) => {
-      const { imported, skipped } = await importPngFiles(files);
+      const result = await runWithToast(() => importPngFiles(files), { error: "Import failed." });
+      if (!result) return;
+      const { imported, skipped } = result;
       if (imported.length > 0) {
         toast.success(
           imported.length === 1

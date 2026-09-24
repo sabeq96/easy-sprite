@@ -117,4 +117,14 @@ repositories uniform, and update the docs to describe the code that exists.
 - **Browser flakiness** (confirmed on untouched `main`, 3 runs each): `spritesheet-drag › …empty
   sheet becomes its first row` fails every run on both; other spritesheet-drag cases and
   `spritesheet-builder › …drops out of the palette` fail intermittently on both under load.
+- **Review fixes (independent reviewer, phase 6)**: every action-hook mutation now reports its own
+  failure (create/update/palette writes/import/restore were pass-through); `writeSetting` goes
+  through `withQuotaGuard`; `cels.getCel` → `findCel`; lint overrides added for `commands/` and
+  `types/` so every DAG row is enforced; `RouteErrorBoundary` resets via a `resetKey` prop
+  instead of remounting the app shell on each navigation.
+- **Addition 3 partly reverted**: both eslint-disable comments name rules that *are* enabled
+  (`react/set-state-in-effect`; `react-hooks/exhaustive-deps` is an oxlint alias), contrary to the
+  doc review's premise — removing them added 10 warnings. `useBlobUrl` and `ColorPickerPopover`
+  are back to their `main` versions; the prop→state effect in the colour picker stays, because
+  the render-time alternative trips the compiler's `react(refs)` lint on every ref in the body.
 
