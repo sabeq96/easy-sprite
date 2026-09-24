@@ -192,12 +192,7 @@ function applyImport(
   return withQuotaGuard(() =>
     db.transaction(
       "rw",
-      db.sprites,
-      db.layers,
-      db.cels,
-      db.palettes,
-      db.spritesheets,
-      db.settings,
+      [db.sprites, db.layers, db.cels, db.palettes, db.spritesheets, db.settings],
       async () => {
         if (mode === "replace") {
           await db.cels.clear();
@@ -222,12 +217,7 @@ function applyImport(
 export async function clearAllData(): Promise<void> {
   await db.transaction(
     "rw",
-    db.sprites,
-    db.layers,
-    db.cels,
-    db.palettes,
-    db.spritesheets,
-    db.settings,
+    [db.sprites, db.layers, db.cels, db.palettes, db.spritesheets, db.settings],
     async () => {
       await db.cels.clear();
       await db.layers.clear();
