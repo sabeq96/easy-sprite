@@ -1,6 +1,6 @@
 # Contract — architecture cleanup (boundaries, dedup, consistency)
 
-Status: **approved** (2026-09-24, with independent-review additions 1–5)
+Status: **done** (approved 2026-09-24 with independent-review additions 1–5; built same day)
 
 ## Goal
 
@@ -89,9 +89,9 @@ repositories uniform, and update the docs to describe the code that exists.
 - [x] rewire components to the action hooks; lint overrides for components/hooks; BuilderBlock lint
 
 **Batch 4 — robustness & docs** (DW 7–10)
-- [ ] route error boundary + browser test
-- [ ] small fixes (index keys, ColorPickerPopover effect, eslint-disable, useSaveStatus)
-- [ ] rewrite architecture.md / conventions.md sections
+- [x] route error boundary + browser test
+- [x] small fixes (index keys, ColorPickerPopover effect, eslint-disable, useSaveStatus)
+- [x] rewrite architecture.md / conventions.md sections
 
 ## Drift log
 
@@ -107,3 +107,14 @@ repositories uniform, and update the docs to describe the code that exists.
 - **Pre-existing browser failures**: `dnd-visuals › a reordered palette shows its new order…` and
   `spritesheet-drag › a sprite dropped on the empty sheet…` fail on untouched `main` too in this
   container (Chromium 1194 vs the headless shell Playwright expects); not addressed here.
+- **Error boundary**: the app uses declarative `<Routes>`, which has no `errorElement`, so it is a
+  class `ErrorBoundary` in a pathless layout route (`RouteErrorBoundary`) keyed on the pathname.
+- **DW 10 index keys**: `ShortcutList` now keys on label + chords. The `SpriteManagerPage` skeleton
+  keeps `key={index}` — it is a fixed list of placeholders that never reorders, and conventions §6
+  now names that as the one allowed case, rather than dressing an index up as an id.
+- **Phase links**: the §11 links to phase-12/13 docs stay; they point at the rationale, not at
+  build history. Other phase references were removed from both docs.
+- **Browser flakiness** (confirmed on untouched `main`, 3 runs each): `spritesheet-drag › …empty
+  sheet becomes its first row` fails every run on both; other spritesheet-drag cases and
+  `spritesheet-builder › …drops out of the palette` fail intermittently on both under load.
+

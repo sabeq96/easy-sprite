@@ -7,7 +7,6 @@ import { useEffect, useState } from "react";
  * An effect is the right tool despite the set-state-in-effect rule: createObjectURL allocates a
  * browser resource with a matching release call, so it cannot run during render.
  */
-/* eslint-disable react/set-state-in-effect -- syncing with an external browser resource */
 export function useBlobUrl(blob: Blob | null | undefined): string | null {
   const [url, setUrl] = useState<string | null>(null);
 
@@ -24,4 +23,3 @@ export function useBlobUrl(blob: Blob | null | undefined): string | null {
 
   return url;
 }
-/* eslint-enable react/set-state-in-effect */

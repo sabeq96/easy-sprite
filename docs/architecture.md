@@ -36,62 +36,32 @@ document replaces its `layers`/`frames` arrays rather than splicing them. See
 
 ## 2. Folder map
 
+One line per folder: what belongs there. Individual files are not listed — they change too often
+for a map to stay true. The dependency rules between these folders are in §9.
+
 ```
 src/
-  app/
-    routes.tsx              # declarative <Routes>
-    AppLayout.tsx           # shell: top bar + <Outlet/>
-    providers.tsx           # theme, document context, shortcut scope
-  components/
-    ui/                     # shadcn primitives (generated, do not hand-edit)
-    editor/                 # Toolbar, ToolOptions, LayersPanel, FramesBar,
-                            # PreviewPanel, PalettePanel, StatusBar, EditorCanvas
-    manager/                # SpriteGrid, SpriteCard, NewSpriteDialog
-    common/                 # ColorSwatch, NumberField, IconButton, ConfirmDialog
-  editor/                   # ── imperative core, zero React imports ──
-    emitter.ts              # tiny typed event emitter
-    pixels.ts               # plot/line/flood-fill/blend on raw buffers
-    cel.ts                  # Cel: buffer + ImageData + OffscreenCanvas
-    document.ts             # SpriteDocument: layers, frames, cels, revisions
-    history.ts              # Command stack, StrokeRecorder
-    composite.ts            # layer compositing + onion skin passes
-    viewport.ts             # zoom/pan math, screen↔sprite coordinate mapping
-    renderer.ts             # canvas stack, rAF loop, dirty-rect redraw
-    selection.ts            # lift/stamp helpers for moving a rect of pixels
-    tools/                  # types.ts + one file per tool + index.ts (TOOL_LIST, the only list of
-                            # tools; ToolId, tool commands, their keys and sidebar sections derive
-                            # from it). A tool declares its key, hold key and gesture hints, and
-                            # owns its state via onActivate → cleanup (the selection lives in
-                            # tools/select.ts). Adding a tool: its file, TOOL_LIST, its icon.
-  db/
-    schema.ts               # record types (the persisted shape)
-    db.ts                   # Dexie instance + versions
-    repositories/           # sprites.ts, palettes.ts, settings.ts, cels.ts
-    seed.ts                 # built-in palettes on first run
-    backup.ts               # export/import whole DB as JSON
-  services/                 # composition layer: the only place db/ and editor/ meet
-    documentService.ts      # snapshot → SpriteDocument, and back
-    autosave.ts             # debounced flush of dirty cels
-    thumbnails.ts           # throttled thumbnail regeneration
-  export/
-    spritesheet.ts          # compose + encode PNG
-    download.ts             # blob → file
-  hooks/
-    useDocument.ts          # context access
-    useDocumentRevision.ts  # useSyncExternalStore bridge
-    useAnimationPlayer.ts
-    useShortcuts.ts
-    usePointerPaint.ts      # pointer events → tool calls
-  commands/                 # useEditorCommands (id → run/enabled/active/label), keymap.ts (tool +
-                            # app keys merged), hints.ts (gesture hints), CommandsContext (useCommand,
-                            # read by components/common/CommandButton)
-  stores/
-    useEditorStore.ts       # zustand: tool + options + colors + view prefs
-    useCommands.ts          # command registry (id → run/enabled/label)
-  lib/                      # pure utils: color.ts, rect.ts, id.ts, array.ts, math.ts, cn.ts
-  constants/                # frozen config: tools.ts, shortcuts.ts, canvas.ts,
-                            # palettes.ts, storage.ts — no logic, no imports
-  types/                    # shared domain types (non-persisted)
+  app/          routes, the app shell, providers, DocumentProvider (the open document's context),
+                RouteErrorBoundary (a crashed page shows CrashPage instead of a blank screen)
+  components/   React only. One folder per surface: editor/, manager/ (the library), builder/
+                (the spritesheet composer), settings/, plus common/ (shared app components) and
+                ui/ (generated shadcn primitives — add variants, never fork)
+  hooks/        bridges React to everything below it: document revisions, DnD, pointer input,
+                and the domain action hooks (useSpriteActions, usePaletteActions, …) that are the
+                only way components reach the database, services and export
+  commands/     the editor command registry: ids → run/enabled/active/label, the keymap merged
+                from tool and app keys, and the gesture hints shown in tooltips
+  stores/       zustand UI state: the editor store (built from slices/) and the builder's view store
+  editor/       the imperative core, zero React: SpriteDocument, cels, pixels, history, renderer,
+                viewport, overlays, command factories (commands/), and tools/ — one file per tool
+                plus index.ts, the one registry every tool list derives from
+  db/           Dexie schema and instance, repositories/ (the only code that queries tables),
+                typed errors, seed data, whole-database backup
+  services/     where db/ and editor/ meet: open/save a document, autosave, thumbnails, PNG import
+  export/       renders documents to PNG and triggers downloads
+  lib/          pure functions (color, rects, sheet rows and layout, library search/sort, …)
+  constants/    tuning values and static config, grouped by domain; no logic
+  types/        shared domain types that are not persisted records
 ```
 
 ## 3. Pixel representation
@@ -123,7 +93,7 @@ user's colors on reload is broken. Raw buffers are lossless, synchronous, and st
 native. PNG encoding is used only where loss doesn't matter: thumbnails and export.
 
 Budget check: 128×128 × 4 layers × 24 frames = 48 MB. That is the practical ceiling and it is
-well inside IndexedDB quota; the editor warns above it (phase 9).
+well inside IndexedDB quota; the editor warns above it.
 
 ## 4. Rendering pipeline
 
@@ -195,9 +165,9 @@ simplification — persisting undo across reloads would multiply DB writes for l
 Dexie 4 with typed `EntityTable`s. Writes are never synchronous with drawing:
 
 - Tools mark cels `storeDirty`.
-- An `AutosaveController` flushes on a 700 ms debounce, on `visibilitychange`, on route change,
+- An `AutosaveController` flushes on a debounce (`AUTOSAVE_DEBOUNCE_MS`, 2 s), on `visibilitychange`, on route change,
   and on `beforeunload` (best-effort), in one `db.transaction('rw', ...)` per flush.
-- Thumbnails regenerate at most every 5 s while editing.
+- Thumbnails regenerate at most every `THUMBNAIL_THROTTLE_MS` (5 s) while editing.
 - The sprite gallery reads through `useLiveQuery`, so saves show up there with no manual wiring.
 
 IDs are `crypto.randomUUID()` strings, not auto-increment integers, so JSON backups can be
@@ -205,38 +175,71 @@ re-imported without remapping foreign keys.
 
 ## 8. Testing strategy
 
-Vitest + jsdom for the core; the core is pure functions over typed arrays, which is the easy 80%.
+Two Vitest projects, chosen by one question — does the code under test import React, touch the
+DOM, or read a canvas?
 
-- `pixels.test.ts` — plot/line/flood fill/blend against hand-written expected buffers.
-- `history.test.ts` — stroke → undo restores byte-identical buffer.
-- `document.test.ts` — structural ops keep cel map consistent (no orphan cels).
-- `backup.test.ts` — export → import round-trips to an identical DB dump.
-- `spritesheet.test.ts` — frame rects for each layout mode.
+- **No → `tests/unit/**`** (jsdom, `fake-indexeddb`). The core is pure functions over typed arrays,
+  which is the easy 80%: pixels, history, document structure, repositories, backup round-trips,
+  sheet rows and layout, library search/sort, stores.
+- **Yes → `tests/browser/**`** (real Chromium through Playwright). jsdom has no real canvas, so
+  anything that renders, drags or paints runs here: interactions (strokes, selection moves),
+  flows through the real routes (library, editor, composer), export pixels, and components.
 
-Canvas-dependent code (`renderer.ts`) is verified by hand; `OffscreenCanvas` is stubbed in tests.
+`npm test` runs the unit project; `npm run test:browser` the browser one. See
+[conventions.md §11](conventions.md) for where tests go and what they assert on.
 
 ## 9. Module boundaries
 
-The dependency graph is a DAG with exactly one legal direction. Anything that violates it is a
-bug, not a style opinion, and phase 0 wires a lint rule to fail the build on it.
+The dependency graph has one legal direction. An arrow means "may import from"; the right column
+says whether `.oxlintrc.json` enforces it, so the table never claims more than the build checks.
 
 ```
-constants/  ──►  (nothing)
-lib/        ──►  constants, types
-types/      ──►  (nothing)
-editor/     ──►  lib, constants, types              ✗ never React, Dexie, components
-db/         ──►  lib, constants, types              ✗ never editor, components
-export/     ──►  editor, lib, constants, types
-services/   ──►  db, editor, lib, constants, types     ◄ the only layer that may touch both
-stores/     ──►  editor, lib, constants, types
-hooks/      ──►  services, stores, db, editor, lib, constants
-components/ ──►  hooks, stores, lib, constants, types, components/ui
+constants/  ──►  constants; types from lib                                  lint
+lib/        ──►  lib, constants, types                                      lint
+types/      ──►  types from db/schema
+editor/     ──►  lib, constants, types; types from commands/hints           lint (no React/DB/UI)
+db/         ──►  lib, constants, types                                      lint (no editor/UI)
+export/     ──►  editor, lib, constants, types; types from db/schema        lint (no React/UI)
+services/   ──►  db, editor, export, lib, constants, types                  lint (no React/UI)
+stores/     ──►  editor, lib, constants, types                              lint (no React/UI)
+commands/   ──►  editor, stores, hooks, app (document context), lib, constants
+hooks/      ──►  services, export, db/repositories, stores, editor, commands,
+                 app (document context), lib, constants                     lint (no raw db, no components)
+components/ ──►  hooks, stores, commands, editor, app (document context),
+                 lib, constants, types; types from db/schema                lint (no db/services/export)
 app/        ──►  everything
 ```
 
-Reading it out loud: **pure things never import impure things, and nothing below React imports
-React.** `editor/` staying React-free is what makes the whole core testable in Vitest with no
-DOM, and what stops rendering logic from leaking into components.
+Reading it out loud: **pure things never import impure things, nothing below React imports React,
+and components reach data only through hooks.** `editor/` staying React-free is what makes the
+core testable with no DOM; hooks being the only door to `db/`, `services/` and `export/` is what
+keeps loading, error reporting and toasts in one place per domain (§10).
+
+Two edges are known compromises: hooks and commands read the open document through
+`app/DocumentProvider`, and `editor/tools` borrows the hint *type* from `commands/`. Both are
+type- or context-only; moving the document context below `app/` would remove the first.
+
+## 10. Data access
+
+One path from a click to the database and back:
+
+```
+component ──calls──► domain action hook ──► repository / service / export
+    ▲                    │ success/failure → toast (runWithToast / useAsyncAction)
+    └── useLiveQuery ◄───┴─ Dexie notifies every live query that read the rows it wrote
+```
+
+- **Reads** are live: a hook wraps `useLiveQuery` around a repository call (`useLibrary`,
+  `usePalettes`, `useSpritesheet`), so a write anywhere re-renders every surface showing it.
+  `undefined` from `useLiveQuery` means "not loaded yet" — keep it distinct from "empty".
+- **Writes** go through a domain action hook (`useSpriteActions`, `useSpritesheetActions`,
+  `usePaletteActions`, `useBackupActions`). The hook owns the user-facing message; components
+  never build an error string or call `toast.error` for a failed write.
+- **Optimistic order** (drag reorders) goes through `useOptimisticOrder`, which shows the proposed
+  order until the live query catches up.
+- **Errors**: repositories throw typed errors (`NotFoundError`, `QuotaError`); action hooks turn
+  them into toasts; a render crash is caught by `RouteErrorBoundary`. User data that can be
+  malformed (backups, palette files) is validated into a `Result` instead of throwing.
 
 See [conventions.md](conventions.md) for the full code standard: file/function size limits,
 naming, where a piece of logic belongs (hook vs util vs store vs core), barrel-file policy,
