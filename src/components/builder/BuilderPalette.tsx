@@ -1,11 +1,11 @@
 import { Search } from "lucide-react";
-import { PALETTE_DROP_ID, type DragData } from "@/components/builder/useBuilderDnd";
+import { PALETTE_DROP_ID, type DragData } from "@/hooks/useBuilderDnd";
 import { Panel } from "@/components/common/Panel";
 import { Input } from "@/components/ui/input";
 import type { SpriteRecord } from "@/db/schema";
 import { useBlobUrl } from "@/hooks/useBlobUrl";
 import { useDragSource, useDropZone } from "@/hooks/useDnd";
-import { useSpriteLibrary } from "@/hooks/useSpriteLibrary";
+import { useLibrary } from "@/hooks/useLibrary";
 import { cn } from "@/lib/utils";
 
 export interface BuilderPaletteProps {
@@ -21,8 +21,9 @@ export interface BuilderPaletteProps {
  * exported texture, so a placed sprite leaves the list rather than inviting a second copy.
  */
 export function BuilderPalette({ placedSpriteIds }: BuilderPaletteProps) {
-  const library = useSpriteLibrary();
-  const available = library.sprites.filter((sprite) => !placedSpriteIds.has(sprite.id));
+  const library = useLibrary("sprite");
+  const sprites = library.items.flatMap((item) => (item.kind === "sprite" ? [item.record] : []));
+  const available = sprites.filter((sprite) => !placedSpriteIds.has(sprite.id));
   const { ref, dropClass } = useDropZone({ id: PALETTE_DROP_ID, collision: "pointer" });
 
   return (
@@ -45,7 +46,7 @@ export function BuilderPalette({ placedSpriteIds }: BuilderPaletteProps) {
       <div className="flex flex-1 items-center gap-2 overflow-x-auto">
         {available.length === 0 ? (
           <p className="text-xs text-muted-foreground">
-            {library.sprites.length > 0
+            {sprites.length > 0
               ? "Every matching sprite is already on this sheet."
               : "No sprites match."}
           </p>

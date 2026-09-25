@@ -1,7 +1,5 @@
-import { useState } from "react";
 import { ArrowLeft, Download, Keyboard, Redo2, Undo2 } from "lucide-react";
 import { Link } from "react-router";
-import { toast } from "sonner";
 import { useDocumentSession } from "@/app/DocumentProvider";
 import { CommandButton } from "@/components/common/CommandButton";
 import { Panel } from "@/components/common/Panel";
@@ -14,27 +12,13 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ROUTES } from "@/constants/routes";
 import { commandKeys } from "@/commands/keymap";
-import { downloadSpritePng } from "@/export/spritePng";
 import { useHistoryState } from "@/hooks/useHistoryState";
+import { useSpriteExport } from "@/hooks/useSpriteActions";
 
 export function EditorTopBar() {
   const { doc, history, autosave, saveStatus } = useDocumentSession();
   const { canUndo, canRedo, undoLabel, redoLabel } = useHistoryState(history);
-  const [isExporting, setExporting] = useState(false);
-
-  const exportSprite = async () => {
-    setExporting(true);
-    try {
-      // Flush pending autosave so the PNG always matches what is on screen.
-      await autosave.flush();
-      const filename = await downloadSpritePng(doc);
-      toast.success(`Exported ${filename}`);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Export failed.");
-    } finally {
-      setExporting(false);
-    }
-  };
+  const exportPng = useSpriteExport();
 
   return (
     <Panel render={<header />} className="flex items-center gap-2 px-2 py-1.5">
@@ -81,7 +65,12 @@ export function EditorTopBar() {
 
         <Separator orientation="vertical" className="h-5" />
 
-        <Button size="sm" onClick={() => void exportSprite()} disabled={isExporting}>
+        <Button
+          size="sm"
+          // Flush pending autosave first, so the PNG always matches what is on screen.
+          onClick={() => void exportPng.run(doc, () => autosave.flush())}
+          disabled={exportPng.isRunning}
+        >
           <Download />
           Export
         </Button>

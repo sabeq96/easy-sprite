@@ -1,7 +1,19 @@
-import type { SpritesheetBlockRecord, SpriteRecord } from "@/db/schema";
-import type { SpriteDocument } from "@/editor/document";
 import type { Rect } from "@/lib/rect";
-import { toRows } from "@/lib/sheetRows";
+import { toRows, type RowBlock } from "@/lib/sheetRows";
+
+/**
+ * Structural shapes, so this stays a pure module. In practice a block is a
+ * `SpritesheetBlockRecord` and a sprite is a `SpriteRecord` or a `SpriteDocument`.
+ */
+export interface SheetBlock extends RowBlock {
+  spriteId: string;
+}
+
+export interface SpriteDimensions {
+  width: number;
+  height: number;
+  frames: readonly unknown[];
+}
 
 /** A block's footprint: its sprite's frames laid out as one horizontal strip. */
 export interface BlockSize {
@@ -13,7 +25,7 @@ export interface BlockSize {
 export type BlockSizes = ReadonlyMap<string, BlockSize>;
 
 /** Export's source: the documents it is about to draw anyway. */
-export function sizesFromDocs(docs: ReadonlyMap<string, SpriteDocument>): BlockSizes {
+export function sizesFromDocs(docs: ReadonlyMap<string, SpriteDimensions>): BlockSizes {
   return new Map(
     [...docs].map(([id, doc]) => [id, { w: doc.width * doc.frames.length, h: doc.height }]),
   );
@@ -21,7 +33,7 @@ export function sizesFromDocs(docs: ReadonlyMap<string, SpriteDocument>): BlockS
 
 /** The UI's source: a record knows its size the moment the library query returns, well before
  *  its document has been opened — so a block never renders at a placeholder size and then jumps. */
-export function sizesFromRecords(sprites: SpriteRecord[]): BlockSizes {
+export function sizesFromRecords(sprites: readonly (SpriteDimensions & { id: string })[]): BlockSizes {
   return new Map(
     sprites.map((sprite) => [sprite.id, { w: sprite.width * sprite.frames.length, h: sprite.height }]),
   );
@@ -48,7 +60,7 @@ export interface PackedSheet {
  * This mirrors in arithmetic exactly what the composer's flex rows do in CSS — the browser lays
  * out what you see, this lays out what gets exported, and a browser test holds the two together.
  */
-export function packSheet(blocks: SpritesheetBlockRecord[], sizes: BlockSizes): PackedSheet {
+export function packSheet(blocks: SheetBlock[], sizes: BlockSizes): PackedSheet {
   const packed: PackedBlock[] = [];
   const rows: Rect[] = [];
   let y = 0;
@@ -74,7 +86,7 @@ export function packSheet(blocks: SpritesheetBlockRecord[], sizes: BlockSizes): 
 
 /** For callers that only need the sheet's size. */
 export function computeBuilderBounds(
-  blocks: SpritesheetBlockRecord[],
+  blocks: SheetBlock[],
   sizes: BlockSizes,
 ): { width: number; height: number } {
   const { width, height } = packSheet(blocks, sizes);

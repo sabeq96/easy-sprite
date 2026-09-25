@@ -1,13 +1,15 @@
 import { useState } from "react";
-import { LayoutGrid } from "lucide-react";
+import { LayoutGrid, Pencil } from "lucide-react";
 import { useNavigate } from "react-router";
 import { LibraryCard } from "@/components/common/LibraryCard";
-import { RenameDialog } from "@/components/common/RenameDialog";
-import { SpritesheetCardMenu } from "@/components/manager/SpritesheetCardMenu";
+import { LibraryItemMenu } from "@/components/common/LibraryItemMenu";
+import { NameDialog } from "@/components/common/NameDialog";
 import { Badge } from "@/components/ui/badge";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { ROUTES } from "@/constants/routes";
-import { updateSpritesheet } from "@/db/repositories/spritesheets";
 import type { SpritesheetRecord } from "@/db/schema";
+import { useSpritesheetActions } from "@/hooks/useSpritesheetActions";
+import { plural } from "@/lib/format";
 
 export interface SpritesheetCardProps {
   spritesheet: SpritesheetRecord;
@@ -15,14 +17,13 @@ export interface SpritesheetCardProps {
 
 export function SpritesheetCard({ spritesheet }: SpritesheetCardProps) {
   const navigate = useNavigate();
+  const actions = useSpritesheetActions();
   const [isRenaming, setRenaming] = useState(false);
-
-  const count = spritesheet.blocks.length;
 
   return (
     <LibraryCard
       name={spritesheet.name}
-      meta={`${count} ${count === 1 ? "sprite" : "sprites"}`}
+      meta={plural(spritesheet.blocks.length, "sprite")}
       thumbnail={spritesheet.thumbnail}
       badge={
         <Badge className="absolute top-2 left-2" variant="secondary">
@@ -32,20 +33,28 @@ export function SpritesheetCard({ spritesheet }: SpritesheetCardProps) {
       }
       onOpen={() => navigate(ROUTES.spritesheet(spritesheet.id))}
       menu={
-        <SpritesheetCardMenu
-          spritesheet={spritesheet}
-          onRename={() => setRenaming(true)}
-        />
+        <LibraryItemMenu
+          name={spritesheet.name}
+          deleteDescription="This permanently deletes the spritesheet's arrangement. The sprites placed on it are not affected."
+          onDelete={() => void actions.remove(spritesheet)}
+        >
+          <DropdownMenuItem onClick={() => setRenaming(true)}>
+            <Pencil />
+            Rename
+          </DropdownMenuItem>
+        </LibraryItemMenu>
       }
     >
-      <RenameDialog
-        title="Rename spritesheet"
-        name={spritesheet.name}
-        tags={spritesheet.tags}
-        tagsPlaceholder="ui, tiles"
-        onSave={(values) => updateSpritesheet(spritesheet.id, values)}
+      <NameDialog
         open={isRenaming}
         onOpenChange={setRenaming}
+        title="Rename spritesheet"
+        submitLabel="Save"
+        initialName={spritesheet.name}
+        withTags
+        initialTags={spritesheet.tags}
+        tagsPlaceholder="ui, tiles"
+        onSubmit={(values) => actions.update(spritesheet.id, values)}
       />
     </LibraryCard>
   );

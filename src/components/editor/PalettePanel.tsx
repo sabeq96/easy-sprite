@@ -18,10 +18,10 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { updatePalette } from "@/db/repositories/palettes";
 import { COLOR_HOTKEY_HINTS } from "@/hooks/useColorHotkeys";
 import { useColorUsage } from "@/hooks/useColorUsage";
 import { useOptimisticOrder } from "@/hooks/useOptimisticOrder";
+import { usePaletteActions } from "@/hooks/usePaletteActions";
 import { usePalettes } from "@/hooks/usePalettes";
 import { useDragSource, useDropZone, useSortableItem } from "@/hooks/useDnd";
 import { hexToRgba, rgbaToHex, rgbaEquals, type RGBA } from "@/lib/color";
@@ -54,6 +54,7 @@ const hexFromPaletteSwatchId = (id: string) =>
 export function PalettePanel() {
   const { doc } = useDocumentSession();
   const { palettes, active } = usePalettes();
+  const paletteActions = usePaletteActions();
   const usage = useColorUsage(doc);
 
   const setActivePalette = useEditorStore((state) => state.setActivePalette);
@@ -82,7 +83,7 @@ export function PalettePanel() {
   const writeColors = (next: string[]) => {
     if (!active) return;
     stored.propose(next);
-    void updatePalette(active.id, { colors: next });
+    void paletteActions.setColors(active, next);
   };
 
   // Palette swatches are sorted by the library itself; only a color copied in from outside the

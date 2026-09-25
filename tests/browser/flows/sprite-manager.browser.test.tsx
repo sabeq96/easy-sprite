@@ -116,3 +116,19 @@ test("spritesheets rename through the same dialog as sprites", async () => {
 
   await expect.element(screen.getByRole("button", { name: "Open Enemies" })).toBeVisible();
 });
+
+test("reopening the new-sprite dialog after Cancel starts from an empty draft", async () => {
+  const screen = render(<AppRoutes />, { route: "/sprites" });
+  const openDialog = () =>
+    userEvent.click(screen.getByRole("button", { name: "New sprite", exact: true }).first());
+
+  await openDialog();
+  await userEvent.fill(screen.getByLabelText("Name"), "Abandoned");
+  await userEvent.fill(screen.getByLabelText("Tags"), "draft");
+  await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
+  await expect.element(screen.getByRole("dialog")).not.toBeInTheDocument();
+
+  await openDialog();
+  await expect.element(screen.getByLabelText("Name")).toHaveValue("");
+  await expect.element(screen.getByLabelText("Tags")).toHaveValue("");
+});

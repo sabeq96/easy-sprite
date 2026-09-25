@@ -5,7 +5,7 @@ import { db } from "@/db/db";
 import { createSprite, updateSprite } from "@/db/repositories/sprites";
 import { createSpritesheet, getSpritesheet, updateSpritesheet } from "@/db/repositories/spritesheets";
 import type { SpritesheetBlockRecord } from "@/db/schema";
-import { packSheet, sizesFromRecords } from "@/export/spritesheetBuilderLayout";
+import { packSheet, sizesFromRecords } from "@/lib/sheetLayout";
 import { useBuilderViewStore } from "@/stores/useBuilderViewStore";
 import { render } from "@test/render";
 import { builderSaveSettled } from "@test/builder";

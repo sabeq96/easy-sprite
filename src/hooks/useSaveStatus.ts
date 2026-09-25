@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import type { SaveStatus } from "@/services/autosave";
 
 export interface SaveStatusTracker {
@@ -18,7 +18,7 @@ export function useSaveStatus(): SaveStatusTracker {
   const [status, setStatus] = useState<SaveStatus>("idle");
   const inFlight = useRef(0);
 
-  const track = useCallback(async <T,>(write: Promise<T>): Promise<T> => {
+  const track = async <T,>(write: Promise<T>): Promise<T> => {
     inFlight.current += 1;
     setStatus("saving");
     try {
@@ -30,7 +30,7 @@ export function useSaveStatus(): SaveStatusTracker {
       setStatus("error");
       throw error;
     }
-  }, []);
+  };
 
   return { status, track };
 }

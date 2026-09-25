@@ -1,6 +1,6 @@
 import { Fragment, useRef } from "react";
 import { BuilderRow, RowGutter } from "@/components/builder/BuilderRow";
-import type { BuilderRowView } from "@/components/builder/useBuilderDnd";
+import type { BuilderRowView } from "@/hooks/useBuilderDnd";
 import { Panel } from "@/components/common/Panel";
 import {
   BUILDER_GRID_LINE,
@@ -9,7 +9,7 @@ import {
   ROW_GUTTER_REACH_PX,
 } from "@/constants/builder";
 import type { SpriteDocument } from "@/editor/document";
-import type { BlockSizes } from "@/export/spritesheetBuilderLayout";
+import type { BlockSizes } from "@/lib/sheetLayout";
 import { useBuilderViewport } from "@/hooks/useBuilderViewport";
 import { useBuilderViewStore } from "@/stores/useBuilderViewStore";
 

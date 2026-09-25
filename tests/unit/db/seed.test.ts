@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { STARTER_PALETTES } from "@/constants/palettes";
 import { db } from "@/db/db";
-import { createPalette, getPalette, listPalettes, removePalette, updatePalette } from "@/db/repositories/palettes";
+import { createPalette, findPalette, listPalettes, removePalette, updatePalette } from "@/db/repositories/palettes";
 import { seedDatabase } from "@/db/seed";
 
 beforeEach(async () => {
@@ -35,7 +35,7 @@ describe("seeding", () => {
     await updatePalette(STARTER_PALETTES[0].id, { name: "Mine now", colors: ["#123456"] });
     await seedDatabase();
 
-    const palette = await getPalette(STARTER_PALETTES[0].id);
+    const palette = await findPalette(STARTER_PALETTES[0].id);
     expect(palette?.name).toBe("Mine now");
     expect(palette?.colors).toEqual(["#123456"]);
   });
@@ -45,7 +45,7 @@ describe("seeding", () => {
     await removePalette(STARTER_PALETTES[0].id);
     await seedDatabase();
 
-    expect(await getPalette(STARTER_PALETTES[0].id)).toBeUndefined();
+    expect(await findPalette(STARTER_PALETTES[0].id)).toBeUndefined();
     expect(await db.palettes.count()).toBe(STARTER_PALETTES.length - 1);
   });
 

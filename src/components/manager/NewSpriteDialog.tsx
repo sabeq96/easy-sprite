@@ -1,23 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import { FormDialog } from "@/components/common/FormDialog";
+import { NameForm } from "@/components/common/NameForm";
 import { SizeFields } from "@/components/common/SizeFields";
-import { TagsField } from "@/components/common/TagsField";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Field, FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
 import { CANVAS_SIZE_PRESETS, DEFAULT_CANVAS_SIZE } from "@/constants/canvas";
+import { DEFAULT_ITEM_NAME } from "@/constants/names";
 import { ROUTES } from "@/constants/routes";
-import { createSprite } from "@/db/repositories/sprites";
-import { parseTags } from "@/lib/tags";
+import { useSpriteActions } from "@/hooks/useSpriteActions";
 import { isSpriteOversized, isValidCanvasSize, type CanvasSize } from "@/lib/validation";
 
 export interface NewSpriteDialogProps {
@@ -26,89 +16,61 @@ export interface NewSpriteDialogProps {
 }
 
 export function NewSpriteDialog({ open, onOpenChange }: NewSpriteDialogProps) {
+  return (
+    <FormDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title="New sprite"
+      description="Pick a canvas size. You can resize it later."
+    >
+      {(close) => <NewSpriteForm onDone={close} />}
+    </FormDialog>
+  );
+}
+
+function NewSpriteForm({ onDone }: { onDone: () => void }) {
   const navigate = useNavigate();
-  const [name, setName] = useState("");
-  const [tags, setTags] = useState("");
+  const sprites = useSpriteActions();
   const [size, setSize] = useState<CanvasSize>({
     width: DEFAULT_CANVAS_SIZE,
     height: DEFAULT_CANVAS_SIZE,
   });
   const [linked, setLinked] = useState(true);
 
-  const create = async () => {
-    const sprite = await createSprite({ name, tags: parseTags(tags), ...size });
-    onOpenChange(false);
-    setName("");
-    setTags("");
-    // Straight into the editor — creating a sprite is never the end goal.
-    navigate(ROUTES.sprite(sprite.id));
-  };
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>New sprite</DialogTitle>
-          <DialogDescription>Pick a canvas size. You can resize it later.</DialogDescription>
-        </DialogHeader>
-
-        <Field>
-          <FieldLabel htmlFor="new-sprite-name">Name</FieldLabel>
-          <Input
-            id="new-sprite-name"
-            autoFocus
-            placeholder="Untitled"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            onKeyDown={(event) => {
-              event.stopPropagation();
-              if (event.key === "Enter" && isValidCanvasSize(size)) void create();
-            }}
-          />
-        </Field>
-
-        <TagsField
-          value={tags}
-          onChange={setTags}
-          placeholder="hero, walk, idle"
-          onSubmit={() => {
-            if (isValidCanvasSize(size)) void create();
-          }}
-        />
-
-        <div className="flex flex-wrap gap-1">
-          {CANVAS_SIZE_PRESETS.map((preset) => (
-            <Button
-              key={preset}
-              size="xs"
-              variant={size.width === preset && size.height === preset ? "secondary" : "outline"}
-              onClick={() => setSize({ width: preset, height: preset })}
-            >
-              {preset}×{preset}
-            </Button>
-          ))}
-        </div>
-
-        <SizeFields
-          size={size}
-          linked={linked}
-          onLinkedChange={setLinked}
-          onChange={setSize}
-        />
-
-        {isSpriteOversized(size) && (
-          <p className="text-xs text-destructive">
-            That canvas is very large. Expect slow drawing and heavy storage use.
-          </p>
-        )}
-
-        <DialogFooter>
-          <DialogClose render={<Button variant="ghost">Cancel</Button>} />
-          <Button onClick={create} disabled={!isValidCanvasSize(size)}>
-            Create
+    <NameForm
+      submitLabel="Create"
+      namePlaceholder={DEFAULT_ITEM_NAME}
+      withTags
+      tagsPlaceholder="hero, walk, idle"
+      canSubmit={isValidCanvasSize(size)}
+      onSubmit={async ({ name, tags }) => {
+        const sprite = await sprites.create({ name, tags, ...size });
+        // Straight into the editor — creating a sprite is never the end goal.
+        if (sprite) navigate(ROUTES.sprite(sprite.id));
+      }}
+      onDone={onDone}
+    >
+      <div className="flex flex-wrap gap-1">
+        {CANVAS_SIZE_PRESETS.map((preset) => (
+          <Button
+            key={preset}
+            size="xs"
+            variant={size.width === preset && size.height === preset ? "secondary" : "outline"}
+            onClick={() => setSize({ width: preset, height: preset })}
+          >
+            {preset}×{preset}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        ))}
+      </div>
+
+      <SizeFields size={size} linked={linked} onLinkedChange={setLinked} onChange={setSize} />
+
+      {isSpriteOversized(size) && (
+        <p className="text-xs text-destructive">
+          That canvas is very large. Expect slow drawing and heavy storage use.
+        </p>
+      )}
+    </NameForm>
   );
 }

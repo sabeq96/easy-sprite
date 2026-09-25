@@ -1,13 +1,12 @@
-import { useEffect, useRef } from "react";
 import { X } from "lucide-react";
-import type { DragData } from "@/components/builder/useBuilderDnd";
+import type { DragData } from "@/hooks/useBuilderDnd";
 import { Button } from "@/components/ui/button";
 import { BUILDER_BLOCK_CHROME_MIN_PX, BUILDER_FALLBACK_BLOCK_PX } from "@/constants/builder";
 import type { SpritesheetBlockRecord } from "@/db/schema";
 import type { SpriteDocument } from "@/editor/document";
-import type { BlockSize } from "@/export/spritesheetBuilderLayout";
-import { renderSpriteStrip } from "@/export/spriteStrip";
+import type { BlockSize } from "@/lib/sheetLayout";
 import { useSortableItem } from "@/hooks/useDnd";
+import { useSpriteStripCanvas } from "@/hooks/useSpriteStripCanvas";
 import { cn } from "@/lib/utils";
 import { useBuilderViewStore } from "@/stores/useBuilderViewStore";
 
@@ -33,16 +32,7 @@ function useScreenSize(size: BlockSize | undefined) {
 }
 
 function SpriteStrip({ doc }: { doc: SpriteDocument | undefined }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!doc || !canvas) return;
-    const strip = renderSpriteStrip(doc);
-    canvas.width = strip.width;
-    canvas.height = strip.height;
-    canvas.getContext("2d")?.drawImage(strip, 0, 0);
-  }, [doc]);
+  const canvasRef = useSpriteStripCanvas(doc);
 
   if (!doc) return <div className="h-full w-full animate-pulse bg-muted" />;
   return <canvas ref={canvasRef} className="pixelated block h-full w-full" />;
@@ -95,13 +85,12 @@ export function BuilderBlock({ block, index, rowKey, size, doc, isGhost, onRemov
             variant="destructive"
             className={cn(
               "pointer-events-none absolute top-0.5 right-0.5 z-10",
-              hasRoom
-                ? "group-focus-within:pointer-events-auto group-hover:pointer-events-auto"
-                : // Too small to carry it: never shown on hover (it would cover the block, which is
-                  // the drag handle), only while the button itself has keyboard focus.
-                  "opacity-0 focus-visible:opacity-100",
+              hasRoom && "group-focus-within:pointer-events-auto group-hover:pointer-events-auto",
             )}
             revealOnHover={hasRoom}
+            // Too small to carry it: never shown on hover (it would cover the block, which is the
+            // drag handle), only while the button itself has keyboard focus.
+            revealOnFocus={!hasRoom}
             aria-label={`Remove ${doc?.name ?? "sprite"}`}
             // Pressing the ✕ and wobbling must remove, not start dragging the block.
             data-no-drag

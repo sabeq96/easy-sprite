@@ -4,11 +4,11 @@ import type {
   DragMoveEvent,
   DragOverEvent,
   DragStartEvent,
-} from "@/components/common/DragBoard";
+} from "@dnd-kit/dom";
 import { updateSpritesheet } from "@/db/repositories/spritesheets";
 import type { SpritesheetBlockRecord, SpritesheetRecord } from "@/db/schema";
 import type { SpriteDocument } from "@/editor/document";
-import type { BlockSizes } from "@/export/spritesheetBuilderLayout";
+import type { BlockSizes } from "@/lib/sheetLayout";
 import { useDocumentCache } from "@/hooks/useDocumentCache";
 import { useOptimisticOrder } from "@/hooks/useOptimisticOrder";
 import type { SaveStatusTracker } from "@/hooks/useSaveStatus";

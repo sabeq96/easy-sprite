@@ -40,12 +40,17 @@ const buttonVariants = cva(
         true: "opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100",
         false: "",
       },
+      revealOnFocus: {
+        true: "opacity-0 focus-visible:opacity-100",
+        false: "",
+      },
     },
     defaultVariants: {
       variant: "default",
       size: "default",
       numeric: false,
       revealOnHover: false,
+      revealOnFocus: false,
     },
   }
 )
@@ -56,12 +61,13 @@ function Button({
   size = "default",
   numeric,
   revealOnHover,
+  revealOnFocus,
   ...props
 }: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
   return (
     <ButtonPrimitive
       data-slot="button"
-      className={cn(buttonVariants({ variant, size, numeric, revealOnHover, className }))}
+      className={cn(buttonVariants({ variant, size, numeric, revealOnHover, revealOnFocus, className }))}
       {...props}
     />
   )

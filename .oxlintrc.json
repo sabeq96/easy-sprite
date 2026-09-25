@@ -72,6 +72,140 @@
           }
         ]
       }
+    },
+    {
+      "files": [
+        "src/components/**"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "@/db/*",
+                  "@/services/*",
+                  "@/export/*",
+                  "dexie",
+                  "dexie-react-hooks"
+                ],
+                "allowTypeImports": true,
+                "message": "Components reach data and side effects through a hook in src/hooks/ (e.g. useSpriteActions). Type-only imports are fine."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "src/hooks/**"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "@/db/db",
+                  "dexie"
+                ],
+                "message": "Hooks read the database through src/db/repositories/, never the raw Dexie instance."
+              },
+              {
+                "group": [
+                  "@/components/*"
+                ],
+                "message": "Hooks sit below components: move the shared piece into hooks/ or lib/."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "src/services/**",
+        "src/export/**",
+        "src/stores/**"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "@/components/*",
+                  "@/hooks/*",
+                  "@/app/*",
+                  "react",
+                  "react-dom"
+                ],
+                "message": "services/, export/ and stores/ sit below React: no components, hooks or app imports."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "src/commands/**"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "@/components/*",
+                  "@/db/*",
+                  "@/services/*",
+                  "@/export/*",
+                  "dexie"
+                ],
+                "message": "commands/ wires editor actions to keys and UI state; data goes through hooks."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "src/types/**"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "@/app/*",
+                  "@/commands/*",
+                  "@/components/*",
+                  "@/db/*",
+                  "@/editor/*",
+                  "@/export/*",
+                  "@/hooks/*",
+                  "@/lib/*",
+                  "@/services/*",
+                  "@/stores/*",
+                  "react",
+                  "dexie"
+                ],
+                "allowTypeImports": true,
+                "message": "src/types/** holds types only: it may import other types, never runtime code."
+              }
+            ]
+          }
+        ]
+      }
     }
   ]
 }

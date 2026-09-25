@@ -1,7 +1,7 @@
 # Code conventions
 
-This is the contract every phase is written against. It exists so the codebase stays readable at
-month six, not just at week one. Phase 0 sets up the lint rules that enforce the mechanical parts.
+The code standard for this repo. It exists so the codebase stays readable at month six, not just
+at week one. `.oxlintrc.json` enforces the mechanical parts (§10); the rest is for review.
 
 ## 1. Where does this code go?
 
@@ -12,31 +12,34 @@ Before writing anything, answer one question: *what does it depend on?*
 | is a literal value with no logic | `src/constants/` | `MAX_ZOOM`, `DEFAULT_FPS`, `BRUSH_SIZES` |
 | is a pure function of its arguments | `src/lib/` | `hexToRgba()`, `rectUnion()`, `clamp()` |
 | manipulates pixels/documents, no React, no DB | `src/editor/` | `floodFill()`, `SpriteDocument` |
-| talks to IndexedDB | `src/db/repositories/` | `spriteRepo.duplicate()` |
+| talks to IndexedDB | `src/db/repositories/` | `duplicateSprite()` |
 | wires the DB to the editor core | `src/services/` | `autosave.ts`, `documentService.ts` |
 | is cross-component UI state | `src/stores/` | active tool, primary color, zoom |
 | bridges React to a non-React source | `src/hooks/` | `useDocumentRevision()` |
+| is a user action that writes data | `src/hooks/use<Domain>Actions.ts` | `useSpriteActions().duplicate` |
 | renders DOM | `src/components/` | `<LayersPanel/>` |
 
 Two rules resolve almost every "where should this live" argument:
 
-1. **If it can be a pure function in `lib/`, it must be.** Hooks and components should read as a
-   sequence of named calls, not as inline arithmetic.
+1. **Pure logic is a named function, not inline arithmetic** — hooks and components should read as
+   a sequence of named calls. Colocate it with its only caller first; promote it to `lib/` (with
+   a unit test) the moment a second caller needs it.
 2. **If two components need it, it is not component state.** Lift it to a store or a hook — never
    to prop-drilling through three levels.
 
-## 2. Size limits (soft, but reviewed)
+## 2. Size: review heuristics, not limits
 
-| Unit | Limit | If you exceed it |
+Size is a symptom; mixed responsibilities are the problem. In review, a unit that trips one of
+these gets asked "what are the two things this does?" — and is split along that answer, not at
+an arbitrary line.
+
+| Unit | Worth a look past | Usual fix |
 | --- | --- | --- |
-| File | 200 lines | split by responsibility, not by line count |
-| React component | 150 lines / ~6 hooks | extract a child component or a custom hook |
-| Function | 40 lines | extract named helpers into `lib/` |
-| Function params | 3 | pass an options object with a named type |
+| File | ~200 lines | split by responsibility |
+| React component | ~150 lines / ~6 hooks | extract a child component or a custom hook |
+| Function | ~40 lines | extract named helpers |
+| Function params | 3 (public APIs) | pass an options object with a named type |
 | `useEffect` per component | 2 | move the logic into a custom hook |
-
-A 400-line `EditorPage.tsx` is the single most likely way this project goes bad. Phase 3 and
-phase 11 both include explicit decomposition steps to prevent it.
 
 ## 3. Naming
 
@@ -45,7 +48,7 @@ Components         PascalCase.tsx           LayersPanel.tsx
 Hooks              useThing.ts              useAnimationPlayer.ts
 Stores             useXStore.ts             useEditorStore.ts
 Core classes       PascalCase.ts            SpriteDocument (document.ts)
-Utils / modules    kebab or single word     color.ts, flood-fill.ts
+Utils / modules    camelCase                color.ts, paletteSort.ts
 Constants          SCREAMING_SNAKE          DEFAULT_CANVAS_SIZE
 Types              PascalCase               CelKey, ToolContext
 Booleans           is/has/should/can        isDirty, hasSelection
@@ -70,36 +73,19 @@ Two compiler settings shape how classes are written in this repo:
 Every tuning value in this app is user-visible behaviour (zoom feel, autosave latency, onion
 opacity). They belong in one place per domain so they can be tuned without grepping.
 
-`src/constants/canvas.ts`
-```ts
-export const ZOOM_LEVELS = [0.5, 1, 2, 3, 4, 6, 8, 12, 16, 24, 32] as const;
-export const DEFAULT_ZOOM = 8;
-export const MIN_CANVAS_SIZE = 1;
-export const MAX_CANVAS_SIZE = 512;
-export const DEFAULT_CANVAS_SIZE = 32;
-export const GRID_MIN_SCALE = 6;          // hide the pixel grid below this zoom
-export const CHECKER_TILE_PX = 8;
-```
+One file per domain — `canvas.ts` (zoom ladder, canvas and grid sizes), `storage.ts` (autosave
+debounce, thumbnail throttle, history caps, backup format version), `animation.ts`, `builder.ts`,
+`names.ts` (default names), `shortcuts.ts`, and so on. Look there for the current values; they are
+deliberately not repeated in this document.
 
-`src/constants/storage.ts`
-```ts
-export const DB_NAME = 'sprite-editor';
-export const AUTOSAVE_DEBOUNCE_MS = 700;
-export const THUMBNAIL_THROTTLE_MS = 5_000;
-export const THUMBNAIL_MAX_PX = 128;
-export const HISTORY_MAX_ENTRIES = 100;
-export const HISTORY_MAX_BYTES = 64 * 1024 * 1024;
-export const BACKUP_FORMAT_VERSION = 1;
-```
-
-Rules: constants files contain **no logic and no imports** (except other constants and types).
+Rules: constants files contain **no logic**, and import only other constants and types.
 If a value needs computing, it is a `lib/` function, not a constant.
 
 ## 5. Modules and barrels
 
 - Import from the file, not from a barrel: `import { floodFill } from '@/editor/pixels'`.
 - The **only** barrels allowed are registries where the collection itself is the API:
-  `editor/tools/index.ts`, `db/repositories/index.ts`, `constants/index.ts`.
+  `editor/tools/index.ts` is the only one today.
   Everywhere else barrels create import cycles and defeat tree-shaking.
 - Always use the `@/` alias. Relative imports only within the same folder (`./pixels`).
 - One concept per file. `pixels.ts` exporting `plot`, `line`, `floodFill` is one concept
@@ -113,10 +99,16 @@ The React Compiler is enabled in `vite.config.ts`.
   memoisation; hand-written memos add noise and can defeat it. Exception: a value passed into a
   non-React system (a renderer, an event listener) where identity is load-bearing — comment why.
 - Components receive data via props or hooks, never by reaching into the document/renderer
-  directly. Exactly one component (`<EditorCanvas/>`) is allowed to hold canvas refs.
+  directly. Only `<EditorCanvas/>` talks to the `CanvasRenderer`; other canvases (thumbnails,
+  previews, strips) are painted by a hook such as `useThumbnailCanvas` or `useSpriteStripCanvas`.
 - No `useEffect` for derived state. Effects are for subscriptions, imperative sync, and cleanup.
-- Every list gets a stable `key` from a domain id — never an array index (frames and layers get
-  reordered, and index keys will corrupt the UI state of the rows).
+  To reset state when a prop changes, adjust it during render or remount with a `key`.
+- Every list that can change gets a stable `key` from a domain id — never an array index (frames
+  and layers get reordered, and index keys will corrupt the UI state of the rows). A fixed list
+  of placeholders (skeletons) is the one place an index key is fine.
+- Components never import `db/`, `services/` or `export/` (types excepted): data comes from a
+  hook, writes go through a domain action hook. See [architecture.md §10](architecture.md).
+- A form in a dialog mounts only while open (`FormDialog`), so its draft starts fresh every time.
 - Dialogs/menus come from `components/ui/` (shadcn). Do not hand-roll focus traps.
 
 ## 6b. UI composition: shadcn first
@@ -213,15 +205,18 @@ flood fill is `editor/pixels.ts`, the hook would only wire it to state.
 
 ## 8. Errors and edge cases
 
-- Repository functions throw typed errors (`class NotFoundError extends Error`); components
-  catch at the route boundary and render an error state. No silent `catch {}`.
+- Repository functions throw typed errors (`NotFoundError`, `QuotaError`). `get*` throws when the
+  row is missing; `find*` returns `undefined` where absence is an expected state.
+- A user-triggered write reports its outcome through `runWithToast` / `useAsyncAction` in its
+  domain action hook — one message per failure, written once, never in the component.
+- A render error is caught by `RouteErrorBoundary`, which shows `CrashPage`. No silent `catch {}`.
 - Anything that can fail on user data (import a backup, parse a palette file) returns a
   discriminated result instead of throwing:
   ```ts
   export type Result<T> = { ok: true; value: T } | { ok: false; error: string };
   ```
-- Guard the DB against quota errors explicitly (`QuotaExceededError`) — it is the one runtime
-  failure users will actually hit.
+- Every repository write goes through `withQuotaGuard` — quota is the one runtime failure users
+  will actually hit.
 
 ## 9. Comments
 
@@ -233,41 +228,26 @@ Comment *why*, never *what*. The code says what. Three places where a comment is
 
 ## 10. Lint rules that enforce the above
 
-Added in phase 0 to `.oxlintrc.json` — the layering rule is the important one:
+The source of truth is [`.oxlintrc.json`](../.oxlintrc.json) — read it rather than a copy here,
+which would drift. What it enforces, in intent:
 
-```json
-{
-  "plugins": ["react", "typescript", "oxc", "import"],
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/exhaustive-deps": "warn",
-    "typescript/no-explicit-any": "error",
-    "typescript/consistent-type-imports": "error",
-    "import/no-cycle": "error",
-    "no-restricted-imports": ["error", {
-      "patterns": [
-        { "group": ["react", "react-dom", "dexie", "@/components/*", "@/hooks/*", "@/stores/*"],
-          "message": "src/editor/** is framework-free: no React, no Dexie, no UI imports." }
-      ]
-    }]
-  },
-  "overrides": [
-    { "files": ["src/components/**", "src/hooks/**", "src/stores/**", "src/app/**"],
-      "rules": { "no-restricted-imports": "off" } },
-    { "files": ["src/db/**"],
-      "rules": { "no-restricted-imports": ["error", { "patterns": [
-        { "group": ["@/components/*", "@/editor/*"], "message": "db/ must not depend on UI or the editor core." }
-      ]}]}}
-  ]
-}
-```
+- **Layer boundaries** (`no-restricted-imports` overrides per folder): `editor/` is framework-free;
+  `db/` never imports the editor or UI; `lib/` and `constants/` are pure; `services/`, `export/`
+  and `stores/` never import React code; `commands/` never reach the database or components; `types/`
+  holds types only; `hooks/` never touch the raw Dexie instance or import components; `components/` never import `db/`, `services/`, `export/` or Dexie (type-only
+  imports allowed). The table in [architecture.md §9](architecture.md) marks which edges these
+  cover.
+- **Hooks and imports**: `rules-of-hooks`, `consistent-type-imports`, `no-explicit-any`, `import/no-cycle`.
+- **Design system**: `shadcn/no-restyle` — a `ui/` component is never restyled inline; add a
+  variant to its `cva` config instead (§6b).
+
+A disable comment must name a rule that is actually enabled, and say why.
 
 ## 11. Testing
 
 - **Tests never sit next to the file they cover.** They live under `tests/`, mirroring `src/`
-  one level down: `src/editor/history.ts` → `tests/unit/editor/history.test.ts`. Colocated
-  `*.test.ts` files are a leftover of phases 0–11 and were moved out in
-  [phase 12](phases/phase-12-test-infrastructure.md); do not reintroduce the pattern.
+  one level down: `src/editor/history.ts` → `tests/unit/editor/history.test.ts`. Do not
+  colocate `*.test.ts` files next to their source.
 - **Two Vitest projects, chosen by one question:** does the code under test import React, touch
   the DOM, or read a canvas? No → `tests/unit/**` (jsdom, `*.test.ts`). Yes → `tests/browser/**`
   (real Chromium via the Playwright provider, `*.browser.test.tsx`). See

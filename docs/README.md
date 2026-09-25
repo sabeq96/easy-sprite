@@ -78,7 +78,7 @@ A few things in the plans below were wrong, and the code is the source of truth 
    accepted a live document directly; the real component owns loading by id (`fallback`,
    `renderError`), so component tests that need one seed a sprite through the real repository and
    render the real route instead of injecting a fake session.
-5. **`ConfirmDialog`'s trigger isn't always a real `<button>`.** `SpriteCardMenu` passes it a
+5. **`ConfirmDialog`'s trigger isn't always a real `<button>`.** `LibraryItemMenu` passes it a
    `DropdownMenuItem`, so the Base UI trigger needs `nativeButton={false}` there and `true` (the
    default) everywhere else — another instance of the conventions.md §6d trap, caught by the
    sprite-manager flow test.

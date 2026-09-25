@@ -5,6 +5,8 @@ import { db } from "@/db/db";
 import { withQuotaGuard } from "@/db/errors";
 import { isCelEmpty } from "@/db/repositories/cels";
 import type { CelRecord, LayerRecord, SpriteRecord } from "@/db/schema";
+import { DEFAULT_ITEM_NAME, DEFAULT_LAYER_NAME } from "@/constants/names";
+import { nameOrDefault } from "@/lib/format";
 import { createId } from "@/lib/id";
 import type { PixelBuffer } from "@/types/pixels";
 
@@ -15,8 +17,7 @@ export interface ImportPngResult {
 }
 
 function baseName(filename: string): string {
-  const withoutExt = filename.replace(/\.[^./]+$/, "");
-  return withoutExt.trim() || "Untitled";
+  return nameOrDefault(filename.replace(/\.[^./]+$/, ""), DEFAULT_ITEM_NAME);
 }
 
 async function decodePng(file: File): Promise<{ pixels: PixelBuffer; width: number; height: number }> {
@@ -89,7 +90,7 @@ async function importPngFile(file: File): Promise<SpriteRecord> {
   const layer: LayerRecord = {
     id: layerId,
     spriteId: sprite.id,
-    name: "Layer 1",
+    name: DEFAULT_LAYER_NAME,
     opacity: 1,
     visible: true,
     locked: false,

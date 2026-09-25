@@ -5,7 +5,7 @@ import type { SpritesheetBlockRecord } from "@/db/schema";
 import { compositeFrame } from "@/editor/composite";
 import type { SpriteDocument } from "@/editor/document";
 import { renderBuilderSheet } from "@/export/spritesheetBuilder";
-import { computeBuilderBounds, sizesFromDocs } from "@/export/spritesheetBuilderLayout";
+import { computeBuilderBounds, sizesFromDocs } from "@/lib/sheetLayout";
 
 /** Scales a 1× source up by a whole factor, to about THUMBNAIL_MAX_PX, and encodes it. */
 async function toThumbnail(source: OffscreenCanvas): Promise<Blob | null> {
