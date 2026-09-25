@@ -6,7 +6,7 @@ import { createSprite } from "@/db/repositories/sprites";
 import { createSpritesheet, getSpritesheet, updateSpritesheet } from "@/db/repositories/spritesheets";
 import type { SpritesheetBlockRecord } from "@/db/schema";
 import { useBuilderViewStore } from "@/stores/useBuilderViewStore";
-import { builderSaveSettled } from "@test/builder";
+import { blocksSized, builderSaveSettled } from "@test/builder";
 import { settled } from "@test/dom";
 import { dragElementOnto } from "@test/pointer";
 import { render } from "@test/render";
@@ -29,6 +29,7 @@ async function openSheet(
   await expect
     .poll(() => document.querySelectorAll('[data-testid="builder-canvas"] [data-block-id]').length)
     .toBe(placed.length);
+  await blocksSized(sheet.id);
   return { screen, sheetId: sheet.id, ids };
 }
 

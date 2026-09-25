@@ -8,7 +8,7 @@ import type { SpritesheetBlockRecord } from "@/db/schema";
 import { packSheet, sizesFromRecords } from "@/lib/sheetLayout";
 import { useBuilderViewStore } from "@/stores/useBuilderViewStore";
 import { render } from "@test/render";
-import { builderSaveSettled } from "@test/builder";
+import { blocksSized, builderSaveSettled } from "@test/builder";
 import { settled } from "@test/dom";
 import { dragElementOnto } from "@test/pointer";
 
@@ -21,6 +21,7 @@ async function sheetWith(names: string[], blocks: (ids: string[]) => Spritesheet
 
   const screen = render(<AppRoutes />, { route: `/spritesheets/${sheet.id}` });
   await expect.element(screen.getByTestId("builder-trailing-row")).toBeVisible();
+  await blocksSized(sheet.id);
   return { screen, sheetId: sheet.id, spriteIds: sprites.map((sprite) => sprite.id) };
 }
 
@@ -279,6 +280,7 @@ test("what the sheet shows is exactly what packSheet exports", async () => {
 
   render(<AppRoutes />, { route: `/spritesheets/${sheet.id}` });
   await blocksRendered(3);
+  await blocksSized(sheet.id);
 
   const packed = packSheet(await blocksOf(sheet.id), sizesFromRecords(await db.sprites.toArray()));
   const zoom = useBuilderViewStore.getState().zoom;

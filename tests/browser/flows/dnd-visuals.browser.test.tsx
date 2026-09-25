@@ -8,7 +8,7 @@ import {
   updateSpritesheet,
 } from "@/db/repositories/spritesheets";
 import { useEditorStore } from "@/stores/useEditorStore";
-import { builderSaveSettled } from "@test/builder";
+import { blocksSized, builderSaveSettled } from "@test/builder";
 import { settled } from "@test/dom";
 import { holdDrag, releaseDrag as release, releaseDragNow } from "@test/pointer";
 import { render } from "@test/render";
@@ -157,6 +157,7 @@ async function openComposerWithRow() {
   await expect
     .poll(() => document.querySelectorAll('[data-testid="builder-row"] [data-block-id]').length)
     .toBe(2);
+  await blocksSized(sheet.id);
   return sheet.id;
 }
 
