@@ -56,7 +56,7 @@ export function DocumentProvider({
         // Dev-only handle: makes the live document inspectable from the console, and is how
         // tests/browser/** reaches real pixel state without a DOM-only assertion.
         if (import.meta.env.DEV) {
-          Object.assign(window, { __spriteEditor: { doc, history } });
+          Object.assign(window, { __spriteEditor: { doc, history, autosave: controller } });
         }
         setState({ status: "ready", spriteId, doc, history, autosave: controller });
       })

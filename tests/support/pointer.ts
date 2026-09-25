@@ -114,6 +114,27 @@ export function nextFrame(): Promise<void> {
 }
 
 /**
+ * Resolves once the page has gone `frames` consecutive frames without a DOM change (or after
+ * `timeout` ms). A drag's reaction to a move — a slot opening, a ring, a row appearing — takes a
+ * variable number of frames on a busy machine, so a drag waits for it to finish, not for a count.
+ */
+export async function untilQuiet(frames = 3, timeout = 2000): Promise<void> {
+  let changed = false;
+  const observer = new MutationObserver(() => {
+    changed = true;
+  });
+  observer.observe(document.body, { subtree: true, childList: true, attributes: true });
+  const start = performance.now();
+  let quiet = 0;
+  while (quiet < frames && performance.now() - start < timeout) {
+    await nextFrame();
+    quiet = changed ? 0 : quiet + 1;
+    changed = false;
+  }
+  observer.disconnect();
+}
+
+/**
  * Drags one element onto a point inside another, the way dnd-kit's PointerSensor sees it: the
  * `pointerdown` lands on the drag source, and the moves/up go to the document, where the sensor
  * attaches its listeners once a drag is live. The first move clears the sensor's 4px activation
@@ -143,8 +164,15 @@ export async function dragElementOnto(
   fire(document, "pointermove", endX, endY, true);
   await nextFrame();
   for (let move = 1; move <= settleMoves; move += 1) {
+    await untilQuiet();
     fire(document, "pointermove", endX + (move % 2), endY, true);
     await nextFrame();
+  }
+  if (settleMoves > 0) {
+    // Back onto the exact target, then release only once the page has reacted to it: a release
+    // while dnd-kit is still processing the last move resolves the drop against the old layout.
+    fire(document, "pointermove", endX, endY, true);
+    await untilQuiet();
   }
   fire(document, "pointerup", endX, endY, false);
   await nextFrame();
@@ -174,11 +202,12 @@ export async function holdDrag(
   fire(document, "pointermove", to.x, to.y, true);
   await nextFrame();
   for (let move = 1; move <= settleMoves; move += 1) {
+    await untilQuiet();
     fire(document, "pointermove", to.x - (move % 2), to.y, true);
     await nextFrame();
   }
   fire(document, "pointermove", to.x, to.y, true);
-  await nextFrame();
+  await untilQuiet();
 }
 
 /** Ends a drag started by `holdDrag`, at `to`. */
