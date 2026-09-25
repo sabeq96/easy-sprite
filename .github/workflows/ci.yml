@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  pull_request:
+  # Pushes to main run this through the Pages deploy, which calls it before building — so nothing
+  # reaches the live site without passing it (and main is not checked twice).
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  lint-and-build:
+    name: Lint, typecheck & build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run lint
+
+      # `tsc -b` type-checks the app and the tests (tsconfig.test.json) before the Vite build.
+      - run: npm run build
+
+  test:
+    name: Unit & browser tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # Keyed on the lockfile, which pins the Playwright version and so the browser build it needs.
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Chromium
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Chromium system dependencies
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      # Both projects — jsdom unit tests and the real-Chromium browser suite — in one run, so the
+      # coverage floor in vitest.config.ts is enforced against everything the tests reach.
+      - name: Run tests with coverage
+        run: npm run test:coverage -- --coverage.reporter=text-summary --coverage.reporter=html
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/
+          if-no-files-found: ignore
+          retention-days: 14
+
+      # Vitest saves a screenshot of the page for every failing browser test.
+      - name: Upload failure screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-test-screenshots
+          path: tests/browser/**/__screenshots__/
+          if-no-files-found: ignore
+          retention-days: 14

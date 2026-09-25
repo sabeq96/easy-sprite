@@ -57,7 +57,7 @@ export function useCanvasViewControls(containerRef: RefObject<HTMLElement | null
 
     const onPointerMove = (event: PointerEvent) => {
       if (!panning) return;
-      useEditorStore.getState().panBy(event.clientX - last.x, event.clientY - last.y);
+      useEditorStore.getState().panBy(event.clientX - last.x, event.clientY - last.y, sprite);
       last = { x: event.clientX, y: event.clientY };
     };
 

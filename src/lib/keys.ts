@@ -95,9 +95,26 @@ export function formatBinding(binding: KeyBinding): string {
   return parts.join(IS_APPLE ? "" : "+");
 }
 
+/**
+ * `<input>` types that take no typed text. A slider or switch keeps focus after it is used, and
+ * treating it as a text field would leave every shortcut — undo included — dead until the user
+ * clicked somewhere else.
+ */
+const NON_TEXT_INPUT_TYPES = new Set([
+  "range",
+  "checkbox",
+  "radio",
+  "button",
+  "submit",
+  "reset",
+  "color",
+  "file",
+]);
+
 /** Typing must never trigger a tool change; Escape is the one key that always gets through. */
 export function isTypingTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
   if (target.isContentEditable) return true;
-  return ["input", "textarea", "select"].includes(target.tagName.toLowerCase());
+  if (target instanceof HTMLInputElement) return !NON_TEXT_INPUT_TYPES.has(target.type);
+  return ["textarea", "select"].includes(target.tagName.toLowerCase());
 }

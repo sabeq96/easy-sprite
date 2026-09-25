@@ -24,7 +24,7 @@ export interface ViewSlice {
 
   setViewport: (viewport: Viewport) => void;
   setContainerSize: (size: Size) => void;
-  panBy: (dx: number, dy: number) => void;
+  panBy: (dx: number, dy: number, sprite: Size) => void;
   zoom: (cursor: Point, direction: 1 | -1, sprite: Size) => void;
   fitToContainer: (container: Size, sprite: Size) => void;
   toggleGrid: () => void;
@@ -51,10 +51,12 @@ export const createViewSlice: SliceCreator<ViewSlice> = (set, get) => ({
   setViewport: (viewport) => set({ viewport }),
   setContainerSize: (containerSize) => set({ containerSize }),
 
-  panBy: (dx, dy) =>
-    set(({ viewport }) => ({
-      viewport: { ...viewport, originX: viewport.originX + dx, originY: viewport.originY + dy },
-    })),
+  // Clamped like zoom, so a long drag can never push the sprite entirely off screen.
+  panBy: (dx, dy, sprite) => {
+    const { viewport, containerSize } = get();
+    const next = { ...viewport, originX: viewport.originX + dx, originY: viewport.originY + dy };
+    set({ viewport: containerSize.width ? clampViewport(next, containerSize, sprite) : next });
+  },
 
   zoom: (cursor, direction, sprite) => {
     const { viewport, containerSize } = get();

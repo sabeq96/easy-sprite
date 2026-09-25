@@ -74,7 +74,10 @@ test("a sprite already on the sheet drops out of the palette until it is removed
     .not.toBeInTheDocument();
 
   // An 8×8 sprite is a 32px block at 4× — too small to draw its ✕, which stays keyboard-reachable.
-  (screen.getByRole("button", { name: "Remove Hero", exact: true }).element() as HTMLElement).focus();
+  // A block renders before its sprite's name has loaded, so wait for the labelled button.
+  const removeHero = screen.getByRole("button", { name: "Remove Hero", exact: true });
+  await expect.element(removeHero).toBeInTheDocument();
+  (removeHero.element() as HTMLElement).focus();
   await userEvent.keyboard("{Enter}");
 
   // Removing it from the canvas returns it to the palette.
