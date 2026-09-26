@@ -93,10 +93,10 @@ export function BuilderCanvas({ rows, sizes, docs, ghostId, onRemoveBlock }: Bui
  */
 function BuilderGrid() {
   const gridEnabled = useBuilderViewStore((state) => state.gridEnabled);
-  const gridCell = useBuilderViewStore((state) => state.gridCell);
+  const gridSize = useBuilderViewStore((state) => state.gridSize);
   const zoom = useBuilderViewStore((state) => state.zoom);
 
-  const cell = gridCell * zoom;
+  const cell = gridSize * zoom;
   if (!gridEnabled || cell < BUILDER_GRID_MIN_SCALE) return null;
 
   return (

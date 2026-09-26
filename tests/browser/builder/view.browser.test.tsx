@@ -3,12 +3,13 @@ import { page, userEvent } from "@vitest/browser/context";
 import { AppRoutes } from "@/app/routes";
 import { BUILDER_ZOOM_LEVELS } from "@/constants/builder";
 import { createSprite } from "@/db/repositories/sprites";
-import { createSpritesheet, getSpritesheet, updateSpritesheet } from "@/db/repositories/spritesheets";
+import { createSpritesheet, updateSpritesheet } from "@/db/repositories/spritesheets";
 import type { SpritesheetBlockRecord } from "@/db/schema";
 import { useBuilderViewStore } from "@/stores/useBuilderViewStore";
-import { blocksSized, builderSaveSettled } from "@test/builder";
+import { blocksSized, builderSaveSettled, savedSheet } from "@test/builder";
 import { settled } from "@test/dom";
 import { dragElementOnto } from "@test/pointer";
+import { mod } from "@test/editor";
 import { render } from "@test/render";
 
 /** Renders the composer at a sheet of 8×8 sprites (placed per `blocks`) and waits for it. */
@@ -35,7 +36,7 @@ async function openSheet(
 
 const zoom = () => useBuilderViewStore.getState().zoom;
 const blockWidth = (id: string) => document.querySelector(`[data-block-id="${id}"]`)!.getBoundingClientRect().width;
-const blockIds = async (sheetId: string) => (await getSpritesheet(sheetId)).blocks.map((block) => block.id);
+const blockIds = async (sheetId: string) => (await savedSheet(sheetId)).blocks.map((block) => block.id);
 const SETTLE = { settleMoves: 2 };
 
 function wheel(target: Element, deltaY: number, ctrlKey: boolean) {
@@ -109,12 +110,15 @@ test("fit picks the largest zoom at which the whole sheet still fits the panel",
   await expect.poll(() => blockWidth("a")).toBe(64 * level);
 });
 
-test("the grid switch hides the ruler and the cell size changes it", async () => {
+test("the grid switch hides the ruler and the grid size slider changes it", async () => {
   const { screen } = await openSheet(["Hero"]);
+  await expect.poll(() => useBuilderViewStore.getState().gridSize).toBe(16);
 
   await userEvent.click(screen.getByRole("button", { name: "Grid options" }));
-  await userEvent.click(screen.getByRole("button", { name: "8px" }));
-  expect(useBuilderViewStore.getState().gridCell).toBe(8);
+  // Focused, not clicked: the thumb sits over the range input and takes the pointer.
+  (screen.getByRole("slider", { name: "Grid size" }).element() as HTMLElement).focus();
+  await userEvent.keyboard("{ArrowLeft}");
+  await expect.poll(() => useBuilderViewStore.getState().gridSize).toBe(8);
 
   await userEvent.click(screen.getByRole("switch"));
   await expect.element(screen.getByTestId("builder-grid")).not.toBeInTheDocument();
@@ -164,7 +168,7 @@ test.each([2, 8])("at %i× zoom, a sprite dropped on a block's left half lands b
   await dragElementOnto(tile, a, { x: 8 * level * 0.2, y: 4 * level }, SETTLE);
 
   await expect
-    .poll(async () => (await getSpritesheet(sheetId)).blocks.map((block) => block.spriteId))
+    .poll(async () => (await savedSheet(sheetId)).blocks.map((block) => block.spriteId))
     .toEqual([ids[1], ids[0]]);
   await builderSaveSettled();
 });
@@ -174,10 +178,77 @@ test("zooming changes only the view, never the saved layout", async () => {
     { id: "a", spriteId: hero, row: 0 },
     { id: "b", spriteId: villain, row: 1 },
   ]);
-  const before = await getSpritesheet(sheetId);
+  const before = await savedSheet(sheetId);
 
   await userEvent.click(screen.getByRole("button", { name: "Zoom in" }));
   await userEvent.click(screen.getByRole("button", { name: "Fit to window" }));
 
-  expect((await getSpritesheet(sheetId)).blocks).toEqual(before.blocks);
+  expect((await savedSheet(sheetId)).blocks).toEqual(before.blocks);
+});
+
+test("the sprite editor's view keys work here too: + / = and - / _ step the zoom, 0 fits, ⌘/Ctrl+G toggles the grid", async () => {
+  const { screen } = await openSheet(["Hero"], ([hero]) => [{ id: "a", spriteId: hero, row: 0 }]);
+  expect(zoom()).toBe(4);
+
+  await userEvent.keyboard("=");
+  expect(zoom()).toBe(6);
+  await userEvent.keyboard("+");
+  expect(zoom()).toBe(8);
+  await userEvent.keyboard("-");
+  await userEvent.keyboard("_");
+  expect(zoom()).toBe(4);
+  await expect.element(screen.getByLabelText("Zoom level")).toHaveTextContent("4×");
+
+  await userEvent.keyboard("0");
+  await expect.poll(zoom).toBe(BUILDER_ZOOM_LEVELS.at(-1));
+
+  await userEvent.keyboard(mod("g"));
+  expect(useBuilderViewStore.getState().gridEnabled).toBe(false);
+  await expect.element(screen.getByTestId("builder-grid")).not.toBeInTheDocument();
+});
+
+test("view keys stay out of the way while typing the sheet's name", async () => {
+  const { screen } = await openSheet(["Hero"]);
+  await userEvent.click(screen.getByLabelText("Spritesheet name"));
+  await userEvent.keyboard("-=0");
+  expect(zoom()).toBe(4);
+});
+
+test("? and the keyboard button open a shortcut sheet listing the sheet's keys", async () => {
+  const { screen } = await openSheet(["Hero"]);
+
+  await userEvent.keyboard("?");
+  const dialog = screen.getByRole("dialog", { name: "Keyboard shortcuts" });
+  await expect.element(dialog).toBeVisible();
+  for (const label of [
+    "Undo",
+    "Redo",
+    "Save now",
+    "Zoom in",
+    "Zoom out",
+    "Fit to window",
+    "Toggle grid",
+    "Back to sprites",
+    "Zoom",
+  ]) {
+    await expect.element(dialog.getByText(label, { exact: true })).toBeVisible();
+  }
+  // The pixel editor's tools and selection keys are not the composer's.
+  expect(dialog.getByText("Pencil").query()).toBeNull();
+  expect(dialog.getByText("Copy", { exact: true }).query()).toBeNull();
+
+  await userEvent.keyboard("{Escape}");
+  await expect.element(dialog).not.toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", { name: "Keyboard shortcuts" }));
+  await expect.element(screen.getByRole("dialog", { name: "Keyboard shortcuts" })).toBeVisible();
+});
+
+test("blocks show the chessboard at chess size × zoom, 1px by default", async () => {
+  await openSheet(["Hero"], ([hero]) => [{ id: "a", spriteId: hero, row: 0 }]);
+  const block = () => document.querySelector('[data-block-id="a"]') as HTMLElement;
+
+  // One chess cell per sprite px: at 4× a two-cell tile is 8 screen px.
+  await expect.poll(() => block().style.backgroundSize).toBe("8px 8px");
+  useBuilderViewStore.getState().setCheckerSize(2);
+  await expect.poll(() => block().style.backgroundSize).toBe("16px 16px");
 });

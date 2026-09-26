@@ -39,10 +39,21 @@ describe("builder view store", () => {
     expect(store().zoom).toBe(DEFAULT_BUILDER_ZOOM);
   });
 
-  it("toggles the grid and switches its cell", () => {
+  it("toggles the grid and switches its size", () => {
     store().toggleGrid();
     expect(store().gridEnabled).toBe(false);
-    store().setGridCell(8);
-    expect(store().gridCell).toBe(8);
+    store().setGridSize(8);
+    expect(store().gridSize).toBe(8);
+  });
+
+  it("resetGrid sets the grid to the sheet's tile and the chessboard back to 1px", () => {
+    store().setCheckerSize(8);
+    store().resetGrid(24);
+    expect(store().gridSize).toBe(24);
+    expect(store().checkerSize).toBe(1);
+  });
+
+  it("zooms up to 12×", () => {
+    expect(BUILDER_ZOOM_LEVELS.at(-1)).toBe(12);
   });
 });

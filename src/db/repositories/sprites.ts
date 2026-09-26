@@ -1,4 +1,4 @@
-import { DEFAULT_CANVAS_SIZE } from "@/constants/canvas";
+import { DEFAULT_TILE_COUNT, DEFAULT_TILE_SIZE } from "@/constants/canvas";
 import { DEFAULT_FPS } from "@/constants/animation";
 import { db } from "@/db/db";
 import { NotFoundError, withQuotaGuard } from "@/db/errors";
@@ -9,6 +9,7 @@ import { nameOrDefault } from "@/lib/format";
 import { createId } from "@/lib/id";
 import type { PixelBuffer } from "@/types/pixels";
 import { fromRows, toRows } from "@/lib/sheetRows";
+import { inferTileSize } from "@/lib/tiles";
 
 export interface SpriteSnapshot {
   sprite: SpriteRecord;
@@ -21,6 +22,7 @@ export interface CreateSpriteOptions {
   name?: string;
   width?: number;
   height?: number;
+  tileSize?: number;
   fps?: number;
   paletteId?: string | null;
   tags?: string[];
@@ -29,11 +31,13 @@ export interface CreateSpriteOptions {
 export async function createSprite(options: CreateSpriteOptions = {}): Promise<SpriteRecord> {
   const now = Date.now();
   const layerId = createId();
+  const tileSize = options.tileSize ?? DEFAULT_TILE_SIZE;
   const sprite: SpriteRecord = {
     id: createId(),
     name: nameOrDefault(options.name, DEFAULT_ITEM_NAME),
-    width: options.width ?? DEFAULT_CANVAS_SIZE,
-    height: options.height ?? DEFAULT_CANVAS_SIZE,
+    width: options.width ?? tileSize * DEFAULT_TILE_COUNT,
+    height: options.height ?? tileSize * DEFAULT_TILE_COUNT,
+    tileSize,
     fps: options.fps ?? DEFAULT_FPS,
     layerIds: [layerId],
     frames: [{ id: createId() }],
@@ -218,6 +222,8 @@ export async function splitSpriteIntoFrames(
     ...sprite,
     width: frameWidth,
     height: frameHeight,
+    // The old tile rarely fits the new frame size; re-derive it like an import would.
+    tileSize: inferTileSize(frameWidth, frameHeight),
     frames: newFrames,
     thumbnail: null,
     updatedAt: Date.now(),

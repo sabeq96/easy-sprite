@@ -21,6 +21,11 @@ describe("spritesheet repository", () => {
     expect(sheet.blocks).toEqual([]);
   });
 
+  it("stores its tile size, defaulting to 16", async () => {
+    expect((await getSpritesheet((await createSpritesheet({ tileSize: 32 })).id)).tileSize).toBe(32);
+    expect((await createSpritesheet()).tileSize).toBe(16);
+  });
+
   it("falls back to Untitled for a blank name", async () => {
     const sheet = await createSpritesheet({ name: "   " });
     expect(sheet.name).toBe("Untitled");

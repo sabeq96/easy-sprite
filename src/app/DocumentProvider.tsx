@@ -1,13 +1,14 @@
 import { createContext, use, useEffect, useState, type ReactNode } from "react";
 import { History } from "@/editor/history";
 import type { SpriteDocument } from "@/editor/document";
-import { AutosaveController, type SaveStatus } from "@/services/autosave";
+import { Autosave, type SaveStatus } from "@/services/autosave";
 import { openDocument } from "@/services/documentService";
+import { spriteSaveSource } from "@/services/spriteSaveSource";
 
 export interface DocumentSession {
   doc: SpriteDocument;
   history: History;
-  autosave: AutosaveController;
+  autosave: Autosave;
   saveStatus: SaveStatus;
 }
 
@@ -21,7 +22,7 @@ type LoadState =
       spriteId: string;
       doc: SpriteDocument;
       history: History;
-      autosave: AutosaveController;
+      autosave: Autosave;
     };
 
 export interface DocumentProviderProps {
@@ -46,12 +47,12 @@ export function DocumentProvider({
 
   useEffect(() => {
     let disposed = false;
-    let controller: AutosaveController | null = null;
+    let controller: Autosave | null = null;
 
     void openDocument(spriteId)
       .then((doc) => {
         if (disposed) return;
-        controller = new AutosaveController(doc, setSaveStatus);
+        controller = new Autosave(spriteSaveSource(doc), setSaveStatus);
         const history = new History();
         // Dev-only handle: makes the live document inspectable from the console, and is how
         // tests/browser/** reaches real pixel state without a DOM-only assertion.

@@ -4,11 +4,10 @@ import { createPalette, findPalette } from "@/db/repositories/palettes";
 import { createSprite } from "@/db/repositories/sprites";
 import {
   createSpritesheet,
-  getSpritesheet,
   updateSpritesheet,
 } from "@/db/repositories/spritesheets";
 import { useEditorStore } from "@/stores/useEditorStore";
-import { blocksSized, builderSaveSettled } from "@test/builder";
+import { blocksSized, builderSaveSettled, savedSheet } from "@test/builder";
 import { settled } from "@test/dom";
 import { holdDrag, releaseDrag as release, releaseDragNow } from "@test/pointer";
 import { render } from "@test/render";
@@ -194,7 +193,7 @@ test("holding a sprite from the dock over a row opens a gap for it before the dr
   await release(to);
 
   await expect
-    .poll(async () => (await getSpritesheet(sheetId)).blocks.map((block) => block.id))
+    .poll(async () => (await savedSheet(sheetId)).blocks.map((block) => block.id))
     .toEqual(["a", ids[1], "b"]);
   await builderSaveSettled();
 });
@@ -212,7 +211,7 @@ test("dragging a block along its row moves its hollow slot past its neighbour", 
 
   await release(to);
   await expect
-    .poll(async () => (await getSpritesheet(sheetId)).blocks.map((block) => block.id))
+    .poll(async () => (await savedSheet(sheetId)).blocks.map((block) => block.id))
     .toEqual(["b", "a"]);
   await builderSaveSettled();
 });

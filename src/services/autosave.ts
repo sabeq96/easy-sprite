@@ -1,39 +1,37 @@
-import { AUTOSAVE_DEBOUNCE_MS, THUMBNAIL_THROTTLE_MS } from "@/constants/storage";
-import { flushCels } from "@/db/repositories/cels";
-import { saveDocumentStructure } from "@/services/documentService";
-import { saveThumbnail } from "@/services/thumbnails";
-import type { SpriteDocument } from "@/editor/document";
+import { AUTOSAVE_DEBOUNCE_MS } from "@/constants/storage";
 
 export type SaveStatus = "idle" | "pending" | "saving" | "error";
 
-export class AutosaveController {
-  private readonly doc: SpriteDocument;
+/** What one editor saves: when its document changes, and how to write what changed. */
+export interface SaveSource {
+  /** Calls `onChange` on every edit worth saving; returns the unsubscribe. */
+  subscribe(onChange: () => void): () => void;
+  /**
+   * Writes whatever changed since the last write. Decides synchronously: "clean" when there is
+   * nothing to write, so a no-op flush never shows "saving".
+   */
+  write(): "clean" | Promise<void>;
+}
+
+/**
+ * Deferred saving, shared by every editor: edits are written once they pause for
+ * AUTOSAVE_DEBOUNCE_MS, on `flush` (⌘S, export, leaving the page), or when the tab is hidden.
+ * What gets written is the source's business; when it gets written is this class's alone — the
+ * one place to change the cadence.
+ */
+export class Autosave {
+  private readonly source: SaveSource;
   private readonly onStatus: (status: SaveStatus) => void;
-  private readonly unsubscribes: (() => void)[] = [];
+  private readonly unsubscribe: () => void;
 
   private timer: ReturnType<typeof setTimeout> | null = null;
-  private structureDirty = false;
   private inFlight: Promise<void> | null = null;
-  private lastThumbnailAt = 0;
   private disposed = false;
 
-  constructor(doc: SpriteDocument, onStatus: (status: SaveStatus) => void) {
-    this.doc = doc;
+  constructor(source: SaveSource, onStatus: (status: SaveStatus) => void) {
+    this.source = source;
     this.onStatus = onStatus;
-
-    this.unsubscribes.push(doc.events.on("pixels", () => this.schedule()));
-    this.unsubscribes.push(
-      doc.events.on("structure", () => {
-        this.structureDirty = true;
-        this.schedule();
-      }),
-    );
-    this.unsubscribes.push(
-      doc.events.on("meta", () => {
-        this.structureDirty = true;
-        this.schedule();
-      }),
-    );
+    this.unsubscribe = source.subscribe(() => this.schedule());
 
     // Tab hide is the only reliably delivered "about to lose the page" signal.
     document.addEventListener("visibilitychange", this.onVisibilityChange);
@@ -46,7 +44,7 @@ export class AutosaveController {
     this.timer = setTimeout(() => void this.flush(), AUTOSAVE_DEBOUNCE_MS);
   }
 
-  /** Awaited on route change and before export. Safe to call concurrently. */
+  /** Writes now. Awaited on route change and before export. Safe to call concurrently. */
   async flush(): Promise<void> {
     if (this.timer) {
       clearTimeout(this.timer);
@@ -54,11 +52,8 @@ export class AutosaveController {
     }
     if (this.inFlight) return this.inFlight;
 
-    const dirty = this.doc.takeDirtyCels();
-    const needsStructure = this.structureDirty;
-    this.structureDirty = false;
-
-    if (dirty.length === 0 && !needsStructure) {
+    const write = this.source.write();
+    if (write === "clean") {
       this.onStatus("idle");
       return;
     }
@@ -66,15 +61,9 @@ export class AutosaveController {
     this.onStatus("saving");
     this.inFlight = (async () => {
       try {
-        if (dirty.length) {
-          await flushCels(dirty.map((cel) => ({ ...cel, spriteId: this.doc.id })));
-        }
-        if (needsStructure) await saveDocumentStructure(this.doc);
-        await this.maybeSaveThumbnail();
+        await write;
         this.onStatus("idle");
       } catch (error) {
-        // Put the structural work back so the next flush retries instead of losing it.
-        this.structureDirty ||= needsStructure;
         this.onStatus("error");
         throw error;
       } finally {
@@ -87,9 +76,10 @@ export class AutosaveController {
 
   dispose(): void {
     this.disposed = true;
+    if (this.timer) clearTimeout(this.timer);
+    this.timer = null;
     document.removeEventListener("visibilitychange", this.onVisibilityChange);
-    for (const unsubscribe of this.unsubscribes) unsubscribe();
-    this.unsubscribes.length = 0;
+    this.unsubscribe();
   }
 
   /** Flush that ignores the disposed flag, for the unmount path. */
@@ -97,13 +87,6 @@ export class AutosaveController {
     const pending = this.flush();
     this.dispose();
     await pending;
-  }
-
-  private async maybeSaveThumbnail(): Promise<void> {
-    const now = Date.now();
-    if (now - this.lastThumbnailAt < THUMBNAIL_THROTTLE_MS) return;
-    this.lastThumbnailAt = now;
-    await saveThumbnail(this.doc);
   }
 
   private onVisibilityChange = () => {

@@ -1,12 +1,14 @@
 import { db } from "@/db/db";
 import { NotFoundError, withQuotaGuard } from "@/db/errors";
 import type { SpritesheetRecord } from "@/db/schema";
+import { DEFAULT_TILE_SIZE } from "@/constants/canvas";
 import { DEFAULT_ITEM_NAME } from "@/constants/names";
 import { nameOrDefault } from "@/lib/format";
 import { createId } from "@/lib/id";
 
 export interface CreateSpritesheetOptions {
   name?: string;
+  tileSize?: number;
   tags?: string[];
 }
 
@@ -18,6 +20,7 @@ export async function createSpritesheet(
     id: createId(),
     name: nameOrDefault(options.name, DEFAULT_ITEM_NAME),
     blocks: [],
+    tileSize: options.tileSize ?? DEFAULT_TILE_SIZE,
     tags: options.tags ?? [],
     createdAt: now,
     updatedAt: now,

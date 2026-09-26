@@ -2,16 +2,14 @@ import { Panel } from "@/components/common/Panel";
 import { Separator } from "@/components/ui/separator";
 import { plural } from "@/lib/format";
 import type { PackedSheet } from "@/lib/sheetLayout";
-import { useBuilderViewStore } from "@/stores/useBuilderViewStore";
 
 export interface BuilderStatusBarProps {
   sheet: PackedSheet;
   blockCount: number;
 }
 
-/** The composer's footer, mirroring the editor's: sheet size and contents left, zoom right. */
+/** The composer's footer, mirroring the editor's: sheet size and contents. Zoom lives in the top bar. */
 export function BuilderStatusBar({ sheet, blockCount }: BuilderStatusBarProps) {
-  const zoom = useBuilderViewStore((state) => state.zoom);
   const rowCount = sheet.rows.length;
 
   return (
@@ -30,7 +28,6 @@ export function BuilderStatusBar({ sheet, blockCount }: BuilderStatusBarProps) {
       <span className="tabular-nums">
         {plural(rowCount, "row")}
       </span>
-      <span className="ml-auto tabular-nums">{Math.round(zoom * 100)}%</span>
     </Panel>
   );
 }

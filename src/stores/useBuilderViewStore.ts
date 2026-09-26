@@ -1,16 +1,15 @@
 import { create } from "zustand";
-import {
-  BUILDER_ZOOM_LEVELS,
-  DEFAULT_BUILDER_GRID_CELL,
-  DEFAULT_BUILDER_ZOOM,
-} from "@/constants/builder";
+import { BUILDER_ZOOM_LEVELS, DEFAULT_BUILDER_ZOOM } from "@/constants/builder";
+import { DEFAULT_CHECKER_SIZE, DEFAULT_TILE_SIZE } from "@/constants/canvas";
 import type { Size } from "@/editor/viewport";
 import { stepLadder } from "@/lib/math";
 
 export interface BuilderViewState {
   zoom: number;
   gridEnabled: boolean;
-  gridCell: number;
+  /** In sprite px, like the pixel editor's. */
+  gridSize: number;
+  checkerSize: number;
   /** Last known size of the scrolling sheet panel, so `fit` needs no DOM read at click time. */
   containerSize: Size;
 
@@ -18,7 +17,10 @@ export interface BuilderViewState {
   /** Largest ladder step at which `sheet` (in sprite px) still fits the panel. */
   fit: (sheet: Size) => void;
   toggleGrid: () => void;
-  setGridCell: (cell: number) => void;
+  setGridSize: (size: number) => void;
+  setCheckerSize: (size: number) => void;
+  /** Grid to `gridSize` (the sheet's tile), chessboard to its default — done whenever a sheet opens. */
+  resetGrid: (gridSize: number) => void;
   setContainerSize: (size: Size) => void;
 }
 
@@ -31,7 +33,8 @@ export const useBuilderViewStore = create<BuilderViewState>()((set) => ({
   zoom: DEFAULT_BUILDER_ZOOM,
   // On by default: the grid is how you see at a glance that sprites sit flush.
   gridEnabled: true,
-  gridCell: DEFAULT_BUILDER_GRID_CELL,
+  gridSize: DEFAULT_TILE_SIZE,
+  checkerSize: DEFAULT_CHECKER_SIZE,
   containerSize: { width: 0, height: 0 },
 
   zoomBy: (direction) =>
@@ -48,6 +51,8 @@ export const useBuilderViewStore = create<BuilderViewState>()((set) => ({
     }),
 
   toggleGrid: () => set(({ gridEnabled }) => ({ gridEnabled: !gridEnabled })),
-  setGridCell: (gridCell) => set({ gridCell }),
+  setGridSize: (gridSize) => set({ gridSize }),
+  setCheckerSize: (checkerSize) => set({ checkerSize }),
+  resetGrid: (gridSize) => set({ gridSize, checkerSize: DEFAULT_CHECKER_SIZE }),
   setContainerSize: (containerSize) => set({ containerSize }),
 }));

@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { useDocumentSession } from "@/app/DocumentProvider";
 import { createToolCommands } from "@/commands/toolCommands";
 import type { CommandRegistry } from "@/commands/types";
+import { ZOOM_LEVELS } from "@/constants/canvas";
 import { ROUTES } from "@/constants/routes";
 import { hasClipboard } from "@/editor/clipboard";
 import {
@@ -279,12 +280,14 @@ export function useEditorCommands(): CommandRegistry {
       id: "view.zoomIn",
       label: "Zoom in",
       group: "View",
+      isEnabled: () => store.getState().viewport.scale < ZOOM_LEVELS[ZOOM_LEVELS.length - 1],
       run: () => zoomFromCentre(1),
     },
     "view.zoomOut": {
       id: "view.zoomOut",
       label: "Zoom out",
       group: "View",
+      isEnabled: () => store.getState().viewport.scale > ZOOM_LEVELS[0],
       run: () => zoomFromCentre(-1),
     },
     "view.fit": {

@@ -7,7 +7,9 @@ import {
   getSpritesheet,
   updateSpritesheet,
 } from "@/db/repositories/spritesheets";
-import { blocksSized, builderSaveSettled } from "@test/builder";
+import { useBuilderViewStore } from "@/stores/useBuilderViewStore";
+import { blocksSized, builderSaveSettled, savedSheet, sheetSession } from "@test/builder";
+import { KEYS, mod } from "@test/editor";
 import { render } from "@test/render";
 
 test("creating a spritesheet from the library opens the composer, and it lists with a sheet badge", async () => {
@@ -41,7 +43,7 @@ test("the composer header exposes export and a save indicator, like the sprite e
   await userEvent.keyboard("{Enter}");
 
   // The badge reports a real write, so the rename must land in the database behind it.
-  await expect.poll(async () => (await getSpritesheet(sheet.id)).name).toBe("Renamed");
+  await expect.poll(async () => (await savedSheet(sheet.id)).name).toBe("Renamed");
   await expect.element(screen.getByRole("status", { name: "Saved" })).toBeVisible();
 });
 
@@ -158,8 +160,8 @@ test("zoom steps change the readout and the size every block renders at", async 
 
   await expect.element(screen.getByLabelText("Zoom level")).toHaveTextContent("6×");
   expect(block()!.getBoundingClientRect().width).toBe(48);
-  // The status bar carries the same level as a percentage, like the sprite editor's.
-  await expect.element(screen.getByText("600%")).toBeVisible();
+  // Zoom lives in the top bar only; the status bar no longer repeats it as a percentage.
+  expect(screen.getByText("600%").query()).toBeNull();
 });
 
 test("the grid is on when a sheet is first opened", async () => {
@@ -198,4 +200,104 @@ test("on a block too small to show it, the remove button appears in the corner w
   expect(rect.top).toBeGreaterThanOrEqual(blockRect.top);
   expect(rect.bottom).toBeLessThanOrEqual(blockRect.bottom);
   await expect.poll(() => getComputedStyle(button).opacity).toBe("1");
+});
+
+/** A sheet holding one 16×16 Hero block, opened in the composer. */
+async function openHeroSheet() {
+  await page.viewport(1280, 720);
+  const sprite = await createSprite({ name: "Hero", width: 16, height: 16 });
+  const sheet = await createSpritesheet({ name: "Composed" });
+  await updateSpritesheet(sheet.id, { blocks: [{ id: "block-1", spriteId: sprite.id, row: 0 }] });
+  const screen = render(<AppRoutes />, { route: `/spritesheets/${sheet.id}` });
+  const removeHero = screen.getByRole("button", { name: "Remove Hero", exact: true });
+  await expect.element(removeHero).toBeInTheDocument();
+  return { screen, sheetId: sheet.id, removeHero };
+}
+
+async function removeBlock(removeHero: Awaited<ReturnType<typeof openHeroSheet>>["removeHero"]) {
+  (removeHero.element() as HTMLElement).focus();
+  await userEvent.keyboard("{Enter}");
+  await expect.element(removeHero).not.toBeInTheDocument();
+}
+
+test("edits wait for the autosave debounce, and ⌘S writes them straight away", async () => {
+  const { screen, sheetId, removeHero } = await openHeroSheet();
+  await removeBlock(removeHero);
+
+  // In memory at once, in the database only once saved.
+  expect(sheetSession().doc.blocks).toEqual([]);
+  await expect.element(screen.getByRole("status", { name: "Unsaved changes" })).toBeVisible();
+  expect((await getSpritesheet(sheetId)).blocks).toHaveLength(1);
+
+  await userEvent.keyboard(mod("s"));
+  await expect.poll(async () => (await getSpritesheet(sheetId)).blocks).toEqual([]);
+  // The toast, not the badge: the badge is a role="status" labelled "Saved" with no text of its own.
+  await expect.element(screen.getByText("Saved", { exact: true })).toBeVisible();
+  await builderSaveSettled();
+});
+
+test("undo and redo step a removal back and forth, from the keys and the top-bar buttons", async () => {
+  const { screen, sheetId, removeHero } = await openHeroSheet();
+  await removeBlock(removeHero);
+
+  const undo = screen.getByRole("button", { name: "Undo remove sprite" });
+  await expect.element(undo).toBeEnabled();
+  await userEvent.keyboard(KEYS.undo);
+  await expect.element(screen.getByRole("button", { name: "Remove Hero", exact: true })).toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole("button", { name: "Redo remove sprite" }));
+  await expect
+    .element(screen.getByRole("button", { name: "Remove Hero", exact: true }))
+    .not.toBeInTheDocument();
+
+  // Both redo chords, as in the sprite editor.
+  await userEvent.click(screen.getByRole("button", { name: "Undo remove sprite" }));
+  await userEvent.keyboard(KEYS.redo);
+  expect(sheetSession().doc.blocks).toEqual([]);
+  await userEvent.keyboard(KEYS.undo);
+  await userEvent.keyboard(mod("y"));
+  expect(sheetSession().doc.blocks).toEqual([]);
+
+  await userEvent.keyboard(KEYS.undo);
+  expect((await savedSheet(sheetId)).blocks.map((block) => block.id)).toEqual(["block-1"]);
+  await builderSaveSettled();
+});
+
+test("the menu's Tile size… changes the tile, the grid follows, and undo puts both back", async () => {
+  const { screen, sheetId } = await openHeroSheet();
+  await expect.poll(() => useBuilderViewStore.getState().gridSize).toBe(16);
+
+  await userEvent.click(screen.getByRole("button", { name: "Spritesheet menu" }));
+  await userEvent.click(screen.getByRole("menuitem", { name: "Tile size…" }));
+  await userEvent.click(screen.getByRole("button", { name: "32×32" }));
+  await userEvent.click(screen.getByRole("button", { name: "Apply" }));
+
+  await expect.poll(() => useBuilderViewStore.getState().gridSize).toBe(32);
+  expect((await savedSheet(sheetId)).tileSize).toBe(32);
+
+  await userEvent.keyboard(KEYS.undo);
+  await expect.poll(() => useBuilderViewStore.getState().gridSize).toBe(16);
+  expect((await savedSheet(sheetId)).tileSize).toBe(16);
+  await builderSaveSettled();
+});
+
+test("the menu's Save now writes pending edits", async () => {
+  const { screen, sheetId, removeHero } = await openHeroSheet();
+  await removeBlock(removeHero);
+
+  await userEvent.click(screen.getByRole("button", { name: "Spritesheet menu" }));
+  await userEvent.click(screen.getByRole("menuitem", { name: "Save now" }));
+  await expect.poll(async () => (await getSpritesheet(sheetId)).blocks).toEqual([]);
+  await builderSaveSettled();
+});
+
+test("leaving the composer saves what was still pending", async () => {
+  const { screen, sheetId, removeHero } = await openHeroSheet();
+  await removeBlock(removeHero);
+  expect((await getSpritesheet(sheetId)).blocks).toHaveLength(1);
+
+  await userEvent.click(screen.getByRole("button", { name: "Back to sprites" }));
+  await expect.poll(async () => (await getSpritesheet(sheetId)).blocks).toEqual([]);
+  // The thumbnail follows the blocks; let it land before teardown closes the database.
+  await expect.poll(async () => (await getSpritesheet(sheetId)).thumbnail).not.toBeUndefined();
 });

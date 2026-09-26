@@ -26,6 +26,14 @@ describe("sprite repository", () => {
     expect(snapshot.cels).toHaveLength(0);
   });
 
+  it("stores its tile size, and defaults to 16 × 2×2 tiles", async () => {
+    const tiled = await createSprite({ width: 48, height: 32, tileSize: 16 });
+    expect((await loadSnapshot(tiled.id)).sprite.tileSize).toBe(16);
+
+    const plain = await createSprite();
+    expect([plain.width, plain.height, plain.tileSize]).toEqual([32, 32, 16]);
+  });
+
   it("falls back to Untitled for a blank name", async () => {
     const sprite = await createSprite({ name: "   " });
     expect(sprite.name).toBe("Untitled");

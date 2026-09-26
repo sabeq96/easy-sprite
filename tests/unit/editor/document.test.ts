@@ -78,7 +78,7 @@ describe("SpriteDocument", () => {
     setPixel(cel.pixels, 0, 0, 4, RED);
     setPixel(cel.pixels, 3, 3, 4, RED);
 
-    doc.resize(2, 2);
+    doc.resize(2, 2, {}, doc.tileSize);
     const resized = doc.getCel("l1", "f1")!;
     expect(resized.pixels.length).toBe(2 * 2 * 4);
     expect(resized.pixels[0]).toBe(255);

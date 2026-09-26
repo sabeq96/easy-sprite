@@ -1,5 +1,11 @@
 import { useEffect, type RefObject } from "react";
+import type { HintSection } from "@/commands/hints";
 import { useBuilderViewStore } from "@/stores/useBuilderViewStore";
+
+export const BUILDER_VIEW_HINTS: HintSection = {
+  group: "View",
+  hints: [{ action: "Zoom", inputs: [{ hold: "mod" }, { text: "Wheel" }] }],
+};
 
 /**
  * ⌘/ctrl+wheel zooms the sheet; a plain wheel keeps scrolling it, because unlike the pixel canvas

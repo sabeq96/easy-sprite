@@ -61,4 +61,12 @@ describe("viewSlice", () => {
     expect(store.getState().activeFrameId).toBe("f1");
     expect(store.getState().activeLayerId).toBe("l1");
   });
+
+  it("resetGrid sets the grid to the given tile and the chessboard back to 1px", () => {
+    const store = createTestStore();
+    store.getState().setCheckerSize(8);
+    store.getState().resetGrid(16);
+    expect(store.getState().gridSize).toBe(16);
+    expect(store.getState().checkerSize).toBe(1);
+  });
 });

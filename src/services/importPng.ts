@@ -8,6 +8,7 @@ import type { CelRecord, LayerRecord, SpriteRecord } from "@/db/schema";
 import { DEFAULT_ITEM_NAME, DEFAULT_LAYER_NAME } from "@/constants/names";
 import { nameOrDefault } from "@/lib/format";
 import { createId } from "@/lib/id";
+import { inferTileSize } from "@/lib/tiles";
 import type { PixelBuffer } from "@/types/pixels";
 
 export interface ImportPngResult {
@@ -77,6 +78,7 @@ async function importPngFile(file: File): Promise<SpriteRecord> {
     name: baseName(file.name),
     width,
     height,
+    tileSize: inferTileSize(width, height),
     fps: DEFAULT_FPS,
     layerIds: [layerId],
     frames: [{ id: frameId }],

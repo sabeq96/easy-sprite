@@ -13,6 +13,11 @@ export interface SpriteRecord {
   name: string;
   width: number;
   height: number;
+  /**
+   * One of TILE_SIZE_PRESETS; width and height are whole multiples of it. Absent on sprites that
+   * predate tiles or were imported at an arbitrary size — see `inferTileSize`.
+   */
+  tileSize?: number;
   fps: number;
   /** Layer ids, bottom → top. Order lives here so reordering is a single-record write. */
   layerIds: string[];
@@ -75,6 +80,8 @@ export interface SpritesheetRecord {
   id: string;
   name: string;
   blocks: SpritesheetBlockRecord[];
+  /** One of TILE_SIZE_PRESETS. Drives the grid only; blocks pack regardless. Absent on older sheets. */
+  tileSize?: number;
   tags: string[];
   createdAt: number;
   updatedAt: number;

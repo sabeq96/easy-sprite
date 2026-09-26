@@ -3,7 +3,7 @@ import { userEvent } from "@vitest/browser/context";
 import { ZOOM_LEVELS } from "@/constants/canvas";
 import { screenToSprite, spriteToScreen, type Point } from "@/editor/viewport";
 import { useEditorStore } from "@/stores/useEditorStore";
-import { mod, openEditor, paintedPixels, type Editor } from "@test/editor";
+import { KEYS, mod, openEditor, paintedPixels, session, type Editor } from "@test/editor";
 import { dragClientPoints } from "@test/pointer";
 
 /** Big enough to fit mid-ladder in the test viewport, so zoom can step both ways from the fit. */
@@ -184,4 +184,44 @@ test("zooming never changes the document", async () => {
 
   expect(paintedPixels()).toEqual(["4,4"]);
   expect(window.__spriteEditor!.history.canRedo).toBe(false);
+});
+
+test("the zoom level reads as a multiplier between − and +, and the status bar no longer shows it", async () => {
+  const editor = await openEditor(SPRITE);
+  const level = editor.screen.getByLabelText("Zoom level");
+  await expect.element(level).toHaveTextContent(`${viewport().scale}×`);
+
+  await userEvent.click(editor.screen.getByRole("button", { name: "Zoom in" }));
+  await expect.element(level).toHaveTextContent(`${viewport().scale}×`);
+  expect(document.querySelector("footer")!.textContent).not.toMatch(/%/);
+});
+
+test("zoom now reaches 48×", async () => {
+  const editor = await openEditor({ width: 8, height: 8 });
+  const zoomIn = editor.screen.getByRole("button", { name: "Zoom in" });
+  while (viewport().scale < 48) await userEvent.click(zoomIn);
+  await expect.element(zoomIn).toBeDisabled();
+  expect(ZOOM_LEVELS.at(-1)).toBe(48);
+});
+
+test("resize canvas works in tiles: a new tile keeps the canvas size, and undo restores size and tile", async () => {
+  const editor = await openEditor({ width: 32, height: 32 });
+  const doc = session().doc;
+  expect(doc.tileSize).toBe(16);
+
+  await userEvent.click(editor.screen.getByRole("button", { name: "Sprite menu" }));
+  await userEvent.click(editor.screen.getByRole("menuitem", { name: "Resize canvas…" }));
+  await userEvent.click(editor.screen.getByRole("button", { name: "8×8" }));
+  // 32px at 16 = 2×2; at 8 the same 32px is 4×4.
+  await expect.element(editor.screen.getByLabelText("Columns")).toHaveValue(4);
+  await userEvent.fill(editor.screen.getByLabelText("Columns"), "6");
+  await userEvent.click(editor.screen.getByRole("button", { name: "Anchor top left" }));
+  await userEvent.click(editor.screen.getByRole("button", { name: "Resize", exact: true }));
+
+  expect([doc.width, doc.height, doc.tileSize]).toEqual([48, 32, 8]);
+  await expect.poll(() => useEditorStore.getState().gridSize).toBe(8);
+
+  await userEvent.keyboard(KEYS.undo);
+  expect([doc.width, doc.height, doc.tileSize]).toEqual([32, 32, 16]);
+  await expect.poll(() => useEditorStore.getState().gridSize).toBe(16);
 });

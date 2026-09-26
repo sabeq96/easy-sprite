@@ -7,3 +7,8 @@ export function plural(count: number, singular: string, pluralForm = `${singular
 export function nameOrDefault(name: string | undefined, fallback: string): string {
   return name?.trim() || fallback;
 }
+
+/** A zoom scale as the multiplier shown between the zoom buttons: `0.5` → `"0.5×"`, `8` → `"8×"`. */
+export function formatZoom(scale: number): string {
+  return `${scale}×`;
+}

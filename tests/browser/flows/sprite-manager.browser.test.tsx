@@ -1,8 +1,10 @@
 import { expect, test } from "vitest";
 import { userEvent } from "@vitest/browser/context";
 import { AppRoutes } from "@/app/routes";
-import { createSprite } from "@/db/repositories/sprites";
-import { createSpritesheet } from "@/db/repositories/spritesheets";
+import { createSprite, listSprites } from "@/db/repositories/sprites";
+import { createSpritesheet, listSpritesheets } from "@/db/repositories/spritesheets";
+import { useBuilderViewStore } from "@/stores/useBuilderViewStore";
+import { useEditorStore } from "@/stores/useEditorStore";
 import { render } from "@test/render";
 
 test("creating a sprite from the library opens it in the editor, and it lists on the way back", async () => {
@@ -20,6 +22,49 @@ test("creating a sprite from the library opens it in the editor, and it lists on
 
   await userEvent.click(screen.getByRole("button", { name: "Back to sprites" }));
   await expect.element(screen.getByRole("button", { name: "Open Hero walk" })).toBeVisible();
+});
+
+test("a new sprite is sized in tiles, and opens with a one-tile grid and a 1px chessboard", async () => {
+  const screen = render(<AppRoutes />, { route: "/sprites" });
+
+  await userEvent.click(screen.getByRole("button", { name: "New sprite", exact: true }).first());
+  await userEvent.click(screen.getByRole("button", { name: "24×24" }));
+  await userEvent.fill(screen.getByLabelText("Columns"), "3");
+  await userEvent.fill(screen.getByLabelText("Rows"), "2");
+  await expect.element(screen.getByText("72×48 px")).toBeVisible();
+  await userEvent.click(screen.getByRole("button", { name: "Create" }));
+
+  await expect.element(screen.getByRole("application", { name: "Sprite canvas" })).toBeVisible();
+  const [sprite] = await listSprites();
+  expect([sprite.width, sprite.height, sprite.tileSize]).toEqual([72, 48, 24]);
+  await expect.poll(() => useEditorStore.getState().gridSize).toBe(24);
+  expect(useEditorStore.getState().checkerSize).toBe(1);
+});
+
+test("a bigger tile pulls the column and row counts back under the canvas limit", async () => {
+  const screen = render(<AppRoutes />, { route: "/sprites" });
+
+  await userEvent.click(screen.getByRole("button", { name: "New sprite", exact: true }).first());
+  await userEvent.fill(screen.getByLabelText("Columns"), "20");
+  await userEvent.click(screen.getByRole("button", { name: "64×64" }));
+  // 512 / 64 = 8 tiles at most.
+  await expect.element(screen.getByLabelText("Columns")).toHaveValue(8);
+  await expect.element(screen.getByText("512×128 px")).toBeVisible();
+});
+
+test("a new spritesheet keeps its tile size and opens with a one-tile grid", async () => {
+  const screen = render(<AppRoutes />, { route: "/sprites" });
+
+  await userEvent.click(screen.getByRole("button", { name: "More ways to create" }));
+  await userEvent.click(screen.getByRole("menuitem", { name: "New spritesheet" }));
+  await userEvent.click(screen.getByRole("button", { name: "32×32" }));
+  await userEvent.click(screen.getByRole("button", { name: "Create" }));
+
+  await expect.element(screen.getByTestId("builder-canvas")).toBeInTheDocument();
+  const [sheet] = await listSpritesheets();
+  expect(sheet.tileSize).toBe(32);
+  await expect.poll(() => useBuilderViewStore.getState().gridSize).toBe(32);
+  expect(useBuilderViewStore.getState().checkerSize).toBe(1);
 });
 
 test("tags entered when creating a sprite show up in the library", async () => {

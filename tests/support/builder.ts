@@ -30,12 +30,34 @@ export async function blocksSized(sheetId: string): Promise<void> {
 }
 
 /**
- * Waits for a composer edit's whole save — the blocks, then the thumbnail rendered from them — to
- * land, as the save badge reports it. A test that ended as soon as the blocks were written would
- * leave the thumbnail write in flight when teardown closes the database under it.
+ * Saves the composer's edits now and waits for the whole save — the blocks, then the thumbnail
+ * rendered from them — to land, as the save badge reports it. A test that ended as soon as the
+ * blocks were written would leave the thumbnail write in flight when teardown closes the database.
  */
 export async function builderSaveSettled(): Promise<void> {
+  await flushSheet();
   await expect
     .poll(() => document.querySelector('[role="status"][aria-label]')?.getAttribute("aria-label"))
     .toBe("Saved");
+}
+
+/** The open composer's document, history and autosave — see SpritesheetProvider. */
+export function sheetSession() {
+  const session = window.__spritesheetEditor;
+  if (!session) throw new Error("No spritesheet is open");
+  return session;
+}
+
+/**
+ * Writes the open sheet now, as ⌘S would — edits otherwise wait out the autosave debounce before
+ * they reach the database.
+ */
+export async function flushSheet(): Promise<void> {
+  await sheetSession().autosave.flush();
+}
+
+/** The sheet as saved, after writing any pending edits — for asserting what actually persisted. */
+export async function savedSheet(sheetId: string) {
+  await flushSheet();
+  return getSpritesheet(sheetId);
 }

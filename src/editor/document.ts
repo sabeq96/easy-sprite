@@ -29,6 +29,7 @@ export interface DocumentInit {
   name: string;
   width: number;
   height: number;
+  tileSize?: number;
   fps: number;
   /** Bottom → top. */
   layers: LayerModel[];
@@ -69,6 +70,8 @@ export class SpriteDocument {
   name: string;
   width: number;
   height: number;
+  /** Undefined for sprites that never recorded one; see `inferTileSize`. */
+  tileSize: number | undefined;
   fps: number;
   layers: LayerModel[];
   frames: FrameModel[];
@@ -80,6 +83,7 @@ export class SpriteDocument {
     this.name = init.name;
     this.width = init.width;
     this.height = init.height;
+    this.tileSize = init.tileSize;
     this.fps = init.fps;
     this.layers = [...init.layers];
     this.frames = [...init.frames];
@@ -273,7 +277,13 @@ export class SpriteDocument {
   // ── canvas ────────────────────────────────────────────────────────────────
 
   /** Destructive: callers snapshot for undo first (see resizeCanvasCommand). */
-  resize(width: number, height: number, options: ResizeOptions = {}): void {
+  /** `tileSize` is required so undo can restore "no tile" — a default would swallow undefined. */
+  resize(
+    width: number,
+    height: number,
+    options: ResizeOptions,
+    tileSize: number | undefined,
+  ): void {
     const from = { width: this.width, height: this.height };
     const resized = new Map<string, Cel>();
 
@@ -287,13 +297,16 @@ export class SpriteDocument {
     this.cels = resized;
     this.width = width;
     this.height = height;
+    this.tileSize = tileSize;
     this.bump("meta");
     this.bump("structure");
   }
 
-  setMeta(patch: { name?: string; fps?: number }): void {
+  /** A present-but-undefined `tileSize` clears it — undo needs that for sprites that had none. */
+  setMeta(patch: { name?: string; fps?: number; tileSize?: number | undefined }): void {
     if (patch.name !== undefined) this.name = patch.name;
     if (patch.fps !== undefined) this.fps = patch.fps;
+    if ("tileSize" in patch) this.tileSize = patch.tileSize;
     this.bump("meta");
   }
 

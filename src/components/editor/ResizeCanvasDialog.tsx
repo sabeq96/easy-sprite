@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useDocumentSession } from "@/app/DocumentProvider";
-import { SizeFields } from "@/components/common/SizeFields";
+import { TileCountFields, type TileCount } from "@/components/common/TileCountFields";
+import { TileSizePicker } from "@/components/common/TileSizePicker";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -16,8 +17,9 @@ import type { AnchorX, AnchorY } from "@/editor/buffer";
 import { resizeCanvasCommand, resizeWillCrop } from "@/editor/commands/canvas";
 import { useCommandDispatch } from "@/hooks/useCommandDispatch";
 import { useDocumentSnapshot } from "@/hooks/useDocumentSnapshot";
+import { DEFAULT_TILE_SIZE } from "@/constants/canvas";
+import { inferTileSize, tileCountFor } from "@/lib/tiles";
 import { cn } from "@/lib/utils";
-import { isValidCanvasSize, type CanvasSize } from "@/lib/validation";
 
 const ANCHORS_X: AnchorX[] = ["left", "center", "right"];
 const ANCHORS_Y: AnchorY[] = ["top", "center", "bottom"];
@@ -43,18 +45,39 @@ function ResizeForm({ onDone }: { onDone: () => void }) {
   const snapshot = useDocumentSnapshot(doc);
   const dispatch = useCommandDispatch();
 
-  const [size, setSize] = useState<CanvasSize>({ width: snapshot.width, height: snapshot.height });
-  const [linked, setLinked] = useState(false);
+  // Sprites that never recorded a tile get the one that fits them, or the default.
+  const initialTile =
+    snapshot.tileSize ?? inferTileSize(snapshot.width, snapshot.height) ?? DEFAULT_TILE_SIZE;
+  const [tile, setTile] = useState(initialTile);
+  const [count, setCount] = useState<TileCount>(() => countFor(initialTile));
   const [anchor, setAnchor] = useState<{ x: AnchorX; y: AnchorY }>({
     x: "center",
     y: "center",
   });
 
-  const willCrop = resizeWillCrop(doc, size.width, size.height);
+  function countFor(nextTile: number): TileCount {
+    return {
+      columns: tileCountFor(snapshot.width, nextTile),
+      rows: tileCountFor(snapshot.height, nextTile),
+    };
+  }
+
+  // A new tile keeps the canvas as close to its current size as it can, rather than the count.
+  const changeTile = (nextTile: number) => {
+    setTile(nextTile);
+    setCount(countFor(nextTile));
+  };
+
+  const width = count.columns * tile;
+  const height = count.rows * tile;
+  const willCrop = resizeWillCrop(doc, width, height);
+  // Against the tile the dialog opened with, so a sprite that never recorded one isn't "changed"
+  // just by opening the dialog.
+  const unchanged = width === snapshot.width && height === snapshot.height && tile === initialTile;
 
   const apply = () => {
     dispatch(() =>
-      resizeCanvasCommand(doc, size.width, size.height, { anchorX: anchor.x, anchorY: anchor.y }),
+      resizeCanvasCommand(doc, width, height, { anchorX: anchor.x, anchorY: anchor.y }, tile),
     );
     onDone();
   };
@@ -69,7 +92,8 @@ function ResizeForm({ onDone }: { onDone: () => void }) {
           </DialogDescription>
         </DialogHeader>
 
-        <SizeFields size={size} linked={linked} onLinkedChange={setLinked} onChange={setSize} />
+        <TileSizePicker value={tile} onChange={changeTile} />
+        <TileCountFields tile={tile} value={count} onChange={setCount} />
 
         <Field>
           <FieldLabel>Anchor</FieldLabel>
@@ -105,10 +129,7 @@ function ResizeForm({ onDone }: { onDone: () => void }) {
           <DialogClose render={<Button variant="ghost">Cancel</Button>} />
           <Button
             onClick={apply}
-            disabled={
-              !isValidCanvasSize(size) ||
-              (size.width === snapshot.width && size.height === snapshot.height)
-            }
+            disabled={unchanged}
           >
             Resize
           </Button>

@@ -1,14 +1,14 @@
 import { expect, test } from "vitest";
-import { userEvent } from "@vitest/browser/context";
+import { page, userEvent } from "@vitest/browser/context";
 import { AppRoutes } from "@/app/routes";
 import { db } from "@/db/db";
 import { createSprite, updateSprite } from "@/db/repositories/sprites";
-import { createSpritesheet, getSpritesheet, updateSpritesheet } from "@/db/repositories/spritesheets";
+import { createSpritesheet, updateSpritesheet } from "@/db/repositories/spritesheets";
 import type { SpritesheetBlockRecord } from "@/db/schema";
 import { packSheet, sizesFromRecords } from "@/lib/sheetLayout";
 import { useBuilderViewStore } from "@/stores/useBuilderViewStore";
 import { render } from "@test/render";
-import { blocksSized, builderSaveSettled } from "@test/builder";
+import { blocksSized, builderSaveSettled, savedSheet } from "@test/builder";
 import { settled } from "@test/dom";
 import { dragElementOnto } from "@test/pointer";
 
@@ -25,7 +25,7 @@ async function sheetWith(names: string[], blocks: (ids: string[]) => Spritesheet
   return { screen, sheetId: sheet.id, spriteIds: sprites.map((sprite) => sprite.id) };
 }
 
-const blocksOf = async (sheetId: string) => (await getSpritesheet(sheetId)).blocks;
+const blocksOf = async (sheetId: string) => (await savedSheet(sheetId)).blocks;
 /** [spriteIndex, row] per block, in stored order — the sheet's whole layout at a glance. */
 const layoutOf = async (sheetId: string, spriteIds: string[]) =>
   (await blocksOf(sheetId)).map((block) => [spriteIds.indexOf(block.spriteId), block.row]);
@@ -66,6 +66,8 @@ test("a sprite dropped on the empty sheet becomes its first row", async () => {
   );
 
   await expect.poll(() => layoutOf(sheetId, spriteIds)).toEqual([[0, 0]]);
+  // Undoable, under its own label.
+  await expect.element(page.getByRole("button", { name: "Undo add sprite" })).toBeEnabled();
   await builderSaveSettled();
 });
 
@@ -137,6 +139,9 @@ test("a block dragged past its neighbour trades places with it", async () => {
   await expect.poll(async () => (await blocksOf(sheetId)).map((entry) => entry.id)).toEqual(["b", "a"]);
   // Moved, not re-created: the ids survive and both are still in row 0.
   expect((await blocksOf(sheetId)).map((entry) => entry.row)).toEqual([0, 0]);
+
+  await userEvent.click(page.getByRole("button", { name: "Undo move sprite" }));
+  expect((await blocksOf(sheetId)).map((entry) => entry.id)).toEqual(["a", "b"]);
   await builderSaveSettled();
 });
 

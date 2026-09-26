@@ -1,14 +1,13 @@
 /** On-screen display scales. Sprite-resolution px are too small to drag comfortably at 1×. */
-export const BUILDER_ZOOM_LEVELS = [1, 2, 3, 4, 6, 8] as const;
+export const BUILDER_ZOOM_LEVELS = [1, 2, 3, 4, 6, 8, 12] as const;
 export const DEFAULT_BUILDER_ZOOM = 4;
 
 /**
- * Ruler grid cell, in sprite px. Blocks pack tight, so a block may straddle a grid line — the
- * grid is there to read row alignment and "no gap" off, not a snap target. Snapping is structural:
- * a block's position is its place in a row, so there are no off-grid coordinates to snap.
+ * Grid and chessboard sizes, in sprite px. A sheet has no fixed size to divide, so these are a fixed
+ * ladder; the sheet's own tile size is merged in (see `sheetTileOptions`). Blocks pack tight, so a
+ * block may straddle a grid line — the grid is for reading row alignment, not a snap target.
  */
-export const BUILDER_GRID_CELLS = [4, 8, 16, 32] as const;
-export const DEFAULT_BUILDER_GRID_CELL = 16;
+export const SHEET_TILE_OPTIONS = [1, 2, 4, 8, 16, 32, 64] as const;
 
 /** Below this many screen px per cell the ruler is noise, hidden regardless of the toggle. */
 export const BUILDER_GRID_MIN_SCALE = 6;

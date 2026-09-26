@@ -4,17 +4,31 @@ import type { Command } from "@/editor/history";
 
 /**
  * Resizing touches every cel, and shrinking discards pixels outright, so undo carries a full
- * snapshot — nothing smaller is sufficient.
+ * snapshot — nothing smaller is sufficient. `tileSize` rides along so undo restores the grid the
+ * sprite was drawn on; changing only the tile is a cheap metadata command.
  */
 export function resizeCanvasCommand(
   doc: SpriteDocument,
   width: number,
   height: number,
   options: ResizeOptions = {},
+  tileSize: number | undefined = doc.tileSize,
 ): Command | null {
-  if (width === doc.width && height === doc.height) return null;
+  const sizeChanged = width !== doc.width || height !== doc.height;
+  if (!sizeChanged && tileSize === doc.tileSize) return null;
 
-  const before = { width: doc.width, height: doc.height };
+  const before = { width: doc.width, height: doc.height, tileSize: doc.tileSize };
+
+  if (!sizeChanged) {
+    doc.setMeta({ tileSize });
+    return {
+      label: "Change tile size",
+      sizeBytes: 0,
+      undo: () => doc.setMeta({ tileSize: before.tileSize }),
+      redo: () => doc.setMeta({ tileSize }),
+    };
+  }
+
   const snapshots: CelData[] = [];
 
   for (const layer of doc.layers) {
@@ -29,13 +43,13 @@ export function resizeCanvasCommand(
     }
   }
 
-  doc.resize(width, height, options);
+  doc.resize(width, height, options, tileSize);
 
   return {
     label: "Resize canvas",
     sizeBytes: snapshots.reduce((total, cel) => total + cel.pixels.length, 0),
     undo: () => {
-      doc.resize(before.width, before.height, options);
+      doc.resize(before.width, before.height, options, before.tileSize);
       const fullRect = { x: 0, y: 0, w: before.width, h: before.height };
       for (const snapshot of snapshots) {
         const cel = doc.ensureCel(snapshot.layerId, snapshot.frameId);
@@ -44,7 +58,7 @@ export function resizeCanvasCommand(
       }
     },
     redo: () => {
-      doc.resize(width, height, options);
+      doc.resize(width, height, options, tileSize);
     },
   };
 }

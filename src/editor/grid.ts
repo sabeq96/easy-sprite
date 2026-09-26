@@ -1,3 +1,6 @@
+import { DEFAULT_TILE_SIZE, MAX_GRID_SIZE } from "@/constants/canvas";
+import { inferTileSize } from "@/lib/tiles";
+
 function gcd(a: number, b: number): number {
   while (b !== 0) [a, b] = [b, a % b];
   return a;
@@ -20,5 +23,17 @@ export function tileSizeOptions(width: number, height: number, max: number): num
 export function snapTileSize(preferred: number, options: number[]): number {
   return options.reduce((best, option) =>
     Math.abs(option - preferred) < Math.abs(best - preferred) ? option : best,
+  );
+}
+
+/**
+ * The grid a sprite opens with: one cell per tile — recorded, else inferred from its size — or,
+ * when no preset fits, the even divisor closest to the default.
+ */
+export function defaultGridSize(tile: number | undefined, width: number, height: number): number {
+  return (
+    tile ??
+    inferTileSize(width, height) ??
+    snapTileSize(DEFAULT_TILE_SIZE, tileSizeOptions(width, height, MAX_GRID_SIZE))
   );
 }

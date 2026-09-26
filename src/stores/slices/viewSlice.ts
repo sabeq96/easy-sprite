@@ -1,4 +1,4 @@
-import { DEFAULT_CHECKER_SIZE, DEFAULT_GRID_SIZE, DEFAULT_ZOOM } from "@/constants/canvas";
+import { DEFAULT_CHECKER_SIZE, DEFAULT_TILE_SIZE, DEFAULT_ZOOM } from "@/constants/canvas";
 import { ONION_DEFAULT, type OnionDirection } from "@/constants/animation";
 import { clampViewport, fitViewport, zoomStep, type Point, type Size, type Viewport } from "@/editor/viewport";
 import type { SliceCreator } from "@/stores/slices/types";
@@ -31,6 +31,8 @@ export interface ViewSlice {
   setGridEnabled: (enabled: boolean) => void;
   setGridSize: (size: number) => void;
   setCheckerSize: (size: number) => void;
+  /** Grid to `gridSize` (a sprite's tile), chessboard to its default — done whenever a sprite opens. */
+  resetGrid: (gridSize: number) => void;
   setOnion: (patch: Partial<OnionConfig>) => void;
   setActiveFrame: (frameId: string) => void;
   setActiveLayer: (layerId: string) => void;
@@ -40,7 +42,7 @@ export interface ViewSlice {
 export const createViewSlice: SliceCreator<ViewSlice> = (set, get) => ({
   viewport: { scale: DEFAULT_ZOOM, originX: 0, originY: 0 },
   gridEnabled: true,
-  gridSize: DEFAULT_GRID_SIZE,
+  gridSize: DEFAULT_TILE_SIZE,
   checkerSize: DEFAULT_CHECKER_SIZE,
   onion: { ...ONION_DEFAULT },
   containerSize: { width: 0, height: 0 },
@@ -76,6 +78,7 @@ export const createViewSlice: SliceCreator<ViewSlice> = (set, get) => ({
   setGridEnabled: (gridEnabled) => set({ gridEnabled }),
   setGridSize: (gridSize) => set({ gridSize }),
   setCheckerSize: (checkerSize) => set({ checkerSize }),
+  resetGrid: (gridSize) => set({ gridSize, checkerSize: DEFAULT_CHECKER_SIZE }),
   setOnion: (patch) => set(({ onion }) => ({ onion: { ...onion, ...patch } })),
   setActiveFrame: (activeFrameId) => set({ activeFrameId }),
   setActiveLayer: (activeLayerId) => set({ activeLayerId }),

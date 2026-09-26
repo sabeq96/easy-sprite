@@ -1,4 +1,4 @@
-import { MAX_CHECKER_SIZE } from "@/constants/canvas";
+import { CHECKER_GRADIENT, MAX_CHECKER_SIZE } from "@/constants/canvas";
 import { snapTileSize, tileSizeOptions } from "@/editor/grid";
 import type { Viewport } from "@/editor/viewport";
 
@@ -27,8 +27,7 @@ export function CheckerboardLayer({ viewport, width, height, tileSize }: Checker
         top: viewport.originY,
         width: width * viewport.scale,
         height: height * viewport.scale,
-        backgroundImage:
-          "conic-gradient(var(--checker-a) 25%, var(--checker-b) 0 50%, var(--checker-a) 0 75%, var(--checker-b) 0)",
+        backgroundImage: CHECKER_GRADIENT,
         backgroundSize: `${tile * 2}px ${tile * 2}px`,
       }}
     />

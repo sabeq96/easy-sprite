@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { errorMessage } from "@/lib/errors";
-import { nameOrDefault, plural } from "@/lib/format";
+import { formatZoom, nameOrDefault, plural } from "@/lib/format";
 
 describe("plural", () => {
   it("uses the singular only for exactly one", () => {
@@ -23,5 +23,13 @@ describe("errorMessage", () => {
     expect(errorMessage(new Error("Disk full"), "Failed.")).toBe("Disk full");
     expect(errorMessage(new Error(""), "Failed.")).toBe("Failed.");
     expect(errorMessage("nope", "Failed.")).toBe("Failed.");
+  });
+});
+
+describe("formatZoom", () => {
+  it("shows the scale as a multiplier", () => {
+    expect(formatZoom(0.5)).toBe("0.5×");
+    expect(formatZoom(8)).toBe("8×");
+    expect(formatZoom(48)).toBe("48×");
   });
 });

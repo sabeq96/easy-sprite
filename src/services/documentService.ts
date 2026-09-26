@@ -10,6 +10,7 @@ export async function openDocument(spriteId: string): Promise<SpriteDocument> {
     name: sprite.name,
     width: sprite.width,
     height: sprite.height,
+    tileSize: sprite.tileSize,
     fps: sprite.fps,
     layers: layers.map(({ id, name, opacity, visible, locked }) => ({
       id,
@@ -33,6 +34,7 @@ export async function saveDocumentStructure(doc: SpriteDocument): Promise<void> 
     name: doc.name,
     width: doc.width,
     height: doc.height,
+    tileSize: doc.tileSize,
     fps: doc.fps,
     layerIds,
     frames: doc.frames.map((frame) => ({ id: frame.id })),

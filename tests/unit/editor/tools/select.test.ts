@@ -149,7 +149,7 @@ describe("select tool: lifecycle", () => {
 
   it("a canvas resize clears the selection", () => {
     selection.set({ x: 0, y: 0, w: 2, h: 2 });
-    doc.resize(8, 8);
+    doc.resize(8, 8, {}, doc.tileSize);
     expect(selection.get()).toBeNull();
   });
 });

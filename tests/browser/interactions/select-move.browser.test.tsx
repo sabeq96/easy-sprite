@@ -46,6 +46,8 @@ async function openEditor() {
   await expect.poll(() => useEditorStore.getState().containerSize.width > 0).toBe(true);
 
   useEditorStore.getState().setGridEnabled(false);
+  // The renderer redraws on the next frame; until then the overlay still holds the grid.
+  await expect.poll(hasOverlayInk).toBe(false);
   return { screen, canvas: canvas.element() };
 }
 

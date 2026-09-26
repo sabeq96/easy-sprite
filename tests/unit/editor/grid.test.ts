@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { snapTileSize, tileSizeOptions } from "@/editor/grid";
+import { defaultGridSize, snapTileSize, tileSizeOptions } from "@/editor/grid";
 
 describe("tileSizeOptions", () => {
   it("only includes sizes that evenly divide both dimensions", () => {
@@ -23,5 +23,20 @@ describe("snapTileSize", () => {
   it("snaps to the closest valid size", () => {
     expect(snapTileSize(8, [1, 5])).toBe(5);
     expect(snapTileSize(2, [1, 5])).toBe(1);
+  });
+});
+
+describe("defaultGridSize", () => {
+  it("is the sprite's tile when it has one", () => {
+    expect(defaultGridSize(8, 64, 32)).toBe(8);
+  });
+
+  it("infers the tile from the sprite's size when it has none", () => {
+    expect(defaultGridSize(undefined, 64, 32)).toBe(32);
+  });
+
+  it("falls back to the even divisor closest to 16 when no preset fits", () => {
+    expect(defaultGridSize(undefined, 20, 30)).toBe(10);
+    expect(defaultGridSize(undefined, 17, 20)).toBe(1);
   });
 });
