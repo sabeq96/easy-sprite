@@ -5,7 +5,6 @@ import {
   duplicateFrameCommand,
   moveFrameCommand,
   removeFrameCommand,
-  setFpsCommand,
 } from "@/editor/commands/frames";
 import { BLUE, makeDocument, RED } from "@test/factories";
 
@@ -63,15 +62,5 @@ describe("frame commands", () => {
     expect(doc.frames.map((frame) => frame.id)).toEqual([second.id, "f1"]);
     command.undo();
     expect(doc.frames.map((frame) => frame.id)).toEqual(["f1", second.id]);
-  });
-
-  it("changes fps and returns null for a no-op", () => {
-    const doc = makeDocument();
-    const command = setFpsCommand(doc, 24)!;
-    expect(doc.fps).toBe(24);
-
-    command.undo();
-    expect(doc.fps).toBe(12);
-    expect(setFpsCommand(doc, 12)).toBeNull();
   });
 });

@@ -30,7 +30,6 @@ export interface DocumentInit {
   width: number;
   height: number;
   tileSize?: number;
-  fps: number;
   /** Bottom → top. */
   layers: LayerModel[];
   frames: FrameModel[];
@@ -48,7 +47,7 @@ export interface DocumentEvents {
   pixels: PixelsChanged;
   /** Layers or frames were added, removed or reordered. */
   structure: void;
-  /** Name, size, fps, or a layer property changed. */
+  /** Name, size, or a layer property changed. */
   meta: void;
 }
 
@@ -72,7 +71,6 @@ export class SpriteDocument {
   height: number;
   /** Undefined for sprites that never recorded one; see `inferTileSize`. */
   tileSize: number | undefined;
-  fps: number;
   layers: LayerModel[];
   frames: FrameModel[];
 
@@ -84,7 +82,6 @@ export class SpriteDocument {
     this.width = init.width;
     this.height = init.height;
     this.tileSize = init.tileSize;
-    this.fps = init.fps;
     this.layers = [...init.layers];
     this.frames = [...init.frames];
 
@@ -303,9 +300,8 @@ export class SpriteDocument {
   }
 
   /** A present-but-undefined `tileSize` clears it — undo needs that for sprites that had none. */
-  setMeta(patch: { name?: string; fps?: number; tileSize?: number | undefined }): void {
+  setMeta(patch: { name?: string; tileSize?: number | undefined }): void {
     if (patch.name !== undefined) this.name = patch.name;
-    if (patch.fps !== undefined) this.fps = patch.fps;
     if ("tileSize" in patch) this.tileSize = patch.tileSize;
     this.bump("meta");
   }

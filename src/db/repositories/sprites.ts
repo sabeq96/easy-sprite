@@ -1,5 +1,4 @@
 import { DEFAULT_TILE_COUNT, DEFAULT_TILE_SIZE } from "@/constants/canvas";
-import { DEFAULT_FPS } from "@/constants/animation";
 import { db } from "@/db/db";
 import { NotFoundError, withQuotaGuard } from "@/db/errors";
 import { celKey, isCelEmpty } from "@/db/repositories/cels";
@@ -23,7 +22,6 @@ export interface CreateSpriteOptions {
   width?: number;
   height?: number;
   tileSize?: number;
-  fps?: number;
   paletteId?: string | null;
   tags?: string[];
 }
@@ -38,7 +36,6 @@ export async function createSprite(options: CreateSpriteOptions = {}): Promise<S
     width: options.width ?? tileSize * DEFAULT_TILE_COUNT,
     height: options.height ?? tileSize * DEFAULT_TILE_COUNT,
     tileSize,
-    fps: options.fps ?? DEFAULT_FPS,
     layerIds: [layerId],
     frames: [{ id: createId() }],
     paletteId: options.paletteId ?? null,

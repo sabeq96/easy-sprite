@@ -1,4 +1,3 @@
-import { DEFAULT_FPS } from "@/constants/animation";
 import { MAX_CANVAS_SIZE, MIN_CANVAS_SIZE } from "@/constants/canvas";
 import { THUMBNAIL_MAX_PX } from "@/constants/storage";
 import { db } from "@/db/db";
@@ -79,7 +78,6 @@ async function importPngFile(file: File): Promise<SpriteRecord> {
     width,
     height,
     tileSize: inferTileSize(width, height),
-    fps: DEFAULT_FPS,
     layerIds: [layerId],
     frames: [{ id: frameId }],
     paletteId: null,

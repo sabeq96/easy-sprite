@@ -12,17 +12,19 @@ export interface AnimationPlayer {
 
 export interface AnimationPlayerOptions {
   doc: SpriteDocument;
+  fps: number;
   /** Notified on every advance — the preview and, optionally, the editor follow it. */
   onFrame?: (frameIndex: number) => void;
   startIndex?: number;
 }
 
 /**
- * One rAF loop with an accumulator. Not setInterval: at 12 fps a timer drifts against the
+ * One rAF loop with an accumulator. Not setInterval: at low fps a timer drifts against the
  * display refresh and the preview visibly stutters.
  */
 export function useAnimationPlayer({
   doc,
+  fps,
   onFrame,
   startIndex = 0,
 }: AnimationPlayerOptions): AnimationPlayer {
@@ -34,6 +36,11 @@ export function useAnimationPlayer({
   useEffect(() => {
     onFrameRef.current = onFrame;
   }, [onFrame]);
+  // Same for fps, so the speed slider takes effect mid-playback without a restart.
+  const fpsRef = useRef(fps);
+  useEffect(() => {
+    fpsRef.current = fps;
+  }, [fps]);
 
   useEffect(() => {
     if (!isPlaying || doc.frames.length < 2) return;
@@ -43,8 +50,7 @@ export function useAnimationPlayer({
     let accumulator = 0;
 
     const tick = (now: number) => {
-      // Read fps every tick so the speed slider takes effect mid-playback.
-      const frameDuration = 1000 / Math.max(1, doc.fps);
+      const frameDuration = 1000 / Math.max(1, fpsRef.current);
       accumulator += now - previous;
       previous = now;
 

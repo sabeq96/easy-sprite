@@ -79,16 +79,3 @@ export function moveFrameCommand(
     redo: () => doc.moveFrame(from, to),
   };
 }
-
-export function setFpsCommand(doc: SpriteDocument, fps: number): Command | null {
-  const before = doc.fps;
-  if (before === fps) return null;
-  doc.setMeta({ fps });
-
-  return {
-    label: "Change speed",
-    sizeBytes: 0,
-    undo: () => doc.setMeta({ fps: before }),
-    redo: () => doc.setMeta({ fps }),
-  };
-}

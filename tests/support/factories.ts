@@ -10,7 +10,6 @@ export function makeDocument(overrides: Partial<DocumentInit> = {}): SpriteDocum
     name: "Test",
     width: 4,
     height: 4,
-    fps: 12,
     layers: [{ id: "l1", name: "Layer 1", opacity: 1, visible: true, locked: false }],
     frames: [{ id: "f1" }],
     cels: [],

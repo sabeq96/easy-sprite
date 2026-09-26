@@ -4,7 +4,7 @@ import type { PixelBuffer } from "@/types/pixels";
 
 export interface FrameMeta {
   id: string;
-  /** Per-frame hold multiplier (1 = one tick at the sprite fps). Reserved for a later phase. */
+  /** Per-frame hold multiplier (1 = one tick at the preview fps). Reserved for a later phase. */
   durationScale?: number;
 }
 
@@ -18,7 +18,6 @@ export interface SpriteRecord {
    * predate tiles or were imported at an arbitrary size — see `inferTileSize`.
    */
   tileSize?: number;
-  fps: number;
   /** Layer ids, bottom → top. Order lives here so reordering is a single-record write. */
   layerIds: string[];
   /** Frame order, left → right. */

@@ -39,12 +39,11 @@ describe("documentService", () => {
 
     const added = doc.addLayer("Outline");
     doc.addFrame();
-    doc.setMeta({ name: "Renamed", fps: 24 });
+    doc.setMeta({ name: "Renamed" });
     await saveDocumentStructure(doc);
 
     const reopened = await openDocument(sprite.id);
     expect(reopened.name).toBe("Renamed");
-    expect(reopened.fps).toBe(24);
     expect(reopened.frames).toHaveLength(2);
     expect(reopened.layers.map((layer) => layer.id)).toEqual([sprite.layerIds[0], added.id]);
   });

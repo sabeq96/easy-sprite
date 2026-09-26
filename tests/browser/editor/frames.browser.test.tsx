@@ -228,27 +228,21 @@ test("playing the animation shows every frame in turn in the preview", async () 
 
   await userEvent.click(editor.screen.getByRole("button", { name: "Play animation" }));
 
-  // At 12 fps both frames come round within a fraction of a second.
+  // At the default 5 fps both frames come round within a fraction of a second.
   await expect.poll(() => previewColorAt({ x: 1, y: 1 })).toBe("rgb(255,0,0)");
   await expect.poll(() => previewColorAt({ x: 6, y: 6 })).toBe("rgb(0,0,255)");
   await userEvent.click(editor.screen.getByRole("button", { name: "Pause animation" }));
 });
 
-test("the fps slider changes the speed, and undo puts the old speed back", async () => {
+test("the fps slider starts at the default and changes the speed", async () => {
   const editor = await openEditor();
-  expect(session().doc.fps).toBe(12);
+  await expect.element(editor.screen.getByText("5 fps")).toBeVisible();
 
   const slider = editor.screen.getByRole("slider").first();
   (slider.element() as HTMLElement).focus();
   await userEvent.keyboard("{ArrowRight}{ArrowRight}");
 
-  await expect.poll(() => session().doc.fps).toBe(14);
-  await expect.element(editor.screen.getByText("14 fps")).toBeVisible();
-
-  await userEvent.keyboard(KEYS.undo);
-  expect(session().doc.fps).toBe(13);
-  await userEvent.keyboard(KEYS.undo);
-  expect(session().doc.fps).toBe(12);
+  await expect.element(editor.screen.getByText("7 fps")).toBeVisible();
 });
 
 test("drawing on a frame shows up in the preview straight away", async () => {

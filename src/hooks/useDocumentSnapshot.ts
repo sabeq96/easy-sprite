@@ -10,7 +10,6 @@ export interface DocumentSnapshot {
   width: number;
   height: number;
   tileSize: number | undefined;
-  fps: number;
   /** Bottom → top, copied so later mutations cannot alias what React rendered. */
   layers: LayerModel[];
   frames: FrameModel[];
@@ -39,7 +38,6 @@ export function useDocumentSnapshot(doc: SpriteDocument): DocumentSnapshot {
       width: doc.width,
       height: doc.height,
       tileSize: doc.tileSize,
-      fps: doc.fps,
       // Layer objects are mutated by setLayerProps, so copy each one, not just the array.
       layers: doc.layers.map((layer) => ({ ...layer })),
       frames: doc.frames.map((frame) => ({ ...frame })),

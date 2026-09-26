@@ -1,14 +1,12 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Pause, Play } from "lucide-react";
 import { useDocumentSession } from "@/app/DocumentProvider";
 import { Panel } from "@/components/common/Panel";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { MAX_FPS, MIN_FPS } from "@/constants/animation";
+import { DEFAULT_FPS, MAX_FPS, MIN_FPS } from "@/constants/animation";
 import { compositeFrame } from "@/editor/composite";
-import { setFpsCommand } from "@/editor/commands/frames";
 import { useAnimationPlayer } from "@/hooks/useAnimationPlayer";
-import { useCommandDispatch } from "@/hooks/useCommandDispatch";
 import { useDocumentSnapshot } from "@/hooks/useDocumentSnapshot";
 import { useEditorStore } from "@/stores/useEditorStore";
 
@@ -16,15 +14,13 @@ export function PreviewPanel() {
   const { doc } = useDocumentSession();
   const snapshot = useDocumentSnapshot(doc);
 
-  const dispatch = useCommandDispatch();
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  // The fps before this slider gesture began. The live updates overwrite it in the document, so
-  // the undo entry recorded on release has to be handed the original back.
-  const fpsGestureStart = useRef<number | null>(null);
+  // Preview-only: not saved with the sprite, so every open starts at the default.
+  const [fps, setFps] = useState(DEFAULT_FPS);
   const activeFrameId = useEditorStore((state) => state.activeFrameId);
   const setPlaying = useEditorStore((state) => state.setPlaying);
 
-  const player = useAnimationPlayer({ doc });
+  const player = useAnimationPlayer({ doc, fps });
 
   // Mirror playback into the store so the renderer can suppress onion skin while playing.
   useEffect(() => {
@@ -101,24 +97,13 @@ export function PreviewPanel() {
           className="flex-1"
           min={MIN_FPS}
           max={MAX_FPS}
-          value={[snapshot.fps]}
+          value={[fps]}
           aria-label="Frames per second"
-          // Live, so playback speed follows the drag…
-          onValueChange={(value) => {
-            fpsGestureStart.current ??= doc.fps;
-            doc.setMeta({ fps: Array.isArray(value) ? value[0] : value });
-          }}
-          // …with a single undo entry on release, from where the gesture started.
-          onValueCommitted={(value) => {
-            const start = fpsGestureStart.current;
-            fpsGestureStart.current = null;
-            if (start !== null) doc.setMeta({ fps: start });
-            dispatch(() => setFpsCommand(doc, Array.isArray(value) ? value[0] : value));
-          }}
+          onValueChange={(value) => setFps(Array.isArray(value) ? value[0] : value)}
         />
 
         <span className="w-12 text-right text-xs tabular-nums text-muted-foreground">
-          {snapshot.fps} fps
+          {fps} fps
         </span>
       </div>
     </Panel>

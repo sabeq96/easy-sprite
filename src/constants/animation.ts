@@ -1,4 +1,4 @@
-export const DEFAULT_FPS = 12;
+export const DEFAULT_FPS = 5;
 export const MIN_FPS = 1;
 export const MAX_FPS = 60;
 

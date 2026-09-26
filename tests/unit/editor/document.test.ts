@@ -68,7 +68,7 @@ describe("SpriteDocument", () => {
     expect(doc.revisions.structure).toBe(structure + 1);
     expect(doc.revisions.meta).toBe(meta);
 
-    doc.setMeta({ fps: 24 });
+    doc.setMeta({ name: "Renamed" });
     expect(doc.revisions.meta).toBe(meta + 1);
   });
 
