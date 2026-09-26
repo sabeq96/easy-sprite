@@ -13,20 +13,36 @@ import { spriteToScreen, type Point, type Viewport } from "@/editor/viewport";
  */
 const POINTER_ID = 1;
 
+/** Which mouse button a gesture uses, and the modifiers held through it. */
+export interface GestureOptions {
+  /** 0 = primary (left), 1 = middle, 2 = secondary (right). */
+  button?: number;
+  ctrlKey?: boolean;
+  shiftKey?: boolean;
+  altKey?: boolean;
+}
+
+/** `event.buttons` is a bitmask whose middle and right bits are swapped relative to `button`. */
+const BUTTONS_MASK: Record<number, number> = { 0: 1, 1: 4, 2: 2 };
+
 function fire(
   target: Element | Document,
   type: string,
   clientX: number,
   clientY: number,
-  buttons: number,
+  pressed: boolean,
+  { button = 0, ctrlKey = false, shiftKey = false, altKey = false }: GestureOptions = {},
 ) {
   target.dispatchEvent(
     new PointerEvent(type, {
       pointerId: POINTER_ID,
       pointerType: "mouse",
       isPrimary: true,
-      button: 0,
-      buttons,
+      button: type === "pointermove" ? -1 : button,
+      buttons: pressed ? BUTTONS_MASK[button] : 0,
+      ctrlKey,
+      shiftKey,
+      altKey,
       bubbles: true,
       cancelable: true,
       clientX,
@@ -46,18 +62,76 @@ function clientPointFor(container: Element, viewport: Viewport, point: Point) {
 /** Moves the cursor over one sprite pixel without pressing — drives hover-only previews. */
 export function hoverSpritePixel(container: Element, viewport: Viewport, point: Point): void {
   const { clientX, clientY } = clientPointFor(container, viewport, point);
-  fire(container, "pointermove", clientX, clientY, 0);
+  fire(container, "pointermove", clientX, clientY, false);
 }
 
 /** A pointer down + up over one sprite pixel — enough for a pencil stamp or a bucket fill. */
-export function clickSpritePixel(container: Element, viewport: Viewport, point: Point): void {
+export function clickSpritePixel(
+  container: Element,
+  viewport: Viewport,
+  point: Point,
+  options: GestureOptions = {},
+): void {
   const { clientX, clientY } = clientPointFor(container, viewport, point);
-  fire(container, "pointerdown", clientX, clientY, 1);
-  fire(container, "pointerup", clientX, clientY, 0);
+  fire(container, "pointerdown", clientX, clientY, true, options);
+  fire(container, "pointerup", clientX, clientY, false, options);
 }
 
-function nextFrame(): Promise<void> {
+/** A pointer down, a sequence of moves, then up — one continuous stroke over sprite pixels. */
+export function dragSpritePixels(
+  container: Element,
+  viewport: Viewport,
+  points: Point[],
+  options: GestureOptions = {},
+): void {
+  const first = clientPointFor(container, viewport, points[0]);
+  fire(container, "pointerdown", first.clientX, first.clientY, true, options);
+  for (const point of points.slice(1)) {
+    const { clientX, clientY } = clientPointFor(container, viewport, point);
+    fire(container, "pointermove", clientX, clientY, true, options);
+  }
+  const last = clientPointFor(container, viewport, points.at(-1)!);
+  fire(container, "pointerup", last.clientX, last.clientY, false, options);
+}
+
+/**
+ * A drag in plain client pixels (not sprite pixels) — for gestures measured on screen, like
+ * panning, where the start and end are about the view rather than any one pixel.
+ */
+export function dragClientPoints(
+  container: Element,
+  points: { x: number; y: number }[],
+  options: GestureOptions = {},
+): void {
+  fire(container, "pointerdown", points[0].x, points[0].y, true, options);
+  for (const point of points.slice(1)) fire(container, "pointermove", point.x, point.y, true, options);
+  const last = points.at(-1)!;
+  fire(container, "pointerup", last.x, last.y, false, options);
+}
+
+export function nextFrame(): Promise<void> {
   return new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 0)));
+}
+
+/**
+ * Resolves once the page has gone `frames` consecutive frames without a DOM change (or after
+ * `timeout` ms). A drag's reaction to a move — a slot opening, a ring, a row appearing — takes a
+ * variable number of frames on a busy machine, so a drag waits for it to finish, not for a count.
+ */
+export async function untilQuiet(frames = 3, timeout = 2000): Promise<void> {
+  let changed = false;
+  const observer = new MutationObserver(() => {
+    changed = true;
+  });
+  observer.observe(document.body, { subtree: true, childList: true, attributes: true });
+  const start = performance.now();
+  let quiet = 0;
+  while (quiet < frames && performance.now() - start < timeout) {
+    await nextFrame();
+    quiet = changed ? 0 : quiet + 1;
+    changed = false;
+  }
+  observer.disconnect();
 }
 
 /**
@@ -81,30 +155,68 @@ export async function dragElementOnto(
   const endX = to.left + offset.x;
   const endY = to.top + offset.y;
 
-  fire(source, "pointerdown", startX, startY, 1);
+  fire(source, "pointerdown", startX, startY, true);
   await nextFrame();
-  fire(document, "pointermove", startX + 8, startY + 8, 1); // clears the activation distance
+  fire(document, "pointermove", startX + 8, startY + 8, true); // clears the activation distance
   await nextFrame();
-  fire(document, "pointermove", (startX + endX) / 2, (startY + endY) / 2, 1);
+  fire(document, "pointermove", (startX + endX) / 2, (startY + endY) / 2, true);
   await nextFrame();
-  fire(document, "pointermove", endX, endY, 1);
+  fire(document, "pointermove", endX, endY, true);
   await nextFrame();
   for (let move = 1; move <= settleMoves; move += 1) {
-    fire(document, "pointermove", endX + (move % 2), endY, 1);
+    await untilQuiet();
+    fire(document, "pointermove", endX + (move % 2), endY, true);
     await nextFrame();
   }
-  fire(document, "pointerup", endX, endY, 0);
+  if (settleMoves > 0) {
+    // Back onto the exact target, then release only once the page has reacted to it: a release
+    // while dnd-kit is still processing the last move resolves the drop against the old layout.
+    fire(document, "pointermove", endX, endY, true);
+    await untilQuiet();
+  }
+  fire(document, "pointerup", endX, endY, false);
   await nextFrame();
 }
 
-/** A pointer down, a sequence of moves, then up — one continuous stroke over sprite pixels. */
-export function dragSpritePixels(container: Element, viewport: Viewport, points: Point[]): void {
-  const first = clientPointFor(container, viewport, points[0]);
-  fire(container, "pointerdown", first.clientX, first.clientY, 1);
-  for (const point of points.slice(1)) {
-    const { clientX, clientY } = clientPointFor(container, viewport, point);
-    fire(container, "pointermove", clientX, clientY, 1);
+/**
+ * Starts a drag from `source` and leaves the pointer held over `to` (client coordinates), for
+ * asserting on what a drag shows before it is dropped. Pair with `releaseDrag`.
+ *
+ * It ends with a couple of 1px moves at the destination: dnd-kit measures the droppables once the
+ * drag is live and only re-runs collision detection on the next move, so a pointer that jumps
+ * onto a sortable and freezes there never sorts it — a real hand is never that still.
+ */
+export async function holdDrag(
+  source: Element,
+  to: { x: number; y: number },
+  { settleMoves = 2 }: { settleMoves?: number } = {},
+): Promise<void> {
+  const from = source.getBoundingClientRect();
+  const startX = from.left + from.width / 2;
+  const startY = from.top + from.height / 2;
+
+  fire(source, "pointerdown", startX, startY, true);
+  await nextFrame();
+  fire(document, "pointermove", startX + 8, startY + 8, true); // clears the activation distance
+  await nextFrame();
+  fire(document, "pointermove", to.x, to.y, true);
+  await nextFrame();
+  for (let move = 1; move <= settleMoves; move += 1) {
+    await untilQuiet();
+    fire(document, "pointermove", to.x - (move % 2), to.y, true);
+    await nextFrame();
   }
-  const last = clientPointFor(container, viewport, points.at(-1)!);
-  fire(container, "pointerup", last.clientX, last.clientY, 0);
+  fire(document, "pointermove", to.x, to.y, true);
+  await untilQuiet();
+}
+
+/** Ends a drag started by `holdDrag`, at `to`. */
+export async function releaseDrag(to: { x: number; y: number }): Promise<void> {
+  fire(document, "pointerup", to.x, to.y, false);
+  await nextFrame();
+}
+
+/** Releases a held drag without awaiting a frame — for asserting on what the very next tick shows. */
+export function releaseDragNow(to: { x: number; y: number }): void {
+  fire(document, "pointerup", to.x, to.y, false);
 }

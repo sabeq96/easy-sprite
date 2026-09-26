@@ -15,7 +15,12 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Lint, typecheck and the full test suite — a red main never deploys.
+  checks:
+    uses: ./.github/workflows/ci.yml
+
   build:
+    needs: checks
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

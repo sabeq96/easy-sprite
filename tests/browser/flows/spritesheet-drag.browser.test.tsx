@@ -8,7 +8,8 @@ import type { SpritesheetBlockRecord } from "@/db/schema";
 import { packSheet, sizesFromRecords } from "@/lib/sheetLayout";
 import { useBuilderViewStore } from "@/stores/useBuilderViewStore";
 import { render } from "@test/render";
-import { builderSaveSettled } from "@test/builder";
+import { blocksSized, builderSaveSettled } from "@test/builder";
+import { settled } from "@test/dom";
 import { dragElementOnto } from "@test/pointer";
 
 /** An 8×8 one-frame sprite is a 32×32 block at the default 4× zoom. */
@@ -20,6 +21,7 @@ async function sheetWith(names: string[], blocks: (ids: string[]) => Spritesheet
 
   const screen = render(<AppRoutes />, { route: `/spritesheets/${sheet.id}` });
   await expect.element(screen.getByTestId("builder-trailing-row")).toBeVisible();
+  await blocksSized(sheet.id);
   return { screen, sheetId: sheet.id, spriteIds: sprites.map((sprite) => sprite.id) };
 }
 
@@ -28,9 +30,23 @@ const blocksOf = async (sheetId: string) => (await getSpritesheet(sheetId)).bloc
 const layoutOf = async (sheetId: string, spriteIds: string[]) =>
   (await blocksOf(sheetId)).map((block) => [spriteIds.indexOf(block.spriteId), block.row]);
 
-const tile = (name: string) => document.querySelector(`[aria-label="Drag ${name} onto the sheet"]`)!;
-const block = (id: string) => document.querySelector(`[data-block-id="${id}"]`)!;
-const byTestId = (id: string) => document.querySelector(`[data-testid="${id}"]`)!;
+const tileEl = (name: string) => document.querySelector(`[aria-label="Drag ${name} onto the sheet"]`);
+const blockEl = (id: string) => document.querySelector(`[data-block-id="${id}"]`)!;
+const testIdEl = (id: string) => document.querySelector(`[data-testid="${id}"]`)!;
+
+// Drag sources and targets wait for their element to exist and stop moving: the dock is a live
+// query that renders a beat after the canvas, shifting everything above it as it arrives.
+const tile = (name: string) => settled(() => tileEl(name));
+const block = (id: string) => settled(() => blockEl(id));
+const byTestId = (id: string) => settled(() => testIdEl(id));
+
+/**
+ * Drops rest a moment at the destination before releasing, like a real hand: arriving over the
+ * sheet opens a slot that shifts the row, and dnd-kit re-measures it only on a later move — release
+ * on the very frame of arrival and, on a busy machine, the drop resolves against the row as it was
+ * before the slot opened.
+ */
+const SETTLE = { settleMoves: 2 };
 
 /** Waits until every placed block has rendered, so the drag has real geometry to aim at. */
 async function blocksRendered(count: number) {
@@ -42,7 +58,12 @@ async function blocksRendered(count: number) {
 test("a sprite dropped on the empty sheet becomes its first row", async () => {
   const { sheetId, spriteIds } = await sheetWith(["Hero"]);
 
-  await dragElementOnto(tile("Hero"), byTestId("builder-trailing-row"), { x: 40, y: 40 });
+  await dragElementOnto(
+    await tile("Hero"),
+    await byTestId("builder-trailing-row"),
+    { x: 40, y: 40 },
+    SETTLE,
+  );
 
   await expect.poll(() => layoutOf(sheetId, spriteIds)).toEqual([[0, 0]]);
   await builderSaveSettled();
@@ -55,7 +76,12 @@ test("a sprite dropped along a row's empty stretch joins the end of that row", a
   await blocksRendered(1);
 
   // Well right of Hero, at the row's vertical middle — clear of the gutters on its edges.
-  await dragElementOnto(tile("Villain"), byTestId("builder-row"), { x: 120, y: 16 });
+  await dragElementOnto(
+    await tile("Villain"),
+    await byTestId("builder-row"),
+    { x: 120, y: 16 },
+    SETTLE,
+  );
 
   await expect.poll(() => layoutOf(sheetId, spriteIds)).toEqual([
     [0, 0],
@@ -70,7 +96,7 @@ test("a sprite dropped on the left half of a block lands before it, flush", asyn
   ]);
   await blocksRendered(1);
 
-  await dragElementOnto(tile("Villain"), block("a"), { x: 6, y: 16 });
+  await dragElementOnto(await tile("Villain"), await block("a"), { x: 6, y: 16 }, SETTLE);
 
   await expect.poll(() => layoutOf(sheetId, spriteIds)).toEqual([
     [1, 0],
@@ -85,7 +111,12 @@ test("a sprite dropped on the gutter above the first row opens a new row there",
   ]);
   await blocksRendered(1);
 
-  await dragElementOnto(tile("Villain"), byTestId("builder-gutter-0"), { x: 60, y: 4 });
+  await dragElementOnto(
+    await tile("Villain"),
+    await byTestId("builder-gutter-0"),
+    { x: 60, y: 4 },
+    SETTLE,
+  );
 
   await expect.poll(() => layoutOf(sheetId, spriteIds)).toEqual([
     [1, 0],
@@ -101,7 +132,7 @@ test("a block dragged past its neighbour trades places with it", async () => {
   ]);
   await blocksRendered(2);
 
-  await dragElementOnto(block("a"), block("b"), { x: 26, y: 16 });
+  await dragElementOnto(await block("a"), await block("b"), { x: 26, y: 16 }, SETTLE);
 
   await expect.poll(async () => (await blocksOf(sheetId)).map((entry) => entry.id)).toEqual(["b", "a"]);
   // Moved, not re-created: the ids survive and both are still in row 0.
@@ -118,7 +149,7 @@ test("a block dropped on the near half of its neighbour stays where it was", asy
   ]);
   await blocksRendered(2);
 
-  await dragElementOnto(block("a"), block("b"), { x: 6, y: 16 }, { settleMoves: 2 });
+  await dragElementOnto(await block("a"), await block("b"), { x: 6, y: 16 }, SETTLE);
 
   await new Promise((resolve) => setTimeout(resolve, 100));
   expect((await blocksOf(sheetId)).map((entry) => entry.id)).toEqual(["a", "b"]);
@@ -132,14 +163,14 @@ test("a block too small for its own chrome is still grabbed wherever it is press
   await blocksRendered(2);
   // At 1× an 8×8 sprite is 8 screen px — smaller than the gutter strips on its edges.
   useBuilderViewStore.setState({ zoom: 1 });
-  await expect.poll(() => block("a").getBoundingClientRect().width).toBe(8);
+  await expect.poll(() => blockEl("a").getBoundingClientRect().width).toBe(8);
 
   // Press whatever is actually under the pointer at the block's centre, as a real press would.
-  const rect = block("a").getBoundingClientRect();
+  const rect = (await block("a")).getBoundingClientRect();
   const pressed = document.elementFromPoint(rect.left + 4, rect.top + 4)!;
-  expect(block("a").contains(pressed)).toBe(true);
+  expect(blockEl("a").contains(pressed)).toBe(true);
 
-  await dragElementOnto(pressed, block("b"), { x: 7, y: 4 }, { settleMoves: 2 });
+  await dragElementOnto(pressed, await block("b"), { x: 7, y: 4 }, { settleMoves: 2 });
 
   await expect.poll(async () => (await blocksOf(sheetId)).map((entry) => entry.id)).toEqual(["b", "a"]);
   await builderSaveSettled();
@@ -153,7 +184,7 @@ test("a block dragged into another row joins it, and the row it left collapses",
   ]);
   await blocksRendered(3);
 
-  await dragElementOnto(block("b"), block("a"), { x: 26, y: 16 });
+  await dragElementOnto(await block("b"), await block("a"), { x: 26, y: 16 }, SETTLE);
 
   await expect
     .poll(async () => (await blocksOf(sheetId)).map((entry) => [entry.id, entry.row]))
@@ -175,7 +206,7 @@ test("a block alone in its row, dragged down into the next row, lands in that ro
   ]);
   await blocksRendered(3);
 
-  await dragElementOnto(block("a"), block("b"), { x: 26, y: 16 }, { settleMoves: 3 });
+  await dragElementOnto(await block("a"), await block("b"), { x: 26, y: 16 }, { settleMoves: 3 });
 
   await expect
     .poll(async () => (await blocksOf(sheetId)).map((entry) => [entry.id, entry.row]))
@@ -191,10 +222,10 @@ test("a block dragged back onto the dock leaves the sheet and returns to the pal
   const { sheetId } = await sheetWith(["Hero"], ([hero]) => [{ id: "a", spriteId: hero, row: 0 }]);
   await blocksRendered(1);
 
-  await dragElementOnto(block("a"), byTestId("builder-palette"), { x: 300, y: 60 });
+  await dragElementOnto(await block("a"), await byTestId("builder-palette"), { x: 300, y: 60 }, SETTLE);
 
   await expect.poll(() => blocksOf(sheetId)).toEqual([]);
-  await expect.poll(() => tile("Hero")).toBeTruthy();
+  await expect.poll(() => tileEl("Hero")).toBeTruthy();
   await builderSaveSettled();
 });
 
@@ -202,7 +233,7 @@ test("a block released outside every target stays where it was", async () => {
   const { sheetId } = await sheetWith(["Hero"], ([hero]) => [{ id: "a", spriteId: hero, row: 0 }]);
   await blocksRendered(1);
 
-  await dragElementOnto(block("a"), document.querySelector("header")!, { x: 300, y: 10 });
+  await dragElementOnto(await block("a"), document.querySelector("header")!, { x: 300, y: 10 });
 
   await new Promise((resolve) => setTimeout(resolve, 100));
   expect(await blocksOf(sheetId)).toEqual([{ id: "a", spriteId: expect.any(String), row: 0 }]);
@@ -217,7 +248,10 @@ test("removing the last block of a middle row pulls the rows below it up", async
   await blocksRendered(3);
 
   // An 8×8 sprite is a 32px block at 4× — too small to draw its ✕, which stays keyboard-reachable.
-  (screen.getByRole("button", { name: "Remove Villain", exact: true }).element() as HTMLElement).focus();
+  // A block renders before its sprite's name has loaded, so wait for the labelled button.
+  const removeVillain = screen.getByRole("button", { name: "Remove Villain", exact: true });
+  await expect.element(removeVillain).toBeInTheDocument();
+  (removeVillain.element() as HTMLElement).focus();
   await userEvent.keyboard("{Enter}");
 
   await expect
@@ -246,14 +280,15 @@ test("what the sheet shows is exactly what packSheet exports", async () => {
 
   render(<AppRoutes />, { route: `/spritesheets/${sheet.id}` });
   await blocksRendered(3);
+  await blocksSized(sheet.id);
 
   const packed = packSheet(await blocksOf(sheet.id), sizesFromRecords(await db.sprites.toArray()));
   const zoom = useBuilderViewStore.getState().zoom;
-  const origin = byTestId("builder-canvas").getBoundingClientRect();
+  const origin = testIdEl("builder-canvas").getBoundingClientRect();
 
   expect(packed.blocks).toHaveLength(3);
   for (const entry of packed.blocks) {
-    const rect = block(entry.id).getBoundingClientRect();
+    const rect = blockEl(entry.id).getBoundingClientRect();
     expect({
       x: Math.round(rect.left - origin.left),
       y: Math.round(rect.top - origin.top),

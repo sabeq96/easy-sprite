@@ -122,8 +122,10 @@ export function usePointerPaint(
     };
 
     const onPointerDown = (event: PointerEvent) => {
-      // Middle-drag is panning, handled by useCanvasViewControls.
+      // Middle-drag is panning, handled by useCanvasViewControls — and so is a Space+drag, which
+      // that hook claims first (its listener is attached before this one) by preventing default.
       if (event.button !== 0 && event.button !== 2) return;
+      if (event.defaultPrevented) return;
 
       const tool = getTool(useEditorStore.getState().toolId);
       const recorder = new StrokeRecorder(doc, tool.label);

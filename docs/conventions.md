@@ -262,3 +262,18 @@ A disable comment must name a rule that is actually enabled, and say why.
 - Prefer asserting on the model (`doc.getCel(...)`, store state) over pixels rendered to screen or
   screenshots — it's exact and needs no `waitFor`. Reach for a real interaction/visual assertion
   only when the thing under test is the rendering itself, not the logic behind it.
+- **Editor tests go through `@test/editor`.** `openEditor()` renders the real app at a fresh
+  sprite in a fixed-size viewport and returns `click`/`drag`/`hover` in sprite-pixel space;
+  `paintedPixels`, `pixelAt` and `compositeAt` read the result back from the live document.
+  Choose tools, layers and frames the way a user does (`chooseTool`, `selectLayer`,
+  `selectFrame`, or the keys) rather than by setting the store.
+- **Drag tests never measure a bare `querySelector`.** Take sources and targets from `settled()`
+  (`@test/dom`), which waits until the element exists and has stopped moving: live queries render
+  a beat after the page and shift everything around them. Release drags that open a slot under the
+  pointer with `settleMoves` (built into `holdDrag`), because dnd-kit only re-measures on a later
+  move.
+- **Every browser test file gets its own IndexedDB** (see `tests/support/setup.browser.ts`), since
+  files run in parallel on one origin. Don't open `DB_NAME` by hand in a test.
+- **CI** (`.github/workflows/ci.yml`) runs lint, `tsc -b` + build, and both projects with the
+  coverage floor on every pull request, and the Pages deploy runs it before building. Locally,
+  `npm run lint`, `npm run build` and `npm run test:coverage` are exactly what CI runs.

@@ -8,48 +8,10 @@ import {
   updateSpritesheet,
 } from "@/db/repositories/spritesheets";
 import { useEditorStore } from "@/stores/useEditorStore";
-import { builderSaveSettled } from "@test/builder";
+import { blocksSized, builderSaveSettled } from "@test/builder";
+import { settled } from "@test/dom";
+import { holdDrag, releaseDrag as release, releaseDragNow } from "@test/pointer";
 import { render } from "@test/render";
-
-function fire(target: Element | Document, type: string, x: number, y: number, buttons: number) {
-  target.dispatchEvent(
-    new PointerEvent(type, {
-      pointerId: 1,
-      pointerType: "mouse",
-      isPrimary: true,
-      button: 0,
-      buttons,
-      bubbles: true,
-      cancelable: true,
-      clientX: x,
-      clientY: y,
-    }),
-  );
-}
-
-function nextFrame(): Promise<void> {
-  return new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 0)));
-}
-
-/** Starts a drag from `source` and leaves the pointer held over `to`. */
-async function holdDrag(source: Element, to: { x: number; y: number }) {
-  const from = source.getBoundingClientRect();
-  const startX = from.left + from.width / 2;
-  const startY = from.top + from.height / 2;
-
-  fire(source, "pointerdown", startX, startY, 1);
-  await nextFrame();
-  fire(document, "pointermove", startX + 8, startY + 8, 1);
-  await nextFrame();
-  fire(document, "pointermove", to.x, to.y, 1);
-  await nextFrame();
-  await nextFrame();
-}
-
-async function release(to: { x: number; y: number }) {
-  fire(document, "pointerup", to.x, to.y, 0);
-  await nextFrame();
-}
 
 async function openEditor() {
   const sprite = await createSprite({ width: 16, height: 16 });
@@ -65,18 +27,10 @@ test("dragging a palette color shows a preview, rings the grid and opens an empt
   await openEditor();
   useEditorStore.getState().setActivePalette(palette.id);
 
-  await expect
-    .poll(
-      () =>
-        [...document.querySelectorAll('[data-drag-item="sortable"]')].filter((node) =>
-          node.closest("[aria-label='Colors']"),
-        ).length,
-    )
-    .toBe(4);
+  await expect.poll(() => paletteSwatches().length).toBe(4);
+  await settled(() => paletteSwatches()[3]);
 
-  const swatches = [...document.querySelectorAll('[data-drag-item="sortable"]')].filter(
-    (node) => node.closest("[aria-label='Colors']"),
-  );
+  const swatches = paletteSwatches();
   const source = swatches[0];
   const grid = source.parentElement!;
   const targetRect = swatches[3].getBoundingClientRect();
@@ -101,6 +55,12 @@ test("dragging a palette color shows a preview, rings the grid and opens an empt
   await expect.poll(() => document.querySelector(".pointer-events-none.opacity-70")).toBeNull();
 });
 
+/** The active palette's swatches, in grid order. */
+const paletteSwatches = () =>
+  [...document.querySelectorAll('[data-drag-item="sortable"]')].filter((node) =>
+    node.closest("[aria-label='Colors']"),
+  );
+
 /** The swatch's own color, read from its accessible name ("Color #rrggbbaa"). */
 function swatchHex(node: Element): string | undefined {
   return node.querySelector("[aria-label^='Color #']")?.getAttribute("aria-label")?.slice(6, 13);
@@ -119,14 +79,13 @@ test("a reordered palette shows its new order before the write returns from Dexi
   await expect.poll(() => gridColors().length).toBe(4);
   expect(gridColors()).toEqual(["#ff0000", "#00ff00", "#0000ff", "#ffff00"]);
 
-  const swatches = [...document.querySelectorAll('[data-drag-item="sortable"]')].filter(
-    (node) => node.closest("[aria-label='Colors']"),
-  );
+  await settled(() => paletteSwatches()[3]);
+  const swatches = paletteSwatches();
   const lastRect = swatches[3].getBoundingClientRect();
   const to = { x: lastRect.right - 2, y: lastRect.top + lastRect.height / 2 };
 
   await holdDrag(swatches[0], to);
-  fire(document, "pointerup", to.x, to.y, 0);
+  releaseDragNow(to);
   // Only a microtask, which is long enough for React to flush the drop handler's state but far
   // too short for an IndexedDB write to round-trip — so seeing the new order here can only be
   // the optimistic one.
@@ -143,9 +102,9 @@ test("a reordered palette shows its new order before the write returns from Dexi
 test("dragging a layer row opens an empty slot in the list", async () => {
   await openEditor();
 
-  const row = document
-    .querySelector("[aria-label='Layers']")!
-    .querySelector('li[data-drag-item="sortable"]')!;
+  const row = await settled(() =>
+    document.querySelector("[aria-label='Layers']")?.querySelector('li[data-drag-item="sortable"]'),
+  );
   const rect = row.getBoundingClientRect();
 
   const list = row.parentElement!;
@@ -170,7 +129,7 @@ test("dragging a frame card rings the strip, even though only its cards are drop
   await openEditor();
 
   // The card is the strip's own <li>, so the <ol> is its parent.
-  const card = document.querySelector('ol [data-drag-item="sortable"]')!;
+  const card = await settled(() => document.querySelector('ol [data-drag-item="sortable"]'));
   const strip = card.parentElement!;
   const rect = card.getBoundingClientRect();
 
@@ -198,6 +157,7 @@ async function openComposerWithRow() {
   await expect
     .poll(() => document.querySelectorAll('[data-testid="builder-row"] [data-block-id]').length)
     .toBe(2);
+  await blocksSized(sheet.id);
   return sheet.id;
 }
 
@@ -208,8 +168,8 @@ const rowBlockIds = () =>
 
 test("holding a sprite from the dock over a row opens a gap for it before the drop", async () => {
   const sheetId = await openComposerWithRow();
-  const tile = document.querySelector('[aria-label="Drag Mage onto the sheet"]')!;
-  const a = document.querySelector('[data-block-id="a"]')!.getBoundingClientRect();
+  const tile = await settled(() => document.querySelector('[aria-label="Drag Mage onto the sheet"]'));
+  const a = (await settled(() => document.querySelector('[data-block-id="a"]'))).getBoundingClientRect();
   const bBefore = document.querySelector('[data-block-id="b"]')!.getBoundingClientRect();
   const dockTop = () => document.querySelector('[data-testid="builder-palette"]')!.getBoundingClientRect().top;
   const dockBefore = dockTop();
@@ -241,8 +201,8 @@ test("holding a sprite from the dock over a row opens a gap for it before the dr
 
 test("dragging a block along its row moves its hollow slot past its neighbour", async () => {
   const sheetId = await openComposerWithRow();
-  const source = document.querySelector('[data-block-id="a"]')!;
-  const b = document.querySelector('[data-block-id="b"]')!.getBoundingClientRect();
+  const source = await settled(() => document.querySelector('[data-block-id="a"]'));
+  const b = (await settled(() => document.querySelector('[data-block-id="b"]'))).getBoundingClientRect();
   const to = { x: b.left + b.width * 0.8, y: b.top + b.height / 2 };
 
   await holdDrag(source, to);
@@ -263,14 +223,10 @@ test("a color dragged in from outside the palette opens a slot for itself before
   useEditorStore.getState().setActivePalette(palette.id);
   useEditorStore.getState().setPrimaryColor({ r: 0x12, g: 0x34, b: 0x56, a: 255 });
 
-  const paletteSwatches = () =>
-    [...document.querySelectorAll('[data-drag-item="sortable"]')].filter((node) =>
-      node.closest("[aria-label='Colors']"),
-    );
   await expect.poll(() => paletteSwatches().length).toBe(3);
 
-  const primary = document.querySelector('[aria-label^="Primary color"]')!;
-  const second = paletteSwatches()[1].getBoundingClientRect();
+  const primary = await settled(() => document.querySelector('[aria-label^="Primary color"]'));
+  const second = (await settled(() => paletteSwatches()[1])).getBoundingClientRect();
   const to = { x: second.left + second.width / 2, y: second.top + second.height / 2 };
 
   await holdDrag(primary, to);

@@ -7,7 +7,7 @@ import {
   getSpritesheet,
   updateSpritesheet,
 } from "@/db/repositories/spritesheets";
-import { builderSaveSettled } from "@test/builder";
+import { blocksSized, builderSaveSettled } from "@test/builder";
 import { render } from "@test/render";
 
 test("creating a spritesheet from the library opens the composer, and it lists with a sheet badge", async () => {
@@ -74,7 +74,10 @@ test("a sprite already on the sheet drops out of the palette until it is removed
     .not.toBeInTheDocument();
 
   // An 8×8 sprite is a 32px block at 4× — too small to draw its ✕, which stays keyboard-reachable.
-  (screen.getByRole("button", { name: "Remove Hero", exact: true }).element() as HTMLElement).focus();
+  // A block renders before its sprite's name has loaded, so wait for the labelled button.
+  const removeHero = screen.getByRole("button", { name: "Remove Hero", exact: true });
+  await expect.element(removeHero).toBeInTheDocument();
+  (removeHero.element() as HTMLElement).focus();
   await userEvent.keyboard("{Enter}");
 
   // Removing it from the canvas returns it to the palette.
@@ -147,7 +150,7 @@ test("zoom steps change the readout and the size every block renders at", async 
   const screen = render(<AppRoutes />, { route: `/spritesheets/${sheet.id}` });
 
   const block = () => document.querySelector('[data-block-id="block-1"]');
-  await expect.poll(block).toBeTruthy();
+  await blocksSized(sheet.id);
   await expect.element(screen.getByLabelText("Zoom level")).toHaveTextContent("4×");
   expect(block()!.getBoundingClientRect().width).toBe(32);
 

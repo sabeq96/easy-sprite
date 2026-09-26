@@ -31,9 +31,20 @@ describe("viewSlice", () => {
   it("panBy offsets the viewport origin without touching scale", () => {
     const store = createTestStore();
     const before = store.getState().viewport;
-    store.getState().panBy(10, -5);
+    store.getState().panBy(10, -5, { width: 32, height: 32 });
     const after = store.getState().viewport;
     expect(after).toEqual({ ...before, originX: before.originX + 10, originY: before.originY - 5 });
+  });
+
+  it("panBy stops once only a margin of the sprite is left on screen", () => {
+    const store = createTestStore();
+    const sprite = { width: 32, height: 32 };
+    store.getState().fitToContainer({ width: 500, height: 500 }, sprite);
+
+    store.getState().panBy(10_000, -10_000, sprite);
+
+    // scale 12: margin = min(32 * 12 * 0.25, 500 * 0.4) = 96 px of sprite kept in view.
+    expect(store.getState().viewport).toEqual({ scale: 12, originX: 500 - 96, originY: -32 * 12 + 96 });
   });
 
   it("setOnion merges a partial patch onto the existing config", () => {

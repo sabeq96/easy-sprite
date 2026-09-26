@@ -18,6 +18,9 @@ export function PreviewPanel() {
 
   const dispatch = useCommandDispatch();
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  // The fps before this slider gesture began. The live updates overwrite it in the document, so
+  // the undo entry recorded on release has to be handed the original back.
+  const fpsGestureStart = useRef<number | null>(null);
   const activeFrameId = useEditorStore((state) => state.activeFrameId);
   const setPlaying = useEditorStore((state) => state.setPlaying);
 
@@ -101,11 +104,17 @@ export function PreviewPanel() {
           value={[snapshot.fps]}
           aria-label="Frames per second"
           // Live, so playback speed follows the drag…
-          onValueChange={(value) => doc.setMeta({ fps: Array.isArray(value) ? value[0] : value })}
-          // …with a single undo entry on release.
-          onValueCommitted={(value) =>
-            dispatch(() => setFpsCommand(doc, Array.isArray(value) ? value[0] : value))
-          }
+          onValueChange={(value) => {
+            fpsGestureStart.current ??= doc.fps;
+            doc.setMeta({ fps: Array.isArray(value) ? value[0] : value });
+          }}
+          // …with a single undo entry on release, from where the gesture started.
+          onValueCommitted={(value) => {
+            const start = fpsGestureStart.current;
+            fpsGestureStart.current = null;
+            if (start !== null) doc.setMeta({ fps: start });
+            dispatch(() => setFpsCommand(doc, Array.isArray(value) ? value[0] : value));
+          }}
         />
 
         <span className="w-12 text-right text-xs tabular-nums text-muted-foreground">

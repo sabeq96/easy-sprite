@@ -88,6 +88,23 @@ describe("isTypingTarget", () => {
   // jsdom never resolves `isContentEditable` to true regardless of attachment (a long-standing
   // jsdom gap, not an app bug), so that branch is covered in the browser project instead.
 
+  it("treats every text-entry input type as typing", () => {
+    for (const type of ["text", "search", "number", "email"]) {
+      const input = document.createElement("input");
+      input.type = type;
+      expect(isTypingTarget(input)).toBe(true);
+    }
+  });
+
+  it("does not treat a focused slider, checkbox or colour input as typing", () => {
+    // A slider keeps focus after a drag; shortcuts (undo, tool keys) must still work then.
+    for (const type of ["range", "checkbox", "radio", "color"]) {
+      const input = document.createElement("input");
+      input.type = type;
+      expect(isTypingTarget(input)).toBe(false);
+    }
+  });
+
   it("does not treat a plain button or null target as typing", () => {
     expect(isTypingTarget(document.createElement("button"))).toBe(false);
     expect(isTypingTarget(null)).toBe(false);
