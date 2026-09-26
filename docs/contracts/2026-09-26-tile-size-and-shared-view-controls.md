@@ -155,3 +155,4 @@ top bar, in the same order. The
 - Review fixes: `defaultGridSize` now tries `inferTileSize` before the divisor fallback (Decision 3), and Resize compares against the tile it opened with, so an untouched dialog on an old sprite stays disabled.
 - Test-only: `select-move` now waits for the overlay to clear after disabling the grid. The new 16px default grid is drawn at the test's 0.5× zoom, which exposed a same-tick race.
 
+- Decision 9 (chess behind each block) → the whole sheet area: user feedback after shipping. The pattern is on `builder-canvas` (the grid's element), and blocks have no background of their own.

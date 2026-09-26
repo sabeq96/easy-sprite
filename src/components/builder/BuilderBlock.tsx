@@ -2,7 +2,6 @@ import { X } from "lucide-react";
 import type { DragData } from "@/hooks/useBuilderDnd";
 import { Button } from "@/components/ui/button";
 import { BUILDER_BLOCK_CHROME_MIN_PX, BUILDER_FALLBACK_BLOCK_PX } from "@/constants/builder";
-import { CHECKER_GRADIENT } from "@/constants/canvas";
 import type { SpritesheetBlockRecord } from "@/db/schema";
 import type { SpriteDocument } from "@/editor/document";
 import type { BlockSize } from "@/lib/sheetLayout";
@@ -32,14 +31,6 @@ function useScreenSize(size: BlockSize | undefined) {
   };
 }
 
-/** The sheet's chessboard behind a block's transparent pixels, at chess size × zoom. */
-function useCheckerStyle() {
-  const zoom = useBuilderViewStore((state) => state.zoom);
-  const checkerSize = useBuilderViewStore((state) => state.checkerSize);
-  const tile = checkerSize * zoom;
-  return { backgroundImage: CHECKER_GRADIENT, backgroundSize: `${tile * 2}px ${tile * 2}px` };
-}
-
 function SpriteStrip({ doc }: { doc: SpriteDocument | undefined }) {
   const canvasRef = useSpriteStripCanvas(doc);
 
@@ -49,7 +40,6 @@ function SpriteStrip({ doc }: { doc: SpriteDocument | undefined }) {
 
 export function BuilderBlock({ block, index, rowKey, size, doc, isGhost, onRemove }: BuilderBlockProps) {
   const screenSize = useScreenSize(size);
-  const checkerStyle = useCheckerStyle();
   const hasRoom = Math.min(screenSize.width, screenSize.height) >= BUILDER_BLOCK_CHROME_MIN_PX;
   const { dragProps, dragClass } = useSortableItem(block.id, {
     index,
@@ -65,7 +55,7 @@ export function BuilderBlock({ block, index, rowKey, size, doc, isGhost, onRemov
       aria-hidden={isGhost || undefined}
       aria-label={isGhost ? undefined : (doc?.name ?? "Missing sprite")}
       title={isGhost ? undefined : doc?.name}
-      style={{ ...screenSize, ...checkerStyle }}
+      style={screenSize}
       className={cn(
         // shrink-0 keeps a long row overflowing (and scrolling) instead of squashing its blocks,
         // which would put the screen out of step with the export. ring-inset, and no rounding: a

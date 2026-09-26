@@ -2,6 +2,7 @@ import { Fragment, useRef } from "react";
 import { BuilderRow, RowGutter } from "@/components/builder/BuilderRow";
 import type { BuilderRowView } from "@/hooks/useBuilderDnd";
 import { Panel } from "@/components/common/Panel";
+import { CHECKER_GRADIENT } from "@/constants/canvas";
 import {
   BUILDER_GRID_LINE,
   BUILDER_GRID_MIN_SCALE,
@@ -34,6 +35,7 @@ export function BuilderCanvas({ rows, sizes, docs, ghostId, onRemoveBlock }: Bui
   const panelRef = useRef<HTMLDivElement | null>(null);
   useBuilderViewport(panelRef);
   const zoom = useBuilderViewStore((state) => state.zoom);
+  const checkerSize = useBuilderViewStore((state) => state.checkerSize);
   const isSheetEmpty = rows.every((row) => row.blocks.length === 0);
 
   // How far the boundary strip above row `index` may reach into a row, given that row's height.
@@ -58,7 +60,19 @@ export function BuilderCanvas({ rows, sizes, docs, ghostId, onRemoveBlock }: Bui
         min-h-full gives the trailing row's flex-1 something to fill — that is what makes the whole
         empty area below the sheet a live drop target rather than dead space.
       */}
-      <div data-testid="builder-canvas" className="relative flex min-h-full w-max min-w-full flex-col">
+      {/*
+        The chessboard covers the whole sheet area, one cell per `checkerSize` sprite px. It sits on
+        this element, like the grid, so both line up with the blocks' own sprite-px positions; the
+        blocks have no background, and their transparent pixels show it through.
+      */}
+      <div
+        data-testid="builder-canvas"
+        className="relative flex min-h-full w-max min-w-full flex-col"
+        style={{
+          backgroundImage: CHECKER_GRADIENT,
+          backgroundSize: `${checkerSize * zoom * 2}px ${checkerSize * zoom * 2}px`,
+        }}
+      >
         {rows.map((row, index) => (
           // Keyed by the row's positional key: a row *is* its position — it holds no state of its
           // own, its blocks are keyed by id, and its key is fixed for the length of a drag.

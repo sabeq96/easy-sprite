@@ -82,7 +82,7 @@ function SpritesheetBuilderShell() {
 
   return (
     <CommandsProvider value={commands}>
-      <div className="grid h-dvh grid-rows-[auto_1fr_auto_auto] gap-2 overflow-hidden bg-background p-2">
+      <div className="grid h-dvh grid-cols-1 grid-rows-[auto_1fr_auto_auto] gap-2 overflow-hidden bg-background p-2">
         <Panel render={<header />} className="flex min-w-0 items-center gap-2 px-2 py-1.5">
           {/* A link, not a command button: navigation belongs to the <Link>. */}
           <TooltipButton

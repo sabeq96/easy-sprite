@@ -243,12 +243,27 @@ test("? and the keyboard button open a shortcut sheet listing the sheet's keys",
   await expect.element(screen.getByRole("dialog", { name: "Keyboard shortcuts" })).toBeVisible();
 });
 
-test("blocks show the chessboard at chess size × zoom, 1px by default", async () => {
+test("the whole sheet area shows the chessboard at chess size × zoom, 1px by default", async () => {
   await openSheet(["Hero"], ([hero]) => [{ id: "a", spriteId: hero, row: 0 }]);
-  const block = () => document.querySelector('[data-block-id="a"]') as HTMLElement;
+  const canvas = () => document.querySelector('[data-testid="builder-canvas"]') as HTMLElement;
+  const block = document.querySelector('[data-block-id="a"]') as HTMLElement;
 
   // One chess cell per sprite px: at 4× a two-cell tile is 8 screen px.
-  await expect.poll(() => block().style.backgroundSize).toBe("8px 8px");
+  await expect.poll(() => canvas().style.backgroundSize).toBe("8px 8px");
   useBuilderViewStore.getState().setCheckerSize(2);
-  await expect.poll(() => block().style.backgroundSize).toBe("16px 16px");
+  await expect.poll(() => canvas().style.backgroundSize).toBe("16px 16px");
+  // Blocks draw none of their own, so the pattern runs unbroken behind them.
+  expect(block.style.backgroundImage).toBe("");
+});
+
+test("a library too big for one palette row scrolls in the dock instead of pushing the top bar off screen", async () => {
+  const names = Array.from({ length: 40 }, (_, index) => `Sprite ${index}`);
+  const { screen } = await openSheet(names);
+  // The dock fills in from its own live query after the page renders.
+  await expect.element(screen.getByRole("button", { name: "Drag Sprite 39 onto the sheet" })).toBeInTheDocument();
+
+  const header = document.querySelector("header")!;
+  expect(header.scrollWidth).toBeLessThanOrEqual(window.innerWidth);
+  const exportRight = screen.getByRole("button", { name: "Export" }).element().getBoundingClientRect().right;
+  expect(exportRight).toBeLessThanOrEqual(window.innerWidth);
 });
