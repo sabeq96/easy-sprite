@@ -17,7 +17,6 @@ import { useEditorCommands } from "@/commands/useEditorCommands";
 import { useActiveTargets } from "@/hooks/useActiveTargets";
 import { useColorHotkeys } from "@/hooks/useColorHotkeys";
 import { useGridDefaults } from "@/hooks/useGridDefaults";
-import { useHeldToolKeys } from "@/hooks/useHeldToolKeys";
 import { useShortcuts } from "@/hooks/useShortcuts";
 
 export function EditorPage() {
@@ -42,7 +41,6 @@ function EditorShell() {
   useActiveTargets();
   useColorHotkeys();
   useGridDefaults();
-  useHeldToolKeys();
 
   const commands = useEditorCommands();
   // The help dialog is a shell concern, so it is injected rather than living in the registry.

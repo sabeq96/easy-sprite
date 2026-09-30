@@ -7,6 +7,8 @@ import type { KeyBinding } from "@/lib/keys";
  * (`Tool.shortcut`); `@/commands/keymap` merges both.
  */
 export const APP_SHORTCUTS: Partial<Record<AppCommandId, KeyBinding[]>> = {
+  "tool.toggleMirror": [{ key: "v" }],
+
   "edit.undo": [{ key: "z", mod: true }],
   "edit.redo": [{ key: "z", mod: true, shift: true }, { key: "y", mod: true }],
   "edit.copy": [{ key: "c", mod: true }],
@@ -41,3 +43,6 @@ export const APP_SHORTCUTS: Partial<Record<AppCommandId, KeyBinding[]>> = {
   "app.shortcutHelp": [{ key: "?" }],
   "app.backToLibrary": [{ key: "escape", shift: true }],
 };
+
+/** A tool key held at least this long borrows the tool; a shorter press switches to it for good. */
+export const TOOL_KEY_HOLD_MS = 300;

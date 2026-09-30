@@ -1,6 +1,7 @@
 import { expect, test } from "vitest";
 import { userEvent } from "@vitest/browser/context";
 import { brushBounds } from "@/editor/pixels";
+import { IS_APPLE } from "@/lib/keys";
 import { useEditorStore } from "@/stores/useEditorStore";
 import {
   KEYS,
@@ -9,8 +10,10 @@ import {
   paintedPixels,
   rectPoints,
   selectLayer,
+  session,
   type Editor,
 } from "@test/editor";
+import { keyDown, keyUp, pressKey } from "@test/keys";
 
 const ALL = rectPoints(0, 0, 16, 16);
 
@@ -96,4 +99,82 @@ test("an erase stroke undoes in one step and redoes back", async () => {
 
   await userEvent.keyboard(KEYS.redo);
   expect(paintedPixels()).toEqual(erased);
+});
+
+/** Fills the whole cel with the bucket, then goes back to the pencil through the sidebar. */
+async function filledCanvasWithPencil(editor: Editor) {
+  await userEvent.click(editor.screen.getByRole("button", { name: "Paint bucket" }));
+  editor.click({ x: 0, y: 0 });
+  await userEvent.click(editor.screen.getByRole("button", { name: "Pencil", exact: true }));
+}
+
+test("tapping E switches to the eraser for good", async () => {
+  await openEditor();
+
+  pressKey("e", "KeyE", 0, 100);
+
+  expect(useEditorStore.getState().toolId).toBe("eraser");
+});
+
+test("holding E borrows the eraser and hands the pencil back on release", async () => {
+  const editor = await openEditor();
+  await filledCanvasWithPencil(editor);
+
+  keyDown("e", { code: "KeyE", at: 0 });
+  editor.click({ x: 7, y: 7 });
+  keyUp("e", { code: "KeyE", at: 1000 });
+
+  expect(paintedPixels()).toHaveLength(255);
+  expect(useEditorStore.getState().toolId).toBe("pencil");
+});
+
+test("releasing a held E mid-stroke keeps erasing to the end, as one undo step", async () => {
+  const editor = await openEditor();
+  await filledCanvasWithPencil(editor);
+
+  keyDown("e", { code: "KeyE", at: 0 });
+  const stroke = editor.press({ x: 0, y: 3 });
+  stroke.moveTo({ x: 5, y: 3 });
+  keyUp("e", { code: "KeyE", at: 1000 });
+  stroke.moveTo({ x: 15, y: 3 });
+  stroke.release();
+
+  expect(paintedPixels()).toHaveLength(256 - 16);
+  expect(useEditorStore.getState().toolId).toBe("pencil");
+  expect(session().history.undoLabel).toBe("Eraser");
+
+  await userEvent.keyboard(KEYS.undo);
+  expect(paintedPixels()).toHaveLength(256);
+});
+
+test("the window losing focus mid-hold hands the pencil back", async () => {
+  await openEditor();
+
+  keyDown("e", { code: "KeyE", at: 0 });
+  window.dispatchEvent(new Event("blur"));
+
+  expect(useEditorStore.getState()).toMatchObject({ toolId: "pencil", heldTool: null });
+});
+
+test("E typed into a text field, or with the command key, never switches tools", async () => {
+  await openEditor();
+  const input = document.body.appendChild(document.createElement("input"));
+
+  keyDown("e", { code: "KeyE", at: 0, target: input });
+  keyDown("e", { code: "KeyE", at: 10, ctrlKey: !IS_APPLE, metaKey: IS_APPLE });
+
+  expect(useEditorStore.getState()).toMatchObject({ toolId: "pencil", heldTool: null });
+  input.remove();
+});
+
+test("a hold survives the editor re-rendering while the key is down", async () => {
+  const editor = await openEditor();
+
+  keyDown("e", { code: "KeyE", at: 0 });
+  await expect
+    .element(editor.screen.getByRole("button", { name: "Eraser", exact: true }))
+    .toHaveAttribute("aria-pressed", "true");
+  keyUp("e", { code: "KeyE", at: 1000 });
+
+  expect(useEditorStore.getState()).toMatchObject({ toolId: "pencil", heldTool: null });
 });

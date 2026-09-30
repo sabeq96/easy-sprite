@@ -16,6 +16,7 @@ export const pencilTool = defineTool({
   label: "Pencil",
   group: "draw",
   shortcut: { key: "p" },
+  reselectCommand: "tool.cycleBrushSize",
   continuous: true,
   options: ["brushSize", "mirror"],
 

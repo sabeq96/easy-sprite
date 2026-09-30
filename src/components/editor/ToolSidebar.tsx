@@ -1,4 +1,3 @@
-import { toolKeys } from "@/commands/keymap";
 import { Panel } from "@/components/common/Panel";
 import { CommandButton } from "@/components/common/CommandButton";
 import { TOOL_ICONS } from "@/components/editor/toolIcons";
@@ -35,7 +34,6 @@ export function ToolSidebar() {
               <CommandButton
                 key={tool.id}
                 command={`tool.${tool.id}`}
-                keys={toolKeys(tool)}
                 side="right"
                 size="icon"
               >

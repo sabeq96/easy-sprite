@@ -2,6 +2,7 @@ import { expect, test } from "vitest";
 import { userEvent } from "@vitest/browser/context";
 import { useEditorStore } from "@/stores/useEditorStore";
 import { activeColors, chooseTool, openEditor, selectLayer, type Editor } from "@test/editor";
+import { keyDown, keyUp } from "@test/keys";
 
 const RED = { r: 255, g: 0, b: 0, a: 255 };
 const GREEN = { r: 0, g: 255, b: 0, a: 255 };
@@ -99,26 +100,30 @@ test("with 'Sample merged image' off, it only reads the active layer", async () 
   expect(activeColors().primary).toBe("#00000000");
 });
 
-test("holding Alt borrows the picker from the pencil, and releasing hands the pencil back", async () => {
+test("holding O borrows the picker from the pencil, and releasing hands the pencil back", async () => {
   const editor = await openEditor();
   paint(editor, { x: 4, y: 4 }, RED);
   useEditorStore.getState().setPrimaryColor(BLUE);
 
-  await userEvent.keyboard("{Alt>}");
+  keyDown("o", { code: "KeyO", at: 0 });
   await expect
     .element(editor.screen.getByRole("button", { name: "Color picker", exact: true }))
     .toHaveAttribute("aria-pressed", "true");
   editor.click({ x: 4, y: 4 });
-  await userEvent.keyboard("{/Alt}");
+  keyUp("o", { code: "KeyO", at: 1000 });
 
   expect(activeColors().primary).toBe("#ff0000ff");
   await expect
     .element(editor.screen.getByRole("button", { name: "Pencil", exact: true }))
     .toHaveAttribute("aria-pressed", "true");
+});
 
-  // …and the pencil now paints with the colour just picked.
-  editor.click({ x: 8, y: 8 });
+test("holding Alt on its own no longer switches tools", async () => {
+  await openEditor();
+
+  await userEvent.keyboard("{Alt>}");
   expect(useEditorStore.getState().toolId).toBe("pencil");
+  await userEvent.keyboard("{/Alt}");
 });
 
 test("the picker never changes a pixel", async () => {

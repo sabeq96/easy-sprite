@@ -3,6 +3,7 @@ import { userEvent } from "@vitest/browser/context";
 import type { CommandRegistry } from "@/commands/types";
 import { useShortcuts } from "@/hooks/useShortcuts";
 import { IS_APPLE } from "@/lib/keys";
+import { keyDown, keyUp } from "@test/keys";
 import { render } from "@test/render";
 
 /** `Ctrl+Z` (or `⌘Z` on a Mac runner) via testing-library's `{Modifier>}key{/Modifier}` syntax. */
@@ -61,4 +62,56 @@ test("a disabled command does not run", async () => {
 
   await userEvent.keyboard(UNDO_CHORD);
   expect(undo).not.toHaveBeenCalled();
+});
+
+function holdRegistry() {
+  const hold = { press: vi.fn(), release: vi.fn(), cancel: vi.fn() };
+  const run = vi.fn();
+  const commands: CommandRegistry = {
+    "tool.eraser": { id: "tool.eraser", label: "Eraser", group: "Tools", run, hold },
+  };
+  return { commands, hold, run };
+}
+
+test("a key bound to a hold command reports its press and release instead of running", async () => {
+  const { commands, hold, run } = holdRegistry();
+  const screen = render(<Harness commands={commands} />);
+  await expect.element(screen.getByLabelText("Sprite name")).toBeVisible();
+
+  const down = keyDown("e", { code: "KeyE", at: 100 });
+  keyDown("e", { code: "KeyE", at: 250, repeat: true });
+  keyUp("e", { code: "KeyE", at: 400 });
+
+  expect(down.defaultPrevented).toBe(true);
+  expect(hold.press).toHaveBeenCalledExactlyOnceWith({ code: "KeyE", at: 100 });
+  expect(hold.release).toHaveBeenCalledExactlyOnceWith({ code: "KeyE", at: 400 });
+  expect(run).not.toHaveBeenCalled();
+});
+
+test("a release is matched by physical key, and a key never pressed releases nothing", async () => {
+  const { commands, hold } = holdRegistry();
+  const screen = render(<Harness commands={commands} />);
+  await expect.element(screen.getByLabelText("Sprite name")).toBeVisible();
+
+  keyUp("e", { code: "KeyE", at: 50 });
+  expect(hold.release).not.toHaveBeenCalled();
+
+  keyDown("e", { code: "KeyE", at: 100 });
+  // Option held mid-press changes `key` but not `code`.
+  keyUp("´", { code: "KeyE", at: 400 });
+  expect(hold.release).toHaveBeenCalledExactlyOnceWith({ code: "KeyE", at: 400 });
+});
+
+test("losing window focus, or unmounting, mid-press cancels the hold", async () => {
+  const { commands, hold } = holdRegistry();
+  const screen = render(<Harness commands={commands} />);
+  await expect.element(screen.getByLabelText("Sprite name")).toBeVisible();
+
+  keyDown("e", { code: "KeyE", at: 0 });
+  window.dispatchEvent(new Event("blur"));
+  expect(hold.cancel).toHaveBeenCalledTimes(1);
+
+  keyDown("e", { code: "KeyE", at: 1000 });
+  screen.unmount();
+  expect(hold.cancel).toHaveBeenCalledTimes(2);
 });

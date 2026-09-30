@@ -1,6 +1,6 @@
 # Hold tool shortcuts (spring-loaded tool keys), `P` again, `V` mirror toggle
 
-Status: proposed
+Status: done
 Date: 2026-09-30
 Issue: #5 "Eraser Holding Shortcut"
 
@@ -278,19 +278,19 @@ Browser (`npm run test:browser`):
 Command: `npm run lint && npm run build && npm run test:coverage`
 
 ## Done when
-- [ ] 1. From the pencil, a press of `E` under 300 ms leaves the eraser active, and 300 ms or more returns to the pencil. The same holds for `B`, `G`, `O` and `S`, and for `P` from any other tool.
-- [ ] 2. A hold returns with mirror settings intact. A tap clears mirror exactly as clicking the tool does.
-- [ ] 3. Repeats never restart the clock, and window blur during a hold restores the pre-hold tool.
-- [ ] 4. `E↓ B↓ E↑ B↑` (fast) ends on the bucket, and the same sequence held long ends on the pencil.
-- [ ] 5. Holding `Alt` does nothing on its own, and holding `O` borrows the picker.
-- [ ] 6. `E` in a text field, `⌘/Ctrl+E`, `⌘/Ctrl+V` (paste still works), `Shift+E` and `Alt+E` never switch tools.
-- [ ] 7. `useHeldToolKeys`, `previousToolId`, `pushTemporaryTool`, `popTemporaryTool`, `holdKey`, `HELD_TOOL_KEYS`, `HeldModifier` and `toolKeys` no longer exist (`grep` is empty).
-- [ ] 8. On an active pencil with no hold, each `P` press cycles 1→2→3→4→1, and a brush of 6 or 8 goes to 1.
-- [ ] 9. `V` on the pencil toggles Mirror horizontally, exactly like the options-bar button. `V` on any other tool does nothing.
-- [ ] 10. A held `S` released mid-drag leaves the pixels where they started and no new undo entry.
-- [ ] 11. The `?` sheet's Tools section has the "Cycle brush size · P again", "Mirror horizontally · V" and "Use a tool until you let go · Hold tool key" rows, and no "Hold ⌥".
-- [ ] 12. `docs/shortcuts.md` matches all of the above.
-- [ ] 13. Every test listed above exists, and the command above passes.
+- [x] 1. From the pencil, a press of `E` under 300 ms leaves the eraser active, and 300 ms or more returns to the pencil. The same holds for `B`, `G`, `O` and `S`, and for `P` from any other tool.
+- [x] 2. A hold returns with mirror settings intact. A tap clears mirror exactly as clicking the tool does.
+- [x] 3. Repeats never restart the clock, and window blur during a hold restores the pre-hold tool.
+- [x] 4. `E↓ B↓ E↑ B↑` (fast) ends on the bucket, and the same sequence held long ends on the pencil.
+- [x] 5. Holding `Alt` does nothing on its own, and holding `O` borrows the picker.
+- [x] 6. `E` in a text field, `⌘/Ctrl+E`, `⌘/Ctrl+V` (paste still works), `Shift+E` and `Alt+E` never switch tools.
+- [x] 7. `useHeldToolKeys`, `previousToolId`, `pushTemporaryTool`, `popTemporaryTool`, `holdKey`, `HELD_TOOL_KEYS`, `HeldModifier` and `toolKeys` no longer exist (`grep` is empty).
+- [x] 8. On an active pencil with no hold, each `P` press cycles 1→2→3→4→1, and a brush of 6 or 8 goes to 1.
+- [x] 9. `V` on the pencil toggles Mirror horizontally, exactly like the options-bar button. `V` on any other tool does nothing.
+- [x] 10. A held `S` released mid-drag leaves the pixels where they started and no new undo entry.
+- [x] 11. The `?` sheet's Tools section has the "Cycle brush size · P again", "Mirror horizontally · V" and "Use a tool until you let go · Hold tool key" rows, and no "Hold ⌥".
+- [x] 12. `docs/shortcuts.md` matches all of the above.
+- [x] 13. Every test listed above exists, and the command above passes.
 
 ## Open risks
 - Linux/X11 auto-repeat has historically produced synthetic keyup/keydown pairs. Chromium filters
@@ -303,3 +303,17 @@ Command: `npm run lint && npm run build && npm run test:coverage`
 None. All were settled on 2026-09-30.
 
 ## Drift log
+- `holdToolKey(toolId, code, at)` takes plain arguments; `KeyPress` lives only in `commands/types.ts`.
+- **Bug found while testing:** the editor's command registry is rebuilt on every render, so
+  `useShortcuts` re-subscribed when a held key switched tools and its cleanup cancelled the hold.
+  It now keeps the registry in a ref and subscribes once (the `useAnimationPlayer` pattern), with
+  a regression test in `eraser.browser.test.tsx`.
+- `tool.toggleMirror` also has `isActive`, and the options-bar "Mirror horizontally" button became
+  a `CommandButton` for it (shortcuts.md rule 3), so it shows `V` in its tooltip. The
+  `ToolOptionsBar` tests now render inside a `CommandsProvider`.
+- The help dialog folds every Tools-group command with a key (the mirror toggle) into its leading
+  Tools section, and excludes it from the groups, so there is no second "Tools" heading.
+- Off Apple, `matchesBinding` ignores Meta (existing behaviour), so the tests use the platform's
+  command key rather than both Ctrl and Meta.
+- Test helpers: `tests/support/keys.ts` (`keyDown`, `keyUp`, `pressKey`) and `editor.press(point)`
+  (`pressSpritePixel`) for gestures that stay down while a key is released.

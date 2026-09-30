@@ -12,6 +12,7 @@ import {
   clickSpritePixel,
   dragSpritePixels,
   hoverSpritePixel,
+  pressSpritePixel,
   type GestureOptions,
 } from "@test/pointer";
 import { render } from "@test/render";
@@ -67,6 +68,9 @@ export async function openEditor({ width = 16, height = 16 } = {}) {
     drag: (points: Point[], options?: GestureOptions) =>
       dragSpritePixels(canvas, viewport(), points, options),
     hover: (point: Point) => hoverSpritePixel(canvas, viewport(), point),
+    /** Presses at one sprite pixel and leaves the button down; finish with `moveTo`/`release`. */
+    press: (point: Point, options?: GestureOptions) =>
+      pressSpritePixel(canvas, viewport, point, options),
     /** The pointer leaving the canvas, which clears hover previews. */
     leave: () =>
       canvas.dispatchEvent(new PointerEvent("pointerleave", { pointerId: 1, pointerType: "mouse" })),

@@ -8,9 +8,18 @@ import { TOOL_LIST, TOOLS } from "@/editor/tools";
 import { useEditorStore } from "@/stores/useEditorStore";
 import { render } from "@test/render";
 
+/** The bar's command buttons (the mirror toggle) read the registry, as they do in the editor. */
+function renderBar() {
+  return render(
+    <CommandsProvider value={createToolCommands(useEditorStore)}>
+      <ToolOptionsBar />
+    </CommandsProvider>,
+  );
+}
+
 test("the bucket tool has no options — tolerance was dropped, not hidden", async () => {
   useEditorStore.getState().setTool("bucket");
-  const screen = render(<ToolOptionsBar />);
+  const screen = renderBar();
 
   await expect.element(screen.getByText("Paint bucket")).toBeVisible();
   expect(screen.getByText(/tolerance/i).elements()).toHaveLength(0);
@@ -19,7 +28,7 @@ test("the bucket tool has no options — tolerance was dropped, not hidden", asy
 
 test("fill similar also has no options", async () => {
   useEditorStore.getState().setTool("fillSimilar");
-  const screen = render(<ToolOptionsBar />);
+  const screen = renderBar();
 
   await expect.element(screen.getByText("Fill similar")).toBeVisible();
   expect(screen.getByText(/tolerance/i).elements()).toHaveLength(0);
@@ -27,14 +36,14 @@ test("fill similar also has no options", async () => {
 
 test("the picker tool offers only the sample-merged switch", async () => {
   useEditorStore.getState().setTool("picker");
-  const screen = render(<ToolOptionsBar />);
+  const screen = renderBar();
 
   await expect.element(screen.getByText("Sample merged image")).toBeVisible();
 });
 
 test("the pencil tool keeps brush size and its own mirror option", async () => {
   useEditorStore.getState().setTool("pencil");
-  const screen = render(<ToolOptionsBar />);
+  const screen = renderBar();
 
   await expect.element(screen.getByRole("group", { name: "Brush size" })).toBeVisible();
   await expect.element(screen.getByRole("button", { name: "Mirror horizontally" })).toBeVisible();
@@ -43,7 +52,7 @@ test("the pencil tool keeps brush size and its own mirror option", async () => {
 
 test.each(TOOL_LIST.map((tool) => tool.id))("the %s bar shows exactly the options that tool declares", async (toolId) => {
   useEditorStore.getState().setTool(toolId);
-  const screen = render(<ToolOptionsBar />);
+  const screen = renderBar();
   const declared = TOOLS[toolId].options;
 
   // Each control appears only when the tool itself claims to honour it — the guard against a
