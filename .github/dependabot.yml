@@ -1,0 +1,32 @@
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: deps
+    groups:
+      # Minor and patch bumps land together in one weekly PR, so they cost one review.
+      minor-and-patch:
+        update-types: [minor, patch]
+        exclude-patterns: ["@dnd-kit/*"]
+      # dnd-kit is 0.x and pinned: any bump can break drag and drop, and its packages must move in
+      # lockstep. Review it on its own and run the browser suite.
+      dnd-kit:
+        patterns: ["@dnd-kit/*"]
+    # Major bumps (React, Vite, Tailwind, Vitest, …) still arrive one PR per package, since each
+    # may need migration work.
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: ci
+    groups:
+      actions:
+        patterns: ["*"]
