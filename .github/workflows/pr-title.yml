@@ -1,0 +1,36 @@
+name: PR title
+
+# PRs are squash-merged, so the title becomes the commit on main that release-please reads to
+# pick the next version and write the changelog. Only the title is checked, never the code, so
+# pull_request_target is safe here and gives fork PRs a token that can report the status.
+on:
+  pull_request_target:
+    types: [opened, edited, reopened, synchronize]
+
+permissions:
+  pull-requests: read
+
+jobs:
+  conventional-title:
+    name: Conventional PR title
+    runs-on: ubuntu-latest
+    steps:
+      - uses: amannn/action-semantic-pull-request@v6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            perf
+            refactor
+            docs
+            test
+            build
+            ci
+            chore
+            revert
+          requireScope: false
+          # A one-commit PR would otherwise default the squash message to the commit, not the title.
+          validateSingleCommit: true
+          validateSingleCommitMatchesPrTitle: true

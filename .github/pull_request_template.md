@@ -4,6 +4,7 @@
 
 ## Checklist
 
+- [ ] PR title follows `type: summary` (`feat`, `fix`, `docs`, … — see CONTRIBUTING)
 - [ ] `npm run lint`, `npm run build` and `npm run test:coverage` pass
 - [ ] Added or updated tests for the change
 - [ ] Added a screenshot if the UI changed

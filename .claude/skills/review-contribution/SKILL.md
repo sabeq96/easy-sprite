@@ -84,7 +84,15 @@ only (§9). Mark these as nits unless they make the code wrong or hard to mainta
 ### E. Docs and polish
 - Keymap changed → `docs/shortcuts.md` updated. New folder or boundary → architecture §2/§9.
 - UI change → screenshot in the PR (CONTRIBUTING requires it).
-- User-visible change → PR title reads well as a release-note line.
+- **PR title** (it becomes the squash commit, which drives the version bump and the changelog):
+  - Conventional type matches the change: `feat` = new user capability, `fix` = user-visible
+    bug fixed, `perf`, otherwise `docs`/`refactor`/`test`/`build`/`ci`/`chore` (no release).
+    A "fix" that only changes tests is `test`, not `fix`.
+  - The subject reads well as a changelog line for users, not developers.
+  - **Stored data changed** (new `db.version`, backup format bump) → must be `feat:`, or `feat!:`
+    if older data or backups can no longer be read. Flag a mismatch as a blocker.
+  - A wrong title is not the contributor's burden: suggest the corrected title and offer to
+    change it yourself before merging.
 
 ## 4. Classify every finding
 
