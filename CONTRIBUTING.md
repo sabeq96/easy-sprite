@@ -54,32 +54,8 @@ These are exactly what CI runs on every PR. While you work, `npm test` (unit onl
   fix should come with a test that fails without it.
 - **Keep PRs focused.** Several small PRs are easier to review than one large one.
 - **If you changed the UI, include a screenshot.**
-- **Give the PR a [Conventional Commits](https://www.conventionalcommits.org/) title.** See
-  below.
-
-### PR titles
-
-PRs are squash-merged, so the PR title becomes the commit on `main`. Releases are automated from
-those titles: they decide the next version number and become the changelog entry. A check on
-every PR makes sure the title has the right format. Your individual commit messages don't matter.
-
-```
-<type>: <what changed, written for users>
-```
-
-| Type | Use it for | Release |
-| --- | --- | --- |
-| `feat` | something new a user can do | minor version, listed under Features |
-| `fix` | a bug fix a user would notice | patch version, listed under Bug Fixes |
-| `perf` | faster or lighter, same behavior | patch version, listed under Performance |
-| `docs`, `refactor`, `test`, `build`, `ci`, `chore` | everything else | no release on its own |
-
-Examples: `feat: add a line tool`, `fix: paint bucket ignores locked layers`,
-`docs: explain onion skin settings`. A scope is optional: `fix(export): keep transparent pixels`.
-
-Add `!` after the type (`feat!: …`) for a breaking change, such as removing a feature or changing
-a shortcut people rely on. Don't worry about getting it perfect; the maintainer can fix the title
-before merging.
+- **Write the PR title for users**, e.g. "Add a line tool" or "Fix the paint bucket on locked
+  layers". The release notes are generated from PR titles, so yours appears there as written.
 
 ### Don't lose anyone's sprites
 
@@ -89,12 +65,16 @@ Users' work lives only in their browser's IndexedDB, so changes to stored data n
   `.upgrade()` that migrates existing data, plus a test for the upgrade.
 - If you change the backup format, bump `BACKUP_FORMAT_VERSION` and make sure older backups still
   import.
-- Title these PRs `feat:` (or `feat!:` if older data can no longer be read), even for a small
-  change, so the release that ships the new data format gets its own version and a changelog
-  entry.
 
 If you're unsure whether your change touches stored data, ask in the PR. That's what review is
 for.
+
+## Releases
+
+There's no release schedule. Every merge to `main` goes live on the demo site straight away.
+Now and then the maintainer publishes a GitHub Release (`v0.1.0`, `v0.2.0`, …) with
+auto-generated notes listing every merged PR and crediting new contributors. The
+[Releases page](https://github.com/sabeq96/easy-sprite/releases) is the changelog.
 
 ## Code of conduct
 

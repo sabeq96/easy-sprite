@@ -7,11 +7,6 @@ updates:
       interval: weekly
       day: monday
     open-pull-requests-limit: 5
-    # Conventional titles ("chore(deps): …", "ci(deps): …") so these pass the PR title check and
-    # stay out of the changelog.
-    commit-message:
-      prefix: chore
-      include: scope
     groups:
       # Minor and patch bumps land together in one weekly PR, so they cost one review.
       minor-and-patch:
@@ -28,9 +23,6 @@ updates:
     directory: /
     schedule:
       interval: monthly
-    commit-message:
-      prefix: ci
-      include: scope
     groups:
       actions:
         patterns: ["*"]

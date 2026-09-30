@@ -1,0 +1,6 @@
+# Used by "Generate release notes" on a new GitHub Release: lists every merged PR by title and
+# credits first-time contributors. Dependency bumps are left out to keep the notes readable.
+changelog:
+  exclude:
+    labels: [skip-changelog]
+    authors: [dependabot, "dependabot[bot]"]
