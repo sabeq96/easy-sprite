@@ -1,35 +1,98 @@
-# React + TypeScript + Vite
+# Easy Sprite
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+**Pixel art without the ceremony.** Open a tab, start drawing, animate it, export a spritesheet for your game. No account, no install, no cloud. Everything stays in your browser.
 
-Currently, two official plugins are available:
+Easy Sprite is a local-first pixel-art editor and animator, built by a developer for developers who just want to get sprites into their game and get back to coding.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+---
 
-## React Compiler
+## Why this exists
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+Easy Sprite is an **off-hours project**, built in evenings and weekends because I wanted a sprite tool that's quick, keyboard-driven, and stays out of the way. It's built **with open source in mind**: the code is here.
 
-Note: This will impact Vite dev & build performances.
-You can also try [the experimental native React Compiler support in plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md#rust-react-compiler) by using `compiler: true` in the plugin options instead of using the Babel plugin.
+It's made **from developer, for developers**. If something annoys you, it probably annoys me too. Tell me about it.
 
-## Expanding the Oxlint configuration
+## Features
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+- **Sprite editor**
+  - **Drawing tools**
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+  - **Layers**
+  - **Frames & animation**
+  - **Palettes**
+
+- **Sprite library**
+- **Spritesheet builder**
+- **PNG export**
+- **Local-first storage & backups**
+- **Keyboard shortcuts**
+
+## Screenshots
+
+### Editor
+
+Draw with a pencil (sizes 1–8, with mirroring), eraser, paint bucket, fill similar, color picker, and select & move. Stack layers, add frames, and watch the animation play in the live preview. Switch between built-in or custom color palettes, and see the colors your sprite already uses.
+
+![Sprite editor](.readme/editor.png)
+
+### Sprite library
+
+Every sprite in one gallery with thumbnails. Search, filter by tags, sort, and rename, duplicate, or delete them. It's all stored locally in your browser and autosaved.
+
+![Sprite library](.readme/library.png)
+
+### Spritesheet builder
+
+Drag sprites onto a shared grid, arrange them however you like, and export one PNG that's ready to drop into your engine.
+
+![Spritesheet builder](.readme/builder.png)
+
+### Keyboard shortcuts
+
+Every key and mouse gesture the editor understands, one keypress away.
+
+![Keyboard shortcuts](.readme/shortcuts.png)
+
+## For developers
+
+```bash
+git clone git@github.com:sabeq96/easy-sprite.git
+cd easy-sprite
+npm install
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Then open the URL Vite prints (usually <http://localhost:5173>).
+
+### Useful scripts
+
+| Command                | What it does                        |
+| ---------------------- | ----------------------------------- |
+| `npm run dev`          | Start the dev server with HMR       |
+| `npm run build`        | Type-check and build for production |
+| `npm run preview`      | Serve the production build locally  |
+| `npm run lint`         | Lint with Oxlint                    |
+| `npm test`             | Run unit tests                      |
+| `npm run test:browser` | Run browser tests                   |
+| `npm run test:all`     | Run the whole test suite            |
+
+## Tech stack
+
+React 19 · TypeScript · Vite · Tailwind CSS 4 · shadcn/ui (Base UI) · Zustand · Dexie (IndexedDB) · Canvas 2D · Vitest
+
+Architecture notes, conventions, and design docs live in [docs/](docs/).
+
+## Contributing
+
+This is a side project, so progress follows free time. Feedback still shapes where it goes, so please get involved:
+
+- 🐛 **Found a bug?** [Open an issue](https://github.com/sabeq96/easy-sprite/issues/new) with steps to reproduce.
+- 💡 **Have an idea?** Feature requests are very welcome, big or small.
+- 🎨 **Made something with it?** Share it in an issue. I'd love to see it.
+- 🔧 **Want to hack on it?** PRs are welcome. For bigger changes, open an issue first so we can talk it through. Read [docs/conventions.md](docs/conventions.md) before you start.
+
+No contribution is too small. A typo fix or a "this felt weird" report helps too.
+
+---
+
+_Made with ☕ after hours._
