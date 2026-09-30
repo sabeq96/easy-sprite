@@ -1,0 +1,11 @@
+name: 💡 Feature request
+description: An idea to make Easy Sprite better.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like?
+      description: Describe the idea, and if you can, the problem it solves for you.
+    validations:
+      required: true

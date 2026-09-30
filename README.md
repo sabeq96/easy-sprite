@@ -1,6 +1,13 @@
 # Easy Sprite
 
+[![Live demo](https://img.shields.io/badge/demo-live-brightgreen)](https://sabeq96.github.io/easy-sprite/)
+[![Build](https://github.com/sabeq96/easy-sprite/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/sabeq96/easy-sprite/actions/workflows/deploy-pages.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-orange.svg)](CONTRIBUTING.md)
+
 **Pixel art without the ceremony.** Open a tab, start drawing, animate it, export a spritesheet for your game. No account, no install, no cloud. Everything stays in your browser.
+
+**👉 [Try it now at sabeq96.github.io/easy-sprite](https://sabeq96.github.io/easy-sprite/)**
 
 Easy Sprite is a local-first pixel-art editor and animator, built by a developer for developers who just want to get sprites into their game and get back to coding.
 
@@ -86,12 +93,16 @@ Architecture notes, conventions, and design docs live in [docs/](docs/).
 
 This is a side project, so progress follows free time. Feedback still shapes where it goes, so please get involved:
 
-- 🐛 **Found a bug?** [Open an issue](https://github.com/sabeq96/easy-sprite/issues/new) with steps to reproduce.
+- 🐛 **Found a bug?** [Open an issue](https://github.com/sabeq96/easy-sprite/issues/new/choose) with steps to reproduce.
 - 💡 **Have an idea?** Feature requests are very welcome, big or small.
 - 🎨 **Made something with it?** Share it in an issue. I'd love to see it.
-- 🔧 **Want to hack on it?** PRs are welcome. For bigger changes, open an issue first so we can talk it through. Read [docs/conventions.md](docs/conventions.md) before you start.
+- 🔧 **Want to hack on it?** PRs are welcome. For bigger changes, open an issue first so we can talk it through. See [CONTRIBUTING.md](CONTRIBUTING.md) to get started.
 
 No contribution is too small. A typo fix or a "this felt weird" report helps too.
+
+## License
+
+[MIT](LICENSE). Use it, fork it, ship it.
 
 ---
 
