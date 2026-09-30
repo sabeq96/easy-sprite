@@ -18,7 +18,8 @@ The hold-`Alt` temporary picker runs on the same machinery. The slice holds one 
 
 The same PR makes two rows of `docs/shortcuts.md` true, since neither is wired up today:
 
-- `P` pressed while the pencil is already active cycles the brush size 1→2→3→4.
+- `P` pressed while the pencil is already active cycles the brush size 1→2→3→4. A size above 4
+  (6 or 8, picked in the options bar) wraps to 1 (Decision 22).
 - `V` selects a new **Mirror pencil** tool, which always draws on both sides of the vertical axis.
 
 ## Non-goals
@@ -30,7 +31,6 @@ The same PR makes two rows of `docs/shortcuts.md` true, since neither is wired u
   still call `setTool`).
 - No deferring of a revert until the current stroke ends (Decision 12).
 - No borrow stack. Only one held tool at a time (Decision 9).
-- No change to `cycleBrushSize`'s arithmetic, including what it does from sizes 6 and 8 (Open question 1).
 - The Mirror pencil gets no mirror toggles and no vertical-mirror or four-way variant. The
   pencil's own mirror toggles are unchanged.
 - Borrowing any tool while Select & move is active still drops the selection. `Alt` does this today,
@@ -61,6 +61,7 @@ The same PR makes two rows of `docs/shortcuts.md` true, since neither is wired u
 | 19 | Repeats are ignored. Window `blur` calls `dropHeldTool()` (hand back, whatever the elapsed time). A keydown in a typing target is ignored and not claimed. Keyup is **not** filtered | Issue requirements. A release that lands after focus moved into a field must still resolve | Treating a blur within 300 ms as a tap. Filtering keyup too |
 | 20 | Cheat sheet, leading **Tools** section: a Mirror pencil row (`V`) comes from `TOOL_LIST` automatically. After the Pencil row comes "Cycle brush size" / "P again" (from `reselectCommand`, via `reselectKeys`). At the end comes "Use a tool until you let go" / "Hold tool key" (`TOOL_KEY_HOLD_HINT`) | Hints live next to their code. Joining the `"Tools"` `CommandGroup` would render a second "Tools" heading. A pencil `hints` entry would give the pencil its own section, which the core-editing test forbids | "Hold X" on every row or tooltip |
 | 21 | The tap/hold logic is unit-tested on the slice with explicit timestamps. The hook's browser tests dispatch `KeyboardEvent`s with `timeStamp` overridden (`tests/support/keys.ts`) | Deterministic, with no 300 ms sleeps. Fake timers don't move `event.timeStamp` | Real waits |
+| 22 | **Settled by the maintainer.** `cycleBrushSize` wraps any size of `MAX_CYCLE_BRUSH_SIZE` or more to 1: `size >= MAX_CYCLE_BRUSH_SIZE ? 1 : size + 1` | `(size % 4) + 1` sends 6→3 and 8→1. The only sizes above 4 come from the options bar, and "back to 1" is what the documented 1→2→3→4 cycle implies | Leaving it. Cycling through every `BRUSH_SIZES` entry (would change the documented 1→2→3→4 cycle) |
 
 ## Call graph
 ```mermaid
@@ -181,6 +182,7 @@ onBlur():   store().dropHeldTool();
   - Add `holdToolKey`, `releaseToolKey` and `dropHeldTool`.
   - `setTool` also clears `heldTool`, and `withoutMirror` is extracted for it and the tap path to share.
   - Remove `previousToolId`, `pushTemporaryTool` and `popTemporaryTool`.
+  - `cycleBrushSize` wraps sizes of 4 or more to 1 (Decision 22).
 
   Serves 1–7.
 - `src/editor/tools/types.ts`: add `reselectCommand?` and `fixedMirror?`, and update the `holdKey` doc. Serves 8, 9, 11.
@@ -235,6 +237,7 @@ Unit (`npm test`):
   9. `setTool` mid-hold clears the hold.
   10. The active tool's key is a no-op.
   11. Mirror pencil held from the eraser → eraser, with `toolOptions` untouched.
+  12. `cycleBrushSize` from 4, 6 and 8 → 1, and from 1, 2 and 3 → the next size.
 - `tests/unit/commands/keymap.test.ts`:
   - `toolForKey`: `{key:"v"}` → mirrorPencil and `{key:"s"}` → select. `{key:"v"}` with `ctrlKey` or `metaKey` → null. `Shift+E` and `Alt+E` → null. Every `shortcut` resolves to its own tool.
   - `reselectKeys(pencil)` is `["P again"]`, and `reselectKeys(mirrorPencil)` is `[]`.
@@ -286,7 +289,7 @@ Command: `npm run lint && npx tsc -b && npm test && npm run test:browser`
 - [ ] 5. Holding `Alt` borrows the picker and always hands back. `Alt` during an `E` hold takes over and its release returns to the pre-`E` tool.
 - [ ] 6. `E` in a text field, `⌘/Ctrl+E`, `⌘/Ctrl+V` (paste still works), `Shift+E` and `Alt+E` never switch tools through this path.
 - [ ] 7. `previousToolId`, `pushTemporaryTool` and `popTemporaryTool` no longer exist (`grep` is empty), and `heldTool` is the only hold state.
-- [ ] 8. On an active pencil with no hold, each non-repeat `P` press runs `tool.cycleBrushSize` (1→2→3→4→1).
+- [ ] 8. On an active pencil with no hold, each non-repeat `P` press runs `tool.cycleBrushSize` (1→2→3→4→1), and a brush of 6 or 8 goes to 1.
 - [ ] 9. `V` activates the Mirror pencil. It draws each stamp on both sides of the vertical axis whatever the mirror options say, its preview shows both footprints, and it has a sidebar button with the `V` tooltip.
 - [ ] 10. A held `S` released mid-drag leaves the pixels where they started and no new undo entry.
 - [ ] 11. The `?` sheet's Tools section has the Mirror pencil (`V`), "Cycle brush size · P again" and "Use a tool until you let go · Hold tool key" rows.
@@ -303,8 +306,6 @@ Command: `npm run lint && npx tsc -b && npm test && npm run test:browser`
 - A seventh sidebar button adds height to the tool rail. It should still fit the 720 px test viewport; check it visually.
 
 ## Open questions for the maintainer
-1. **Cycling from sizes above the cap.** The options bar also offers 6 and 8, and `(size % 4) + 1`
-   maps 6→3 and 8→1. The default is to leave it (non-goal). The recommendation is a one-line follow-up
-   so that any size of 4 or more wraps to 1.
+None. All were settled on 2026-09-30.
 
 ## Drift log
