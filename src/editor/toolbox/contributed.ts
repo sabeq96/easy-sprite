@@ -1,17 +1,16 @@
 import type { CommandRegistry } from "@/commands/types";
+import type { ModuleContext } from "@/editor/module";
 import type { ContributedCommand } from "@/framework/command";
 import type { ToolHost } from "@/framework/host";
 import type { Settings } from "@/framework/settings";
 import type { Tool } from "@/framework/tool";
-import type { DocumentToolHost } from "@/hooks/toolHost/createToolHost";
-import type { KeyBinding } from "@/lib/keys";
-import { useEditorStore } from "@/stores/useEditorStore";
 import {
   TOOL_LIST,
   type ContributedCommandId,
   type SettingCommandId,
   type ToolId,
 } from "@/tools";
+import { useToolboxStore } from "./store";
 
 const TOOLS_WITH_COMMANDS: readonly Tool<ToolId>[] = TOOL_LIST;
 
@@ -30,7 +29,7 @@ function settingCommands(toolId: ToolId, settings: Settings | undefined): Contri
         label: label ?? setting.label,
         group: "Tools",
         keys,
-        isEnabled: () => useEditorStore.getState().toolId === toolId,
+        isEnabled: () => useToolboxStore.getState().toolId === toolId,
         isActive: value,
         run: (host: ToolHost) => host.tool.set(key, !value(host)),
       },
@@ -50,15 +49,8 @@ type ContributionId = ContributedCommandId | SettingCommandId;
 
 const idOf = (command: ContributedCommand) => command.id as ContributionId;
 
-/** The keys tools declare for their own commands and settings; `@/commands/keymap` merges them. */
-export const CONTRIBUTED_SHORTCUTS = Object.fromEntries(
-  CONTRIBUTIONS.flatMap(({ command }) =>
-    command.keys ? [[idOf(command), [...command.keys]]] : [],
-  ),
-) as Partial<Record<ContributionId, KeyBinding[]>>;
-
 /** Every tool-contributed command as a registry entry, bound to its tool's view of the host. */
-export function createContributedCommands(host: DocumentToolHost): CommandRegistry {
+export function createContributedCommands(host: Pick<ModuleContext, "forTool">): CommandRegistry {
   const registry: CommandRegistry = {};
   for (const { toolId, command } of CONTRIBUTIONS) {
     const toolHost = host.forTool(toolId);

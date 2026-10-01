@@ -3,9 +3,9 @@ import { userEvent } from "vitest/browser";
 import { AppRoutes } from "@/app/routes";
 import { createSprite } from "@/db/repositories/sprites";
 import { getPixel } from "@/core/buffer";
+import { useToolboxStore } from "@/editor/toolbox/api";
 import { useViewStore } from "@/editor/view/api";
 import { IS_APPLE } from "@/lib/keys";
-import { useEditorStore } from "@/stores/useEditorStore";
 import { render } from "@test/render";
 import { clickSpritePixel, dragSpritePixels, hoverSpritePixel } from "@test/pointer";
 
@@ -54,10 +54,10 @@ async function openEditor() {
 
 test("Ctrl+A switches to the select tool and shows it; another tool hides it", async () => {
   const { canvas } = await openEditor();
-  expect(useEditorStore.getState().toolId).toBe("pencil");
+  expect(useToolboxStore.getState().toolId).toBe("pencil");
 
   await userEvent.keyboard(SELECT_ALL);
-  expect(useEditorStore.getState().toolId).toBe("select");
+  expect(useToolboxStore.getState().toolId).toBe("select");
   await expect.poll(hasOverlayInk).toBe(true);
 
   await userEvent.keyboard("p");
@@ -70,7 +70,7 @@ test("dragging from inside the selection moves its pixels and shows a grab curso
   const { viewport } = useViewStore.getState();
   clickSpritePixel(canvas, viewport, { x: 2, y: 2 }); // pencil paints the pixel to move
 
-  useEditorStore.getState().setTool("select");
+  useToolboxStore.getState().setTool("select");
   dragSpritePixels(canvas, viewport, [{ x: 1, y: 1 }, { x: 3, y: 3 }]);
   dragSpritePixels(canvas, viewport, [{ x: 2, y: 2 }, { x: 4, y: 2 }, { x: 6, y: 2 }]);
 
@@ -97,6 +97,6 @@ test("paste after a deselect switches to the select tool and selects the pasted 
 
   await userEvent.keyboard("p");
   await userEvent.keyboard(PASTE);
-  expect(useEditorStore.getState().toolId).toBe("select");
+  expect(useToolboxStore.getState().toolId).toBe("select");
   await expect.poll(hasOverlayInk).toBe(true);
 });

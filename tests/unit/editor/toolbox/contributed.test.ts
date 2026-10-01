@@ -1,14 +1,14 @@
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it } from "vitest";
-import { createContributedCommands } from "@/commands/contributed";
 import { SHORTCUTS } from "@/commands/keymap";
 import { getPixel, setPixel } from "@/core/buffer";
 import type { SpriteDocument } from "@/core/document";
 import { History } from "@/core/history";
 import { useFramesStore } from "@/editor/frames/api";
 import { useLayersStore } from "@/editor/layers/api";
+import { useToolboxStore } from "@/editor/toolbox/api";
+import { createContributedCommands } from "@/editor/toolbox/contributed";
 import { createToolHost } from "@/hooks/toolHost/createToolHost";
 import { startToolLifecycle } from "@/hooks/useToolLifecycle";
-import { useEditorStore } from "@/stores/useEditorStore";
 import type { ContributedCommandId, SettingCommandId } from "@/tools";
 import { makeDocument, RED } from "@test/factories";
 import { resetEditorStores } from "@test/store";
@@ -63,16 +63,16 @@ describe("contributed commands", () => {
   it("paste activates select before selecting, so deselect becomes enabled", () => {
     setPixel(doc.ensureCel("l1", "f1").pixels, 2, 1, 4, RED);
     const commands = setup();
-    useEditorStore.getState().setTool("select");
+    useToolboxStore.getState().setTool("select");
     commands["edit.selectAll"]!.run();
     commands["edit.copy"]!.run();
     commands["edit.deselect"]!.run();
-    useEditorStore.getState().setTool("pencil");
+    useToolboxStore.getState().setTool("pencil");
     doc.ensureCel("l1", "f1").pixels.fill(0);
 
     commands["edit.paste"]!.run();
 
-    expect(useEditorStore.getState().toolId).toBe("select");
+    expect(useToolboxStore.getState().toolId).toBe("select");
     expect(commands["edit.deselect"]!.isEnabled!()).toBe(true);
     expect(getPixel(doc.getCel("l1", "f1")!.pixels, 2, 1, 4)).toEqual(RED);
     expect(history.undoLabel).toBe("Paste");
@@ -82,15 +82,15 @@ describe("contributed commands", () => {
 
   it("paste on a locked layer neither edits nor switches tools", () => {
     const commands = setup();
-    useEditorStore.getState().setTool("select");
+    useToolboxStore.getState().setTool("select");
     commands["edit.selectAll"]!.run();
     commands["edit.copy"]!.run();
-    useEditorStore.getState().setTool("pencil");
+    useToolboxStore.getState().setTool("pencil");
     doc.setLayerProps("l1", { locked: true });
 
     commands["edit.paste"]!.run();
 
-    expect(useEditorStore.getState().toolId).toBe("pencil");
+    expect(useToolboxStore.getState().toolId).toBe("pencil");
     expect(history.canUndo).toBe(false);
   });
 
@@ -104,12 +104,12 @@ describe("contributed commands", () => {
     expect(mirror?.isActive?.()).toBe(false);
 
     mirror?.run();
-    expect(useEditorStore.getState().settings).toEqual({ pencil: { mirrorHorizontal: true } });
+    expect(useToolboxStore.getState().settings).toEqual({ pencil: { mirrorHorizontal: true } });
     expect(mirror?.isActive?.()).toBe(true);
     mirror?.run();
-    expect(useEditorStore.getState().settings.pencil).toEqual({ mirrorHorizontal: false });
+    expect(useToolboxStore.getState().settings.pencil).toEqual({ mirrorHorizontal: false });
 
-    useEditorStore.getState().setTool("eraser");
+    useToolboxStore.getState().setTool("eraser");
     expect(mirror?.isEnabled?.()).toBe(false);
   });
 });

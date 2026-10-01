@@ -1,21 +1,23 @@
 import { expect, test } from "vitest";
 import { userEvent } from "vitest/browser";
-import { ToolOptionsBar } from "@/components/editor/ToolOptionsBar";
-import { CommandsProvider } from "@/commands/CommandsContext";
-import { createContributedCommands } from "@/commands/contributed";
-import { createToolCommands } from "@/commands/toolCommands";
-import { ToolSidebar } from "@/components/editor/ToolSidebar";
+import { CommandsProvider, type CommandsValue } from "@/commands/CommandsContext";
 import { History } from "@/core/history";
+import { subscribeToModules } from "@/editor/modules";
+import { ToolOptionsBar, ToolSidebar, useToolboxStore } from "@/editor/toolbox/api";
+import { createContributedCommands } from "@/editor/toolbox/contributed";
+import { createToolCommands } from "@/editor/toolbox/toolCommands";
 import { createToolHost } from "@/hooks/toolHost/createToolHost";
 import { TOOL_LIST, TOOLS } from "@/tools";
-import { useEditorStore } from "@/stores/useEditorStore";
 import { makeDocument } from "@test/factories";
 import { render } from "@test/render";
 
 /** The bar's command buttons (the mirror toggle) read the registry, as they do in the editor. */
-function commands() {
+function commands(): CommandsValue {
   const host = createToolHost({ doc: makeDocument(), history: new History() });
-  return { ...createToolCommands(useEditorStore), ...createContributedCommands(host) };
+  return {
+    registry: { ...createToolCommands(), ...createContributedCommands(host) },
+    subscribe: subscribeToModules,
+  };
 }
 
 function renderBar() {
@@ -27,7 +29,7 @@ function renderBar() {
 }
 
 test("the bucket tool has no options — tolerance was dropped, not hidden", async () => {
-  useEditorStore.getState().setTool("bucket");
+  useToolboxStore.getState().setTool("bucket");
   const screen = await renderBar();
 
   await expect.element(screen.getByText("Paint bucket")).toBeVisible();
@@ -36,7 +38,7 @@ test("the bucket tool has no options — tolerance was dropped, not hidden", asy
 });
 
 test("fill similar also has no options", async () => {
-  useEditorStore.getState().setTool("fillSimilar");
+  useToolboxStore.getState().setTool("fillSimilar");
   const screen = await renderBar();
 
   await expect.element(screen.getByText("Fill similar")).toBeVisible();
@@ -44,14 +46,14 @@ test("fill similar also has no options", async () => {
 });
 
 test("the picker tool offers only the sample-merged switch", async () => {
-  useEditorStore.getState().setTool("picker");
+  useToolboxStore.getState().setTool("picker");
   const screen = await renderBar();
 
   await expect.element(screen.getByText("Sample merged image")).toBeVisible();
 });
 
 test("the pencil tool keeps brush size and its own mirror option", async () => {
-  useEditorStore.getState().setTool("pencil");
+  useToolboxStore.getState().setTool("pencil");
   const screen = await renderBar();
 
   await expect.element(screen.getByText("Brush size", { exact: true })).toBeVisible();
@@ -62,7 +64,7 @@ test("the pencil tool keeps brush size and its own mirror option", async () => {
 });
 
 test.each(TOOL_LIST.map((tool) => tool.id))("the %s bar shows exactly the settings that tool declares", async (toolId) => {
-  useEditorStore.getState().setTool(toolId);
+  useToolboxStore.getState().setTool(toolId);
   const screen = await renderBar();
   const declared = Object.keys(TOOLS[toolId].settings ?? {});
 
@@ -76,7 +78,7 @@ test.each(TOOL_LIST.map((tool) => tool.id))("the %s bar shows exactly the settin
 });
 
 test("mirror survives pencil → eraser → pencil, and the eraser never shows it", async () => {
-  useEditorStore.getState().setTool("pencil");
+  useToolboxStore.getState().setTool("pencil");
   const screen = await render(
     <CommandsProvider value={commands()}>
       <ToolSidebar />
@@ -90,7 +92,7 @@ test("mirror survives pencil → eraser → pencil, and the eraser never shows i
 
   await userEvent.click(screen.getByRole("button", { name: "Eraser", exact: true }).first());
   await expect.element(screen.getByRole("button", { name: "Mirror horizontally" })).not.toBeInTheDocument();
-  expect(useEditorStore.getState().settings.pencil).toEqual({ mirrorHorizontal: true });
+  expect(useToolboxStore.getState().settings.pencil).toEqual({ mirrorHorizontal: true });
 
   await userEvent.click(screen.getByRole("button", { name: "Pencil", exact: true }).first());
   await expect

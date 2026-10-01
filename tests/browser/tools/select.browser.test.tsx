@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 import { userEvent } from "vitest/browser";
-import { useEditorStore } from "@/stores/useEditorStore";
+import { useToolboxStore } from "@/editor/toolbox/api";
 import { selectedRect } from "@/tools/select/tool";
 import {
   KEYS,
@@ -24,7 +24,7 @@ const RED = { r: 255, g: 0, b: 0, a: 255 };
 /** A 3×3 red block at (2,2)–(4,4), painted with a 3px pencil, then the select tool. */
 async function withRedBlock(editor: Editor) {
   usePaletteStore.getState().setPrimaryColor(RED);
-  useEditorStore.getState().setSetting("pencil", "size", 3);
+  useToolboxStore.getState().setSetting("pencil", "size", 3);
   editor.click({ x: 3, y: 3 });
   expect(paintedPixels()).toEqual(keys(rectPoints(2, 2, 3, 3)));
   await chooseTool(editor, "Select & move");
@@ -226,13 +226,13 @@ test("tapping S keeps Select & move", async () => {
 
   pressKey("s", "KeyS", 0, 100);
 
-  expect(useEditorStore.getState().toolId).toBe("select");
+  expect(useToolboxStore.getState().toolId).toBe("select");
 });
 
 test("releasing a held S mid-move puts the pixels back and adds no undo step", async () => {
   const editor = await openEditor();
   usePaletteStore.getState().setPrimaryColor(RED);
-  useEditorStore.getState().setSetting("pencil", "size", 3);
+  useToolboxStore.getState().setSetting("pencil", "size", 3);
   editor.click({ x: 3, y: 3 });
   const before = session().history.undoLabel;
 
@@ -244,7 +244,7 @@ test("releasing a held S mid-move puts the pixels back and adds no undo step", a
   move.moveTo({ x: 12, y: 12 });
   move.release();
 
-  expect(useEditorStore.getState().toolId).toBe("pencil");
+  expect(useToolboxStore.getState().toolId).toBe("pencil");
   expect(paintedPixels()).toEqual(keys(rectPoints(2, 2, 3, 3)));
   expect(session().history.undoLabel).toBe(before);
 });

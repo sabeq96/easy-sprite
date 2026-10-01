@@ -1,6 +1,7 @@
+import { create } from "zustand";
 import { TOOL_KEY_HOLD_MS } from "@/constants/shortcuts";
+import type { StoredValues } from "@/framework/settings";
 import type { ToolId } from "@/tools";
-import type { SliceCreator } from "@/stores/slices/types";
 
 /** A tool key being held: it has switched tools, and its release decides whether that sticks. */
 export interface HeldTool {
@@ -12,9 +13,14 @@ export interface HeldTool {
   restoreToolId: ToolId;
 }
 
-export interface ToolSlice {
+export interface ToolboxState {
   toolId: ToolId;
   heldTool: HeldTool | null;
+  /**
+   * Every tool's settings, keyed by tool id and then by the setting's key. Absent means the tool's
+   * declared default, so the store never names a setting: `resolveSettings` fills the rest.
+   */
+  settings: Readonly<Record<string, StoredValues>>;
 
   setTool: (toolId: ToolId) => void;
   /** Switches to `toolId` now; `releaseToolKey` later decides between a tap and a hold. */
@@ -23,11 +29,13 @@ export interface ToolSlice {
   releaseToolKey: (code: string, at: number) => void;
   /** The key's release will never arrive (window blur): hand back the tool from before it. */
   dropHeldTool: () => void;
+  setSetting: (toolId: string, key: string, value: number | boolean) => void;
 }
 
-export const createToolSlice: SliceCreator<ToolSlice> = (set, get) => ({
+export const useToolboxStore = create<ToolboxState>()((set, get) => ({
   toolId: "pencil",
   heldTool: null,
+  settings: {},
 
   setTool: (toolId) => set({ toolId, heldTool: null }),
 
@@ -52,4 +60,9 @@ export const createToolSlice: SliceCreator<ToolSlice> = (set, get) => ({
     const { heldTool } = get();
     if (heldTool) set({ heldTool: null, toolId: heldTool.restoreToolId });
   },
-});
+
+  setSetting: (toolId, key, value) =>
+    set(({ settings }) => ({
+      settings: { ...settings, [toolId]: { ...settings[toolId], [key]: value } },
+    })),
+}));

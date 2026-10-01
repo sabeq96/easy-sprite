@@ -4,6 +4,7 @@ import { module as layers } from "@/editor/layers/api";
 import type { EditorModule } from "@/editor/module";
 import { module as palette } from "@/editor/palette/api";
 import { module as shell } from "@/editor/shell/api";
+import { module as toolbox } from "@/editor/toolbox/api";
 import { module as view } from "@/editor/view/api";
 
 /**
@@ -18,4 +19,15 @@ export const EDITOR_MODULES: readonly EditorModule[] = [
   frames,
   animation,
   view,
+  toolbox,
 ];
+
+/** Every module store's `subscribe` as one, so a command's state follows whichever store it reads. */
+export function subscribeToModules(listener: () => void): () => void {
+  const unsubscribes = EDITOR_MODULES.flatMap((editorModule) =>
+    editorModule.subscribe ? [editorModule.subscribe(listener)] : [],
+  );
+  return () => {
+    for (const unsubscribe of unsubscribes) unsubscribe();
+  };
+}

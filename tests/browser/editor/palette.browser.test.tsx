@@ -3,7 +3,7 @@ import { userEvent } from "vitest/browser";
 import { createPalette, findPalette } from "@/db/repositories/palettes";
 import { db } from "@/db/db";
 import { usePaletteStore } from "@/editor/palette/api";
-import { useEditorStore } from "@/stores/useEditorStore";
+import { useToolboxStore } from "@/editor/toolbox/api";
 import { activeColors, openEditor, pixelAt, type Editor } from "@test/editor";
 import { settled } from "@test/dom";
 import { holdDrag, releaseDrag } from "@test/pointer";
@@ -125,7 +125,7 @@ test("the typed hex in the primary colour's picker sets the colour", async () =>
   expect(activeColors().primary).toBe("#ff8800ff");
   // The keys typed into the field never reached the shortcut handler ("f" etc. would be no-ops,
   // but "8"… and every letter must stay inside the field).
-  expect(useEditorStore.getState().toolId).toBe("pencil");
+  expect(useToolboxStore.getState().toolId).toBe("pencil");
 });
 
 test("double-clicking a palette swatch removes it from the palette", async () => {

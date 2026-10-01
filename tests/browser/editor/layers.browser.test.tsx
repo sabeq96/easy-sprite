@@ -1,6 +1,5 @@
 import { expect, test } from "vitest";
 import { userEvent } from "vitest/browser";
-import { useEditorStore } from "@/stores/useEditorStore";
 import {
   KEYS,
   compositeAt,
@@ -16,6 +15,7 @@ import { settled } from "@test/dom";
 import { holdDrag, releaseDrag } from "@test/pointer";
 import { useLayersStore } from "@/editor/layers/api";
 import { usePaletteStore } from "@/editor/palette/api";
+import { useToolboxStore } from "@/editor/toolbox/api";
 
 const RED = { r: 255, g: 0, b: 0, a: 255 };
 const BLUE = { r: 0, g: 0, b: 255, a: 255 };
@@ -163,7 +163,7 @@ test("double-clicking a layer's name renames it; typing never triggers tool shor
   await userEvent.keyboard("Backdrop sky{Enter}");
 
   expect(layerNames()).toEqual(["Backdrop sky"]);
-  expect(useEditorStore.getState().toolId).toBe("pencil");
+  expect(useToolboxStore.getState().toolId).toBe("pencil");
 
   await userEvent.keyboard(KEYS.undo);
   expect(layerNames()).toEqual(["Layer 1"]);

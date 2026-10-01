@@ -1,9 +1,4 @@
 import { create } from "zustand";
-import { createSettingsSlice } from "@/stores/slices/settingsSlice";
-import { createToolSlice } from "@/stores/slices/toolSlice";
-import type { EditorStore } from "@/stores/slices/types";
 
-export const useEditorStore = create<EditorStore>()((...args) => ({
-  ...createToolSlice(...args),
-  ...createSettingsSlice(...args),
-}));
+/** Empty: every field moved into an editor module's store. Deleted with the canvas module (stage 5, task 8). */
+export const useEditorStore = create<Record<string, never>>()(() => ({}));

@@ -2,8 +2,8 @@ import { expect, test } from "vitest";
 import { page } from "vitest/browser";
 import { AppRoutes } from "@/app/routes";
 import { createSprite } from "@/db/repositories/sprites";
+import { useToolboxStore } from "@/editor/toolbox/api";
 import { useViewStore } from "@/editor/view/api";
-import { useEditorStore } from "@/stores/useEditorStore";
 import { render } from "@test/render";
 import { hoverSpritePixel } from "@test/pointer";
 
@@ -54,12 +54,12 @@ async function hoverAndSettle(canvas: Element) {
 
 test("the pencil previews its mirrored footprint only while mirroring is on", async () => {
   const canvas = await openEditor();
-  useEditorStore.getState().setTool("pencil");
+  useToolboxStore.getState().setTool("pencil");
 
   await hoverAndSettle(canvas);
   expect(overlayAlphaAt(MIRRORED)).toBe(0);
 
-  useEditorStore.getState().setSetting("pencil", "mirrorHorizontal", true);
+  useToolboxStore.getState().setSetting("pencil", "mirrorHorizontal", true);
   await hoverAndSettle(canvas);
   expect(overlayAlphaAt(MIRRORED)).toBeGreaterThan(0);
 });
@@ -67,7 +67,7 @@ test("the pencil previews its mirrored footprint only while mirroring is on", as
 test("the eraser preview is never mirrored", async () => {
   const canvas = await openEditor();
 
-  const { setSetting, setTool } = useEditorStore.getState();
+  const { setSetting, setTool } = useToolboxStore.getState();
   setSetting("pencil", "mirrorHorizontal", true);
   setSetting("pencil", "mirrorVertical", true);
   setSetting("eraser", "mirrorHorizontal", true);
@@ -106,7 +106,7 @@ test("a new brush size shows at once, without moving the pointer", async () => {
   await hoverAndSettle(canvas);
   expect(overlayAlphaAt(below)).toBe(0);
 
-  useEditorStore.getState().setSetting("pencil", "size", 2);
+  useToolboxStore.getState().setSetting("pencil", "size", 2);
   await nextFrames();
   expect(overlayAlphaAt(below)).toBeGreaterThan(0);
 });

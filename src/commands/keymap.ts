@@ -1,13 +1,32 @@
-import { CONTRIBUTED_SHORTCUTS } from "@/commands/contributed";
 import type { CommandId, ToolCommandId } from "@/commands/types";
 import { APP_SHORTCUTS } from "@/constants/shortcuts";
-import { TOOL_LIST, type ToolId } from "@/tools";
+import {
+  TOOL_LIST,
+  type ContributedCommandId,
+  type SettingCommandId,
+  type ToolId,
+} from "@/tools";
 import type { Tool } from "@/framework/tool";
 import { formatBinding, type KeyBinding } from "@/lib/keys";
 
 const TOOL_SHORTCUTS = Object.fromEntries(
   TOOL_LIST.flatMap((tool) => (tool.shortcut ? [[`tool.${tool.id}`, [tool.shortcut]]] : [])),
 ) as Partial<Record<ToolCommandId, KeyBinding[]>>;
+
+const TOOLS_WITH_COMMANDS: readonly Tool<ToolId>[] = TOOL_LIST;
+
+/** What each tool declares a command for: its own commands, then its settings', in registry order. */
+const DECLARED_COMMANDS = TOOLS_WITH_COMMANDS.flatMap((tool) => [
+  ...(tool.commands ?? []),
+  ...Object.values(tool.settings ?? {}).flatMap((setting) =>
+    setting.kind !== "choice" && setting.command ? [setting.command] : [],
+  ),
+]);
+
+/** The keys tools declare for those commands; the toolbox module registers the commands. */
+const CONTRIBUTED_SHORTCUTS = Object.fromEntries(
+  DECLARED_COMMANDS.flatMap(({ id, keys }) => (keys ? [[id, [...keys]]] : [])),
+) as Partial<Record<ContributedCommandId | SettingCommandId, KeyBinding[]>>;
 
 /**
  * The merged keymap: app keys, each tool's own key, and the keys of the commands tools

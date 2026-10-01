@@ -151,7 +151,7 @@ function EditorShell() {
    - Move `ViewControls`, `CheckerboardLayer` and `useGridDefaults` (renamed `useGridReset`).
    - Zoom, fit and grid commands.
    - `attachCanvas` registers the grid painter.
-7. **toolbox.**
+7. ✅ **toolbox.**
    - `toolSlice` + `settingsSlice` → `toolbox/store.ts`.
    - Move `ToolSidebar`, `ToolOptionsBar`, `toolCommands`, `contributed` and `useToolSettings`, and move the `tool` adapter.
    - Tool commands join through `toolbox`'s `module.commands`.
@@ -644,6 +644,159 @@ None. Decisions 1-5 were settled on 2026-10-01.
   - `docs/architecture.md` §4 ("The host registers the grid and onion painters … before any tool
     attaches") is still true; task 8 rewrites it to name the modules.
 
+- **2026-10-01, Task 7: the command state refresh (the maintainer's Builder note), built first.**
+  - `EditorModule.subscribe?(listener): () => void`. Palette, layers, frames, animation, view and
+    toolbox each set it to their store's `subscribe`. Shell has no store.
+  - `CommandsProvider`'s value is now `CommandsValue = { registry, subscribe }`
+    (`commands/CommandsContext.ts`). `useCommand(id)` keeps its signature and error. A new
+    `useCommandState(id)` returns `{ isActive, isEnabled }`, each read through
+    `useSyncExternalStore(subscribe, …)`. `CommandButton` uses it and no longer imports a store:
+    `disabled` falls back to `!isEnabled`, and `aria-pressed` and the variant come from
+    `isActive`. The enabled state is now live too; before, it was read at render only.
+  - The merge is `subscribeToModules(listener)` in `src/editor/modules.ts`, next to
+    `EDITOR_MODULES`. It subscribes every module that declares `subscribe` and returns one
+    unsubscribe. `EditorShell` passes `{ registry: commands, subscribe: subscribeToModules }`.
+    The merge is a module-level function, so its identity is stable. It is in `modules.ts`
+    rather than in `EditorPage.tsx`, so tests bind to the real merge. `modules.ts` is the shell's
+    "module list" in the Goal table.
+  - The builder passes `{ registry: commands, subscribe: useBuilderViewStore.subscribe }`. Its
+    `view.toggleGrid` and zoom buttons now follow the builder store as well. The zoom buttons'
+    `disabled` still comes from `ZoomControls`' `levels`.
+  - No other surface shows command state. `EditorMenu` and `SpritesheetMenu` call
+    `useCommand("edit.save")` only to run it. The cheat sheet lists labels and keys.
+    `useShortcuts` reads `isEnabled` when a key is pressed, not at render. None of them changed.
+  - `components/common` imports no editor module (`CommandButton`'s only new import is
+    `@/commands/CommandsContext`).
+- **2026-10-01, Task 7: `ModuleContext.forTool(toolId): ToolHost`.** This is not in the
+  Interfaces sketch. Tool-contributed commands must run through the open document's own tool
+  host: the one `EditorToolHost` creates and `EditorCanvas` attaches the renderer to, because
+  paste's overlay goes through its `canvas`. A plain `commands(ctx)` had no way to reach it.
+  `useModuleContext` binds it to `useToolHost().forTool`, which is the same call
+  `useEditorCommands` made. `createContributedCommands` now takes `Pick<ModuleContext, "forTool">`,
+  so a `DocumentToolHost` still fits; the unit tests that pass one are unchanged.
+  `modules.test.ts`'s fake context builds one with `createToolHost`.
+- **2026-10-01, Task 7: the contributed keys moved into `commands/keymap.ts`.**
+  `CONTRIBUTED_SHORTCUTS` left `contributed.ts`. `keymap.ts` now derives it from `TOOL_LIST`
+  itself: each tool's `commands`, then each non-choice setting's `command`, in the order
+  `contributed.ts` registers them. Importing it from `@/editor/toolbox/api` would close the cycle
+  `toolbox/api → ToolSidebar → CommandButton → keymap → toolbox/api`, so `keymap.ts` depends
+  only on `@/tools`, as it already did for the tool keys. A throwaway unit test printed
+  `JSON.stringify(Object.entries(SHORTCUTS))` on this tree and on `e714384`. Both md5 hashes are
+  `868c36fd…`, so the key order is unchanged too.
+- **2026-10-01, Task 7: the store is `useToolboxStore` (`ToolboxState`).** It has `toolId`,
+  `heldTool`, `settings`, `setTool`, `holdToolKey`, `releaseToolKey`, `dropHeldTool` and
+  `setSetting`, with bodies unchanged from `toolSlice` and `settingsSlice`.
+  `stores/slices/toolSlice.ts` became `toolbox/store.ts` (a `git mv`, with the settings half
+  merged in). `settingsSlice.ts` and `types.ts` are deleted, so `src/stores/slices/` is gone.
+  `useEditorStore` is left as an empty store (`create<Record<string, never>>()`) with no
+  importer, for task 8 to delete. `createTestStore()` is deleted from `tests/support/store.ts`.
+- **2026-10-01, Task 7: moves.**
+  - `components/editor/ToolSidebar.tsx` and `ToolOptionsBar.tsx`, `commands/toolCommands.ts`,
+    `commands/contributed.ts` and `hooks/useToolSettings.ts` all moved into `src/editor/toolbox/`
+    (`git mv`).
+  - `src/components/editor/` now holds only `EditorCanvas.tsx`.
+  - `createToolCommands()` takes no store any more; it reads `useToolboxStore` when a handler
+    runs, like the other modules' commands.
+  - The `isEnabled` of the generated setting commands reads `useToolboxStore`.
+- **2026-10-01, Task 7: `toolboxModule.commands(ctx)` is
+  `{ ...createToolCommands(), ...createContributedCommands(ctx) }`.** It is defined in
+  `toolbox/module.ts` (no separate `commands.ts`). `useEditorCommands.ts` is deleted.
+  `EditorShell` merges only `EDITOR_MODULES` commands. Toolbox comes last, so `tool.*` and the
+  contributed ids keep their old place at the end of the merged registry.
+- **2026-10-01, Task 7: the `tool` adapter is `createToolAdapter(toolId): ToolControl` in
+  `toolbox/toolAdapter.ts`.** It is the old `createToolControl`, unchanged. `createToolHost`
+  imports it through `@/editor/toolbox/api` and loses `resolveSettings`, `getTool` and the
+  store import.
+- **2026-10-01, Task 7: `toolbox/api.ts` exports** `module`, `useToolboxStore`,
+  `createToolAdapter`, `reselectLabel`, `TOOL_KEY_HOLD_HINT` (both for shell's cheat sheet),
+  `ToolOptionsBar` and `ToolSidebar` (both for shell's `EditorShell`). `contributed.ts`,
+  `toolCommands.ts` (except those two names), `useToolSettings.ts` and `module.ts` stay private.
+  Active-tool readers outside the module, all through `@/editor/toolbox/api`:
+  - `hooks/usePointerPaint` (`toolId`, `getState()`);
+  - `hooks/useToolLifecycle` (`getState()` and the synchronous `subscribe`);
+  - `hooks/useCanvasRenderer` (the `settings` selector for the overlay repaint);
+  - `hooks/toolHost/createToolHost` (`createToolAdapter`);
+  - `shell/ShortcutHelpDialog` (`reselectLabel`, `TOOL_KEY_HOLD_HINT`).
+- **2026-10-01, Task 7: `EDITOR_MODULES` is `[palette, shell, layers, frames, animation, view,
+  toolbox]`.** Toolbox declares no hints. The cheat sheet's Tools rows still come from
+  `TOOL_LIST` in `ShortcutHelpDialog`. Lint passes with `import/no-cycle`: nothing `toolbox/api.ts`
+  reaches imports `EditorPage`, `modules.ts`, `createToolHost` or another module's `api.ts`.
+  `contributed.ts` only type-imports `@/editor/module`.
+- **2026-10-01, Task 7: lint.** No rule changed. After the moves, `src/commands/` holds
+  `CommandsContext`, `hints`, `keymap`, `types` and `useBuilderCommands`, and its override still
+  fits. `npm run lint` reports only the ten pre-existing `only-export-components` warnings.
+- **2026-10-01, Task 7: tests.**
+  - `tests/unit/stores/toolSlice.test.ts` and `settingsSlice.test.ts` became one
+    `tests/unit/editor/toolbox/store.test.ts`, with two describe blocks ("toolbox store: tools",
+    "toolbox store: settings"). It tests the singleton after `resetEditorStores()` instead of
+    `createTestStore()` instances. It has the same eleven cases with the same expected values.
+  - `tests/unit/commands/toolCommands.test.ts` and `contributed.test.ts` moved to
+    `tests/unit/editor/toolbox/`. In `toolCommands.test.ts`, `setup()` resets the stores and
+    returns `{ store: useToolboxStore, commands: createToolCommands() }`; the cases are
+    unchanged. In `contributed.test.ts`, only the store changed (`useToolboxStore`).
+  - `tests/unit/editor/modules.test.ts`: the fake context gains `forTool`, and the "never
+    registers one command id twice" case now reads only `EDITOR_MODULES`, since tool commands
+    are a module's now.
+  - `tests/unit/tools/select.test.ts`: only the store and the `createContributedCommands` import
+    path changed.
+  - `resetEditorStores()` resets `useToolboxStore` and no longer resets `useEditorStore`.
+  - Browser reads and setup that changed store and nothing else (`useEditorStore` →
+    `useToolboxStore` from `@/editor/toolbox/api`), with every expected value unchanged:
+    `editor/layers`, `editor/palette`, `interactions/brush-preview`,
+    `interactions/select-move`, `tools/eraser`, `tools/pencil`, `tools/picker`, `tools/select`,
+    `tools/tool-matrix`, and `components/ToolOptionsBar` (which also imports the bar, the
+    sidebar and the command factories from their new paths, and provides `subscribeToModules`).
+  - `components/CommandButton.browser.test.tsx`:
+    - `renderWith` provides `{ registry, subscribe: subscribeToModules }`.
+    - "aria-pressed follows the command's active state as the store changes" uses a
+      `view.toggleGrid` fixture again, now on `useViewStore`. That restores the module-store
+      fixture that task 6 swapped out. The assertions are unchanged.
+    - New: "pressed and enabled state follow a module store changed from outside the button".
+      It binds `tool.eraser` (`isActive`) and `tool.toggleMirror` (`isEnabled`) to
+      `useToolboxStore`, calls `setTool("eraser")` outside React, and expects
+      `aria-pressed="true"` and a disabled mirror button.
+  - The unit project stays at 328 tests. The browser project goes from 274 to 275.
+- **2026-10-01, Task 7: verification beyond the suites.**
+  - Lint probe: `import "@/editor/toolbox/store"` was added to the top of
+    `view/ViewControls.tsx`, `view/commands.ts`, `shell/EditorTopBar.tsx` and `shell/commands.ts`.
+    Each fails `npx oxlint` with `'@/editor/toolbox/store' import is restricted from being used
+    by a pattern`. Each file was restored from a copy.
+  - Mutation probes, each restored from a copy of `modules.ts`:
+    - With `view` filtered out of `subscribeToModules`, "aria-pressed follows the command's
+      active state as the store changes" fails.
+    - With `toolbox` filtered out, "pressed and enabled state follow a module store changed from
+      outside the button" and `ToolOptionsBar`'s "mirror survives pencil → eraser → pencil" fail.
+  - `grep -rn "useEditorStore" src` lists only the empty store itself and a comment in
+    `stores/useBuilderViewStore.ts` ("Separate from useEditorStore on purpose: that store's
+    viewport …"). That comment has been stale since task 6, but it is builder code (a non-goal),
+    so it was left alone.
+  - A throwaway browser probe ran on this tree and on `e714384` in a scratch worktree (then
+    removed). It reads only the DOM and `session()`. It dumped:
+    - every button (name, `aria-keyshortcuts`, disabled, `aria-pressed`), at open, after paste
+      and at the end;
+    - the tooltips of Pencil ("Pencil P"), Eraser ("Eraser E") and Mirror horizontally
+      ("Mirror horizontally V");
+    - after each of 52 steps: the sidebar's pressed state and the options bar's text and
+      controls (name, pressed, checked, disabled).
+
+    The steps were:
+    - a click on each of the six tools;
+    - a tap of P, E, B, G, O and S;
+    - a hold of each of them from the pencil (down, then up after 900 ms);
+    - P again ×7 (2, 3, 4, 6, 8, 1, 2) and E again ×4;
+    - V on, a mirrored paint, V off, the Mirror button, V on the eraser (no effect), back to
+      the pencil (mirror still on), V off;
+    - a held O pick, then the picker by click on a painted and an empty pixel;
+    - ⌘A (switches to Select & move), ⌘C, Pencil, ⌘V (switches back to Select & move), Esc.
+
+    It also dumped the whole cheat sheet. The two JSON dumps (44,718 bytes each) are
+    byte-identical. The Tools group reads "Pencil P, Cycle brush size P again, Eraser E, Cycle
+    brush size E again, Paint bucket B, Fill similar G, Color picker O, Select & move S, Mirror
+    horizontally V, Use a tool until you let go Hold tool key".
+  - `docs/architecture.md` (lines 269–270, `ToolOptionsBar` and `useToolSettings`) and
+    `docs/conventions.md` §3 (the `useEditorStore.ts` naming example) still use the old names;
+    task 8 rewrites the docs.
+
 ## Builder notes (from task 1, for tasks 2–8)
 
 - **Plugging in a module.**
@@ -728,3 +881,28 @@ None. Decisions 1-5 were settled on 2026-10-01.
   `background-size`) gives the viewport and the chessboard tile without reading a store. The
   popover's labels ("Grid size · 16px") give the grid and chessboard sizes. The sliders' names
   include that label, so match them with `/^Grid size/`.
+- **Command state refresh, decided by the maintainer (before task 7).** `EditorModule` gains `subscribe?(listener): () => void`, which is the module store's `subscribe`. The shell merges every module's `subscribe` into one function and provides it through `CommandsProvider`, next to the registry. `CommandButton` (and any surface that shows a command's pressed or enabled state) reads that state with `useSyncExternalStore(subscribe, () => command.isActive?.() ?? false)`, and the same for `isEnabled`. The builder provides its own store's `subscribe`. `components/common` never imports an editor module. Task 7 builds this first, before `toolSlice` and `settingsSlice` leave `useEditorStore`. When task 8 deletes `useEditorStore`, no `CommandButton` depends on it any more.
+- **What is left after task 7 (for task 8).**
+  - `src/stores/useEditorStore.ts` is an empty store with no importer; delete it.
+    `src/stores/slices/` is already gone, and so are `useEditorCommands` and `createTestStore()`.
+  - `src/components/editor/` holds only `EditorCanvas.tsx`.
+  - A comment in `stores/useBuilderViewStore.ts` still names `useEditorStore`; it is builder code.
+- **Command state (from task 7).** `CommandButton` re-reads `isActive` and `isEnabled` whenever
+  any module's `subscribe` fires, through `subscribeToModules` in `modules.ts`. Give `canvas` a
+  `subscribe` only if one of its commands reads its store. `useCursorStore` changes on every
+  pointer move, and every bound button would re-run its state functions each time. A module
+  whose commands read a store must declare that store's `subscribe`, or its buttons go stale.
+  The `CommandButton` browser tests and the mutation probe above show it. `ZoomControls`' doc
+  comment says `CommandButton` reads `isEnabled` once; that is no longer true (see the report).
+- **Toolbox readers (from task 7).** `usePointerPaint`, `useToolLifecycle`, `useCanvasRenderer`
+  and `createToolHost` import `@/editor/toolbox/api`. When task 8 moves them into `canvas`, these
+  become `canvas → toolbox` edges, so nothing `toolbox/api.ts` reaches may import
+  `@/editor/canvas/api`. Toolbox reaches `CommandButton`, `CommandsContext`, `keymap` and
+  `@/editor/module` (type only), none of which import a module.
+- **`ModuleContext.forTool` (from task 7).** `shell/useModuleContext.ts` binds it to
+  `useToolHost()` from `hooks/toolHost/ToolHostContext`. When task 8 moves `ToolHostContext` into
+  `canvas`, shell will import it from `@/editor/canvas/api`. That is fine only if
+  `canvas/api.ts` reaches neither `EditorPage` nor `modules.ts` (see the task 5 renderer note).
+- **Keymap (from task 7).** `commands/keymap.ts` derives the tool-declared keys from `TOOL_LIST`
+  itself and imports no editor module. Keep it that way: `CommandButton` imports `keymap`, and
+  every module's panels import `CommandButton`.

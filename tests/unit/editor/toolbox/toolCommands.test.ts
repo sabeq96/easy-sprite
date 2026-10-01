@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { createToolCommands, reselectLabel } from "@/commands/toolCommands";
+import { useToolboxStore } from "@/editor/toolbox/store";
+import { createToolCommands, reselectLabel } from "@/editor/toolbox/toolCommands";
 import { getTool } from "@/tools";
-import { createTestStore } from "@test/store";
+import { resetEditorStores } from "@test/store";
 
 function setup() {
-  const store = createTestStore();
-  return { store, commands: createToolCommands(store) };
+  resetEditorStores();
+  return { store: useToolboxStore, commands: createToolCommands() };
 }
 
 describe("tool commands", () => {

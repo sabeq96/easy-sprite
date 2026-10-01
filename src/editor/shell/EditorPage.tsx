@@ -3,15 +3,13 @@ import { useParams } from "react-router";
 import { DocumentProvider, useDocumentSession } from "@/app/DocumentProvider";
 import { NotFoundPage } from "@/components/common/NotFoundPage";
 import { EditorCanvas } from "@/components/editor/EditorCanvas";
-import { ToolOptionsBar } from "@/components/editor/ToolOptionsBar";
-import { ToolSidebar } from "@/components/editor/ToolSidebar";
 import { CommandsProvider } from "@/commands/CommandsContext";
 import type { CommandRegistry } from "@/commands/types";
-import { useEditorCommands } from "@/commands/useEditorCommands";
 import { FramesBar, useActiveFrameGuard } from "@/editor/frames/api";
 import { useActiveLayerGuard } from "@/editor/layers/api";
-import { EDITOR_MODULES } from "@/editor/modules";
+import { EDITOR_MODULES, subscribeToModules } from "@/editor/modules";
 import { useColorHotkeys } from "@/editor/palette/api";
+import { ToolOptionsBar, ToolSidebar } from "@/editor/toolbox/api";
 import { useGridReset } from "@/editor/view/api";
 import { useShortcuts } from "@/hooks/useShortcuts";
 import { createToolHost } from "@/hooks/toolHost/createToolHost";
@@ -59,15 +57,13 @@ function EditorShell() {
   useGridReset();
 
   const ctx = useModuleContext(() => setShowHelp(true));
-  const notYetInModules = useEditorCommands();
-  const commands = mergeCommands([
-    ...EDITOR_MODULES.map((editorModule) => editorModule.commands?.(ctx) ?? {}),
-    notYetInModules,
-  ]);
+  const commands = mergeCommands(
+    EDITOR_MODULES.map((editorModule) => editorModule.commands?.(ctx) ?? {}),
+  );
   useShortcuts(commands);
 
   return (
-    <CommandsProvider value={commands}>
+    <CommandsProvider value={{ registry: commands, subscribe: subscribeToModules }}>
       <div className="grid h-dvh grid-cols-1 grid-rows-[auto_auto_1fr_auto_auto] gap-2 overflow-hidden bg-background p-2">
         <EditorTopBar />
         <ToolOptionsBar />
@@ -85,7 +81,7 @@ function EditorShell() {
   );
 }
 
-/** Every module's commands plus those not yet moved into a module, as one registry. */
+/** Every module's commands as one registry. */
 function mergeCommands(registries: readonly CommandRegistry[]): CommandRegistry {
   return Object.assign({}, ...registries) as CommandRegistry;
 }

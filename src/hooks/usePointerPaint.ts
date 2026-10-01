@@ -6,6 +6,7 @@ import { StrokeRecorder } from "@/core/history";
 import type { CanvasRenderer } from "@/core/renderer";
 import { useFramesStore } from "@/editor/frames/api";
 import { useLayersStore } from "@/editor/layers/api";
+import { useToolboxStore } from "@/editor/toolbox/api";
 import { useViewStore } from "@/editor/view/api";
 import { getTool } from "@/tools";
 import type { ColorSlot, Gesture, PointerModifiers, Surface, ToolHost } from "@/framework/host";
@@ -14,7 +15,6 @@ import { screenToSprite } from "@/core/viewport";
 import { createSurface } from "@/hooks/toolHost/surface";
 import { useToolHost } from "@/hooks/toolHost/ToolHostContext";
 import { useCursorStore } from "@/stores/useCursorStore";
-import { useEditorStore } from "@/stores/useEditorStore";
 
 export const POINTER_PAINT_HINTS: HintSection = {
   group: "Color",
@@ -79,7 +79,7 @@ export function usePointerPaint(
     ): Gesture => ({ point, previous, modifiers, slot: stroke.slot, surface: stroke.surface });
 
     const updateHover = (point: ToolPoint | null) => {
-      const tool = getTool(useEditorStore.getState().toolId);
+      const tool = getTool(useToolboxStore.getState().toolId);
       element.style.cursor = tool.onHover?.(toolHost.forTool(tool.id), point) ?? "";
     };
 
@@ -107,7 +107,7 @@ export function usePointerPaint(
       if (event.button !== 0 && event.button !== 2) return;
       if (event.defaultPrevented) return;
 
-      const tool = getTool(useEditorStore.getState().toolId);
+      const tool = getTool(useToolboxStore.getState().toolId);
       const target = resolveTarget();
       if (!target) return;
 

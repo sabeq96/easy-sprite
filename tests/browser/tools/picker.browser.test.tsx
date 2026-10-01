@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 import { userEvent } from "vitest/browser";
-import { useEditorStore } from "@/stores/useEditorStore";
+import { useToolboxStore } from "@/editor/toolbox/api";
 import { activeColors, chooseTool, openEditor, selectLayer, type Editor } from "@test/editor";
 import { keyDown, keyUp } from "@test/keys";
 import { usePaletteStore } from "@/editor/palette/api";
@@ -123,7 +123,7 @@ test("holding Alt on its own no longer switches tools", async () => {
   await openEditor();
 
   await userEvent.keyboard("{Alt>}");
-  expect(useEditorStore.getState().toolId).toBe("pencil");
+  expect(useToolboxStore.getState().toolId).toBe("pencil");
   await userEvent.keyboard("{/Alt}");
 });
 

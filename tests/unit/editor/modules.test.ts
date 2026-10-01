@@ -1,24 +1,25 @@
 import { describe, expect, it } from "vitest";
-import { createContributedCommands } from "@/commands/contributed";
 import { SHORTCUTS } from "@/commands/keymap";
-import { createToolCommands } from "@/commands/toolCommands";
 import type { CommandRegistry } from "@/commands/types";
 import { History } from "@/core/history";
 import type { ModuleContext } from "@/editor/module";
 import { EDITOR_MODULES } from "@/editor/modules";
 import { createToolHost } from "@/hooks/toolHost/createToolHost";
 import { bindingSignature } from "@/lib/keys";
-import { useEditorStore } from "@/stores/useEditorStore";
 import { makeDocument } from "@test/factories";
 
 function moduleContext(): ModuleContext {
+  const doc = makeDocument();
+  const history = new History();
+  const host = createToolHost({ doc, history });
   return {
-    doc: makeDocument(),
-    history: new History(),
+    doc,
+    history,
     dispatch: () => false,
     navigate: () => {},
     showHelp: () => {},
     save: () => Promise.resolve(),
+    forTool: (toolId) => host.forTool(toolId),
   };
 }
 
@@ -33,11 +34,9 @@ describe("EDITOR_MODULES", () => {
 
   it("never registers one command id twice across modules and tools", () => {
     const ctx = moduleContext();
-    const registries: CommandRegistry[] = [
-      ...EDITOR_MODULES.map((editorModule) => editorModule.commands?.(ctx) ?? {}),
-      createToolCommands(useEditorStore),
-      createContributedCommands(createToolHost({ doc: ctx.doc, history: ctx.history })),
-    ];
+    const registries: CommandRegistry[] = EDITOR_MODULES.map(
+      (editorModule) => editorModule.commands?.(ctx) ?? {},
+    );
 
     expect(duplicates(registries.flatMap((registry) => Object.keys(registry)))).toEqual([]);
   });

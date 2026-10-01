@@ -1,9 +1,9 @@
 import { useEffect, type RefObject } from "react";
 import type { CanvasRenderer } from "@/core/renderer";
+import { useToolboxStore } from "@/editor/toolbox/api";
 import { getTool, type ToolId } from "@/tools";
 import type { DocumentToolHost } from "@/hooks/toolHost/createToolHost";
 import { useToolHost } from "@/hooks/toolHost/ToolHostContext";
-import { useEditorStore } from "@/stores/useEditorStore";
 
 /**
  * Activates the current tool now, and deactivates and activates again on every tool change,
@@ -24,10 +24,10 @@ export function startToolLifecycle(
     };
   };
 
-  let deactivate = activate(useEditorStore.getState().toolId);
+  let deactivate = activate(useToolboxStore.getState().toolId);
   // A synchronous subscription, not a selector + effect: Select All and Paste switch tools
   // and then set the selection in the same tick, so the tool must already be active.
-  const unsubscribe = useEditorStore.subscribe((state, previous) => {
+  const unsubscribe = useToolboxStore.subscribe((state, previous) => {
     if (state.toolId === previous.toolId) return;
     deactivate();
     deactivate = activate(state.toolId);

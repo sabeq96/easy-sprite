@@ -2,8 +2,8 @@ import { expect, test } from "vitest";
 import { userEvent } from "vitest/browser";
 import { spriteToScreen } from "@/core/viewport";
 import { usePaletteStore } from "@/editor/palette/api";
+import { useToolboxStore } from "@/editor/toolbox/api";
 import { useViewStore } from "@/editor/view/api";
-import { useEditorStore } from "@/stores/useEditorStore";
 import { KEYS, chooseTool, openEditor, paintedPixels, type Editor } from "@test/editor";
 
 /**
@@ -51,7 +51,7 @@ test("tool keys typed into a text field never switch tools", async () => {
   await userEvent.click(editor.screen.getByRole("textbox", { name: "Sprite name" }));
   await userEvent.keyboard("bogeps");
 
-  expect(useEditorStore.getState().toolId).toBe("pencil");
+  expect(useToolboxStore.getState().toolId).toBe("pencil");
 });
 
 /** A gesture per writing tool, each of which changes the (empty or filled) canvas. */
@@ -72,9 +72,9 @@ const WRITERS = [
 test.each(WRITERS)("$label: one gesture is one undo step, and redo replays it exactly", async (tool) => {
   const editor = await openEditor();
   // A starting picture every tool can visibly change: a filled 8×8 block top-left.
-  useEditorStore.getState().setSetting("pencil", "size", 8);
+  useToolboxStore.getState().setSetting("pencil", "size", 8);
   editor.click({ x: 3, y: 3 });
-  useEditorStore.getState().setSetting("pencil", "size", 1);
+  useToolboxStore.getState().setSetting("pencil", "size", 1);
   usePaletteStore.getState().setPrimaryColor({ r: 255, g: 0, b: 0, a: 255 });
   const before = paintedPixels();
 
@@ -137,7 +137,7 @@ test("a tool switched mid-stroke does not hijack the stroke already in progress"
 
   // The pencil started the stroke, so the pencil finishes it.
   expect(paintedPixels()).toEqual(["2,2", "3,2", "4,2", "5,2", "6,2"]);
-  expect(useEditorStore.getState().toolId).toBe("eraser");
+  expect(useToolboxStore.getState().toolId).toBe("eraser");
 
   // …and the next stroke is the eraser's.
   editor.drag([{ x: 2, y: 2 }, { x: 4, y: 2 }]);

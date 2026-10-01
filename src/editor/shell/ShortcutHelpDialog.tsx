@@ -1,7 +1,6 @@
 import type { ShortcutRow } from "@/commands/hints";
 import { hintRow } from "@/commands/hints";
 import { commandKeys, reselectKeys } from "@/commands/keymap";
-import { reselectLabel, TOOL_KEY_HOLD_HINT } from "@/commands/toolCommands";
 import type { CommandId, CommandRegistry } from "@/commands/types";
 import {
   ShortcutHelpDialog as CommonShortcutHelpDialog,
@@ -9,6 +8,7 @@ import {
 } from "@/components/common/ShortcutHelpDialog";
 import type { Tool } from "@/framework/tool";
 import { EDITOR_MODULES } from "@/editor/modules";
+import { reselectLabel, TOOL_KEY_HOLD_HINT } from "@/editor/toolbox/api";
 import { TOOL_LIST, type ToolId } from "@/tools";
 
 export interface ShortcutHelpDialogProps {

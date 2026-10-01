@@ -4,8 +4,8 @@ import { CanvasRenderer, type RendererTargets } from "@/core/renderer";
 import { useAnimationStore } from "@/editor/animation/api";
 import { useFramesStore } from "@/editor/frames/api";
 import { EDITOR_MODULES } from "@/editor/modules";
+import { useToolboxStore } from "@/editor/toolbox/api";
 import { useViewStore } from "@/editor/view/api";
-import { useEditorStore } from "@/stores/useEditorStore";
 
 export interface CanvasRefs {
   containerRef: React.RefObject<HTMLDivElement | null>;
@@ -29,7 +29,7 @@ export function useCanvasRenderer(): CanvasRefs {
   const activeFrameId = useFramesStore((state) => state.activeFrameId);
   const isPlaying = useAnimationStore((state) => state.isPlaying);
   const fitToContainer = useViewStore((state) => state.fitToContainer);
-  const toolSettings = useEditorStore((state) => state.settings);
+  const toolSettings = useToolboxStore((state) => state.settings);
 
   // One renderer per document.
   useEffect(() => {

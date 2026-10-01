@@ -3,10 +3,7 @@ import type { CommandHold, CommandRegistry } from "@/commands/types";
 import { TOOL_LIST, type ToolId } from "@/tools";
 import { nextChoice, resolveSettings, type ChoiceSetting } from "@/framework/settings";
 import type { Tool } from "@/framework/tool";
-import type { EditorStore } from "@/stores/slices/types";
-import type { StoreApi, UseBoundStore } from "zustand";
-
-type Store = UseBoundStore<StoreApi<EditorStore>>;
+import { useToolboxStore } from "./store";
 
 /** Every tool key springs back when held; the sheet teaches it once rather than on every row. */
 export const TOOL_KEY_HOLD_HINT: Hint = {
@@ -15,7 +12,7 @@ export const TOOL_KEY_HOLD_HINT: Hint = {
 };
 
 /** One command per tool, generated from the registry so the two cannot drift. */
-export function createToolCommands(store: Store): CommandRegistry {
+export function createToolCommands(): CommandRegistry {
   const registry: CommandRegistry = {};
 
   for (const tool of TOOL_LIST) {
@@ -24,9 +21,9 @@ export function createToolCommands(store: Store): CommandRegistry {
       id: commandId,
       label: tool.label,
       group: "Tools",
-      isActive: () => store.getState().toolId === tool.id,
-      run: () => store.getState().setTool(tool.id),
-      hold: toolKeyHold(store, tool),
+      isActive: () => useToolboxStore.getState().toolId === tool.id,
+      run: () => useToolboxStore.getState().setTool(tool.id),
+      hold: toolKeyHold(tool),
     };
   }
 
@@ -47,27 +44,27 @@ export function reselectLabel(tool: Tool<ToolId>): string | null {
 }
 
 /** Steps the tool's reselect choice to its next value, wrapping. */
-function stepReselect(store: Store, tool: Tool<ToolId>): void {
+function stepReselect(tool: Tool<ToolId>): void {
   const reselect = reselectSetting(tool);
   if (!reselect) return;
   const { key, setting } = reselect;
-  const { settings, setSetting } = store.getState();
+  const { settings, setSetting } = useToolboxStore.getState();
   const current = resolveSettings({ [key]: setting }, settings[tool.id])[key];
   setSetting(tool.id, key, nextChoice(setting, current));
 }
 
 /** Tap a tool key to switch; hold it to borrow the tool until release; press it again to reselect. */
-function toolKeyHold(store: Store, tool: Tool<ToolId>): CommandHold {
+function toolKeyHold(tool: Tool<ToolId>): CommandHold {
   return {
     press: ({ code, at }) => {
-      const state = store.getState();
+      const state = useToolboxStore.getState();
       if (state.toolId === tool.id && !state.heldTool) {
-        stepReselect(store, tool);
+        stepReselect(tool);
         return;
       }
       state.holdToolKey(tool.id, code, at);
     },
-    release: ({ code, at }) => store.getState().releaseToolKey(code, at),
-    cancel: () => store.getState().dropHeldTool(),
+    release: ({ code, at }) => useToolboxStore.getState().releaseToolKey(code, at),
+    cancel: () => useToolboxStore.getState().dropHeldTool(),
   };
 }

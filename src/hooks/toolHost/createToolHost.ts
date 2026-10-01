@@ -7,16 +7,9 @@ import { useFramesStore } from "@/editor/frames/api";
 import { useLayersStore } from "@/editor/layers/api";
 import { createColorsAdapter } from "@/editor/palette/api";
 import { createHistoryAdapter } from "@/editor/shell/api";
-import type {
-  Canvas,
-  DocumentView,
-  OverlayPaint,
-  ToolControl,
-  ToolHost,
-} from "@/framework/host";
-import { resolveSettings } from "@/framework/settings";
-import { getTool, type ToolId } from "@/tools";
-import { useEditorStore } from "@/stores/useEditorStore";
+import { createToolAdapter } from "@/editor/toolbox/api";
+import type { Canvas, DocumentView, OverlayPaint, ToolHost } from "@/framework/host";
+import type { ToolId } from "@/tools";
 
 export interface ToolHostDeps {
   doc: SpriteDocument;
@@ -77,17 +70,6 @@ function createDocumentView(doc: SpriteDocument): DocumentView {
   };
 }
 
-/** The calling tool's own control: its settings are read and written under its id only. */
-function createToolControl(toolId: ToolId): ToolControl {
-  const declared = getTool(toolId).settings;
-  return {
-    // setTool notifies subscribers synchronously, so the tool is active when this returns.
-    activate: () => useEditorStore.getState().setTool(toolId),
-    settings: () => resolveSettings(declared, useEditorStore.getState().settings[toolId]),
-    set: (key, value) => useEditorStore.getState().setSetting(toolId, String(key), value),
-  };
-}
-
 export function createToolHost({ doc, history }: ToolHostDeps): DocumentToolHost {
   let renderer: CanvasRenderer | null = null;
   // Remembered so an overlay set before the renderer exists still shows once it does.
@@ -123,7 +105,7 @@ export function createToolHost({ doc, history }: ToolHostDeps): DocumentToolHost
     forTool(toolId) {
       let view = views.get(toolId);
       if (!view) {
-        view = { ...shared, tool: createToolControl(toolId) };
+        view = { ...shared, tool: createToolAdapter(toolId) };
         views.set(toolId, view);
       }
       return view;

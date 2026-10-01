@@ -1,16 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { createContributedCommands } from "@/commands/contributed";
 import type { CommandId, CommandRegistry } from "@/commands/types";
 import { getPixel, setPixel } from "@/core/buffer";
 import type { SpriteDocument } from "@/core/document";
 import { History, StrokeRecorder, type Command } from "@/core/history";
 import { useFramesStore } from "@/editor/frames/api";
 import { useLayersStore } from "@/editor/layers/api";
+import { useToolboxStore } from "@/editor/toolbox/api";
+import { createContributedCommands } from "@/editor/toolbox/contributed";
 import type { PointerModifiers } from "@/framework/host";
 import type { ToolPoint } from "@/framework/tool";
 import { createToolHost, type DocumentToolHost } from "@/hooks/toolHost/createToolHost";
 import { startToolLifecycle } from "@/hooks/useToolLifecycle";
-import { useEditorStore } from "@/stores/useEditorStore";
 import { selectedRect, selectTool } from "@/tools/select/tool";
 import { makeDocument, makeGesture, NO_MODIFIERS, RED } from "@test/factories";
 import { resetEditorStores } from "@test/store";
@@ -27,7 +27,7 @@ beforeEach(() => {
   doc = makeDocument();
   history = new History();
   resetEditorStores();
-  useEditorStore.setState({ toolId: "select" });
+  useToolboxStore.setState({ toolId: "select" });
   useFramesStore.setState({ activeFrameId: "f1" });
   useLayersStore.setState({ activeLayerId: "l1" });
   host = createToolHost({ doc, history });
@@ -37,7 +37,7 @@ beforeEach(() => {
 
 afterEach(() => stop());
 
-const deactivate = () => useEditorStore.getState().setTool("pencil");
+const deactivate = () => useToolboxStore.getState().setTool("pencil");
 const run = (id: CommandId) => commands[id]!.run();
 const isEnabled = (id: CommandId) => commands[id]!.isEnabled!();
 

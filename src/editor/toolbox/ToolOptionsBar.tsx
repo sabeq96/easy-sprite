@@ -14,9 +14,9 @@ import type {
   SwitchSetting,
   ToggleSetting,
 } from "@/framework/settings";
-import { useToolSettings } from "@/hooks/useToolSettings";
 import { getTool } from "@/tools";
-import { useEditorStore } from "@/stores/useEditorStore";
+import { useToolboxStore } from "./store";
+import { useToolSettings } from "./useToolSettings";
 
 type Entry = readonly [key: string, setting: Setting];
 
@@ -105,7 +105,7 @@ function SwitchControl({ setting, value, onChange }: ControlProps<SwitchSetting,
 
 /** The active tool's settings, each rendered from its kind: the bar knows no setting by name. */
 export function ToolOptionsBar() {
-  const toolId = useEditorStore((state) => state.toolId);
+  const toolId = useToolboxStore((state) => state.toolId);
   const tool = getTool(toolId);
   const { values, set } = useToolSettings(tool);
   const rows = rowsOf(Object.entries(tool.settings ?? {}));

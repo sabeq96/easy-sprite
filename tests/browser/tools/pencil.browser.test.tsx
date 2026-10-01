@@ -5,8 +5,8 @@ import { createPalette } from "@/db/repositories/palettes";
 import { brushBounds } from "@/core/pixels";
 import type { Point } from "@/core/viewport";
 import { usePaletteStore } from "@/editor/palette/api";
+import { useToolboxStore } from "@/editor/toolbox/api";
 import { IS_APPLE } from "@/lib/keys";
-import { useEditorStore } from "@/stores/useEditorStore";
 import {
   KEYS,
   keys,
@@ -245,7 +245,7 @@ test("pressing P on the pencil cycles the brush size shown in the options bar", 
       .element(editor.screen.getByRole("button", { name: `${size} pixels`, exact: true }))
       .toHaveAttribute("aria-pressed", "true");
   }
-  expect(useEditorStore.getState().heldTool).toBeNull();
+  expect(useToolboxStore.getState().heldTool).toBeNull();
 });
 
 test("a held P repeating on the pencil cycles only once", async () => {
@@ -254,7 +254,7 @@ test("a held P repeating on the pencil cycles only once", async () => {
   keyDown("p", { code: "KeyP", at: 0 });
   keyDown("p", { code: "KeyP", at: 500, repeat: true });
 
-  expect(useEditorStore.getState().settings.pencil?.size).toBe(2);
+  expect(useToolboxStore.getState().settings.pencil?.size).toBe(2);
 });
 
 test("V toggles Mirror horizontally on the pencil, like the options-bar button", async () => {
@@ -274,9 +274,9 @@ test("V does nothing on a tool without mirroring, and the command-key V never to
   await openEditor();
 
   keyDown("v", { code: "KeyV", at: 0, ctrlKey: !IS_APPLE, metaKey: IS_APPLE });
-  expect(useEditorStore.getState().settings).toEqual({});
+  expect(useToolboxStore.getState().settings).toEqual({});
 
-  useEditorStore.getState().setTool("eraser");
+  useToolboxStore.getState().setTool("eraser");
   pressKey("v", "KeyV", 100, 50);
-  expect(useEditorStore.getState().settings).toEqual({});
+  expect(useToolboxStore.getState().settings).toEqual({});
 });
