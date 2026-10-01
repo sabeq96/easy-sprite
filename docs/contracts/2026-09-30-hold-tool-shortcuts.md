@@ -23,8 +23,8 @@ coming from a tool key, the design gets simpler:
 
 The same PR makes the `docs/shortcuts.md` rows for `P` and `V` true, since neither is wired up today:
 
-- `P` pressed while the pencil is already active cycles the brush size 1→2→3→4. A size above 4
-  (6 or 8, picked in the options bar) wraps to 1.
+- `P` pressed while the pencil is already active cycles the brush size 1→2→3→4→6→8→1 (Decision 14).
+  `E` does the same for the eraser.
 - `V` pressed while the pencil is active toggles "Mirror horizontally" (both sides of the vertical
   axis). It's the same option and the same effect as the options-bar button today. `V` is a plain
   shortcut and does not spring back.
@@ -285,10 +285,10 @@ Command: `npm run lint && npm run build && npm run test:coverage`
 - [x] 5. Holding `Alt` does nothing on its own, and holding `O` borrows the picker.
 - [x] 6. `E` in a text field, `⌘/Ctrl+E`, `⌘/Ctrl+V` (paste still works), `Shift+E` and `Alt+E` never switch tools.
 - [x] 7. `useHeldToolKeys`, `previousToolId`, `pushTemporaryTool`, `popTemporaryTool`, `holdKey`, `HELD_TOOL_KEYS`, `HeldModifier` and `toolKeys` no longer exist (`grep` is empty).
-- [x] 8. On an active pencil with no hold, each `P` press cycles 1→2→3→4→1, and a brush of 6 or 8 goes to 1.
+- [x] 8. On an active pencil or eraser with no hold, each `P` / `E` press cycles 1→2→3→4→6→8→1.
 - [x] 9. `V` on the pencil toggles Mirror horizontally, exactly like the options-bar button. `V` on any other tool does nothing.
 - [x] 10. A held `S` released mid-drag leaves the pixels where they started and no new undo entry.
-- [x] 11. The `?` sheet's Tools section has the "Cycle brush size · P again", "Mirror horizontally · V" and "Use a tool until you let go · Hold tool key" rows, and no "Hold ⌥".
+- [x] 11. The `?` sheet's Tools section has the "Cycle brush size · P again", "Cycle brush size · E again", "Mirror horizontally · V" and "Use a tool until you let go · Hold tool key" rows, and no "Hold ⌥".
 - [x] 12. `docs/shortcuts.md` matches all of the above.
 - [x] 13. Every test listed above exists, and the command above passes.
 

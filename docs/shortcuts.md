@@ -12,9 +12,9 @@ go, then you are back on the tool you had.
 
 | Key | Command | Notes |
 | --- | --- | --- |
-| `P` | Pencil | press again (while the pencil is active) to cycle brush size 1→2→3→4; 6 and 8 go back to 1 |
+| `P` | Pencil | press again (while the pencil is active) to cycle brush size 1→2→3→4→6→8→1 |
 | `V` | Mirror horizontally | pencil only: toggles drawing on both sides of the vertical axis, like the options-bar button. Doesn't spring back when held |
-| `E` | Eraser | |
+| `E` | Eraser | press again (while the eraser is active) to cycle brush size, as with `P` |
 | `B` | Paint bucket | contiguous fill |
 | `G` | Fill similar | replaces matching colour across the whole layer |
 | `O` | Color picker | samples the composite; hold `O` to pick a colour and go back to your tool |
