@@ -4,6 +4,7 @@ import babel from "@rolldown/plugin-babel";
 import tailwindcss from "@tailwindcss/vite";
 import { playwright } from "@vitest/browser-playwright";
 import { defineConfig } from "vitest/config";
+import { parkPointer } from "./tests/support/commands";
 
 const alias = {
   "@": path.resolve(import.meta.dirname, "./src"),
@@ -43,6 +44,7 @@ export default defineConfig({
           browser: {
             enabled: true,
             provider: playwright(),
+            commands: { parkPointer },
             headless: true,
             instances: [{ browser: "chromium" }],
           },
