@@ -1,9 +1,9 @@
 import { useEffect, type RefObject } from "react";
 import { useDocumentSession } from "@/app/DocumentProvider";
-import type { ToolId } from "@/core/tools";
+import type { ToolId } from "@/tools";
 import type { CanvasRenderer } from "@/core/renderer";
-import { getTool } from "@/core/tools";
-import type { ToolSession } from "@/core/tools/types";
+import { getTool } from "@/tools";
+import type { ToolSession } from "@/framework/tool";
 import { useEditorStore } from "@/stores/useEditorStore";
 
 /** Activates the current tool, and deactivates it on every tool change and on unmount. */

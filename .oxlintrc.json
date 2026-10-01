@@ -32,9 +32,67 @@
                   "@/stores/*",
                   "@/db/*",
                   "@/app/*",
-                  "@/services/*"
+                  "@/services/*",
+                  "@/framework/**",
+                  "@/tools",
+                  "@/tools/**"
                 ],
-                "message": "src/core/** is framework-free: no React, no Dexie, no UI, no DB imports."
+                "message": "src/core/** is framework-free: no React, no Dexie, no UI, no DB, and no framework/ or tools/ imports."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/framework/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@/components/**", "@/hooks/**", "@/app/**", "react", "react-dom"],
+                "allowTypeImports": true,
+                "message": "src/framework/** is the host-tool contract: types and tiny pure helpers, no components, hooks, app or React runtime. Type-only imports are fine."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/tools/*/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "@/db/**",
+                  "@/services/**",
+                  "@/export/**",
+                  "dexie",
+                  "dexie-react-hooks",
+                  "@/stores/**",
+                  "@/app/**",
+                  "@/hooks/**"
+                ],
+                "message": "A tool reaches the editor only through src/framework/: no host state, data or side effects."
+              },
+              {
+                "group": ["@/commands/**"],
+                "allowTypeImports": true,
+                "message": "A tool may name commands by type only; it never runs host commands directly."
+              },
+              {
+                "group": ["@/tools", "@/tools/**", "!@/tools/shared/*"],
+                "message": "A tool folder never imports another tool or the registry; shared code lives in src/tools/shared/."
+              },
+              {
+                "group": ["../**"],
+                "message": "A tool folder is self-contained: import within it with ./, and anything else through @/."
               }
             ]
           }

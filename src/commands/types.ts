@@ -1,5 +1,5 @@
 import type { AppCommandId, CommandGroup } from "@/constants/commands";
-import type { ToolId } from "@/core/tools";
+import type { ToolId } from "@/tools";
 
 export type ToolCommandId = `tool.${ToolId}`;
 export type CommandId = AppCommandId | ToolCommandId;

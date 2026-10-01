@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { getPixel, setPixel } from "@/core/buffer";
-import { eraserTool } from "@/core/tools/eraser";
-import { bucketTool, fillSimilarTool } from "@/core/tools/fill";
-import { pencilTool } from "@/core/tools/pencil";
-import { pickerTool } from "@/core/tools/picker";
+import { eraserTool } from "@/tools/eraser/tool";
+import { bucketTool, fillSimilarTool } from "@/tools/fill/tool";
+import { pencilTool } from "@/tools/pencil/tool";
+import { pickerTool } from "@/tools/picker/tool";
 import { BLUE, makeDocument, makeToolContext, RED } from "@test/factories";
 
 const NO_MODIFIERS = { button: 0, shift: false, alt: false, ctrl: false };

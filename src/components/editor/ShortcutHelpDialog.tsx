@@ -7,7 +7,7 @@ import {
   ShortcutHelpDialog as CommonShortcutHelpDialog,
   type ShortcutSection,
 } from "@/components/common/ShortcutHelpDialog";
-import { TOOL_LIST } from "@/core/tools";
+import { TOOL_LIST } from "@/tools";
 import { CANVAS_VIEW_HINTS } from "@/hooks/useCanvasViewControls";
 import { COLOR_HOTKEY_HINTS } from "@/hooks/useColorHotkeys";
 import { POINTER_PAINT_HINTS } from "@/hooks/usePointerPaint";

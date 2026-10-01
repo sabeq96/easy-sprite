@@ -1,7 +1,8 @@
+import { SquareDashed } from "lucide-react";
 import type { SpriteDocument } from "@/core/document";
-import { selectionPainter, type SelectionView } from "@/core/overlays/selectionOverlay";
+import { selectionPainter, type SelectionView } from "./overlay";
 import { liftRegion, stampRegion, type LiftedRegion } from "@/core/selection";
-import { defineTool, type ToolPoint, type ToolSession } from "@/core/tools/types";
+import { defineTool, type ToolPoint, type ToolSession } from "@/framework/tool";
 import {
   rectClamp,
   rectContains,
@@ -107,6 +108,7 @@ function abandonDrag(doc: SpriteDocument): void {
 export const selectTool = defineTool({
   id: "select",
   label: "Select & move",
+  icon: SquareDashed,
   group: "select",
   shortcut: { key: "s" },
   // `mod`: the move gesture reads `modifiers.ctrl`, which is Ctrl or ⌘.

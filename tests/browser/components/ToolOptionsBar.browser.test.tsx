@@ -4,7 +4,7 @@ import { ToolOptionsBar } from "@/components/editor/ToolOptionsBar";
 import { CommandsProvider } from "@/commands/CommandsContext";
 import { createToolCommands } from "@/commands/toolCommands";
 import { ToolSidebar } from "@/components/editor/ToolSidebar";
-import { TOOL_LIST, TOOLS } from "@/core/tools";
+import { TOOL_LIST, TOOLS } from "@/tools";
 import { useEditorStore } from "@/stores/useEditorStore";
 import { render } from "@test/render";
 

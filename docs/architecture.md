@@ -53,8 +53,12 @@ src/
                 from tool and app keys, and the gesture hints shown in tooltips
   stores/       zustand UI state: the editor store (built from slices/) and the builder's view store
   core/         the imperative core, zero React: SpriteDocument, cels, pixels, history, renderer,
-                viewport, overlays, command factories (commands/), and tools/ — one file per tool
-                plus index.ts, the one registry every tool list derives from
+                viewport, overlays, command factories (commands/). Knows nothing about tools
+  framework/    the host↔tool contract: types and tiny pure helpers (tool.ts: Tool, ToolContext,
+                ToolSession, defineTool) that both tools and the host depend on
+  tools/        one folder per tool (<tool>/tool.ts, plus anything else it needs: icon, overlay,
+                JSX), shared/ for code several tools use, and index.ts, the one registry every
+                tool list derives from. Adding a tool is a folder plus one line in TOOL_LIST
   db/           Dexie schema and instance, repositories/ (the only code that queries tables),
                 typed errors, seed data, whole-database backup
   services/     where db/ and core/ meet: open/save a document, autosave, thumbnails, PNG import
@@ -197,16 +201,24 @@ says whether `.oxlintrc.json` enforces it, so the table never claims more than t
 constants/  ──►  constants; types from lib                                  lint
 lib/        ──►  lib, constants, types                                      lint
 types/      ──►  types from db/schema                                       lint (types only)
-core/       ──►  lib, constants, types; types from commands/hints           lint (no React/DB/UI)
+core/       ──►  lib, constants, types                                      lint (no React/DB/UI,
+                                                                            no framework/tools)
+framework/  ──►  core, lib, constants, types; types from commands/hints
+                 and lucide-react                                           lint (no React runtime/UI)
+tools/<t>/  ──►  framework, tools/shared, own folder (./), core, lib,
+                 constants, lucide-react; types from commands               lint (no host state/data,
+                                                                            no other tool)
 db/         ──►  lib, constants, types                                      lint (no core/UI)
 export/     ──►  core, lib, constants, types; types from db/schema          lint (no React/UI)
 services/   ──►  db, core, export, lib, constants, types                    lint (no React/UI)
-stores/     ──►  core, lib, constants, types                                lint (no React/UI)
-commands/   ──►  core, stores, hooks, app (document context), lib, constants  lint (no db/UI)
-hooks/      ──►  services, export, db/repositories, stores, core, commands,
-                 app (document context), lib, constants                     lint (no raw db, no components)
-components/ ──►  hooks, stores, commands, core, app (document context),
-                 lib, constants, types; types from db/schema                lint (no db/services/export)
+stores/     ──►  core, lib, constants, types; types from framework, tools   lint (no React/UI)
+commands/   ──►  core, framework, tools, stores, hooks, app (document context),
+                 lib, constants                                             lint (no db/UI)
+hooks/      ──►  services, export, db/repositories, stores, core, framework, tools,
+                 commands, app (document context), lib, constants           lint (no raw db, no components)
+components/ ──►  hooks, stores, commands, core, framework, tools,
+                 app (document context), lib, constants, types;
+                 types from db/schema                                       lint (no db/services/export)
 app/        ──►  everything
 ```
 
@@ -216,7 +228,7 @@ core testable with no DOM; hooks being the only door to `db/`, `services/` and `
 keeps loading, error reporting and toasts in one place per domain (§10).
 
 Two edges are known compromises: hooks and commands read the open document through
-`app/DocumentProvider`, and `core/tools` borrows the hint *type* from `commands/`. Both are
+`app/DocumentProvider`, and `framework/` borrows the hint *type* from `commands/`. Both are
 type- or context-only; moving the document context below `app/` would remove the first.
 
 ## 10. Data access

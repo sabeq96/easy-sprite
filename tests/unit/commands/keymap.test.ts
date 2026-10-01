@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { commandKeys, reselectKeys, SHORTCUTS } from "@/commands/keymap";
 import type { CommandId } from "@/commands/types";
-import { getTool, TOOL_LIST } from "@/core/tools";
+import { getTool, TOOL_LIST } from "@/tools";
 import { bindingSignature } from "@/lib/keys";
 
 describe("keymap", () => {

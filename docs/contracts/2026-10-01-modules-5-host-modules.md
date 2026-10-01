@@ -205,6 +205,7 @@ Command per PR: `npm run lint && npm run build && npm run test:coverage`
 
 ## Open risks
 
+- **oxlint globs (found in stage 1):** a `*` in a `no-restricted-imports` group does not cross `/`. Write every pattern in this contract with `/**` (`@/tools/**`, `@/editor/*/**`, `../**`), keep `!` negations, and prove each rule with a lint probe.
 - Cross-module reads in render paths (layers reading the active frame, for example) must still
   use selector hooks from `api.ts`, not `getState()` in render. The React Compiler trap in
   conventions §6c still applies.

@@ -73,7 +73,7 @@ Where things live:
 - **Tool keys and gestures live on the tool.** Each tool declares `shortcut` (the key that activates
   it), an optional `reselectCommand` (run when its key is pressed while it is already active, e.g.
   the pencil's brush-size cycle) and `hints` (its non-obvious gestures, e.g. `⌘ + Drag` to
-  duplicate a selection) — see `src/core/tools/*.ts`.
+  duplicate a selection) — see `src/tools/<tool>/tool.ts`.
 - **Tap vs hold.** Tool commands carry a `hold` part (`CommandDefinition.hold`). `useShortcuts`
   calls its `press` instead of `run()`, then `release` on that key's keyup (`cancel` on window
   blur). The tap/hold decision (`TOOL_KEY_HOLD_MS`) lives in the tool slice.

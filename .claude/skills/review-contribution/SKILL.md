@@ -65,8 +65,9 @@ User sprites live only in the user's IndexedDB. A mistake here destroys someone'
 - React Compiler and Base UI traps: `docs/conventions.md` §6c and §6d. Mutating document arrays in
   place, or `<TooltipTrigger render={<Button onClick/>}/>` instead of `<TooltipButton>`, are
   known silent bugs.
-- New tools go through the registry in `src/core/tools/index.ts`; new keys through the command
-  registry (`src/commands/`) and must not conflict — see `docs/shortcuts.md`.
+- A new tool is a folder `src/tools/<tool>/` (entry `tool.ts`, declaring its own `icon`) plus one
+  line in `TOOL_LIST` in `src/tools/index.ts`; new keys through the command registry
+  (`src/commands/`) and must not conflict — see `docs/shortcuts.md`.
 
 ### C. Tests — usually blockers
 - Behavior changes come with tests. Location rule (conventions §11): under `tests/`, mirroring

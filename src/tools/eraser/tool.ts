@@ -1,6 +1,7 @@
+import { Eraser } from "lucide-react";
 import { TRANSPARENT } from "@/lib/color";
-import { commitWrite, stamp, stampLine } from "@/core/tools/paint";
-import { defineTool } from "@/core/tools/types";
+import { commitWrite, stamp, stampLine } from "@/tools/shared/paint";
+import { defineTool } from "@/framework/tool";
 
 // `replace: true` — erasing must zero the pixel, not blend transparency over it.
 const eraseOptions = (size: number) => ({ color: TRANSPARENT, size, replace: true });
@@ -8,6 +9,7 @@ const eraseOptions = (size: number) => ({ color: TRANSPARENT, size, replace: tru
 export const eraserTool = defineTool({
   id: "eraser",
   label: "Eraser",
+  icon: Eraser,
   group: "draw",
   shortcut: { key: "e" },
   reselectCommand: "tool.cycleBrushSize",

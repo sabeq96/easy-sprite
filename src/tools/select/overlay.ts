@@ -1,6 +1,6 @@
 import type { OverlayPainter } from "@/core/renderer";
 import type { LiftedRegion } from "@/core/selection";
-import type { ToolPoint } from "@/core/tools/types";
+import type { ToolPoint } from "@/framework/tool";
 import type { Rect } from "@/lib/rect";
 
 // Same flat-fill language as the brush preview (brushCursor.ts), in blue.

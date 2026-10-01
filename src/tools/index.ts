@@ -1,13 +1,13 @@
-import { bucketTool, fillSimilarTool } from "@/core/tools/fill";
-import { eraserTool } from "@/core/tools/eraser";
-import { pencilTool } from "@/core/tools/pencil";
-import { pickerTool } from "@/core/tools/picker";
-import { selectTool } from "@/core/tools/select";
-import type { Tool } from "@/core/tools/types";
+import { bucketTool, fillSimilarTool } from "@/tools/fill/tool";
+import { eraserTool } from "@/tools/eraser/tool";
+import { pencilTool } from "@/tools/pencil/tool";
+import { pickerTool } from "@/tools/picker/tool";
+import { selectTool } from "@/tools/select/tool";
+import type { Tool } from "@/framework/tool";
 
 /**
  * The only list of tools, in sidebar order. Ids, tool commands, their keys and the sidebar
- * sections are all derived from it, so adding a tool means adding it here (plus its icon).
+ * sections are all derived from it, so adding a tool means its folder plus one line here.
  */
 export const TOOL_LIST = [
   pencilTool,

@@ -1,7 +1,7 @@
 import type { CommandId, ToolCommandId } from "@/commands/types";
 import { APP_SHORTCUTS } from "@/constants/shortcuts";
-import { TOOL_LIST, type ToolId } from "@/core/tools";
-import type { Tool } from "@/core/tools/types";
+import { TOOL_LIST, type ToolId } from "@/tools";
+import type { Tool } from "@/framework/tool";
 import { formatBinding, type KeyBinding } from "@/lib/keys";
 
 const TOOL_SHORTCUTS = Object.fromEntries(

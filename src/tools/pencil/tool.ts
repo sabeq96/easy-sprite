@@ -1,6 +1,7 @@
-import type { StampOptions } from "@/core/tools/paint";
-import { commitWrite, stamp, stampLine } from "@/core/tools/paint";
-import { defineTool, type ToolContext } from "@/core/tools/types";
+import { Brush } from "lucide-react";
+import type { StampOptions } from "@/tools/shared/paint";
+import { commitWrite, stamp, stampLine } from "@/tools/shared/paint";
+import { defineTool, type ToolContext } from "@/framework/tool";
 
 function stampOptions(ctx: ToolContext): StampOptions {
   return {
@@ -14,6 +15,7 @@ function stampOptions(ctx: ToolContext): StampOptions {
 export const pencilTool = defineTool({
   id: "pencil",
   label: "Pencil",
+  icon: Brush,
   group: "draw",
   shortcut: { key: "p" },
   reselectCommand: "tool.cycleBrushSize",

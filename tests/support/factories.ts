@@ -1,6 +1,6 @@
 import { SpriteDocument, type DocumentInit } from "@/core/document";
 import { StrokeRecorder } from "@/core/history";
-import type { ToolContext } from "@/core/tools/types";
+import type { ToolContext } from "@/framework/tool";
 import type { RGBA } from "@/lib/color";
 
 /** A 4×4, one-layer, one-frame document — the default fixture for core tests. */

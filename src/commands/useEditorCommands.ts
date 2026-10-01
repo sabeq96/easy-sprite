@@ -25,7 +25,7 @@ import {
   pasteCommand,
   type EditTarget,
 } from "@/core/commands/selection";
-import { selection } from "@/core/tools/select";
+import { selection } from "@/tools/select/tool";
 import { useCommandDispatch } from "@/hooks/useCommandDispatch";
 import { useEditorStore } from "@/stores/useEditorStore";
 

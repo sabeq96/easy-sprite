@@ -36,6 +36,8 @@ The browser tests run in Chromium via Playwright. Install it once with
   layering rules are enforced by `npm run lint`, so the linter will tell you when a file imports
   from the wrong place.
 - [docs/shortcuts.md](docs/shortcuts.md): the keymap. Update it if you add or change a shortcut.
+- **Adding a tool** is a folder plus one line: put it in `src/tools/<tool>/tool.ts` (with its
+  icon), then add it to `TOOL_LIST` in `src/tools/index.ts`.
 
 ## Before you open a PR
 

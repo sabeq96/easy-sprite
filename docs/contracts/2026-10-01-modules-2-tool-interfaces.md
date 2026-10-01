@@ -279,6 +279,7 @@ Command: `npm run lint && npm run build && npm run test:coverage`
 
 ## Open risks
 
+- **oxlint globs (found in stage 1):** a `*` in a `no-restricted-imports` group does not cross `/`. Write every pattern in this contract with `/**` (`@/tools/**`, `@/editor/*/**`, `../**`), keep `!` negations, and prove each rule with a lint probe.
 - Derived `ContributedCommandId` through `const` generics in a heterogeneous `TOOL_LIST`
   tuple. Fallback: each tool exports its ids as a `const` tuple from its own folder. Log it.
 - `history.edit` for Paste must push exactly one entry, with the label "Paste", and keep

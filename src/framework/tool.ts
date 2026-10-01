@@ -3,14 +3,13 @@ import type { AppCommandId } from "@/constants/commands";
 import type { SpriteDocument } from "@/core/document";
 import type { History, StrokeRecorder } from "@/core/history";
 import type { OverlayPainter } from "@/core/renderer";
+import type { Point } from "@/core/viewport";
 import type { RGBA } from "@/lib/color";
 import type { KeyBinding } from "@/lib/keys";
+import type { LucideIcon } from "lucide-react";
 
 /** Integer sprite-space pixel. */
-export interface ToolPoint {
-  x: number;
-  y: number;
-}
+export type ToolPoint = Point;
 
 export interface PointerModifiers {
   /** 0 = primary colour, 2 = secondary colour. */
@@ -64,6 +63,8 @@ export type ToolGroup = "draw" | "color" | "select";
 export interface Tool<Id extends string = string> {
   readonly id: Id;
   readonly label: string;
+  /** Drawn on the tool's sidebar button. */
+  readonly icon: LucideIcon;
   readonly group: ToolGroup;
   /** The binding that activates the tool; merged into the keymap as `tool.<id>`. */
   readonly shortcut?: KeyBinding;

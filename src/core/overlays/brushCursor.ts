@@ -1,10 +1,10 @@
 import { brushBounds } from "@/core/pixels";
 import type { OverlayPainter } from "@/core/renderer";
-import type { ToolPoint } from "@/core/tools/types";
+import type { Point } from "@/core/viewport";
 
 /** Highlights the pixels the brush would cover, including mirrored copies. */
 export function brushCursorPainter(
-  getPoint: () => ToolPoint | null,
+  getPoint: () => Point | null,
   getSize: () => number,
   sprite: { width: number; height: number },
   mirror: { horizontal: boolean; vertical: boolean },
@@ -17,7 +17,7 @@ export function brushCursorPainter(
       return;
     }
 
-    const points: ToolPoint[] = [point];
+    const points: Point[] = [point];
     if (mirror.horizontal) points.push({ x: sprite.width - 1 - point.x, y: point.y });
     if (mirror.vertical) points.push({ x: point.x, y: sprite.height - 1 - point.y });
     if (mirror.horizontal && mirror.vertical) {

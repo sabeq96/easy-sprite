@@ -1,6 +1,7 @@
+import { Pipette } from "lucide-react";
 import { getPixel } from "@/core/buffer";
 import { compositeFrame } from "@/core/composite";
-import { defineTool, type ToolContext, type ToolPoint } from "@/core/tools/types";
+import { defineTool, type ToolContext, type ToolPoint } from "@/framework/tool";
 
 function sample(ctx: ToolContext, point: ToolPoint): void {
   const { doc } = ctx;
@@ -21,6 +22,7 @@ function sample(ctx: ToolContext, point: ToolPoint): void {
 export const pickerTool = defineTool({
   id: "picker",
   label: "Color picker",
+  icon: Pipette,
   group: "color",
   shortcut: { key: "o" },
   options: ["pickSource"],
