@@ -2,11 +2,13 @@ import path from "node:path";
 import react, { reactCompilerPreset } from "@vitejs/plugin-react";
 import babel from "@rolldown/plugin-babel";
 import tailwindcss from "@tailwindcss/vite";
+import { playwright } from "@vitest/browser-playwright";
 import { defineConfig } from "vitest/config";
+import { parkPointer } from "./tests/support/commands";
 
 const alias = {
-  "@": path.resolve(__dirname, "./src"),
-  "@test": path.resolve(__dirname, "./tests/support"),
+  "@": path.resolve(import.meta.dirname, "./src"),
+  "@test": path.resolve(import.meta.dirname, "./tests/support"),
 };
 
 export default defineConfig({
@@ -41,7 +43,8 @@ export default defineConfig({
           include: ["tests/browser/**/*.browser.test.tsx"],
           browser: {
             enabled: true,
-            provider: "playwright",
+            provider: playwright(),
+            commands: { parkPointer },
             headless: true,
             instances: [{ browser: "chromium" }],
           },

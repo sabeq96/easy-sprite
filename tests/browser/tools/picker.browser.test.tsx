@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { userEvent } from "@vitest/browser/context";
+import { userEvent } from "vitest/browser";
 import { useEditorStore } from "@/stores/useEditorStore";
 import { activeColors, chooseTool, openEditor, selectLayer, type Editor } from "@test/editor";
 import { keyDown, keyUp } from "@test/keys";

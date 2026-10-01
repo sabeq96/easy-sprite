@@ -14,7 +14,7 @@ import { render } from "@test/render";
 
 async function openEditor() {
   const sprite = await createSprite({ width: 16, height: 16 });
-  const screen = render(<AppRoutes />, { route: `/sprites/${sprite.id}` });
+  const screen = await render(<AppRoutes />, { route: `/sprites/${sprite.id}` });
   await expect.element(screen.getByRole("application", { name: "Sprite canvas" })).toBeVisible();
   await expect.poll(() => useEditorStore.getState().containerSize.width > 0).toBe(true);
   return screen;
@@ -152,7 +152,7 @@ async function openComposerWithRow() {
       { id: "b", spriteId: villain.id, row: 0 },
     ],
   });
-  render(<AppRoutes />, { route: `/spritesheets/${sheet.id}` });
+  await render(<AppRoutes />, { route: `/spritesheets/${sheet.id}` });
   await expect
     .poll(() => document.querySelectorAll('[data-testid="builder-row"] [data-block-id]').length)
     .toBe(2);

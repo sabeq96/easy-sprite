@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { userEvent } from "@vitest/browser/context";
+import { userEvent } from "vitest/browser";
 import { AppRoutes } from "@/app/routes";
 import { createSprite, listSprites } from "@/db/repositories/sprites";
 import { createSpritesheet, listSpritesheets } from "@/db/repositories/spritesheets";
@@ -8,7 +8,7 @@ import { useEditorStore } from "@/stores/useEditorStore";
 import { render } from "@test/render";
 
 test("creating a sprite from the library opens it in the editor, and it lists on the way back", async () => {
-  const screen = render(<AppRoutes />, { route: "/sprites" });
+  const screen = await render(<AppRoutes />, { route: "/sprites" });
 
   // The empty state and the toolbar both offer a "New sprite" button. Exact, because the
   // toolbar also has a "New spritesheet" button whose name contains "New sprite" as a substring.
@@ -25,7 +25,7 @@ test("creating a sprite from the library opens it in the editor, and it lists on
 });
 
 test("a new sprite is sized in tiles, and opens with a one-tile grid and a 1px chessboard", async () => {
-  const screen = render(<AppRoutes />, { route: "/sprites" });
+  const screen = await render(<AppRoutes />, { route: "/sprites" });
 
   await userEvent.click(screen.getByRole("button", { name: "New sprite", exact: true }).first());
   await userEvent.click(screen.getByRole("button", { name: "24×24" }));
@@ -42,7 +42,7 @@ test("a new sprite is sized in tiles, and opens with a one-tile grid and a 1px c
 });
 
 test("a bigger tile pulls the column and row counts back under the canvas limit", async () => {
-  const screen = render(<AppRoutes />, { route: "/sprites" });
+  const screen = await render(<AppRoutes />, { route: "/sprites" });
 
   await userEvent.click(screen.getByRole("button", { name: "New sprite", exact: true }).first());
   await userEvent.fill(screen.getByLabelText("Columns"), "20");
@@ -53,7 +53,7 @@ test("a bigger tile pulls the column and row counts back under the canvas limit"
 });
 
 test("a new spritesheet keeps its tile size and opens with a one-tile grid", async () => {
-  const screen = render(<AppRoutes />, { route: "/sprites" });
+  const screen = await render(<AppRoutes />, { route: "/sprites" });
 
   await userEvent.click(screen.getByRole("button", { name: "More ways to create" }));
   await userEvent.click(screen.getByRole("menuitem", { name: "New spritesheet" }));
@@ -68,7 +68,7 @@ test("a new spritesheet keeps its tile size and opens with a one-tile grid", asy
 });
 
 test("tags entered when creating a sprite show up in the library", async () => {
-  const screen = render(<AppRoutes />, { route: "/sprites" });
+  const screen = await render(<AppRoutes />, { route: "/sprites" });
 
   await userEvent.click(screen.getByRole("button", { name: "New sprite", exact: true }).first());
   await userEvent.fill(screen.getByLabelText("Name"), "Hero walk");
@@ -82,7 +82,7 @@ test("tags entered when creating a sprite show up in the library", async () => {
 });
 
 test("deleting a sprite through its menu removes it from the library", async () => {
-  const screen = render(<AppRoutes />, { route: "/sprites" });
+  const screen = await render(<AppRoutes />, { route: "/sprites" });
 
   await userEvent.click(screen.getByRole("button", { name: "New sprite", exact: true }).first());
   await userEvent.fill(screen.getByLabelText("Name"), "Throwaway");
@@ -103,7 +103,7 @@ test("deleting a sprite through its menu removes it from the library", async () 
 
 test("renaming a sprite from its menu updates the card and its tags", async () => {
   await createSprite({ name: "Draft", width: 8, height: 8 });
-  const screen = render(<AppRoutes />, { route: "/sprites" });
+  const screen = await render(<AppRoutes />, { route: "/sprites" });
 
   await userEvent.click(screen.getByRole("button", { name: "Actions for Draft" }));
   await userEvent.click(screen.getByRole("menuitem", { name: "Rename" }));
@@ -122,7 +122,7 @@ test("renaming a sprite from its menu updates the card and its tags", async () =
 
 test("splitting a sprite from its menu replaces its frames with a grid", async () => {
   await createSprite({ name: "Sheet", width: 4, height: 2 });
-  const screen = render(<AppRoutes />, { route: "/sprites" });
+  const screen = await render(<AppRoutes />, { route: "/sprites" });
 
   await userEvent.click(screen.getByRole("button", { name: "Actions for Sheet" }));
   await userEvent.click(screen.getByRole("menuitem", { name: "Split into frames" }));
@@ -133,7 +133,7 @@ test("splitting a sprite from its menu replaces its frames with a grid", async (
 
   await userEvent.fill(screen.getByLabelText("Frame width"), "2");
   await userEvent.fill(screen.getByLabelText("Frame height"), "2");
-  await expect.element(screen.getByText("2×1 grid → 2 frames")).toBeVisible();
+  await expect.element(screen.getByText(/2×1 grid → 2 frames/)).toBeVisible();
 
   await userEvent.click(screen.getByRole("button", { name: "Split" }));
 
@@ -142,7 +142,7 @@ test("splitting a sprite from its menu replaces its frames with a grid", async (
 });
 
 test("the create menu offers a way to import PNGs", async () => {
-  const screen = render(<AppRoutes />, { route: "/sprites" });
+  const screen = await render(<AppRoutes />, { route: "/sprites" });
 
   await userEvent.click(screen.getByRole("button", { name: "More ways to create" }));
   await expect.element(screen.getByRole("menuitem", { name: "Import PNG" })).toBeVisible();
@@ -150,7 +150,7 @@ test("the create menu offers a way to import PNGs", async () => {
 
 test("spritesheets rename through the same dialog as sprites", async () => {
   await createSpritesheet({ name: "Sheet draft" });
-  const screen = render(<AppRoutes />, { route: "/sprites" });
+  const screen = await render(<AppRoutes />, { route: "/sprites" });
 
   await userEvent.click(screen.getByRole("button", { name: "Actions for Sheet draft" }));
   await userEvent.click(screen.getByRole("menuitem", { name: "Rename" }));
@@ -163,7 +163,7 @@ test("spritesheets rename through the same dialog as sprites", async () => {
 });
 
 test("reopening the new-sprite dialog after Cancel starts from an empty draft", async () => {
-  const screen = render(<AppRoutes />, { route: "/sprites" });
+  const screen = await render(<AppRoutes />, { route: "/sprites" });
   const openDialog = () =>
     userEvent.click(screen.getByRole("button", { name: "New sprite", exact: true }).first());
 

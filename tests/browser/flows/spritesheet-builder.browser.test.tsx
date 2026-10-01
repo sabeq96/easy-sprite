@@ -1,5 +1,5 @@
 import { expect, test, vi } from "vitest";
-import { page, userEvent } from "@vitest/browser/context";
+import { page, userEvent } from "vitest/browser";
 import { AppRoutes } from "@/app/routes";
 import { createSprite } from "@/db/repositories/sprites";
 import {
@@ -13,7 +13,7 @@ import { KEYS, mod } from "@test/editor";
 import { render } from "@test/render";
 
 test("creating a spritesheet from the library opens the composer, and it lists with a sheet badge", async () => {
-  const screen = render(<AppRoutes />, { route: "/sprites" });
+  const screen = await render(<AppRoutes />, { route: "/sprites" });
 
   // "New spritesheet" lives behind the create button's chevron, next to the main "New sprite".
   await userEvent.click(screen.getByRole("button", { name: "More ways to create" }));
@@ -32,7 +32,7 @@ test("creating a spritesheet from the library opens the composer, and it lists w
 
 test("the composer header exposes export and a save indicator, like the sprite editor", async () => {
   const sheet = await createSpritesheet({ name: "Composed" });
-  const screen = render(<AppRoutes />, { route: `/spritesheets/${sheet.id}` });
+  const screen = await render(<AppRoutes />, { route: `/spritesheets/${sheet.id}` });
 
   // Export is a button in both headers, never buried in a menu. The status dot is named by
   // its state; dnd-kit's own live region is also role="status", hence the explicit name.
@@ -51,7 +51,7 @@ test("the composer's palette lists project sprites to drag onto the canvas", asy
   await createSprite({ name: "Hero", width: 8, height: 8 });
   const sheet = await createSpritesheet({ name: "Composed" });
 
-  const screen = render(<AppRoutes />, { route: `/spritesheets/${sheet.id}` });
+  const screen = await render(<AppRoutes />, { route: `/spritesheets/${sheet.id}` });
 
   await expect.element(screen.getByText("Hero")).toBeVisible();
   await expect.element(screen.getByRole("button", { name: "Export" })).toBeVisible();
@@ -65,7 +65,7 @@ test("a sprite already on the sheet drops out of the palette until it is removed
     blocks: [{ id: "block-1", spriteId: placed.id, row: 0 }],
   });
 
-  const screen = render(<AppRoutes />, { route: `/spritesheets/${sheet.id}` });
+  const screen = await render(<AppRoutes />, { route: `/spritesheets/${sheet.id}` });
 
   // A sheet packs each sprite once, so only the unplaced one is still offered.
   await expect
@@ -96,7 +96,7 @@ test("a persisted block renders on the canvas and can be removed", async () => {
     blocks: [{ id: "block-1", spriteId: sprite.id, row: 0 }],
   });
 
-  const screen = render(<AppRoutes />, { route: `/spritesheets/${sheet.id}` });
+  const screen = await render(<AppRoutes />, { route: `/spritesheets/${sheet.id}` });
 
   // Exact, because dnd-kit gives the draggable wrapper its own role="button" whose computed
   // name concatenates the nested remove button's label with the block's visible name.
@@ -118,7 +118,7 @@ test("Export downloads the composed sheet as a PNG in one click", async () => {
   });
 
   const createObjectURL = vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:mock");
-  const screen = render(<AppRoutes />, { route: `/spritesheets/${sheet.id}` });
+  const screen = await render(<AppRoutes />, { route: `/spritesheets/${sheet.id}` });
 
   // One click, no dialog.
   await userEvent.click(screen.getByRole("button", { name: "Export" }));
@@ -134,7 +134,7 @@ test("Export downloads the composed sheet as a PNG in one click", async () => {
 test("the composer header keeps Export reachable in a narrow window", async () => {
   await page.viewport(640, 720);
   const sheet = await createSpritesheet({ name: "A spritesheet with a rather long name indeed" });
-  const screen = render(<AppRoutes />, { route: `/spritesheets/${sheet.id}` });
+  const screen = await render(<AppRoutes />, { route: `/spritesheets/${sheet.id}` });
 
   const exportButton = screen.getByRole("button", { name: "Export" });
   await expect.element(exportButton).toBeVisible();
@@ -149,7 +149,7 @@ test("zoom steps change the readout and the size every block renders at", async 
   const sprite = await createSprite({ name: "Hero", width: 8, height: 8 });
   const sheet = await createSpritesheet({ name: "Composed" });
   await updateSpritesheet(sheet.id, { blocks: [{ id: "block-1", spriteId: sprite.id, row: 0 }] });
-  const screen = render(<AppRoutes />, { route: `/spritesheets/${sheet.id}` });
+  const screen = await render(<AppRoutes />, { route: `/spritesheets/${sheet.id}` });
 
   const block = () => document.querySelector('[data-block-id="block-1"]');
   await blocksSized(sheet.id);
@@ -166,7 +166,7 @@ test("zoom steps change the readout and the size every block renders at", async 
 
 test("the grid is on when a sheet is first opened", async () => {
   const sheet = await createSpritesheet({ name: "Composed" });
-  const screen = render(<AppRoutes />, { route: `/spritesheets/${sheet.id}` });
+  const screen = await render(<AppRoutes />, { route: `/spritesheets/${sheet.id}` });
 
   await expect.element(screen.getByTestId("builder-grid")).toBeInTheDocument();
   await expect
@@ -184,7 +184,7 @@ test("on a block too small to show it, the remove button appears in the corner w
       { id: "b", spriteId: other.id, row: 1 },
     ],
   });
-  const screen = render(<AppRoutes />, { route: `/spritesheets/${sheet.id}` });
+  const screen = await render(<AppRoutes />, { route: `/spritesheets/${sheet.id}` });
   const remove = screen.getByRole("button", { name: "Remove Hero", exact: true });
   await expect.element(remove).toBeInTheDocument();
 
@@ -208,7 +208,7 @@ async function openHeroSheet() {
   const sprite = await createSprite({ name: "Hero", width: 16, height: 16 });
   const sheet = await createSpritesheet({ name: "Composed" });
   await updateSpritesheet(sheet.id, { blocks: [{ id: "block-1", spriteId: sprite.id, row: 0 }] });
-  const screen = render(<AppRoutes />, { route: `/spritesheets/${sheet.id}` });
+  const screen = await render(<AppRoutes />, { route: `/spritesheets/${sheet.id}` });
   const removeHero = screen.getByRole("button", { name: "Remove Hero", exact: true });
   await expect.element(removeHero).toBeInTheDocument();
   return { screen, sheetId: sheet.id, removeHero };
@@ -286,7 +286,7 @@ test("the menu's Save now writes pending edits", async () => {
   await removeBlock(removeHero);
 
   await userEvent.click(screen.getByRole("button", { name: "Spritesheet menu" }));
-  await userEvent.click(screen.getByRole("menuitem", { name: "Save now" }));
+  await userEvent.click(screen.getByRole("menuitem", { name: /^Save now/ }));
   await expect.poll(async () => (await getSpritesheet(sheetId)).blocks).toEqual([]);
   await builderSaveSettled();
 });

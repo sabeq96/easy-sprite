@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { page } from "@vitest/browser/context";
+import { page } from "vitest/browser";
 import { AppRoutes } from "@/app/routes";
 import { createSprite } from "@/db/repositories/sprites";
 import { useEditorStore } from "@/stores/useEditorStore";
@@ -32,7 +32,7 @@ async function openEditor() {
   // brush would render sub-pixel and no footprint would be measurable.
   await page.viewport(1000, 700);
   const sprite = await createSprite({ width: SPRITE_SIZE, height: SPRITE_SIZE });
-  const screen = render(<AppRoutes />, { route: `/sprites/${sprite.id}` });
+  const screen = await render(<AppRoutes />, { route: `/sprites/${sprite.id}` });
   const canvas = screen.getByRole("application", { name: "Sprite canvas" });
   await expect.element(canvas).toBeVisible();
   await expect.poll(() => useEditorStore.getState().containerSize.width > 0).toBe(true);

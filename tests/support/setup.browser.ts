@@ -1,4 +1,5 @@
-import { afterEach, vi } from "vitest";
+import { afterEach, beforeEach, vi } from "vitest";
+import { commands } from "vitest/browser";
 import { cleanup } from "vitest-browser-react";
 import { DB_NAME } from "@/constants/storage";
 import type * as StorageConstants from "@/constants/storage";
@@ -21,11 +22,16 @@ vi.mock("@/constants/storage", async (importOriginal) => ({
   DB_NAME: `sprite-editor-test-${crypto.randomUUID()}`,
 }));
 
+// Every test starts with the pointer off the page, not where the previous test left it.
+beforeEach(async () => {
+  await commands.parkPointer();
+});
+
 afterEach(async () => {
   // vitest-browser-react only unmounts in the next test's beforeEach — after the database below is
   // closed. An editor still mounted then flushes its autosave into a closed database (an unhandled
   // DatabaseClosedError), so unmount now, while it is open, and let that last save finish.
-  cleanup();
+  await cleanup();
   await window.__spriteEditor?.autosave.flush();
   window.__spriteEditor = undefined;
 

@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { userEvent } from "@vitest/browser/context";
+import { userEvent } from "vitest/browser";
 import { AppRoutes } from "@/app/routes";
 import { db } from "@/db/db";
 import { createPalette } from "@/db/repositories/palettes";
@@ -16,7 +16,7 @@ const SELECT_ALL = IS_APPLE ? "{Meta>}a{/Meta}" : "{Control>}a{/Control}";
 /** Renders the real app at a freshly seeded sprite and waits for the canvas to be interactive. */
 async function openEditor(width = 16, height = 16) {
   const sprite = await createSprite({ width, height });
-  const screen = render(<AppRoutes />, { route: `/sprites/${sprite.id}` });
+  const screen = await render(<AppRoutes />, { route: `/sprites/${sprite.id}` });
 
   const canvas = screen.getByRole("application", { name: "Sprite canvas" });
   await expect.element(canvas).toBeVisible();
@@ -157,13 +157,13 @@ test("a sprite survives a remount (the persistence a page reload would exercise)
   // A real page reload would tear down the whole JS context; unmounting and remounting the
   // same route exercises the part that matters here — that the pixel round-tripped through
   // IndexedDB rather than only existing in the live in-memory document.
-  screen.unmount();
+  await screen.unmount();
   // Unmounting flushes the save — cels, then the thumbnail last. Waiting for the thumbnail means
   // the remount reads a finished save, and no write is still in flight when teardown closes the
   // database (which would surface as an unhandled DatabaseClosedError).
   await expect.poll(async () => (await db.sprites.get(spriteId))?.thumbnail).toBeTruthy();
 
-  const reopened = render(<AppRoutes />, { route: `/sprites/${spriteId}` });
+  const reopened = await render(<AppRoutes />, { route: `/sprites/${spriteId}` });
   await expect
     .element(reopened.getByRole("application", { name: "Sprite canvas" }))
     .toBeVisible();

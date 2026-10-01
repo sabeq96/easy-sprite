@@ -1,5 +1,5 @@
 import { expect, test, vi } from "vitest";
-import { userEvent } from "@vitest/browser/context";
+import { userEvent } from "vitest/browser";
 import { CommandsProvider } from "@/commands/CommandsContext";
 import { commandKeys } from "@/commands/keymap";
 import type { CommandRegistry } from "@/commands/types";
@@ -12,7 +12,7 @@ function renderWith(registry: CommandRegistry, ui: React.ReactNode) {
 }
 
 test("the tooltip shows the command's label and every one of its keys", async () => {
-  const screen = renderWith(
+  const screen = await renderWith(
     { "edit.redo": { id: "edit.redo", label: "Redo", group: "Edit", run: () => {} } },
     <CommandButton command="edit.redo">R</CommandButton>,
   );
@@ -25,7 +25,7 @@ test("the tooltip shows the command's label and every one of its keys", async ()
 });
 
 test("aria-pressed follows the command's active state as the store changes", async () => {
-  const screen = renderWith(
+  const screen = await renderWith(
     {
       "view.toggleGrid": {
         id: "view.toggleGrid",
@@ -46,7 +46,7 @@ test("aria-pressed follows the command's active state as the store changes", asy
 });
 
 test("a disabled command disables the button", async () => {
-  const screen = renderWith(
+  const screen = await renderWith(
     {
       "edit.copy": { id: "edit.copy", label: "Copy", group: "Edit", isEnabled: () => false, run: () => {} },
     },
@@ -59,7 +59,7 @@ test("a disabled command disables the button", async () => {
 test("an onClick override replaces the command's action", async () => {
   const run = vi.fn();
   const onClick = vi.fn();
-  const screen = renderWith(
+  const screen = await renderWith(
     { "frame.duplicate": { id: "frame.duplicate", label: "Duplicate frame", group: "Frames", run } },
     <CommandButton command="frame.duplicate" onClick={onClick}>D</CommandButton>,
   );

@@ -7,7 +7,7 @@ import { clickSpritePixel } from "@test/pointer";
 
 test("clicking with the pencil tool paints a pixel", async () => {
   const sprite = await createSprite({ width: 16, height: 16 });
-  const screen = render(<AppRoutes />, { route: `/sprites/${sprite.id}` });
+  const screen = await render(<AppRoutes />, { route: `/sprites/${sprite.id}` });
 
   const canvas = screen.getByRole("application", { name: "Sprite canvas" });
   await expect.element(canvas).toBeVisible();

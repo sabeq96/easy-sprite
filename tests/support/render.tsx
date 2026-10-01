@@ -11,4 +11,4 @@ export function render(ui: ReactNode, { route = "/" } = {}) {
   );
 }
 
-export { userEvent } from "@vitest/browser/context";
+export { userEvent } from "vitest/browser";
