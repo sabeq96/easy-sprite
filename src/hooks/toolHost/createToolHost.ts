@@ -126,11 +126,19 @@ export function createToolHost({ doc, history }: ToolHostDeps): DocumentToolHost
   let renderer: CanvasRenderer | null = null;
   // Remembered so an overlay set before the renderer exists still shows once it does.
   let overlay: OverlayPaint | null = null;
+  let removeOverlay: (() => void) | null = null;
+
+  /** Registered after the host's own painters (grid), so the tool's overlay draws above them. */
+  function showOverlay(): void {
+    removeOverlay?.();
+    removeOverlay =
+      renderer && overlay ? renderer.addPainter({ channel: "overlay", paint: overlay }) : null;
+  }
 
   const canvas: Canvas = {
     setOverlay(paint) {
       overlay = paint;
-      renderer?.setToolOverlay(paint);
+      showOverlay();
     },
     requestRender() {
       renderer?.invalidate("overlay");
@@ -156,7 +164,7 @@ export function createToolHost({ doc, history }: ToolHostDeps): DocumentToolHost
     },
     attachRenderer(next) {
       renderer = next;
-      renderer?.setToolOverlay(overlay);
+      showOverlay(); // the remover is bound to the renderer it was added to
     },
   };
 }

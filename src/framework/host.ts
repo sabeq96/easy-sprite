@@ -1,4 +1,5 @@
-import type { Point, Viewport } from "@/core/viewport";
+import type { PaintContext } from "@/core/renderer";
+import type { Point } from "@/core/viewport";
 import type { RGBA } from "@/lib/color";
 import type { Rect } from "@/lib/rect";
 import type { Settings, SettingValues } from "@/framework/settings";
@@ -20,7 +21,11 @@ export interface ToolHost<S extends Settings = Settings> {
 /** Which colour a gesture paints or picks with: the left button is primary, the right secondary. */
 export type ColorSlot = "primary" | "secondary";
 
-export type OverlayPaint = (ctx: CanvasRenderingContext2D, viewport: Viewport) => void;
+/** A painter's context as a tool sees it: everything but the document. */
+export type ToolPaintContext = Omit<PaintContext, "doc">;
+
+/** Draws on the overlay channel. */
+export type OverlayPaint = (p: ToolPaintContext) => void;
 
 export interface PointerModifiers {
   /** The DOM button: 0 at a left press, 2 at a right one. Tools read `Gesture.slot` instead. */

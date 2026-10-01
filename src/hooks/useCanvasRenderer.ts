@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useDocumentSession } from "@/app/DocumentProvider";
+import { drawGrid } from "@/core/painters/grid";
+import { drawOnion } from "@/core/painters/onion";
 import { CanvasRenderer, type RendererTargets } from "@/core/renderer";
 import { useEditorStore } from "@/stores/useEditorStore";
 
@@ -22,9 +24,6 @@ export function useCanvasRenderer(): CanvasRefs {
   const [renderer, setRenderer] = useState<CanvasRenderer | null>(null);
 
   const viewport = useEditorStore((state) => state.viewport);
-  const gridEnabled = useEditorStore((state) => state.gridEnabled);
-  const gridSize = useEditorStore((state) => state.gridSize);
-  const onion = useEditorStore((state) => state.onion);
   const activeFrameId = useEditorStore((state) => state.activeFrameId);
   const isPlaying = useEditorStore((state) => state.isPlaying);
   const fitToContainer = useEditorStore((state) => state.fitToContainer);
@@ -42,14 +41,39 @@ export function useCanvasRenderer(): CanvasRefs {
     const instance = new CanvasRenderer(doc, targets, {
       viewport: store.viewport,
       frameId: store.activeFrameId ?? doc.frames[0].id,
-      gridEnabled: store.gridEnabled,
-      gridSize: store.gridSize,
-      onion: store.onion,
       isPlaying: false,
+    });
+
+    // Registration order is stacking order: these go in before any tool attaches, so a tool's
+    // overlay (added per activation through the tool host) always draws above the grid.
+    const scratch = new OffscreenCanvas(1, 1);
+    instance.addPainter({
+      channel: "overlay",
+      paint: (p) => {
+        const { gridEnabled, gridSize } = useEditorStore.getState();
+        if (gridEnabled) drawGrid(p, gridSize);
+      },
+    });
+    instance.addPainter({
+      channel: "onion",
+      // Onion skin is meaningless during playback and costs a composite per ghost frame.
+      paint: (p) => {
+        const { onion } = useEditorStore.getState();
+        if (onion.enabled && !p.isPlaying) drawOnion(p, onion, scratch);
+      },
+    });
+
+    // The painters read the store at paint time; repaint their channel when what they read changes.
+    const unsubscribe = useEditorStore.subscribe((state, previous) => {
+      if (state.gridEnabled !== previous.gridEnabled || state.gridSize !== previous.gridSize) {
+        instance.invalidate("overlay");
+      }
+      if (state.onion !== previous.onion) instance.invalidate("onion");
     });
 
     setRenderer(instance);
     return () => {
+      unsubscribe();
       instance.dispose();
       setRenderer(null);
     };
@@ -80,15 +104,8 @@ export function useCanvasRenderer(): CanvasRefs {
 
   // Push store state into the imperative renderer.
   useEffect(() => {
-    renderer?.setState({
-      viewport,
-      gridEnabled,
-      gridSize,
-      onion,
-      frameId: activeFrameId ?? doc.frames[0].id,
-      isPlaying,
-    });
-  }, [renderer, viewport, gridEnabled, gridSize, onion, activeFrameId, isPlaying, doc]);
+    renderer?.setState({ viewport, frameId: activeFrameId ?? doc.frames[0].id, isPlaying });
+  }, [renderer, viewport, activeFrameId, isPlaying, doc]);
 
   // A tool's overlay may draw its settings (the brush preview's size and mirror), and the
   // overlay only repaints on demand, so a changed setting shows without moving the pointer.

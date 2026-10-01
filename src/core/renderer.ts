@@ -1,51 +1,46 @@
-import { onionOffset, type OnionDirection } from "@/constants/animation";
-import { GRID_LINE_WIDTH, GRID_MIN_SCALE, MAX_GRID_SIZE } from "@/constants/canvas";
-import { compositeFrame } from "@/core/composite";
+import { compositeFrame, presentSprite } from "@/core/composite";
 import type { SpriteDocument } from "@/core/document";
-import { snapTileSize, tileSizeOptions } from "@/core/grid";
 import type { Viewport } from "@/core/viewport";
 
-export interface OnionSettings {
-  enabled: boolean;
-  direction: OnionDirection;
-  opacity: number;
+/** The channels painters draw on; `main` (the current frame's composite) is built in. */
+export type PaintChannel = "onion" | "overlay";
+type Channel = "main" | PaintChannel;
+
+export type RendererTargets = Record<Channel, HTMLCanvasElement>;
+
+/** What a painter is handed: its channel's context, already prepared, and the state to draw. */
+export interface PaintContext {
+  /** Cleared, in CSS pixels, smoothing off. */
+  ctx: CanvasRenderingContext2D;
+  viewport: Viewport;
+  doc: SpriteDocument;
+  frameId: string;
+  isPlaying: boolean;
+  dpr: number;
 }
 
-export interface RendererTargets {
-  main: HTMLCanvasElement;
-  onion: HTMLCanvasElement;
-  overlay: HTMLCanvasElement;
+export interface Painter {
+  channel: PaintChannel;
+  paint(p: PaintContext): void;
 }
 
 export interface RendererState {
   viewport: Viewport;
   frameId: string;
-  gridEnabled: boolean;
-  gridSize: number;
-  onion: OnionSettings;
-  /** Onion skin is meaningless during playback and costs a composite per ghost frame. */
+  /** Painters may skip work during playback; a change repaints the channels below `main`. */
   isPlaying: boolean;
 }
-
-/** Tools install a painter to draw cursors, previews and selections. */
-export type OverlayPainter = (ctx: CanvasRenderingContext2D, viewport: Viewport) => void;
-
-type Channel = "main" | "onion" | "overlay";
 
 export class CanvasRenderer {
   private readonly doc: SpriteDocument;
   private readonly targets: RendererTargets;
   private readonly dirty = new Set<Channel>(["main", "onion", "overlay"]);
   private readonly composite = new OffscreenCanvas(1, 1);
-  private readonly onionScratch = new OffscreenCanvas(1, 1);
   private readonly offPixels: () => void;
+  /** In registration order, which is the drawing order within a channel. */
+  private readonly painters: Painter[] = [];
 
   private state: RendererState;
-  /**
-   * The active tool's overlay (installed through the tool host's canvas): its brush preview,
-   * selection, marquee or floating-move ghost. It lives for as long as the tool is active.
-   */
-  private toolPainter: OverlayPainter | null = null;
   private rafId = 0;
   private dpr = 1;
   private disposed = false;
@@ -65,21 +60,21 @@ export class CanvasRenderer {
       this.invalidate("main", "onion", "overlay");
     }
     if (patch.frameId && patch.frameId !== previous.frameId) this.invalidate("main", "onion");
-    if (patch.gridEnabled !== undefined && patch.gridEnabled !== previous.gridEnabled) {
-      this.invalidate("overlay");
-    }
-    if (patch.gridSize !== undefined && patch.gridSize !== previous.gridSize) {
-      this.invalidate("overlay");
-    }
-    if (patch.onion && patch.onion !== previous.onion) this.invalidate("onion");
     if (patch.isPlaying !== undefined && patch.isPlaying !== previous.isPlaying) {
       this.invalidate("onion");
     }
   }
 
-  setToolOverlay(painter: OverlayPainter | null): void {
-    this.toolPainter = painter;
-    this.invalidate("overlay");
+  /** Drawn on its channel after every painter added before it. Returns the remover. */
+  addPainter(painter: Painter): () => void {
+    this.painters.push(painter);
+    this.invalidate(painter.channel);
+    return () => {
+      const index = this.painters.indexOf(painter);
+      if (index === -1) return;
+      this.painters.splice(index, 1);
+      this.invalidate(painter.channel);
+    };
   }
 
   /** Redraws everything — call after a structural change (layer order, visibility). */
@@ -95,7 +90,7 @@ export class CanvasRenderer {
   /** Called from a ResizeObserver. Sizes the backing store to device pixels. */
   resize(cssWidth: number, cssHeight: number, dpr = window.devicePixelRatio || 1): void {
     this.dpr = dpr;
-    for (const canvas of [this.targets.main, this.targets.onion, this.targets.overlay]) {
+    for (const canvas of Object.values(this.targets)) {
       canvas.width = Math.max(1, Math.round(cssWidth * dpr));
       canvas.height = Math.max(1, Math.round(cssHeight * dpr));
       canvas.style.width = `${cssWidth}px`;
@@ -119,9 +114,9 @@ export class CanvasRenderer {
   }
 
   private render(): void {
-    if (this.dirty.has("onion")) this.renderOnion();
+    if (this.dirty.has("onion")) this.renderPainters("onion");
     if (this.dirty.has("main")) this.renderMain();
-    if (this.dirty.has("overlay")) this.renderOverlay();
+    if (this.dirty.has("overlay")) this.renderPainters("overlay");
     this.dirty.clear();
   }
 
@@ -137,65 +132,17 @@ export class CanvasRenderer {
   private renderMain(): void {
     const ctx = this.context(this.targets.main);
     if (!ctx) return;
-    this.present(ctx, compositeFrame(this.doc, this.state.frameId, this.composite), 1);
+    const source = compositeFrame(this.doc, this.state.frameId, this.composite);
+    presentSprite(ctx, source, this.state.viewport, this.doc, 1);
   }
 
-  private renderOnion(): void {
-    const ctx = this.context(this.targets.onion);
+  private renderPainters(channel: PaintChannel): void {
+    const ctx = this.context(this.targets[channel]);
     if (!ctx) return;
-
-    const { enabled, direction, opacity } = this.state.onion;
-    if (!enabled || this.state.isPlaying) return;
-
-    // Clamped, never wrapped: a ghost past the ends would read as a bug.
-    const index = this.doc.frameIndex(this.state.frameId);
-    const frame = this.doc.frames[index + onionOffset(direction)];
-    if (!frame) return;
-
-    const source = compositeFrame(this.doc, frame.id, this.onionScratch);
-    this.present(ctx, source, opacity);
-  }
-
-  private renderOverlay(): void {
-    const ctx = this.context(this.targets.overlay);
-    if (!ctx) return;
-    if (this.state.gridEnabled) this.drawGrid(ctx);
-    this.toolPainter?.(ctx, this.state.viewport);
-  }
-
-  private present(ctx: CanvasRenderingContext2D, source: OffscreenCanvas, alpha: number): void {
-    const { scale, originX, originY } = this.state.viewport;
-    ctx.globalAlpha = alpha;
-    ctx.drawImage(source, originX, originY, this.doc.width * scale, this.doc.height * scale);
-    ctx.globalAlpha = 1;
-  }
-
-  private drawGrid(ctx: CanvasRenderingContext2D): void {
-    const { scale, originX, originY } = this.state.viewport;
-    const options = tileSizeOptions(this.doc.width, this.doc.height, MAX_GRID_SIZE);
-    const step = snapTileSize(this.state.gridSize, options);
-    if (scale * step < GRID_MIN_SCALE) return; // a sub-pixel grid is just noise
-
-    const width = this.doc.width * scale;
-    const height = this.doc.height * scale;
-    // Half-pixel offset puts a 1px line on the boundary instead of straddling it.
-    const offset = 0.5 / this.dpr;
-
-    ctx.lineWidth = GRID_LINE_WIDTH;
-    ctx.strokeStyle = "rgba(128,128,128,0.35)";
-    ctx.beginPath();
-
-    for (let x = 0; x <= this.doc.width; x += step) {
-      const screenX = Math.round(originX + x * scale) + offset;
-      ctx.moveTo(screenX, originY);
-      ctx.lineTo(screenX, originY + height);
+    const { viewport, frameId, isPlaying } = this.state;
+    const p: PaintContext = { ctx, viewport, doc: this.doc, frameId, isPlaying, dpr: this.dpr };
+    for (const painter of this.painters) {
+      if (painter.channel === channel) painter.paint(p);
     }
-    for (let y = 0; y <= this.doc.height; y += step) {
-      const screenY = Math.round(originY + y * scale) + offset;
-      ctx.moveTo(originX, screenY);
-      ctx.lineTo(originX + width, screenY);
-    }
-
-    ctx.stroke();
   }
 }

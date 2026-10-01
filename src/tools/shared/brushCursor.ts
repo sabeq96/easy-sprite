@@ -13,7 +13,7 @@ export interface BrushCursor {
 
 /** Highlights the pixels the brush would cover, including mirrored copies. */
 export function brushCursorPainter(getCursor: () => BrushCursor | null): OverlayPaint {
-  return (ctx, viewport) => {
+  return ({ ctx, viewport }) => {
     const cursor = getCursor();
     if (!cursor) return;
     const { point, size, sprite } = cursor;

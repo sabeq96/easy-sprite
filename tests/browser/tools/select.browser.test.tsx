@@ -246,3 +246,36 @@ test("releasing a held S mid-move puts the pixels back and adds no undo step", a
   expect(paintedPixels()).toEqual(keys(rectPoints(2, 2, 3, 3)));
   expect(session().history.undoLabel).toBe(before);
 });
+
+type RGB = [number, number, number];
+const SELECTION_RGB: RGB = [59, 130, 246];
+const GRID_RGB: RGB = [128, 128, 128];
+
+/** The un-premultiplied colour and alpha of the overlay canvas at a CSS point. */
+function overlayAt(css: { x: number; y: number }) {
+  const canvas = document.querySelector<HTMLCanvasElement>('canvas[data-canvas="overlay"]')!;
+  const dpr = canvas.width / canvas.getBoundingClientRect().width;
+  const [r, g, b, a] = canvas.getContext("2d")!.getImageData(Math.floor(css.x * dpr), Math.floor(css.y * dpr), 1, 1).data;
+  return { rgb: [r, g, b] as RGB, alpha: a };
+}
+
+const distance = (a: RGB, b: RGB) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+
+test("the selection fill draws above the grid lines", async () => {
+  const editor = await openEditor();
+  useEditorStore.getState().setGridEnabled(true);
+  useEditorStore.getState().setGridSize(4);
+  editor.leave();
+  await userEvent.keyboard(KEYS.selectAll);
+  expect(selectedRect()).toEqual({ x: 0, y: 0, w: 16, h: 16 });
+
+  const { scale, originX, originY } = useEditorStore.getState().viewport;
+  const dpr = window.devicePixelRatio || 1;
+  // The device pixel the 1.5px line at the x = 4 cell boundary fully covers.
+  const onLine = { x: Math.round(originX + 4 * scale) + 0.5 / dpr, y: originY + 1.5 * scale };
+  const offLine = { x: originX + 1.5 * scale, y: originY + 1.5 * scale };
+
+  await expect.poll(() => overlayAt(onLine).alpha).toBeGreaterThan(overlayAt(offLine).alpha);
+  const { rgb } = overlayAt(onLine);
+  expect(distance(rgb, SELECTION_RGB)).toBeLessThan(distance(rgb, GRID_RGB));
+});

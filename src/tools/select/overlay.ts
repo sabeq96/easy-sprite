@@ -18,7 +18,7 @@ export interface SelectionView {
 
 /** Draws whatever the select tool resolved — the painter itself holds no logic. */
 export function selectionPainter(getView: () => SelectionView | null): OverlayPaint {
-  return (ctx, viewport) => {
+  return ({ ctx, viewport }) => {
     const view = getView();
     if (!view) return;
 

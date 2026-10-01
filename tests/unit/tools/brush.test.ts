@@ -20,7 +20,8 @@ function setup(shape: { size: number; mirrorHorizontal?: boolean }) {
   const stop = preview.activate(host);
   const paint = vi.mocked(host.canvas.setOverlay).mock.calls[0][0] as OverlayPaint;
   const ctx = fakeContext();
-  return { host, preview, stop, paint: () => paint(ctx, VIEWPORT), ctx };
+  const context = { ctx, viewport: VIEWPORT, frameId: "f1", isPlaying: false, dpr: 1 };
+  return { host, preview, stop, paint: () => paint(context), ctx };
 }
 
 describe("brushSize", () => {

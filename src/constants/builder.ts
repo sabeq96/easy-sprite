@@ -12,7 +12,7 @@ export const SHEET_TILE_OPTIONS = [1, 2, 4, 8, 16, 32, 64] as const;
 /** Below this many screen px per cell the ruler is noise, hidden regardless of the toggle. */
 export const BUILDER_GRID_MIN_SCALE = 6;
 
-/** Theme-independent, matching the pixel editor's grid (see `renderer.drawGrid`). */
+/** Theme-independent, matching the pixel editor's grid (see `core/painters/grid.ts`). */
 export const BUILDER_GRID_LINE = "rgba(128,128,128,0.35)";
 
 /**

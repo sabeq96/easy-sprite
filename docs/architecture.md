@@ -55,7 +55,8 @@ src/
                 gesture hints shown in tooltips
   stores/       zustand UI state: the editor store (built from slices/) and the builder's view store
   core/         the imperative core, zero React: SpriteDocument, cels, pixels, history, renderer,
-                viewport, overlays, command factories (commands/). Knows nothing about tools
+                its grid and onion painters (painters/), viewport, overlays, command factories
+                (commands/). Knows nothing about tools
   framework/    the host↔tool contract: types and tiny pure helpers that both tools and the host
                 depend on (host.ts: ToolHost, Gesture, Surface; tool.ts: Tool, defineTool;
                 command.ts: ContributedCommand; settings.ts: setting kinds, resolveSettings)
@@ -109,9 +110,14 @@ Four stacked `<canvas>` elements, identical CSS box, `position:absolute`, painte
 | z | Canvas | Redrawn when | Contents |
 | --- | --- | --- | --- |
 | 0 | `checker` | viewport changes | transparency checkerboard (CSS gradient div, not canvas) |
-| 1 | `onion` | frame/onion config changes | previous/next frame composites, tinted + faded |
+| 1 | `onion` | frame/onion config changes | the onion painter: the previous or next frame's composite, faded |
 | 2 | `main` | any dirty cel, frame or layer change | composite of visible layers of current frame |
-| 3 | `overlay` | the active tool asks (pointer move, its own state), a tool setting changes, grid toggle | grid, the active tool's overlay (the selection, or the pencil's and eraser's brush preview) |
+| 3 | `overlay` | the active tool asks (pointer move, its own state), a tool setting changes, grid toggle | registered painters in order: grid, then the active tool's overlay (the selection, or the pencil's and eraser's brush preview) |
+
+The renderer only knows channels. `main` is built in; `onion` and `overlay` draw whatever
+painters are registered on them (`addPainter`), in registration order. The host registers the
+grid and onion painters (`src/core/painters/`) when it creates the renderer, before any tool
+attaches, so a tool's overlay always draws above the grid.
 
 Per-frame work:
 
@@ -249,7 +255,7 @@ frame). The host groups its capabilities by domain, all as methods so every read
 | Capability | Members | Backed by |
 | --- | --- | --- |
 | `colors` | `get(slot)`, `set(slot, c)` | the editor store's primary and secondary colours |
-| `canvas` | `setOverlay(paint)`, `requestRender()` | the renderer's tool overlay, once `EditorCanvas` attaches it |
+| `canvas` | `setOverlay(paint)`, `requestRender()` | a painter on the renderer's `overlay` channel (above the grid), once `EditorCanvas` attaches it |
 | `document` | `width`, `height`, `sampleComposite`, `crop`, `onResize` | the open `SpriteDocument` and the active frame |
 | `history` | `edit(label, change)`, `onUndoRedo` | a `StrokeRecorder` over the active layer and frame, pushed as one undo entry |
 | `tool` | `activate()`, `settings()`, `set(key, value)` | `setTool` (synchronous), and the store's `settings[toolId]` resolved against the tool's declared defaults |
