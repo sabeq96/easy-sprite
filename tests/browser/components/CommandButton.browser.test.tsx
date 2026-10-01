@@ -27,18 +27,18 @@ test("the tooltip shows the command's label and every one of its keys", async ()
 test("aria-pressed follows the command's active state as the store changes", async () => {
   const screen = await renderWith(
     {
-      "view.toggleGrid": {
-        id: "view.toggleGrid",
-        label: "Toggle pixel grid",
-        group: "View",
-        isActive: () => useEditorStore.getState().gridEnabled,
-        run: () => useEditorStore.getState().toggleGrid(),
+      "tool.eraser": {
+        id: "tool.eraser",
+        label: "Eraser",
+        group: "Tools",
+        isActive: () => useEditorStore.getState().toolId === "eraser",
+        run: () => useEditorStore.getState().setTool("eraser"),
       },
     },
-    <CommandButton command="view.toggleGrid">G</CommandButton>,
+    <CommandButton command="tool.eraser">E</CommandButton>,
   );
-  const button = screen.getByRole("button", { name: "Toggle pixel grid" });
-  const initial = useEditorStore.getState().gridEnabled;
+  const button = screen.getByRole("button", { name: "Eraser" });
+  const initial = useEditorStore.getState().toolId === "eraser";
 
   await expect.element(button).toHaveAttribute("aria-pressed", String(initial));
   await userEvent.click(button);

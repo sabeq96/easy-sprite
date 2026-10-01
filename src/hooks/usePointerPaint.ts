@@ -6,6 +6,7 @@ import { StrokeRecorder } from "@/core/history";
 import type { CanvasRenderer } from "@/core/renderer";
 import { useFramesStore } from "@/editor/frames/api";
 import { useLayersStore } from "@/editor/layers/api";
+import { useViewStore } from "@/editor/view/api";
 import { getTool } from "@/tools";
 import type { ColorSlot, Gesture, PointerModifiers, Surface, ToolHost } from "@/framework/host";
 import type { Tool, ToolPoint } from "@/framework/tool";
@@ -52,7 +53,7 @@ export function usePointerPaint(
 
     const toSprite = (event: PointerEvent): ToolPoint => {
       const rect = element.getBoundingClientRect();
-      return screenToSprite(useEditorStore.getState().viewport, {
+      return screenToSprite(useViewStore.getState().viewport, {
         x: event.clientX - rect.left,
         y: event.clientY - rect.top,
       });

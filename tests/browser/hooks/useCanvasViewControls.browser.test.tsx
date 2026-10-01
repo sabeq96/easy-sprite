@@ -2,7 +2,7 @@ import { expect, test } from "vitest";
 import { userEvent } from "vitest/browser";
 import { AppRoutes } from "@/app/routes";
 import { createSprite } from "@/db/repositories/sprites";
-import { useEditorStore } from "@/stores/useEditorStore";
+import { useViewStore } from "@/editor/view/api";
 import { render } from "@test/render";
 
 async function openEditor() {
@@ -11,7 +11,7 @@ async function openEditor() {
 
   const canvas = screen.getByRole("application", { name: "Sprite canvas" });
   await expect.element(canvas).toBeVisible();
-  await expect.poll(() => useEditorStore.getState().containerSize.width > 0).toBe(true);
+  await expect.poll(() => useViewStore.getState().containerSize.width > 0).toBe(true);
 
   return { screen, canvas: canvas.element() as HTMLElement };
 }
@@ -31,12 +31,12 @@ function fireMiddleDrag(element: HTMLElement, from: { x: number; y: number }, to
 
 test("middle-drag pans the viewport without ever setting a custom cursor", async () => {
   const { canvas } = await openEditor();
-  const before = useEditorStore.getState().viewport;
+  const before = useViewStore.getState().viewport;
   expect(canvas.style.cursor).toBe("");
 
   fireMiddleDrag(canvas, { x: 40, y: 40 }, { x: 65, y: 70 });
 
-  const after = useEditorStore.getState().viewport;
+  const after = useViewStore.getState().viewport;
   expect(after.originX).not.toBe(before.originX);
   expect(after.originY).not.toBe(before.originY);
   expect(canvas.style.cursor).toBe("");

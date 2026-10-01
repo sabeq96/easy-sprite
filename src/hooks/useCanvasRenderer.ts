@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useDocumentSession } from "@/app/DocumentProvider";
-import { drawGrid } from "@/core/painters/grid";
 import { CanvasRenderer, type RendererTargets } from "@/core/renderer";
 import { useAnimationStore } from "@/editor/animation/api";
 import { useFramesStore } from "@/editor/frames/api";
 import { EDITOR_MODULES } from "@/editor/modules";
+import { useViewStore } from "@/editor/view/api";
 import { useEditorStore } from "@/stores/useEditorStore";
 
 export interface CanvasRefs {
@@ -25,10 +25,10 @@ export function useCanvasRenderer(): CanvasRefs {
   const overlayRef = useRef<HTMLCanvasElement>(null);
   const [renderer, setRenderer] = useState<CanvasRenderer | null>(null);
 
-  const viewport = useEditorStore((state) => state.viewport);
+  const viewport = useViewStore((state) => state.viewport);
   const activeFrameId = useFramesStore((state) => state.activeFrameId);
   const isPlaying = useAnimationStore((state) => state.isPlaying);
-  const fitToContainer = useEditorStore((state) => state.fitToContainer);
+  const fitToContainer = useViewStore((state) => state.fitToContainer);
   const toolSettings = useEditorStore((state) => state.settings);
 
   // One renderer per document.
@@ -39,36 +39,20 @@ export function useCanvasRenderer(): CanvasRefs {
         : null;
     if (!targets) return;
 
-    const store = useEditorStore.getState();
     const instance = new CanvasRenderer(doc, targets, {
-      viewport: store.viewport,
+      viewport: useViewStore.getState().viewport,
       frameId: useFramesStore.getState().activeFrameId ?? doc.frames[0].id,
       isPlaying: false,
     });
 
-    // Registration order is stacking order: these go in before any tool attaches, so a tool's
-    // overlay (added per activation through the tool host) always draws above the grid.
-    instance.addPainter({
-      channel: "overlay",
-      paint: (p) => {
-        const { gridEnabled, gridSize } = useEditorStore.getState();
-        if (gridEnabled) drawGrid(p, gridSize);
-      },
-    });
-    // The grid painter reads the store at paint time; repaint its channel when that changes.
-    const unsubscribe = useEditorStore.subscribe((state, previous) => {
-      if (state.gridEnabled !== previous.gridEnabled || state.gridSize !== previous.gridSize) {
-        instance.invalidate("overlay");
-      }
-    });
-    // Each module registers its own painters and repaint listeners, in module order, also
-    // before any tool attaches.
+    // Each module registers its own painters (the grid, the onion skin) and repaint listeners, in
+    // module order. Registration order is stacking order: they go in before any tool attaches, so
+    // a tool's overlay (added per activation through the tool host) always draws above the grid.
     const detachModules = EDITOR_MODULES.map((module) => module.attachCanvas?.(instance, doc));
 
     setRenderer(instance);
     return () => {
       for (const detach of detachModules) detach?.();
-      unsubscribe();
       instance.dispose();
       setRenderer(null);
     };
@@ -86,7 +70,7 @@ export function useCanvasRenderer(): CanvasRefs {
 
       renderer.resize(width, height);
       if (fitted) {
-        useEditorStore.getState().setContainerSize({ width, height });
+        useViewStore.getState().setContainerSize({ width, height });
         return;
       }
       fitted = true;

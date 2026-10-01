@@ -9,8 +9,8 @@ import type { Point } from "@/core/viewport";
 import { useFramesStore } from "@/editor/frames/api";
 import { useLayersStore } from "@/editor/layers/api";
 import { usePaletteStore } from "@/editor/palette/api";
+import { useViewStore } from "@/editor/view/api";
 import { IS_APPLE } from "@/lib/keys";
-import { useEditorStore } from "@/stores/useEditorStore";
 import {
   clickSpritePixel,
   dragSpritePixels,
@@ -51,14 +51,14 @@ export async function openEditor({ width = 16, height = 16 } = {}) {
 
   const canvasLocator = screen.getByRole("application", { name: "Sprite canvas" });
   await expect.element(canvasLocator).toBeVisible();
-  await expect.poll(() => useEditorStore.getState().containerSize.width > 0).toBe(true);
+  await expect.poll(() => useViewStore.getState().containerSize.width > 0).toBe(true);
   // The first fit can land before the layout settles; wait for a scale that makes one sprite
   // pixel at least a few screen pixels, so every aimed point hits exactly one pixel.
-  await expect.poll(() => useEditorStore.getState().viewport.scale).toBeGreaterThanOrEqual(4);
+  await expect.poll(() => useViewStore.getState().viewport.scale).toBeGreaterThanOrEqual(4);
   await expect.poll(() => useLayersStore.getState().activeLayerId).not.toBeNull();
 
   const canvas = canvasLocator.element();
-  const viewport = () => useEditorStore.getState().viewport;
+  const viewport = () => useViewStore.getState().viewport;
 
   return {
     screen,

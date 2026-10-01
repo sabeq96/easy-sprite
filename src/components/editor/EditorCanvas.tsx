@@ -1,21 +1,20 @@
 import { useEffect } from "react";
 import { useDocumentSession } from "@/app/DocumentProvider";
-import { CheckerboardLayer } from "@/components/editor/CheckerboardLayer";
+import { CheckerboardLayer, useViewStore } from "@/editor/view/api";
 import { useCanvasRenderer } from "@/hooks/useCanvasRenderer";
 import { useCanvasViewControls } from "@/hooks/useCanvasViewControls";
 import { usePointerPaint } from "@/hooks/usePointerPaint";
 import { useDocumentSnapshot } from "@/hooks/useDocumentSnapshot";
 import { useToolLifecycle } from "@/hooks/useToolLifecycle";
 import { useToolHost } from "@/hooks/toolHost/ToolHostContext";
-import { useEditorStore } from "@/stores/useEditorStore";
 
 /** The only component in the app that holds canvas refs. */
 export function EditorCanvas() {
   const { doc } = useDocumentSession();
   const snapshot = useDocumentSnapshot(doc);
   const { containerRef, mainRef, onionRef, overlayRef, renderer } = useCanvasRenderer();
-  const viewport = useEditorStore((state) => state.viewport);
-  const checkerSize = useEditorStore((state) => state.checkerSize);
+  const viewport = useViewStore((state) => state.viewport);
+  const checkerSize = useViewStore((state) => state.checkerSize);
   const toolHost = useToolHost();
 
   // Tools draw their overlays through the host, which forwards to this canvas's renderer.

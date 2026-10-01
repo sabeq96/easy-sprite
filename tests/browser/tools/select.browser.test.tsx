@@ -17,6 +17,7 @@ import {
 } from "@test/editor";
 import { keyDown, keyUp, pressKey } from "@test/keys";
 import { usePaletteStore } from "@/editor/palette/api";
+import { useViewStore } from "@/editor/view/api";
 
 const RED = { r: 255, g: 0, b: 0, a: 255 };
 
@@ -264,13 +265,13 @@ const distance = (a: RGB, b: RGB) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] -
 
 test("the selection fill draws above the grid lines", async () => {
   const editor = await openEditor();
-  useEditorStore.getState().setGridEnabled(true);
-  useEditorStore.getState().setGridSize(4);
+  useViewStore.getState().setGridEnabled(true);
+  useViewStore.getState().setGridSize(4);
   editor.leave();
   await userEvent.keyboard(KEYS.selectAll);
   expect(selectedRect()).toEqual({ x: 0, y: 0, w: 16, h: 16 });
 
-  const { scale, originX, originY } = useEditorStore.getState().viewport;
+  const { scale, originX, originY } = useViewStore.getState().viewport;
   const dpr = window.devicePixelRatio || 1;
   // The device pixel the 1.5px line at the x = 4 cell boundary fully covers.
   const onLine = { x: Math.round(originX + 4 * scale) + 0.5 / dpr, y: originY + 1.5 * scale };

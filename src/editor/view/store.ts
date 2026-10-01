@@ -1,8 +1,8 @@
+import { create } from "zustand";
 import { DEFAULT_CHECKER_SIZE, DEFAULT_TILE_SIZE, DEFAULT_ZOOM } from "@/constants/canvas";
 import { clampViewport, fitViewport, zoomStep, type Point, type Size, type Viewport } from "@/core/viewport";
-import type { SliceCreator } from "@/stores/slices/types";
 
-export interface ViewSlice {
+export interface ViewState {
   viewport: Viewport;
   gridEnabled: boolean;
   gridSize: number;
@@ -23,7 +23,8 @@ export interface ViewSlice {
   resetGrid: (gridSize: number) => void;
 }
 
-export const createViewSlice: SliceCreator<ViewSlice> = (set, get) => ({
+/** Where the sprite sits on screen, and the pixel grid and chessboard drawn with it. */
+export const useViewStore = create<ViewState>()((set, get) => ({
   viewport: { scale: DEFAULT_ZOOM, originX: 0, originY: 0 },
   gridEnabled: true,
   gridSize: DEFAULT_TILE_SIZE,
@@ -59,4 +60,4 @@ export const createViewSlice: SliceCreator<ViewSlice> = (set, get) => ({
   setGridSize: (gridSize) => set({ gridSize }),
   setCheckerSize: (checkerSize) => set({ checkerSize }),
   resetGrid: (gridSize) => set({ gridSize, checkerSize: DEFAULT_CHECKER_SIZE }),
-});
+}));

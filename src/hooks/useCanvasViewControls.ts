@@ -1,7 +1,7 @@
 import { useEffect, type RefObject } from "react";
 import { useDocumentSession } from "@/app/DocumentProvider";
 import type { HintSection } from "@/commands/hints";
-import { useEditorStore } from "@/stores/useEditorStore";
+import { useViewStore } from "@/editor/view/api";
 
 export const CANVAS_VIEW_HINTS: HintSection = {
   group: "View",
@@ -28,7 +28,7 @@ export function useCanvasViewControls(containerRef: RefObject<HTMLElement | null
       // passive:false — the browser's page zoom must be prevented over the canvas.
       event.preventDefault();
       const rect = element.getBoundingClientRect();
-      useEditorStore
+      useViewStore
         .getState()
         .zoom(
           { x: event.clientX - rect.left, y: event.clientY - rect.top },
@@ -57,7 +57,7 @@ export function useCanvasViewControls(containerRef: RefObject<HTMLElement | null
 
     const onPointerMove = (event: PointerEvent) => {
       if (!panning) return;
-      useEditorStore.getState().panBy(event.clientX - last.x, event.clientY - last.y, sprite);
+      useViewStore.getState().panBy(event.clientX - last.x, event.clientY - last.y, sprite);
       last = { x: event.clientX, y: event.clientY };
     };
 

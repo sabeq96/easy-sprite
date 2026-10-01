@@ -3,6 +3,7 @@ import { userEvent } from "vitest/browser";
 import { AppRoutes } from "@/app/routes";
 import { createSprite } from "@/db/repositories/sprites";
 import { getPixel } from "@/core/buffer";
+import { useViewStore } from "@/editor/view/api";
 import { IS_APPLE } from "@/lib/keys";
 import { useEditorStore } from "@/stores/useEditorStore";
 import { render } from "@test/render";
@@ -43,9 +44,9 @@ async function openEditor() {
 
   const canvas = screen.getByRole("application", { name: "Sprite canvas" });
   await expect.element(canvas).toBeVisible();
-  await expect.poll(() => useEditorStore.getState().containerSize.width > 0).toBe(true);
+  await expect.poll(() => useViewStore.getState().containerSize.width > 0).toBe(true);
 
-  useEditorStore.getState().setGridEnabled(false);
+  useViewStore.getState().setGridEnabled(false);
   // The renderer redraws on the next frame; until then the overlay still holds the grid.
   await expect.poll(hasOverlayInk).toBe(false);
   return { screen, canvas: canvas.element() };
@@ -66,7 +67,7 @@ test("Ctrl+A switches to the select tool and shows it; another tool hides it", a
 
 test("dragging from inside the selection moves its pixels and shows a grab cursor", async () => {
   const { canvas } = await openEditor();
-  const { viewport } = useEditorStore.getState();
+  const { viewport } = useViewStore.getState();
   clickSpritePixel(canvas, viewport, { x: 2, y: 2 }); // pencil paints the pixel to move
 
   useEditorStore.getState().setTool("select");
@@ -84,7 +85,7 @@ test("dragging from inside the selection moves its pixels and shows a grab curso
 
 test("paste after a deselect switches to the select tool and selects the pasted region", async () => {
   const { canvas } = await openEditor();
-  const { viewport } = useEditorStore.getState();
+  const { viewport } = useViewStore.getState();
   clickSpritePixel(canvas, viewport, { x: 8, y: 8 });
   leave(canvas);
   expect(hasOverlayInk()).toBe(false);

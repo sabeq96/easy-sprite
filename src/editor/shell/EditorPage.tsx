@@ -12,7 +12,7 @@ import { FramesBar, useActiveFrameGuard } from "@/editor/frames/api";
 import { useActiveLayerGuard } from "@/editor/layers/api";
 import { EDITOR_MODULES } from "@/editor/modules";
 import { useColorHotkeys } from "@/editor/palette/api";
-import { useGridDefaults } from "@/hooks/useGridDefaults";
+import { useGridReset } from "@/editor/view/api";
 import { useShortcuts } from "@/hooks/useShortcuts";
 import { createToolHost } from "@/hooks/toolHost/createToolHost";
 import { ToolHostProvider } from "@/hooks/toolHost/ToolHostContext";
@@ -56,7 +56,7 @@ function EditorShell() {
   useActiveLayerGuard();
   useActiveFrameGuard();
   useColorHotkeys();
-  useGridDefaults();
+  useGridReset();
 
   const ctx = useModuleContext(() => setShowHelp(true));
   const notYetInModules = useEditorCommands();

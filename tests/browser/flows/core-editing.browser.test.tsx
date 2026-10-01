@@ -5,8 +5,8 @@ import { db } from "@/db/db";
 import { createPalette } from "@/db/repositories/palettes";
 import { createSprite } from "@/db/repositories/sprites";
 import { usePaletteStore } from "@/editor/palette/api";
+import { useViewStore } from "@/editor/view/api";
 import { IS_APPLE } from "@/lib/keys";
-import { useEditorStore } from "@/stores/useEditorStore";
 import { render } from "@test/render";
 import { clickSpritePixel } from "@test/pointer";
 
@@ -21,7 +21,7 @@ async function openEditor(width = 16, height = 16) {
 
   const canvas = screen.getByRole("application", { name: "Sprite canvas" });
   await expect.element(canvas).toBeVisible();
-  await expect.poll(() => useEditorStore.getState().containerSize.width > 0).toBe(true);
+  await expect.poll(() => useViewStore.getState().containerSize.width > 0).toBe(true);
 
   return { screen, canvas: canvas.element(), spriteId: sprite.id };
 }
@@ -38,7 +38,7 @@ function countPaintedPixels(): number {
 
 test("drawing with the pencil, undo and redo", async () => {
   const { canvas } = await openEditor();
-  const { viewport } = useEditorStore.getState();
+  const { viewport } = useViewStore.getState();
 
   clickSpritePixel(canvas, viewport, { x: 8, y: 8 });
   await expect.poll(countPaintedPixels).toBeGreaterThan(0);
@@ -52,7 +52,7 @@ test("drawing with the pencil, undo and redo", async () => {
 
 test("the bucket tool fills the whole (empty) canvas", async () => {
   const { screen, canvas } = await openEditor();
-  const { viewport } = useEditorStore.getState();
+  const { viewport } = useViewStore.getState();
 
   await userEvent.click(screen.getByRole("button", { name: "Paint bucket" }));
   clickSpritePixel(canvas, viewport, { x: 8, y: 8 });
@@ -79,7 +79,7 @@ test("layers and frames panels reflect document structure", async () => {
 
 test("select all + delete clears the canvas, and undo restores it", async () => {
   const { canvas } = await openEditor();
-  const { viewport } = useEditorStore.getState();
+  const { viewport } = useViewStore.getState();
 
   clickSpritePixel(canvas, viewport, { x: 8, y: 8 });
   await expect.poll(countPaintedPixels).toBeGreaterThan(0);
@@ -150,7 +150,7 @@ test("hovering the palette shows its 1–9 keys", async () => {
 
 test("a sprite survives a remount (the persistence a page reload would exercise)", async () => {
   const { screen, canvas, spriteId } = await openEditor();
-  const { viewport } = useEditorStore.getState();
+  const { viewport } = useViewStore.getState();
 
   clickSpritePixel(canvas, viewport, { x: 8, y: 8 });
   await expect.poll(countPaintedPixels).toBeGreaterThan(0);

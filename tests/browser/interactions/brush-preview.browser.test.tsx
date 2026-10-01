@@ -2,6 +2,7 @@ import { expect, test } from "vitest";
 import { page } from "vitest/browser";
 import { AppRoutes } from "@/app/routes";
 import { createSprite } from "@/db/repositories/sprites";
+import { useViewStore } from "@/editor/view/api";
 import { useEditorStore } from "@/stores/useEditorStore";
 import { render } from "@test/render";
 import { hoverSpritePixel } from "@test/pointer";
@@ -21,7 +22,7 @@ function overlayAlphaAt(point: { x: number; y: number }): number {
   const ctx = canvas?.getContext("2d");
   if (!canvas || !ctx) return 0;
 
-  const { viewport } = useEditorStore.getState();
+  const { viewport } = useViewStore.getState();
   const x = Math.round(viewport.originX + (point.x + 0.5) * viewport.scale);
   const y = Math.round(viewport.originY + (point.y + 0.5) * viewport.scale);
   return ctx.getImageData(x, y, 1, 1).data[3];
@@ -35,7 +36,7 @@ async function openEditor() {
   const screen = await render(<AppRoutes />, { route: `/sprites/${sprite.id}` });
   const canvas = screen.getByRole("application", { name: "Sprite canvas" });
   await expect.element(canvas).toBeVisible();
-  await expect.poll(() => useEditorStore.getState().containerSize.width > 0).toBe(true);
+  await expect.poll(() => useViewStore.getState().containerSize.width > 0).toBe(true);
   return canvas.element();
 }
 
@@ -45,7 +46,7 @@ async function openEditor() {
  * the repaint that this hover triggered.
  */
 async function hoverAndSettle(canvas: Element) {
-  hoverSpritePixel(canvas, useEditorStore.getState().viewport, HOVERED);
+  hoverSpritePixel(canvas, useViewStore.getState().viewport, HOVERED);
   await new Promise((resolve) =>
     requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(resolve, 50))),
   );
@@ -92,7 +93,7 @@ test("the preview follows the pointer, leaving nothing behind", async () => {
   await hoverAndSettle(canvas);
   expect(overlayAlphaAt(HOVERED)).toBeGreaterThan(0);
 
-  hoverSpritePixel(canvas, useEditorStore.getState().viewport, elsewhere);
+  hoverSpritePixel(canvas, useViewStore.getState().viewport, elsewhere);
   await nextFrames();
   expect(overlayAlphaAt(elsewhere)).toBeGreaterThan(0);
   expect(overlayAlphaAt(HOVERED)).toBe(0);

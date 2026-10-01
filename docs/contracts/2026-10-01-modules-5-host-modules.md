@@ -146,7 +146,7 @@ function EditorShell() {
    - Move `PreviewPanel`, the player and `OnionSkinControl`.
    - `view.toggleOnion` → `animation/commands.ts`.
    - `attachCanvas` registers the onion painter, moved from `useCanvasRenderer`.
-6. **view.**
+6. ✅ **view.**
    - The rest of `viewSlice` → `view/store.ts`.
    - Move `ViewControls`, `CheckerboardLayer` and `useGridDefaults` (renamed `useGridReset`).
    - Zoom, fit and grid commands.
@@ -522,6 +522,128 @@ None. Decisions 1-5 were settled on 2026-10-01.
     89 at 35%, 115 at 45%, 140 at 55%, 0 while playing and 140 again when paused. The View group
     reads "Zoom in +=, Zoom out -_, Fit to window 0, Toggle pixel grid ⌘G, Toggle onion skin ⌘⇧O".
 
+- **2026-10-01, Task 6: the store is `useViewStore` (`ViewState`): `viewport`, `containerSize`,
+  `gridEnabled`, `gridSize`, `checkerSize` and every action (`setViewport`, `setContainerSize`,
+  `panBy`, `zoom`, `fitToContainer`, `toggleGrid`, `setGridEnabled`, `setGridSize`,
+  `setCheckerSize`, `resetGrid`), unchanged from `viewSlice`.** Nothing was left in the slice, so
+  `stores/slices/viewSlice.ts` became `view/store.ts` (a `git mv`) and `EditorStore` is now
+  `ToolSlice & SettingsSlice`; `createTestStore()` loses the view slice. `view/api.ts` exports
+  `CheckerboardLayer` (`components/editor/EditorCanvas`, until task 8 moves it), `useGridReset`
+  (shell's `EditorShell`), `ViewControls` (shell's `EditorTopBar`), `useViewStore` and `module`.
+  `commands.ts`, `attachCanvas.ts`, `store.ts` and `module.ts` stay private. Readers outside the
+  module, all through `@/editor/view/api`:
+  - `hooks/useCanvasRenderer` (the `viewport` and `fitToContainer` selectors, `getState()` for the
+    renderer's initial viewport and for `setContainerSize`);
+  - `hooks/useCanvasViewControls` (`zoom` and `panBy`, `getState()`);
+  - `hooks/usePointerPaint` (`viewport` in `toSprite`, `getState()`);
+  - `components/editor/EditorCanvas` (the `viewport` and `checkerSize` selectors, and `CheckerboardLayer`).
+
+  The task brief also named the status bar as a viewport reader. `EditorStatusBar` reads no view
+  state, so nothing changed there.
+- **2026-10-01, Task 6: `useGridDefaults` is `view/useGridReset.ts`.** It was renamed and moved
+  with the same effect and dependencies (`doc`, `tileSize`, `resetGrid`). `EditorShell` calls
+  `useGridReset()` where it called `useGridDefaults()`.
+- **2026-10-01, Task 6: `view.zoomIn`, `view.zoomOut`, `view.fit` and `view.toggleGrid` are
+  `viewCommands(ctx)` in `view/commands.ts`.** They use `ctx.doc` for the sprite size, with the
+  same labels, group, `isEnabled`, `isActive` and bodies (`zoomFromCentre` moved with them). The
+  keys stay in `constants/shortcuts.ts`, unchanged. `useEditorCommands` loses all four, along
+  with `ZOOM_LEVELS` and its `useDocumentSession` call. It now returns only
+  `createToolCommands(useEditorStore)` and `createContributedCommands(toolHost)`. The builder's
+  own `view.toggleGrid` (`useBuilderCommands`, same id and key) is untouched.
+- **2026-10-01, Task 6: `viewModule.attachCanvas` is `attachGrid(renderer)` in
+  `view/attachCanvas.ts`.** It adds the grid painter on `overlay`, moved unchanged. It also
+  subscribes to `useViewStore` and invalidates `overlay` when `gridEnabled` or `gridSize`
+  changes. `useCanvasRenderer` loses the inline painter, its `useEditorStore` subscription, the
+  `unsubscribe()` in the cleanup, the `drawGrid` import and its `store` local. Its comment above
+  the module loop now carries the stacking rule. Registration order across channels changed: the
+  onion painter (animation) now goes in before the grid painter (view). `renderPainters` draws
+  only the painters on the channel it renders, so stacking is unchanged. On `overlay` the grid is
+  still the only painter before any tool's overlay.
+- **2026-10-01, Task 6: `EDITOR_MODULES` is `[palette, shell, layers, frames, animation, view]`**,
+  wrapped one entry per line. View declares no hints, so the cheat sheet is unchanged. No import
+  cycle: `view/api.ts` reaches `@/editor/animation/api` (`ViewControls` places
+  `OnionSkinControl`), and nothing `animation/api.ts` reaches imports `@/editor/view/api`
+  (`npm run lint` with `import/no-cycle` passes).
+- **2026-10-01, Task 6: tests.**
+  - `tests/unit/stores/viewSlice.test.ts` became `tests/unit/editor/view/store.test.ts`. It tests
+    the singleton after `resetEditorStores()` instead of a `createTestStore()` instance. It has the
+    same six cases with the same expected values.
+  - New `tests/unit/editor/view/module.test.ts` (the contract's fake-renderer test) has "attachCanvas
+    adds one painter on the overlay channel and removes it on cleanup". It also has "repaints the
+    overlay channel when the grid toggles or resizes, until detached": a chessboard change does not
+    repaint. The unit project goes from 326 to 328 tests; the browser project stays at 274.
+  - `resetEditorStores()` also resets `useViewStore`.
+  - Setup and reads that changed store and nothing else, now `useViewStore` from
+    `@/editor/view/api`. Every expected value is unchanged:
+    - `tests/support/editor.ts`: `openEditor()`'s `containerSize` and `scale` polls, and its
+      `viewport()`.
+    - `editor/view`: `viewport()`, the two `gridEnabled` assertions and the two `gridSize` polls.
+    - `editor/frames`: `onionAlphaAt`'s viewport.
+    - `flows/core-editing`, `flows/dnd-visuals`, `hooks/useCanvasViewControls`,
+      `interactions/brush-preview` and `interactions/pencil-stroke`: the `containerSize` polls and
+      viewport reads.
+    - `flows/sprite-manager`: the `gridSize` poll and the `checkerSize` assertion.
+    - `interactions/select-move`, `tools/select` and `tools/tool-matrix`: `setGridEnabled`,
+      `setGridSize` and the viewport reads.
+  - `tests/browser/components/CommandButton.browser.test.tsx`, "aria-pressed follows the
+    command's active state as the store changes": the test registry now holds a `tool.eraser`
+    command (`isActive` = `toolId === "eraser"`, `run` = `setTool("eraser")`) instead of a
+    `view.toggleGrid` one reading `useEditorStore.gridEnabled`. The assertions are unchanged
+    (`aria-pressed` is `String(initial)`, then `String(!initial)` after a click). The command must
+    read state that `CommandButton` subscribes to, and `CommandButton` runs `isActive` as a
+    `useEditorStore` selector. With the grid on `useViewStore`, the button would never re-render.
+    See the task 7 note in the Builder notes.
+  - Mutation probes, each restored from a copy:
+    - With `unsubscribe()` dropped from `attachGrid`'s cleanup, "repaints the overlay channel …
+      until detached" fails (called 3 times, expected 2).
+    - With the painter on `onion`, "attachCanvas adds one painter on the overlay channel" fails.
+    - With `attachCanvas` removed from `viewModule`, the browser test "the selection fill draws
+      above the grid lines" fails.
+- **2026-10-01, Task 6: verification beyond the suites.**
+  - Lint probe: `import "@/editor/view/store"` was added to the top of `animation/OnionSkinControl.tsx`,
+    `animation/commands.ts`, `shell/EditorTopBar.tsx` and `shell/commands.ts`. Each fails
+    `npx oxlint` with `'@/editor/view/store' import is restricted from being used by a pattern`.
+    Each file was restored from a copy.
+  - `grep -rn "viewSlice\|gridEnabled\|gridSize\|checkerSize\|resetGrid\|useGridDefaults" src | grep -v "src/editor/view\|src/components/builder\|src/stores/useBuilderViewStore\|src/core"`
+    lists only:
+    - `EditorCanvas`'s `checkerSize` selector (through `@/editor/view/api`);
+    - `GridOptionsPopover`'s props (shared with the builder, stays in `components/common`);
+    - the builder's `useBuilderCommands` (`useBuilderViewStore`);
+    - a comment in `constants/canvas.ts`;
+    - `SETTING_KEYS.gridEnabled = "view.grid"` in `constants/settings.ts`, a settings key with no
+      reader (pre-existing, untouched).
+
+    The only deep imports of `@/editor/view/*` are in the module's own unit tests.
+  - A throwaway browser probe ran on this tree and on `5419df4` in a scratch worktree (then
+    removed). It reads only the DOM, the live document and the canvases. The viewport comes from
+    the checkerboard's inline style. It used a 32×32 sprite with two painted pixels. It dumped
+    every button (name, `aria-keyshortcuts`, disabled, `aria-pressed`) and the tooltips of Zoom
+    in, Zoom out, Fit to window and Grid options ("Grid options⌘G"). After each of 31 states it
+    recorded:
+    - the zoom text and whether ± are disabled;
+    - the grid button's `aria-pressed`;
+    - the checkerboard's left, top, size and tile;
+    - hashes of the overlay, main and onion canvases;
+    - the document size and tile;
+    - the popover labels.
+
+    The 31 states:
+    - the keys `=`, `+`, `-`, `_`, `-` and `0`;
+    - the Zoom in (×2), Zoom out (×3) and Fit buttons;
+    - ⌘G off and on;
+    - the popover's switch off and on;
+    - the grid-size slider at 8, 4 and 1, and the chessboard slider at 2 and 32;
+    - ⌘A with a 1px grid;
+    - a middle-drag pan, and a clamped pan;
+    - a wheel zoom;
+    - Resize canvas to 8×8 tiles (grid resets to 8px, chessboard to 1px), and undo (16px).
+
+    It also dumped the whole cheat sheet. The two JSON dumps (11,159 bytes each) are
+    byte-identical. The View group reads "Zoom in +=, Zoom out -_, Fit to window 0, Toggle pixel
+    grid ⌘G, Toggle onion skin ⌘⇧O, Pan Space + Drag, Pan Middle-drag".
+  - `docs/architecture.md` §4 ("The host registers the grid and onion painters … before any tool
+    attaches") is still true; task 8 rewrites it to name the modules.
+
 ## Builder notes (from task 1, for tasks 2–8)
 
 - **Plugging in a module.**
@@ -581,3 +703,28 @@ None. Decisions 1-5 were settled on 2026-10-01.
   edge (`PreviewPanel`), and `useCanvasRenderer` (canvas, from task 8) imports
   `@/editor/animation/api`: nothing `animation/api.ts` reaches may import `@/editor/canvas/api`
   or `@/editor/layers/api`.
+- **`CommandButton`'s live pressed state (from task 6, for task 7).** `CommandButton` runs
+  `command.isActive()` as a `useEditorStore` selector, so a button re-renders only when
+  `useEditorStore` changes. Today no `CommandButton` is bound to a command whose `isActive` reads
+  a module store: the grid and onion triggers pass `aria-pressed` from their own selectors. The
+  tool sidebar's `tool.*` buttons are bound that way, and their `isActive` reads `toolId`. When
+  task 7 moves `toolSlice` into `toolbox/store.ts`, those buttons stop following the active tool
+  unless `CommandButton` subscribes to the new store, or the registry offers another way to
+  subscribe. The browser test "aria-pressed follows the command's active state as the store
+  changes" uses a `tool.eraser` fixture on `useEditorStore` and pins this. That test (or
+  `CommandButton`) has to follow the move.
+- **What is left in `useEditorStore` (from task 6).** Only `toolSlice` and `settingsSlice`.
+  `useEditorCommands` returns only the tool and contributed commands. `useCanvasRenderer` still
+  reads `settings` from `useEditorStore` to repaint `overlay` on a tool setting change; task 7
+  repoints it to `toolbox/api`.
+- **View readers (from task 6).** `useCanvasRenderer`, `useCanvasViewControls`,
+  `usePointerPaint` and `EditorCanvas` read `useViewStore` through `@/editor/view/api`, and
+  `EditorCanvas` takes `CheckerboardLayer` from it. When task 8 moves them into `canvas`, these
+  stay cross-module `api.ts` imports. `view → animation` is now a real edge (`ViewControls`
+  places `OnionSkinControl`). So nothing that `animation/api.ts` or `frames/api.ts` reaches may
+  import `@/editor/view/api`, and nothing `view/api.ts` reaches may import
+  `@/editor/canvas/api`.
+- **UI probe (from task 6).** The checkerboard's inline style (`left`, `top`, `width`,
+  `background-size`) gives the viewport and the chessboard tile without reading a store. The
+  popover's labels ("Grid size · 16px") give the grid and chessboard sizes. The sliders' names
+  include that label, so match them with `/^Grid size/`.

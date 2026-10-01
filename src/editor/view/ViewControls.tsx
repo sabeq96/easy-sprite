@@ -6,18 +6,18 @@ import { MAX_CHECKER_SIZE, MAX_GRID_SIZE, ZOOM_LEVELS } from "@/constants/canvas
 import { snapTileSize, tileSizeOptions } from "@/core/grid";
 import { OnionSkinControl } from "@/editor/animation/api";
 import { useDocumentSnapshot } from "@/hooks/useDocumentSnapshot";
-import { useEditorStore } from "@/stores/useEditorStore";
+import { useViewStore } from "./store";
 
 export function ViewControls() {
   const { doc } = useDocumentSession();
   const snapshot = useDocumentSnapshot(doc);
-  const scale = useEditorStore((state) => state.viewport.scale);
-  const gridEnabled = useEditorStore((state) => state.gridEnabled);
-  const toggleGrid = useEditorStore((state) => state.toggleGrid);
-  const gridSize = useEditorStore((state) => state.gridSize);
-  const setGridSize = useEditorStore((state) => state.setGridSize);
-  const checkerSize = useEditorStore((state) => state.checkerSize);
-  const setCheckerSize = useEditorStore((state) => state.setCheckerSize);
+  const scale = useViewStore((state) => state.viewport.scale);
+  const gridEnabled = useViewStore((state) => state.gridEnabled);
+  const toggleGrid = useViewStore((state) => state.toggleGrid);
+  const gridSize = useViewStore((state) => state.gridSize);
+  const setGridSize = useViewStore((state) => state.setGridSize);
+  const checkerSize = useViewStore((state) => state.checkerSize);
+  const setCheckerSize = useViewStore((state) => state.setCheckerSize);
 
   // Only sizes that evenly divide the sprite's width and height, so the grid/checkerboard never
   // clips a partial cell at the right or bottom edge.

@@ -7,7 +7,7 @@ import {
   updateSpritesheet,
 } from "@/db/repositories/spritesheets";
 import { usePaletteStore } from "@/editor/palette/api";
-import { useEditorStore } from "@/stores/useEditorStore";
+import { useViewStore } from "@/editor/view/api";
 import { blocksSized, builderSaveSettled, savedSheet } from "@test/builder";
 import { settled } from "@test/dom";
 import { holdDrag, releaseDrag as release, releaseDragNow } from "@test/pointer";
@@ -17,7 +17,7 @@ async function openEditor() {
   const sprite = await createSprite({ width: 16, height: 16 });
   const screen = await render(<AppRoutes />, { route: `/sprites/${sprite.id}` });
   await expect.element(screen.getByRole("application", { name: "Sprite canvas" })).toBeVisible();
-  await expect.poll(() => useEditorStore.getState().containerSize.width > 0).toBe(true);
+  await expect.poll(() => useViewStore.getState().containerSize.width > 0).toBe(true);
   return screen;
 }
 
