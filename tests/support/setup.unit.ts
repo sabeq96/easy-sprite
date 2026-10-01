@@ -29,6 +29,18 @@ if (!("OffscreenCanvas" in globalThis)) {
   Object.assign(globalThis, { OffscreenCanvas: OffscreenCanvasStub });
 }
 
+// jsdom has no ResizeObserver. dnd-kit creates one when it loads, and a module's api.ts loads its
+// panels with it, so a no-op keeps the module importable from unit tests that never render.
+if (!("ResizeObserver" in globalThis)) {
+  class ResizeObserverStub {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  }
+
+  Object.assign(globalThis, { ResizeObserver: ResizeObserverStub });
+}
+
 // jsdom implements ImageData only behind canvas; the core relies on it sharing the buffer.
 if (!("ImageData" in globalThis)) {
   class ImageDataStub {

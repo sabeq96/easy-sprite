@@ -4,6 +4,7 @@ import { BRUSH_SIZES } from "@/constants/tools";
 import { createPalette } from "@/db/repositories/palettes";
 import { brushBounds } from "@/core/pixels";
 import type { Point } from "@/core/viewport";
+import { usePaletteStore } from "@/editor/palette/api";
 import { IS_APPLE } from "@/lib/keys";
 import { useEditorStore } from "@/stores/useEditorStore";
 import {
@@ -160,7 +161,7 @@ test("pencil size 4 → eraser shows 1 → back to pencil shows 4", async () => 
 test("left paints the primary colour and right paints the secondary, both picked from the palette", async () => {
   const palette = await createPalette("Test", ["#ff0000", "#00ff00"]);
   const editor = await openEditor();
-  useEditorStore.getState().setActivePalette(palette.id);
+  usePaletteStore.getState().setActivePalette(palette.id);
 
   await userEvent.click(editor.screen.getByRole("button", { name: "Color #ff0000ff" }).first());
   await userEvent.click(editor.screen.getByRole("button", { name: "Color #00ff00ff" }).first(), {
@@ -178,7 +179,7 @@ test("a translucent colour blends over what is already there", async () => {
   const editor = await openEditor();
   editor.click({ x: 1, y: 1 }); // opaque black
 
-  useEditorStore.getState().setPrimaryColor({ r: 255, g: 255, b: 255, a: 128 });
+  usePaletteStore.getState().setPrimaryColor({ r: 255, g: 255, b: 255, a: 128 });
   editor.click({ x: 1, y: 1 });
   editor.click({ x: 3, y: 1 });
 

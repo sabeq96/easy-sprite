@@ -1,9 +1,9 @@
 import { useEffect } from "react";
 import type { HintSection } from "@/commands/hints";
-import { usePalettes } from "@/hooks/usePalettes";
 import { hexToRgba } from "@/lib/color";
 import { isTypingTarget } from "@/lib/keys";
-import { useEditorStore } from "@/stores/useEditorStore";
+import { usePalettes } from "./usePalettes";
+import { usePaletteStore } from "./store";
 
 /** Shown in the shortcut sheet and as the palette's hover card. */
 export const COLOR_HOTKEY_HINTS: HintSection = {
@@ -39,7 +39,7 @@ export function useColorHotkeys(): void {
 
       event.preventDefault();
       const color = hexToRgba(hex);
-      const store = useEditorStore.getState();
+      const store = usePaletteStore.getState();
       // Shift picks the secondary colour, matching the right-click behaviour on swatches.
       if (event.shiftKey) store.setSecondaryColor(color);
       else store.setPrimaryColor(color);

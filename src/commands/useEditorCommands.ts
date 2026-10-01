@@ -54,19 +54,6 @@ export function useEditorCommands(): CommandRegistry {
     // The selection's copy, cut, paste, … are the select tool's own (see `Tool.commands`).
     ...createContributedCommands(toolHost),
 
-    "color.swap": {
-      id: "color.swap",
-      label: "Swap colors",
-      group: "Color",
-      run: () => store.getState().swapColors(),
-    },
-    "color.reset": {
-      id: "color.reset",
-      label: "Reset colors",
-      group: "Color",
-      run: () => store.getState().resetColors(),
-    },
-
     "layer.add": {
       id: "layer.add",
       label: "New layer",

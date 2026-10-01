@@ -7,7 +7,7 @@ import { hexToRgba } from "@/lib/color";
 import { plural } from "@/lib/format";
 import { parsePaletteFile, toGpl } from "@/lib/paletteFormats";
 import { sortColorsByHue } from "@/lib/paletteSort";
-import { useEditorStore } from "@/stores/useEditorStore";
+import { usePaletteStore } from "./store";
 
 const SAVE_FAILED = "Could not save the palette.";
 
@@ -16,7 +16,7 @@ const SAVE_FAILED = "Could not save the palette.";
  * reports its own failure and then resolves to `undefined`, so callers never catch.
  */
 export function usePaletteActions() {
-  const setActivePalette = useEditorStore((state) => state.setActivePalette);
+  const setActivePalette = usePaletteStore((state) => state.setActivePalette);
 
   const createActive = (name: string, colors: string[], success?: string) =>
     runWithToast(

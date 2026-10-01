@@ -3,6 +3,7 @@ import { userEvent } from "vitest/browser";
 import { useEditorStore } from "@/stores/useEditorStore";
 import { activeColors, chooseTool, openEditor, selectLayer, type Editor } from "@test/editor";
 import { keyDown, keyUp } from "@test/keys";
+import { usePaletteStore } from "@/editor/palette/api";
 
 const RED = { r: 255, g: 0, b: 0, a: 255 };
 const GREEN = { r: 0, g: 255, b: 0, a: 255 };
@@ -10,7 +11,7 @@ const BLUE = { r: 0, g: 0, b: 255, a: 255 };
 
 /** Paints one pixel in `color` with the pencil, leaving the pencil selected. */
 function paint(editor: Editor, point: { x: number; y: number }, color: typeof RED) {
-  useEditorStore.getState().setPrimaryColor(color);
+  usePaletteStore.getState().setPrimaryColor(color);
   editor.click(point);
 }
 
@@ -23,7 +24,7 @@ async function choosePicker(editor: Editor) {
 test("clicking picks the pixel's colour as primary, and the swatch shows it", async () => {
   const editor = await openEditor();
   paint(editor, { x: 3, y: 3 }, RED);
-  useEditorStore.getState().setPrimaryColor(BLUE);
+  usePaletteStore.getState().setPrimaryColor(BLUE);
   await choosePicker(editor);
 
   editor.click({ x: 3, y: 3 });
@@ -37,7 +38,7 @@ test("clicking picks the pixel's colour as primary, and the swatch shows it", as
 test("right-clicking picks into the secondary colour and leaves the primary alone", async () => {
   const editor = await openEditor();
   paint(editor, { x: 3, y: 3 }, GREEN);
-  useEditorStore.getState().setPrimaryColor(BLUE);
+  usePaletteStore.getState().setPrimaryColor(BLUE);
   await choosePicker(editor);
 
   editor.click({ x: 3, y: 3 }, { button: 2 });
@@ -71,7 +72,7 @@ test("with 'Sample merged image' on, it picks what you see through an empty laye
   await userEvent.click(editor.screen.getByRole("button", { name: "New layer" }));
   await selectLayer(editor, "Layer 2");
   await choosePicker(editor);
-  useEditorStore.getState().setPrimaryColor(BLUE);
+  usePaletteStore.getState().setPrimaryColor(BLUE);
 
   const merged = editor.screen.getByRole("switch");
   await expect.element(merged).toBeChecked(); // the default
@@ -86,14 +87,14 @@ test("with 'Sample merged image' off, it only reads the active layer", async () 
   await userEvent.click(editor.screen.getByRole("button", { name: "New layer" }));
   await selectLayer(editor, "Layer 2");
   await choosePicker(editor);
-  useEditorStore.getState().setPrimaryColor(BLUE);
+  usePaletteStore.getState().setPrimaryColor(BLUE);
 
   await userEvent.click(editor.screen.getByRole("switch"));
   await expect.element(editor.screen.getByRole("switch")).not.toBeChecked();
   await chooseTool(editor, "Pencil");
   paint(editor, { x: 12, y: 12 }, GREEN); // Layer 2 now has pixels of its own, elsewhere
   await choosePicker(editor);
-  useEditorStore.getState().setPrimaryColor(BLUE);
+  usePaletteStore.getState().setPrimaryColor(BLUE);
 
   editor.click({ x: 2, y: 2 });
   // Layer 2 is empty at (2,2) — the red on Layer 1 underneath must not be picked.
@@ -103,7 +104,7 @@ test("with 'Sample merged image' off, it only reads the active layer", async () 
 test("holding O borrows the picker from the pencil, and releasing hands the pencil back", async () => {
   const editor = await openEditor();
   paint(editor, { x: 4, y: 4 }, RED);
-  useEditorStore.getState().setPrimaryColor(BLUE);
+  usePaletteStore.getState().setPrimaryColor(BLUE);
 
   keyDown("o", { code: "KeyO", at: 0 });
   await expect

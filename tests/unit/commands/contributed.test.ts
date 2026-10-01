@@ -9,6 +9,7 @@ import { startToolLifecycle } from "@/hooks/useToolLifecycle";
 import { useEditorStore } from "@/stores/useEditorStore";
 import type { ContributedCommandId, SettingCommandId } from "@/tools";
 import { makeDocument, RED } from "@test/factories";
+import { resetEditorStores } from "@test/store";
 
 const SELECTION_COMMANDS = [
   "edit.selectAll",
@@ -26,10 +27,8 @@ let stop: () => void;
 beforeEach(() => {
   doc = makeDocument();
   history = new History();
-  useEditorStore.setState(
-    { ...useEditorStore.getInitialState(), activeLayerId: "l1", activeFrameId: "f1" },
-    true,
-  );
+  resetEditorStores();
+  useEditorStore.setState({ activeLayerId: "l1", activeFrameId: "f1" });
 });
 
 afterEach(() => stop?.());

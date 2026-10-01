@@ -14,6 +14,7 @@ import {
 } from "@test/editor";
 import { settled } from "@test/dom";
 import { holdDrag, releaseDrag } from "@test/pointer";
+import { usePaletteStore } from "@/editor/palette/api";
 
 const RED = { r: 255, g: 0, b: 0, a: 255 };
 const BLUE = { r: 0, g: 0, b: 255, a: 255 };
@@ -25,11 +26,11 @@ const activeLayerName = () =>
 
 /** Layer 1 with a red pixel at (2,2), Layer 2 on top with a blue one at (5,5); Layer 2 active. */
 async function twoPaintedLayers(editor: Editor) {
-  useEditorStore.getState().setPrimaryColor(RED);
+  usePaletteStore.getState().setPrimaryColor(RED);
   editor.click({ x: 2, y: 2 });
   await userEvent.click(editor.screen.getByRole("button", { name: "New layer" }));
   await selectLayer(editor, "Layer 2");
-  useEditorStore.getState().setPrimaryColor(BLUE);
+  usePaletteStore.getState().setPrimaryColor(BLUE);
   editor.click({ x: 5, y: 5 });
 }
 
@@ -50,11 +51,11 @@ test("a new layer goes on top, and drawing on it leaves the layer below alone", 
 
 test("an upper layer covers the one below in the merged image", async () => {
   const editor = await openEditor();
-  useEditorStore.getState().setPrimaryColor(RED);
+  usePaletteStore.getState().setPrimaryColor(RED);
   editor.click({ x: 4, y: 4 });
   await userEvent.click(editor.screen.getByRole("button", { name: "New layer" }));
   await selectLayer(editor, "Layer 2");
-  useEditorStore.getState().setPrimaryColor(BLUE);
+  usePaletteStore.getState().setPrimaryColor(BLUE);
   editor.click({ x: 4, y: 4 });
 
   expect(compositeAt(4, 4)).toBe("#0000ffff");

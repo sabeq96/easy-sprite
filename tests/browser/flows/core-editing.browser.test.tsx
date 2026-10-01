@@ -4,6 +4,7 @@ import { AppRoutes } from "@/app/routes";
 import { db } from "@/db/db";
 import { createPalette } from "@/db/repositories/palettes";
 import { createSprite } from "@/db/repositories/sprites";
+import { usePaletteStore } from "@/editor/palette/api";
 import { IS_APPLE } from "@/lib/keys";
 import { useEditorStore } from "@/stores/useEditorStore";
 import { render } from "@test/render";
@@ -140,7 +141,7 @@ test("the cheat sheet lists tool gestures once, and feature keys inside their co
 test("hovering the palette shows its 1–9 keys", async () => {
   const palette = await createPalette("Hints", ["#ff0000", "#00ff00"]);
   const { screen } = await openEditor();
-  useEditorStore.getState().setActivePalette(palette.id);
+  usePaletteStore.getState().setActivePalette(palette.id);
 
   await userEvent.hover(screen.getByRole("button", { name: /^Color #ff0000/ }).first());
 

@@ -7,8 +7,6 @@ import { hintRow } from "@/commands/hints";
 import { ColorSwatch } from "@/components/common/ColorSwatch";
 import { DragBoard, type DragEndEvent, type DragOverEvent } from "@/components/common/DragBoard";
 import { ShortcutList } from "@/components/common/ShortcutList";
-import { ActiveColors } from "@/components/editor/ActiveColors";
-import { PaletteMenu } from "@/components/editor/PaletteMenu";
 import {
   Select,
   SelectContent,
@@ -18,15 +16,17 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { COLOR_HOTKEY_HINTS } from "@/hooks/useColorHotkeys";
-import { useColorUsage } from "@/hooks/useColorUsage";
 import { useOptimisticOrder } from "@/hooks/useOptimisticOrder";
-import { usePaletteActions } from "@/hooks/usePaletteActions";
-import { usePalettes } from "@/hooks/usePalettes";
 import { useDragSource, useDropZone, useSortableItem } from "@/hooks/useDnd";
 import { hexToRgba, rgbaToHex, rgbaEquals, type RGBA } from "@/lib/color";
 import { cn } from "@/lib/utils";
-import { useEditorStore } from "@/stores/useEditorStore";
+import { ActiveColors } from "./ActiveColors";
+import { PaletteMenu } from "./PaletteMenu";
+import { COLOR_HOTKEY_HINTS } from "./useColorHotkeys";
+import { useColorUsage } from "./useColorUsage";
+import { usePaletteActions } from "./usePaletteActions";
+import { usePalettes } from "./usePalettes";
+import { usePaletteStore } from "./store";
 
 export type PaletteDragSource = "palette" | "used" | "active-primary" | "active-secondary";
 export interface PaletteDragData {
@@ -57,10 +57,10 @@ export function PalettePanel() {
   const paletteActions = usePaletteActions();
   const usage = useColorUsage(doc);
 
-  const setActivePalette = useEditorStore((state) => state.setActivePalette);
-  const primaryColor = useEditorStore((state) => state.primaryColor);
-  const setPrimaryColor = useEditorStore((state) => state.setPrimaryColor);
-  const setSecondaryColor = useEditorStore((state) => state.setSecondaryColor);
+  const setActivePalette = usePaletteStore((state) => state.setActivePalette);
+  const primaryColor = usePaletteStore((state) => state.primaryColor);
+  const setPrimaryColor = usePaletteStore((state) => state.setPrimaryColor);
+  const setSecondaryColor = usePaletteStore((state) => state.setSecondaryColor);
 
   // usePalettes only hands back a new `active.colors` reference when the live query actually
   // re-ran, which is exactly the "has the read caught up" signal useOptimisticOrder keys on — so a

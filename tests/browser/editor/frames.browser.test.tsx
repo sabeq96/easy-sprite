@@ -12,6 +12,7 @@ import {
 } from "@test/editor";
 import { settled } from "@test/dom";
 import { holdDrag, releaseDrag } from "@test/pointer";
+import { usePaletteStore } from "@/editor/palette/api";
 
 const RED = { r: 255, g: 0, b: 0, a: 255 };
 const BLUE = { r: 0, g: 0, b: 255, a: 255 };
@@ -22,7 +23,7 @@ const activeFrameIndex = () =>
 
 /** Paints `point` on the active frame in `color`. */
 function paintOn(editor: Editor, point: { x: number; y: number }, color = RED) {
-  useEditorStore.getState().setPrimaryColor(color);
+  usePaletteStore.getState().setPrimaryColor(color);
   editor.click(point);
 }
 

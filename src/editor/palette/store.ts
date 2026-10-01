@@ -1,7 +1,7 @@
+import { create } from "zustand";
 import { BLACK, TRANSPARENT, type RGBA } from "@/lib/color";
-import type { SliceCreator } from "@/stores/slices/types";
 
-export interface ColorSlice {
+export interface PaletteState {
   primaryColor: RGBA;
   secondaryColor: RGBA;
   activePaletteId: string | null;
@@ -13,7 +13,8 @@ export interface ColorSlice {
   setActivePalette: (paletteId: string | null) => void;
 }
 
-export const createColorSlice: SliceCreator<ColorSlice> = (set) => ({
+/** The colors tools paint with, and which stored palette the panel shows. */
+export const usePaletteStore = create<PaletteState>()((set) => ({
   primaryColor: { ...BLACK },
   secondaryColor: { ...TRANSPARENT },
   activePaletteId: null,
@@ -29,4 +30,4 @@ export const createColorSlice: SliceCreator<ColorSlice> = (set) => ({
 
   resetColors: () => set({ primaryColor: { ...BLACK }, secondaryColor: { ...TRANSPARENT } }),
   setActivePalette: (activePaletteId) => set({ activePaletteId }),
-});
+}));

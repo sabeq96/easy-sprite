@@ -11,6 +11,7 @@ import { startToolLifecycle } from "@/hooks/useToolLifecycle";
 import { useEditorStore } from "@/stores/useEditorStore";
 import { selectedRect, selectTool } from "@/tools/select/tool";
 import { makeDocument, makeGesture, NO_MODIFIERS, RED } from "@test/factories";
+import { resetEditorStores } from "@test/store";
 
 const CTRL: PointerModifiers = { ...NO_MODIFIERS, ctrl: true };
 
@@ -23,15 +24,8 @@ let stop: () => void;
 beforeEach(() => {
   doc = makeDocument();
   history = new History();
-  useEditorStore.setState(
-    {
-      ...useEditorStore.getInitialState(),
-      toolId: "select",
-      activeLayerId: "l1",
-      activeFrameId: "f1",
-    },
-    true,
-  );
+  resetEditorStores();
+  useEditorStore.setState({ toolId: "select", activeLayerId: "l1", activeFrameId: "f1" });
   host = createToolHost({ doc, history });
   commands = createContributedCommands(host);
   stop = startToolLifecycle(host);

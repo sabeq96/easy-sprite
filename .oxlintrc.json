@@ -342,7 +342,7 @@
                 "message": "An editor module is self-contained: import within it with ./, and anything else through @/."
               },
               {
-                "group": ["@/db/db", "dexie*"],
+                "group": ["@/db/db", "dexie"],
                 "message": "Editor modules read the database through src/db/repositories/, never the raw Dexie instance."
               },
               {

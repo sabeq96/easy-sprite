@@ -23,7 +23,7 @@ import { NameDialog } from "@/components/common/NameDialog";
 import { DEFAULT_PALETTE_NAME } from "@/constants/names";
 import type { PaletteRecord } from "@/db/schema";
 import { collectColorUsage } from "@/core/colorUsage";
-import { usePaletteActions } from "@/hooks/usePaletteActions";
+import { usePaletteActions } from "./usePaletteActions";
 
 export function PaletteMenu({ palette }: { palette: PaletteRecord | null }) {
   const { doc } = useDocumentSession();

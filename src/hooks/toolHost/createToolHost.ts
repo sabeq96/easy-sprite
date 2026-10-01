@@ -3,10 +3,10 @@ import { compositeFrame } from "@/core/composite";
 import type { SpriteDocument } from "@/core/document";
 import type { History } from "@/core/history";
 import type { CanvasRenderer } from "@/core/renderer";
+import { createColorsAdapter } from "@/editor/palette/api";
 import { createHistoryAdapter } from "@/editor/shell/api";
 import type {
   Canvas,
-  Colors,
   DocumentView,
   OverlayPaint,
   ToolControl,
@@ -41,20 +41,6 @@ interface Target {
 function activeTarget(): Target | null {
   const { activeLayerId, activeFrameId } = useEditorStore.getState();
   return activeLayerId && activeFrameId ? { layerId: activeLayerId, frameId: activeFrameId } : null;
-}
-
-function createColors(): Colors {
-  return {
-    get: (slot) => {
-      const state = useEditorStore.getState();
-      return slot === "secondary" ? state.secondaryColor : state.primaryColor;
-    },
-    set: (slot, color) => {
-      const state = useEditorStore.getState();
-      if (slot === "secondary") state.setSecondaryColor(color);
-      else state.setPrimaryColor(color);
-    },
-  };
 }
 
 function createDocumentView(doc: SpriteDocument): DocumentView {
@@ -123,7 +109,7 @@ export function createToolHost({ doc, history }: ToolHostDeps): DocumentToolHost
   };
 
   const shared = {
-    colors: createColors(),
+    colors: createColorsAdapter(),
     canvas,
     document: createDocumentView(doc),
     history: createHistoryAdapter(doc, history),

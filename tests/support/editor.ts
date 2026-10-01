@@ -6,6 +6,7 @@ import { createSprite } from "@/db/repositories/sprites";
 import { getPixel } from "@/core/buffer";
 import { compositeFrame } from "@/core/composite";
 import type { Point } from "@/core/viewport";
+import { usePaletteStore } from "@/editor/palette/api";
 import { IS_APPLE } from "@/lib/keys";
 import { useEditorStore } from "@/stores/useEditorStore";
 import {
@@ -186,7 +187,7 @@ function byPosition(a: string, b: string): number {
 
 /** The store's primary/secondary colours as `#rrggbbaa`. */
 export function activeColors() {
-  const { primaryColor, secondaryColor } = useEditorStore.getState();
+  const { primaryColor, secondaryColor } = usePaletteStore.getState();
   const hex = ({ r, g, b, a }: { r: number; g: number; b: number; a: number }) =>
     `#${[r, g, b, a].map((channel) => channel.toString(16).padStart(2, "0")).join("")}`;
   return { primary: hex(primaryColor), secondary: hex(secondaryColor) };

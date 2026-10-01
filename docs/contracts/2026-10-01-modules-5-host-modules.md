@@ -134,7 +134,7 @@ function EditorShell() {
    - The cheat sheet reads hints from `EDITOR_MODULES` and `TOOL_LIST`, and `FEATURE_HINTS` is deleted.
    - The `history` adapter moves here.
    - Add the lint override (Decision 10).
-2. **palette.**
+2. ✅ **palette.**
    - `colorSlice` → `palette/store.ts`.
    - Move the components and hooks, and the color commands.
    - `COLOR_HOTKEY_HINTS` → `module.hints`.
@@ -285,6 +285,63 @@ None. Decisions 1-5 were settled on 2026-10-01.
   declare no keys yet. Mutation probe: a `tool.pencil` entry added to `shellCommands` fails "never
   registers one command id twice" with `["tool.pencil"]`; restored from a copy. No existing test
   changed.
+- **2026-10-01, Task 2: `EDITOR_MODULES` is `[palette, shell]` for now, not `[shell, palette]`.**
+  Hint rows follow module order, and shell still holds `POINTER_PAINT_HINTS` ("Paint with
+  secondary color", group "Color"). With shell first, that row would move above "Pick primary".
+  `modules.ts` says why in a comment. Task 8 restores the Layout order (shell first) when canvas
+  takes the shell's hints. Commands are unaffected (no overlapping ids), and no module attaches
+  painters yet.
+- **2026-10-01, Task 2: `usePalettes` keeps `useLiveQuery` behind one disable comment.**
+  Decision 10's `dexie*` group also matches `dexie-react-hooks`, so the moved hook failed lint
+  ("Editor modules read the database through src/db/repositories/, never the raw Dexie
+  instance"). The hook still reads through `listPalettes()` in the repository; only the live
+  subscription comes from `dexie-react-hooks`, which `src/hooks/**` allows. The import carries
+  `// eslint-disable-next-line no-restricted-imports -- …` instead of a change to the rule.
+  Probe: without the comment, `npx oxlint src/editor/palette` reports
+  `'dexie-react-hooks' import is restricted`. Narrowing the group to `dexie` (as in `hooks/`) is
+  a maintainer call; see the task 2 report.
+- **2026-10-01, Task 2: the store is `usePaletteStore` (`PaletteState`), with the slice's fields and
+  actions unchanged.** `EditorStore` loses `ColorSlice`; `createTestStore()` loses the colour
+  slice. `palette/api.ts` exports `PalettePanel`, `useColorHotkeys`, `usePaletteStore`,
+  `createColorsAdapter` and `module`. No file in `src/` outside palette uses `usePaletteStore`;
+  only tests do (`resetEditorStores()` and colour setup in browser tests). `ActiveColors`,
+  `PaletteMenu`, `usePalettes`, `usePaletteActions` and `useColorUsage` stay private.
+  `COLOR_HOTKEY_HINTS` stays in `useColorHotkeys.ts`, and the palette's 1–9 tooltip still reads it.
+- **2026-10-01, Task 2: `color.swap` and `color.reset` are `paletteCommands()` in
+  `palette/commands.ts`.** They take no context, because they only touch the palette store.
+  `useEditorCommands` loses both.
+- **2026-10-01, Task 2: the `colors` adapter is `createColorsAdapter(): Colors` in
+  `palette/colorsAdapter.ts`.** `createToolHost` imports it through `@/editor/palette/api`. No
+  cycle: nothing palette reaches imports `createToolHost`, `EditorPage` or `modules.ts`.
+- **2026-10-01, Task 2: unit setup stubs `ResizeObserver`.** `createToolHost` (and
+  `tests/support/store.ts`) now load `palette/api.ts`, which loads `PalettePanel`, and
+  `@dnd-kit/react/sortable` builds a `ResizeObserver` when it loads. jsdom has none, so eight unit
+  files failed to import. `tests/support/setup.unit.ts` adds a no-op stub next to its
+  `OffscreenCanvas` and `ImageData` stubs.
+- **2026-10-01, Task 2: tests.**
+  - `tests/unit/stores/colorSlice.test.ts` became `tests/unit/editor/palette/store.test.ts`. It
+    tests the singleton after `resetEditorStores()` instead of a `createTestStore()` instance.
+    Same two cases, same expected values.
+  - `resetEditorStores()` is in `tests/support/store.ts`. It resets `useEditorStore` and
+    `usePaletteStore` with `setState(getInitialState(), true)`. `useCursorStore` and
+    `useBuilderViewStore` keep their own reset lines in `setup.browser.ts` until their tasks.
+  - Resets moved to `resetEditorStores()`: `setup.browser.ts` (after each test),
+    `tests/unit/tools/select.test.ts` and `tests/unit/commands/contributed.test.ts`. The two unit
+    files then set their fields with a partial `setState`.
+  - Setup that set colours or the active palette on `useEditorStore` now uses
+    `usePaletteStore` from `@/editor/palette/api`: `frames`, `layers`, `palette`
+    (`editor/`), `core-editing`, `dnd-visuals` (`flows/`), and `fill`, `pencil`, `picker`,
+    `select`, `tool-matrix` (`tools/`), plus `activeColors()` in `tests/support/editor.ts`.
+  - One assertion changed its store and nothing else: `palette.browser.test.tsx` polls
+    `usePaletteStore.getState().activePaletteId` instead of `useEditorStore`'s, with the same
+    expected value.
+- **2026-10-01, Task 2: verification beyond the suites.** The task 1 browser probe ran again on
+  this tree and on `8beb05c` in a scratch worktree (then removed). It dumped the editor's buttons
+  (name, `aria-keyshortcuts`, disabled), the X and D results, the swap button's tooltip, the
+  whole cheat sheet and the palette menu. All five dumps are identical. The Color group reads
+  "Swap colors X, Reset colors D, Pick primary 1–9, Pick secondary ⇧ + 1–9, Paint with secondary
+  color Right-drag". `docs/architecture.md` still names `usePaletteActions` and `usePalettes`
+  as hooks; task 8 rewrites the docs.
 
 ## Builder notes (from task 1, for tasks 2–8)
 
@@ -297,3 +354,8 @@ None. Decisions 1-5 were settled on 2026-10-01.
 - **Imports.** Inside a module use `./`; across modules use `@/editor/<m>/api` only. In `.tsx` files, `db`, `services` and `export` are type-only imports.
 - **Hint order.** The cheat sheet's hint rows follow `EDITOR_MODULES` order. Task 2 must keep the "Color" group's row order identical when `COLOR_HOTKEY_HINTS` moves to palette while `POINTER_PAINT_HINTS` stays on shell, until task 8.
 - **Stores.** Task 2 introduces the first module store and `resetEditorStores()` in `tests/support`.
+- **Module order (from task 2).** `EDITOR_MODULES` is `[palette, shell]` until task 8. Tasks 3–7 append their module at the end. Task 8 moves shell to the front when canvas takes `POINTER_PAINT_HINTS` and `CANVAS_VIEW_HINTS`. Canvas comes last, so the Color group still lists the 1–9 keys before "Paint with secondary color".
+- **Module stores in tests (from task 2).** Add every new module store to `resetEditorStores()` in `tests/support/store.ts`. Test setup that sets module state goes through `@/editor/<m>/api`. A store's own unit test may import `@/editor/<m>/store` directly.
+- **Unit tests load `api.ts` whole (from task 2).** Any `createToolHost` or support import of an `api.ts` also loads that module's panels. jsdom gaps (like `ResizeObserver`, now stubbed) surface as import failures in unrelated unit files. Stub them in `tests/support/setup.unit.ts`.
+- **`dexie-react-hooks` in modules (from task 2).** Decision 10's `dexie*` bans `useLiveQuery` inside `src/editor/*/**`. `palette/usePalettes.ts` carries the one disable comment. If the maintainer narrows the rule, remove it.
+- **Lint, decided by the maintainer's session (task 2):** in module `.ts` files (hooks), the database ban is `@/db/db` + `dexie` only, the same as `src/hooks/**`, so `dexie-react-hooks` (`useLiveQuery`) is allowed. Module `.tsx` files keep `dexie*`. The disable comment in `palette/usePalettes.ts` is removed.

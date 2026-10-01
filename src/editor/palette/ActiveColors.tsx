@@ -1,18 +1,18 @@
 import { ArrowLeftRight } from "lucide-react";
 import { ColorPickerPopover } from "@/components/common/ColorPickerPopover";
 import { CommandButton } from "@/components/common/CommandButton";
-import type { PaletteDragData, PaletteDragSource } from "@/components/editor/PalettePanel";
 import { useDragSource } from "@/hooks/useDnd";
 import { rgbaToHex, type RGBA } from "@/lib/color";
 import { cn } from "@/lib/utils";
-import { useEditorStore } from "@/stores/useEditorStore";
+import type { PaletteDragData, PaletteDragSource } from "./PalettePanel";
+import { usePaletteStore } from "./store";
 
 /** The classic overlapping primary/secondary swatches, each opening the picker. */
 export function ActiveColors() {
-  const primaryColor = useEditorStore((state) => state.primaryColor);
-  const secondaryColor = useEditorStore((state) => state.secondaryColor);
-  const setPrimaryColor = useEditorStore((state) => state.setPrimaryColor);
-  const setSecondaryColor = useEditorStore((state) => state.setSecondaryColor);
+  const primaryColor = usePaletteStore((state) => state.primaryColor);
+  const secondaryColor = usePaletteStore((state) => state.secondaryColor);
+  const setPrimaryColor = usePaletteStore((state) => state.setPrimaryColor);
+  const setSecondaryColor = usePaletteStore((state) => state.setSecondaryColor);
 
   return (
     <div className="flex items-center gap-2">

@@ -1,6 +1,7 @@
 import { expect, test } from "vitest";
 import { userEvent } from "vitest/browser";
 import { spriteToScreen } from "@/core/viewport";
+import { usePaletteStore } from "@/editor/palette/api";
 import { useEditorStore } from "@/stores/useEditorStore";
 import { KEYS, chooseTool, openEditor, paintedPixels, type Editor } from "@test/editor";
 
@@ -73,7 +74,7 @@ test.each(WRITERS)("$label: one gesture is one undo step, and redo replays it ex
   useEditorStore.getState().setSetting("pencil", "size", 8);
   editor.click({ x: 3, y: 3 });
   useEditorStore.getState().setSetting("pencil", "size", 1);
-  useEditorStore.getState().setPrimaryColor({ r: 255, g: 0, b: 0, a: 255 });
+  usePaletteStore.getState().setPrimaryColor({ r: 255, g: 0, b: 0, a: 255 });
   const before = paintedPixels();
 
   await chooseTool(editor, tool.label);

@@ -1,7 +1,7 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { listPalettes } from "@/db/repositories/palettes";
 import type { PaletteRecord } from "@/db/schema";
-import { useEditorStore } from "@/stores/useEditorStore";
+import { usePaletteStore } from "./store";
 
 export interface PaletteLibrary {
   palettes: PaletteRecord[];
@@ -15,7 +15,7 @@ export interface PaletteLibrary {
  */
 export function usePalettes(): PaletteLibrary {
   const palettes = useLiveQuery(() => listPalettes(), []);
-  const activePaletteId = useEditorStore((state) => state.activePaletteId);
+  const activePaletteId = usePaletteStore((state) => state.activePaletteId);
 
   const active =
     palettes?.find((palette) => palette.id === activePaletteId) ?? palettes?.[0] ?? null;
