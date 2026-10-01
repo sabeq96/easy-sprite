@@ -1,6 +1,6 @@
 import { Panel } from "@/components/common/Panel";
-import { PreviewPanel } from "@/components/editor/PreviewPanel";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { PreviewPanel } from "@/editor/animation/api";
 import { LayersPanel } from "@/editor/layers/api";
 import { PalettePanel } from "@/editor/palette/api";
 

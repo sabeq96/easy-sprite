@@ -12,6 +12,7 @@ import {
 } from "@test/editor";
 import { settled } from "@test/dom";
 import { holdDrag, releaseDrag } from "@test/pointer";
+import { useAnimationStore } from "@/editor/animation/api";
 import { useFramesStore } from "@/editor/frames/api";
 import { usePaletteStore } from "@/editor/palette/api";
 
@@ -205,10 +206,10 @@ test("play is disabled for a single frame, and with two it plays and pauses", as
   await userEvent.click(editor.screen.getByRole("button", { name: "Play animation" }));
 
   await expect.element(editor.screen.getByRole("button", { name: "Pause animation" })).toBeVisible();
-  expect(useEditorStore.getState().isPlaying).toBe(true);
+  expect(useAnimationStore.getState().isPlaying).toBe(true);
 
   await userEvent.click(editor.screen.getByRole("button", { name: "Pause animation" }));
-  expect(useEditorStore.getState().isPlaying).toBe(false);
+  expect(useAnimationStore.getState().isPlaying).toBe(false);
 });
 
 /** The preview canvas's colour at the centre of sprite pixel `point` (16px sprite, see paint). */

@@ -7,9 +7,9 @@ import { Slider } from "@/components/ui/slider";
 import { DEFAULT_FPS, MAX_FPS, MIN_FPS } from "@/constants/animation";
 import { compositeFrame } from "@/core/composite";
 import { useFramesStore } from "@/editor/frames/api";
-import { useAnimationPlayer } from "@/hooks/useAnimationPlayer";
 import { useDocumentSnapshot } from "@/hooks/useDocumentSnapshot";
-import { useEditorStore } from "@/stores/useEditorStore";
+import { useAnimationStore } from "./store";
+import { useAnimationPlayer } from "./useAnimationPlayer";
 
 export function PreviewPanel() {
   const { doc } = useDocumentSession();
@@ -19,7 +19,7 @@ export function PreviewPanel() {
   // Preview-only: not saved with the sprite, so every open starts at the default.
   const [fps, setFps] = useState(DEFAULT_FPS);
   const activeFrameId = useFramesStore((state) => state.activeFrameId);
-  const setPlaying = useEditorStore((state) => state.setPlaying);
+  const setPlaying = useAnimationStore((state) => state.setPlaying);
 
   const player = useAnimationPlayer({ doc, fps });
 

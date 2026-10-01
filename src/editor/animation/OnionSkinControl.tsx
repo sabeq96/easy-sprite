@@ -6,11 +6,11 @@ import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { commandKeys } from "@/commands/keymap";
-import { useEditorStore } from "@/stores/useEditorStore";
+import { useAnimationStore } from "./store";
 
 export function OnionSkinControl() {
-  const onion = useEditorStore((state) => state.onion);
-  const setOnion = useEditorStore((state) => state.setOnion);
+  const onion = useAnimationStore((state) => state.onion);
+  const setOnion = useAnimationStore((state) => state.setOnion);
 
   return (
     <Popover>

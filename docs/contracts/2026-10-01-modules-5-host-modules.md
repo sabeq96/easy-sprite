@@ -141,7 +141,7 @@ function EditorShell() {
    - The `colors` adapter moves here.
 3. ✅ **layers.** `activeLayerId` → `layers/store.ts`. Move the components and the layer commands, and the layer half of `useActiveTargets`.
 4. ✅ **frames.** `activeFrameId` → `frames/store.ts`. Move the components and the frame commands, and the frame half of `useActiveTargets` (then delete `useActiveTargets`).
-5. **animation.**
+5. ✅ **animation.**
    - `onion` and `isPlaying` → `animation/store.ts`.
    - Move `PreviewPanel`, the player and `OnionSkinControl`.
    - `view.toggleOnion` → `animation/commands.ts`.
@@ -447,6 +447,81 @@ None. Decisions 1-5 were settled on 2026-10-01.
     frame N, Duplicate frame ⇧N, Previous frame `,`, Next frame `.`, Move frame left ⌥`,`, Move
     frame right ⌥`.`". There is no frame menu or context menu to compare.
 
+- **2026-10-01, Task 5: the store is `useAnimationStore` (`AnimationState`): `onion`, `isPlaying`,
+  `setOnion` and `setPlaying`, unchanged from `viewSlice`, which loses all four and the
+  `OnionConfig` type (now in `animation/store.ts`, not exported from `api.ts`: no other module
+  names it).** `animation/api.ts` exports `OnionSkinControl` (`components/editor/ViewControls`),
+  `PreviewPanel` (shell's `RightSidebar`), `useAnimationStore` and `module`. `commands.ts`,
+  `attachCanvas.ts`, `store.ts` and `useAnimationPlayer.ts` stay private. Readers outside the
+  module, all through `@/editor/animation/api`: `hooks/useCanvasRenderer` (the `isPlaying`
+  selector for `setState`; the renderer's initial `isPlaying: false` literal is unchanged),
+  `ViewControls` and `RightSidebar`.
+- **2026-10-01, Task 5: `useAnimationPlayer` moved too.** Only `PreviewPanel` used it (`grep`
+  found no other importer in `src/` or `tests/`). `docs/conventions.md` §7 still shows it as
+  `// src/hooks/useAnimationPlayer.ts`; task 8 fixes that path with the other docs.
+- **2026-10-01, Task 5: `view.toggleOnion` is `animationCommands()` in `animation/commands.ts`.**
+  Same id, label, group, `isActive` and body; it takes no context, like `paletteCommands()`. The
+  key stays `⌘⇧O` in `constants/shortcuts.ts` (unchanged). `useEditorCommands` loses it.
+- **2026-10-01, Task 5: `attachCanvas` is wired in `hooks/useCanvasRenderer.ts`.** In the
+  renderer-creation effect, right after the grid painter and its `useEditorStore` subscription,
+  `EDITOR_MODULES.map((module) => module.attachCanvas?.(instance, doc))` collects the cleanups;
+  the effect's cleanup runs them, then the grid unsubscribe, then `instance.dispose()`. All of
+  this runs before `setRenderer(instance)`, so before the tool host attaches a tool's overlay.
+  `animationModule.attachCanvas` is `attachOnion(renderer)` in `animation/attachCanvas.ts`: it
+  adds the onion painter (moved unchanged: its own scratch `OffscreenCanvas`, `onion.enabled &&
+  !p.isPlaying`) and subscribes to `useAnimationStore` to invalidate `onion` when `onion`
+  changes. The grid subscription in `useCanvasRenderer` now covers only `gridEnabled` and
+  `gridSize`. Registration order is unchanged: the grid painter, then the onion painter (the
+  module loop runs after the grid), then any tool overlay.
+  `docs/architecture.md` §4 ("the host registers the grid and onion painters … before any tool
+  attaches") is still true; task 8 rewrites it to name the modules.
+- **2026-10-01, Task 5: `EDITOR_MODULES` is `[palette, shell, layers, frames, animation]`.**
+  Animation declares no hints, so the cheat sheet is unchanged. No import cycle: `useCanvasRenderer`
+  (in `hooks/`) now imports `@/editor/modules`, and nothing `modules.ts` reaches imports
+  `useCanvasRenderer`, `EditorCanvas` or `EditorPage` (`npm run lint` with `import/no-cycle` passes).
+- **2026-10-01, Task 5: tests.**
+  - The "setOnion merges a partial patch" case left `tests/unit/stores/viewSlice.test.ts` for the
+    new `tests/unit/editor/animation/store.test.ts` (singleton after `resetEditorStores()`, same
+    expected values). There was no playing test to move; the new file adds "tracks playback".
+  - New `tests/unit/editor/animation/module.test.ts` (the contract's fake-renderer test): "attachCanvas
+    adds one painter on the onion channel and removes it on cleanup", plus "repaints the onion
+    channel when the onion config changes, until detached". The unit project goes from 323 to
+    326 tests; the browser project stays at 274.
+  - `resetEditorStores()` also resets `useAnimationStore`.
+  - Reads that changed store and nothing else: `tests/browser/editor/frames.browser.test.tsx`,
+    the two `isPlaying` assertions in "play is disabled for a single frame…"; and
+    `tests/browser/components/OnionSkinControl.browser.test.tsx`, the three
+    `onion.direction` assertions. That file also imports `OnionSkinControl` from
+    `@/editor/animation/api` instead of `@/components/editor/OnionSkinControl`, and stays in
+    `tests/browser/components/` (no browser test moved in tasks 1–4 either). Every expected value
+    is unchanged.
+  - Mutation probes (each restored from a copy): with the `attachCanvas` loop in
+    `useCanvasRenderer` replaced by `EDITOR_MODULES.map(() => undefined)`, "onion skin ghosts
+    the previous frame…" fails (`expected 0 to be greater than 0`); with `unsubscribe()` dropped
+    from `attachOnion`'s cleanup, "repaints the onion channel … until detached" fails.
+- **2026-10-01, Task 5: verification beyond the suites.**
+  - Lint probe: `import "@/editor/animation/store"` added to the top of `frames/FramesBar.tsx`,
+    `frames/commands.ts`, `shell/RightSidebar.tsx` and `shell/commands.ts` fails `npx oxlint`
+    in each with `'@/editor/animation/store' import is restricted from being used by a pattern`.
+    Each file was restored from a copy.
+  - `grep -rn "onion\b\|isPlaying\|setPlaying\|setOnion" src | grep -v "src/editor/animation\|src/core"`
+    lists only: `useCanvasRenderer`'s `useAnimationStore` selector, the renderer's `isPlaying`
+    state field (initial value and `setState`), the `onion` channel (`data-canvas="onion"` in
+    `EditorCanvas`, `targets.onion`), and `SETTING_KEYS.onion = "view.onion"` in
+    `constants/settings.ts`, a settings key with no reader (pre-existing, untouched).
+  - A throwaway browser probe ran on this tree and on `f01964f` in a scratch worktree (then
+    removed). It reads only the DOM, the live document and the onion and preview canvases. It
+    dumped all buttons (name, `aria-keyshortcuts`, disabled, `aria-pressed`) at open and at the
+    end, the onion trigger's tooltip ("Onion skin settings⌘⇧O"), and, after each of 15 states, the
+    onion pixel at (1,1) and (6,6), a hash of the whole onion canvas, a hash of the preview
+    canvas, the trigger's `aria-pressed`, the play button's label and the popover (switches,
+    opacity value). The states: two painted frames, ⌘⇧O on, off, on; popover open; opacity +10,
+    −30, max; the popover's enable switch off and on; direction "after" on frame 2; frame 1;
+    playing (onion cleared); paused; ⌘⇧O off. It also dumped the preview's fps text and the whole
+    cheat sheet. The two JSON dumps (24,414 bytes each) are byte-identical. Ghost alpha reads
+    89 at 35%, 115 at 45%, 140 at 55%, 0 while playing and 140 again when paused. The View group
+    reads "Zoom in +=, Zoom out -_, Fit to window 0, Toggle pixel grid ⌘G, Toggle onion skin ⌘⇧O".
+
 ## Builder notes (from task 1, for tasks 2–8)
 
 - **Plugging in a module.**
@@ -489,3 +564,20 @@ None. Decisions 1-5 were settled on 2026-10-01.
   `openEditor()`: after several keyboard steps, hovering the "New frame" button's wrapper
   opened no tooltip in time. Frame-card actions are hidden until hover, so hover the card's
   `li` first, then the button, both with `{ force: true }`.
+- **`attachCanvas` (from task 5).** `hooks/useCanvasRenderer.ts` calls every module's
+  `attachCanvas(instance, doc)` in `EDITOR_MODULES` order inside the renderer-creation effect,
+  after the grid painter and before `setRenderer(instance)`, and runs the returned cleanups
+  before `instance.dispose()`. Task 6 moves the grid painter the same way: add
+  `view/attachCanvas.ts` that adds the overlay painter and subscribes to the view store for
+  `gridEnabled`/`gridSize`, then delete the inline painter, its `useEditorStore` subscription and
+  the `drawGrid` import from `useCanvasRenderer`. Stacking on `overlay` stays grid → tool overlay
+  because every module attaches before the tool host gets the renderer; "the selection fill
+  draws above the grid lines" pins it. `tests/unit/editor/animation/module.test.ts` has the
+  fake renderer to copy for task 6's test. Task 8 moves the loop into `canvas` with the hook.
+- **Renderer readers (from task 5).** `useCanvasRenderer` reads `isPlaying` through
+  `@/editor/animation/api` and imports `@/editor/modules`. When task 8 moves it into `canvas`,
+  `modules.ts` will list `canvas` while `canvas` imports `modules.ts`; keep `canvas/api.ts` from
+  reaching `useCanvasRenderer`, or `import/no-cycle` fails. `animation → frames` is now a real
+  edge (`PreviewPanel`), and `useCanvasRenderer` (canvas, from task 8) imports
+  `@/editor/animation/api`: nothing `animation/api.ts` reaches may import `@/editor/canvas/api`
+  or `@/editor/layers/api`.

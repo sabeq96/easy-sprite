@@ -1,24 +1,14 @@
 import { DEFAULT_CHECKER_SIZE, DEFAULT_TILE_SIZE, DEFAULT_ZOOM } from "@/constants/canvas";
-import { ONION_DEFAULT, type OnionDirection } from "@/constants/animation";
 import { clampViewport, fitViewport, zoomStep, type Point, type Size, type Viewport } from "@/core/viewport";
 import type { SliceCreator } from "@/stores/slices/types";
-
-export interface OnionConfig {
-  enabled: boolean;
-  direction: OnionDirection;
-  opacity: number;
-}
 
 export interface ViewSlice {
   viewport: Viewport;
   gridEnabled: boolean;
   gridSize: number;
   checkerSize: number;
-  onion: OnionConfig;
   /** Last known container size, so zoom commands can clamp without a DOM read. */
   containerSize: Size;
-  /** Mirrors the preview player so the renderer can skip onion skin during playback. */
-  isPlaying: boolean;
 
   setViewport: (viewport: Viewport) => void;
   setContainerSize: (size: Size) => void;
@@ -31,8 +21,6 @@ export interface ViewSlice {
   setCheckerSize: (size: number) => void;
   /** Grid to `gridSize` (a sprite's tile), chessboard to its default — done whenever a sprite opens. */
   resetGrid: (gridSize: number) => void;
-  setOnion: (patch: Partial<OnionConfig>) => void;
-  setPlaying: (isPlaying: boolean) => void;
 }
 
 export const createViewSlice: SliceCreator<ViewSlice> = (set, get) => ({
@@ -40,9 +28,7 @@ export const createViewSlice: SliceCreator<ViewSlice> = (set, get) => ({
   gridEnabled: true,
   gridSize: DEFAULT_TILE_SIZE,
   checkerSize: DEFAULT_CHECKER_SIZE,
-  onion: { ...ONION_DEFAULT },
   containerSize: { width: 0, height: 0 },
-  isPlaying: false,
 
   setViewport: (viewport) => set({ viewport }),
   setContainerSize: (containerSize) => set({ containerSize }),
@@ -73,6 +59,4 @@ export const createViewSlice: SliceCreator<ViewSlice> = (set, get) => ({
   setGridSize: (gridSize) => set({ gridSize }),
   setCheckerSize: (checkerSize) => set({ checkerSize }),
   resetGrid: (gridSize) => set({ gridSize, checkerSize: DEFAULT_CHECKER_SIZE }),
-  setOnion: (patch) => set(({ onion }) => ({ onion: { ...onion, ...patch } })),
-  setPlaying: (isPlaying) => set({ isPlaying }),
 });

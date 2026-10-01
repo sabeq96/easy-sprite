@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useDocumentSession } from "@/app/DocumentProvider";
 import { drawGrid } from "@/core/painters/grid";
-import { drawOnion } from "@/core/painters/onion";
 import { CanvasRenderer, type RendererTargets } from "@/core/renderer";
+import { useAnimationStore } from "@/editor/animation/api";
 import { useFramesStore } from "@/editor/frames/api";
+import { EDITOR_MODULES } from "@/editor/modules";
 import { useEditorStore } from "@/stores/useEditorStore";
 
 export interface CanvasRefs {
@@ -26,7 +27,7 @@ export function useCanvasRenderer(): CanvasRefs {
 
   const viewport = useEditorStore((state) => state.viewport);
   const activeFrameId = useFramesStore((state) => state.activeFrameId);
-  const isPlaying = useEditorStore((state) => state.isPlaying);
+  const isPlaying = useAnimationStore((state) => state.isPlaying);
   const fitToContainer = useEditorStore((state) => state.fitToContainer);
   const toolSettings = useEditorStore((state) => state.settings);
 
@@ -47,7 +48,6 @@ export function useCanvasRenderer(): CanvasRefs {
 
     // Registration order is stacking order: these go in before any tool attaches, so a tool's
     // overlay (added per activation through the tool host) always draws above the grid.
-    const scratch = new OffscreenCanvas(1, 1);
     instance.addPainter({
       channel: "overlay",
       paint: (p) => {
@@ -55,25 +55,19 @@ export function useCanvasRenderer(): CanvasRefs {
         if (gridEnabled) drawGrid(p, gridSize);
       },
     });
-    instance.addPainter({
-      channel: "onion",
-      // Onion skin is meaningless during playback and costs a composite per ghost frame.
-      paint: (p) => {
-        const { onion } = useEditorStore.getState();
-        if (onion.enabled && !p.isPlaying) drawOnion(p, onion, scratch);
-      },
-    });
-
-    // The painters read the store at paint time; repaint their channel when what they read changes.
+    // The grid painter reads the store at paint time; repaint its channel when that changes.
     const unsubscribe = useEditorStore.subscribe((state, previous) => {
       if (state.gridEnabled !== previous.gridEnabled || state.gridSize !== previous.gridSize) {
         instance.invalidate("overlay");
       }
-      if (state.onion !== previous.onion) instance.invalidate("onion");
     });
+    // Each module registers its own painters and repaint listeners, in module order, also
+    // before any tool attaches.
+    const detachModules = EDITOR_MODULES.map((module) => module.attachCanvas?.(instance, doc));
 
     setRenderer(instance);
     return () => {
+      for (const detach of detachModules) detach?.();
       unsubscribe();
       instance.dispose();
       setRenderer(null);

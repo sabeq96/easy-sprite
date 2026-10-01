@@ -1,7 +1,6 @@
 import { expect, test } from "vitest";
 import { userEvent } from "vitest/browser";
-import { OnionSkinControl } from "@/components/editor/OnionSkinControl";
-import { useEditorStore } from "@/stores/useEditorStore";
+import { OnionSkinControl, useAnimationStore } from "@/editor/animation/api";
 import { render } from "@test/render";
 
 test("the trigger has a hover tooltip naming the control", async () => {
@@ -26,12 +25,12 @@ test("toggling the direction switch flips onion.direction between before and aft
   const screen = await render(<OnionSkinControl />);
   await userEvent.click(screen.getByRole("button", { name: "Onion skin settings" }));
 
-  expect(useEditorStore.getState().onion.direction).toBe("before");
+  expect(useAnimationStore.getState().onion.direction).toBe("before");
 
   const direction = screen.getByRole("switch", { name: /Onion skin direction/ });
   await userEvent.click(direction);
-  expect(useEditorStore.getState().onion.direction).toBe("after");
+  expect(useAnimationStore.getState().onion.direction).toBe("after");
 
   await userEvent.click(direction);
-  expect(useEditorStore.getState().onion.direction).toBe("before");
+  expect(useAnimationStore.getState().onion.direction).toBe("before");
 });

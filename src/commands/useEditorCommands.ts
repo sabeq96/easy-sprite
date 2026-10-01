@@ -55,16 +55,6 @@ export function useEditorCommands(): CommandRegistry {
       isActive: () => store.getState().gridEnabled,
       run: () => store.getState().toggleGrid(),
     },
-    "view.toggleOnion": {
-      id: "view.toggleOnion",
-      label: "Toggle onion skin",
-      group: "View",
-      isActive: () => store.getState().onion.enabled,
-      run: () => {
-        const { onion, setOnion } = store.getState();
-        setOnion({ enabled: !onion.enabled });
-      },
-    },
   };
 
   function zoomFromCentre(direction: 1 | -1) {

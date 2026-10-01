@@ -47,13 +47,6 @@ describe("viewSlice", () => {
     expect(store.getState().viewport).toEqual({ scale: 12, originX: 500 - 96, originY: -32 * 12 + 96 });
   });
 
-  it("setOnion merges a partial patch onto the existing config", () => {
-    const store = createTestStore();
-    store.getState().setOnion({ enabled: true });
-    expect(store.getState().onion.enabled).toBe(true);
-    expect(store.getState().onion.direction).toBe("before"); // untouched fields survive the patch
-  });
-
   it("resetGrid sets the grid to the given tile and the chessboard back to 1px", () => {
     const store = createTestStore();
     store.getState().setCheckerSize(8);
