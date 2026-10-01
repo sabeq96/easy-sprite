@@ -12,8 +12,10 @@ import {
   rectPoints,
   selectFrame,
   selectLayer,
+  session,
   type Editor,
 } from "@test/editor";
+import { keyDown, keyUp, pressKey } from "@test/keys";
 
 const RED = { r: 255, g: 0, b: 0, a: 255 };
 
@@ -215,4 +217,32 @@ test("the select tool offers no brush options", async () => {
   await chooseTool(editor, "Select & move");
 
   await expect.element(editor.screen.getByRole("group", { name: "Brush size" })).not.toBeInTheDocument();
+});
+
+test("tapping S keeps Select & move", async () => {
+  await openEditor();
+
+  pressKey("s", "KeyS", 0, 100);
+
+  expect(useEditorStore.getState().toolId).toBe("select");
+});
+
+test("releasing a held S mid-move puts the pixels back and adds no undo step", async () => {
+  const editor = await openEditor();
+  useEditorStore.getState().setPrimaryColor(RED);
+  useEditorStore.getState().setToolOptions({ brushSize: 3 });
+  editor.click({ x: 3, y: 3 });
+  const before = session().history.undoLabel;
+
+  keyDown("s", { code: "KeyS", at: 0 });
+  selectBlock(editor);
+  const move = editor.press({ x: 3, y: 3 });
+  move.moveTo({ x: 10, y: 10 });
+  keyUp("s", { code: "KeyS", at: 1000 });
+  move.moveTo({ x: 12, y: 12 });
+  move.release();
+
+  expect(useEditorStore.getState().toolId).toBe("pencil");
+  expect(paintedPixels()).toEqual(keys(rectPoints(2, 2, 3, 3)));
+  expect(session().history.undoLabel).toBe(before);
 });

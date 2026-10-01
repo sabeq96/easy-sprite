@@ -10,6 +10,7 @@ export const eraserTool = defineTool({
   label: "Eraser",
   group: "draw",
   shortcut: { key: "e" },
+  reselectCommand: "tool.cycleBrushSize",
   continuous: true,
   options: ["brushSize"],
 

@@ -2,6 +2,7 @@
 const APP_COMMAND_IDS = [
   // tools
   "tool.cycleBrushSize",
+  "tool.toggleMirror",
   // edit
   "edit.undo",
   "edit.redo",

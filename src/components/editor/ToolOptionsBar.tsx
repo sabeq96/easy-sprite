@@ -1,6 +1,7 @@
 import { FlipHorizontal, FlipVertical } from "lucide-react";
 import { BRUSH_SIZES } from "@/constants/tools";
 import { TOOLS } from "@/editor/tools";
+import { CommandButton } from "@/components/common/CommandButton";
 import { Panel } from "@/components/common/Panel";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -45,15 +46,9 @@ export function ToolOptionsBar() {
       {fields.includes("mirror") && (
         <div className="flex items-center gap-1">
           <Label size="sm" muted>Mirror</Label>
-          <Button
-            size="icon-xs"
-            variant={options.mirrorHorizontal ? "secondary" : "ghost"}
-            aria-label="Mirror horizontally"
-            aria-pressed={options.mirrorHorizontal}
-            onClick={() => setToolOptions({ mirrorHorizontal: !options.mirrorHorizontal })}
-          >
+          <CommandButton command="tool.toggleMirror" size="icon-xs">
             <FlipHorizontal />
-          </Button>
+          </CommandButton>
           <Button
             size="icon-xs"
             variant={options.mirrorVertical ? "secondary" : "ghost"}

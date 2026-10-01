@@ -1,7 +1,8 @@
 import type { ShortcutRow } from "@/commands/hints";
 import { hintRow } from "@/commands/hints";
-import { commandKeys, toolKeys } from "@/commands/keymap";
-import type { CommandRegistry } from "@/commands/types";
+import { commandKeys, reselectKeys } from "@/commands/keymap";
+import { TOOL_KEY_HOLD_HINT } from "@/commands/toolCommands";
+import type { CommandId, CommandRegistry } from "@/commands/types";
 import {
   ShortcutHelpDialog as CommonShortcutHelpDialog,
   type ShortcutSection,
@@ -25,17 +26,36 @@ const TOOL_OWNED_COMMANDS = new Set<string>(
   TOOL_LIST.flatMap((tool) => [`tool.${tool.id}`, ...(tool.commands ?? [])]),
 );
 
+/** Tools-group commands that aren't a tool's own key (the mirror toggle): shown under Tools too. */
+function toolsGroupCommands(commands: CommandRegistry): CommandId[] {
+  return (Object.keys(commands) as CommandId[]).filter(
+    (id) =>
+      commands[id]?.group === "Tools" && !TOOL_OWNED_COMMANDS.has(id) && commandKeys(id).length > 0,
+  );
+}
+
 /**
  * Inputs owned by features rather than commands, each declared next to its code. They join the
  * command group they belong to instead of getting sections of their own.
  */
 const FEATURE_HINTS = [COLOR_HOTKEY_HINTS, POINTER_PAINT_HINTS, CANVAS_VIEW_HINTS];
 
-/** One row per tool: its key, plus the key held to borrow it from any other tool. */
-const TOOLS_ROWS: ShortcutRow[] = TOOL_LIST.map((tool) => ({
-  label: tool.label,
-  keys: toolKeys(tool),
-}));
+/**
+ * One row per tool, each followed by what pressing its key again does; then the other Tools
+ * commands, and last the hold gesture every tool key shares.
+ */
+function toolsRows(commands: CommandRegistry): ShortcutRow[] {
+  const rows = TOOL_LIST.flatMap((tool) => {
+    const row = { label: tool.label, keys: commandKeys(`tool.${tool.id}`) };
+    const reselect = tool.reselectCommand && commands[tool.reselectCommand];
+    return reselect ? [row, { label: reselect.label, keys: reselectKeys(tool) }] : [row];
+  });
+  for (const id of toolsGroupCommands(commands)) {
+    rows.push({ label: commands[id]?.label ?? id, keys: commandKeys(id) });
+  }
+  rows.push(hintRow(TOOL_KEY_HOLD_HINT));
+  return rows;
+}
 
 /** Only tools with more to say than their key — their commands and hints — get a section. */
 function toolSections(commands: CommandRegistry): ShortcutSection[] {
@@ -58,8 +78,8 @@ export function ShortcutHelpDialog({ commands, open, onOpenChange }: ShortcutHel
       onOpenChange={onOpenChange}
       description="Every key and mouse gesture the editor understands."
       hints={FEATURE_HINTS}
-      leadingSections={[{ title: "Tools", rows: TOOLS_ROWS }, ...toolSections(commands)]}
-      excludeCommands={TOOL_OWNED_COMMANDS}
+      leadingSections={[{ title: "Tools", rows: toolsRows(commands) }, ...toolSections(commands)]}
+      excludeCommands={new Set([...TOOL_OWNED_COMMANDS, ...toolsGroupCommands(commands)])}
     />
   );
 }

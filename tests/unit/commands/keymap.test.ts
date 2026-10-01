@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { commandKeys, HELD_TOOL_KEYS, SHORTCUTS, toolKeys } from "@/commands/keymap";
+import { commandKeys, reselectKeys, SHORTCUTS } from "@/commands/keymap";
 import type { CommandId } from "@/commands/types";
-import { TOOL_LIST } from "@/editor/tools";
-import { bindingSignature, formatModifier } from "@/lib/keys";
+import { getTool, TOOL_LIST } from "@/editor/tools";
+import { bindingSignature } from "@/lib/keys";
 
 describe("keymap", () => {
   it("never binds one chord to two commands", () => {
@@ -27,15 +27,14 @@ describe("keymap", () => {
     }
   });
 
-  it("derives held keys from the tools that declare one", () => {
-    expect(HELD_TOOL_KEYS).toEqual({ alt: "picker" });
+  it("labels a tool's press-again key only when it has something to reselect", () => {
+    expect(reselectKeys(getTool("pencil"))).toEqual(commandKeys("tool.pencil").map((key) => `${key} again`));
+    expect(reselectKeys(getTool("eraser"))).toEqual(commandKeys("tool.eraser").map((key) => `${key} again`));
+    expect(reselectKeys(getTool("picker"))).toEqual([]);
   });
 
-  it("shows a tool's own key, then the key held to borrow it", () => {
-    const picker = TOOL_LIST.find((tool) => tool.id === "picker")!;
-    const pencil = TOOL_LIST.find((tool) => tool.id === "pencil")!;
-
-    expect(toolKeys(picker)).toEqual([...commandKeys("tool.picker"), `Hold ${formatModifier("alt")}`]);
-    expect(toolKeys(pencil)).toEqual(commandKeys("tool.pencil"));
+  it("binds V to the mirror toggle, apart from paste", () => {
+    expect(SHORTCUTS["tool.toggleMirror"]).toEqual([{ key: "v" }]);
+    expect(SHORTCUTS["edit.paste"]).toEqual([{ key: "v", mod: true }]);
   });
 });

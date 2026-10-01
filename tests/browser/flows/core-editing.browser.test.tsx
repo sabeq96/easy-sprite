@@ -121,9 +121,15 @@ test("the cheat sheet lists tool gestures once, and feature keys inside their co
 
   await expect.element(dialog.getByRole("heading", { name: /Select & move/ })).toBeVisible();
   await expect.element(dialog.getByText(/^Duplicate selection/)).toBeVisible();
-  // Every tool is one row of a single Tools section, the picker's hold key alongside its own.
+  // Every tool is one row of a single Tools section, with the tool keys' shared hold gesture.
   await expect.element(dialog.getByRole("heading", { name: "Tools" })).toBeVisible();
-  await expect.element(dialog.getByText(/^Hold /)).toBeInTheDocument();
+  expect(dialog.getByRole("heading", { name: "Tools" }).elements()).toHaveLength(1);
+  await expect.element(dialog.getByText("Hold tool key", { exact: true })).toBeInTheDocument();
+  // Pencil and eraser each list their own press-again row.
+  await expect.element(dialog.getByText("Cycle brush size", { exact: true }).first()).toBeInTheDocument();
+  expect(dialog.getByText("Cycle brush size", { exact: true }).elements()).toHaveLength(2);
+  await expect.element(dialog.getByText("Mirror horizontally", { exact: true })).toBeInTheDocument();
+  expect(dialog.getByText(/^Hold (⌥|Alt)$/).elements()).toHaveLength(0);
   expect(dialog.getByRole("heading", { name: "Pencil" }).elements()).toHaveLength(0);
   await expect.element(dialog.getByText("Pick primary", { exact: true })).toBeInTheDocument();
   // Selection commands are listed once, in the Select & move section, not again under Edit.

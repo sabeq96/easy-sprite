@@ -95,6 +95,30 @@ export function dragSpritePixels(
 }
 
 /**
+ * A pointer held down over one sprite pixel, left pressed so something can happen mid-gesture
+ * (a key released, a tool switched). Returns the rest of the gesture.
+ */
+export function pressSpritePixel(
+  container: Element,
+  viewport: () => Viewport,
+  point: Point,
+  options: GestureOptions = {},
+) {
+  const start = clientPointFor(container, viewport(), point);
+  fire(container, "pointerdown", start.clientX, start.clientY, true, options);
+  let last = start;
+  return {
+    moveTo(next: Point) {
+      last = clientPointFor(container, viewport(), next);
+      fire(container, "pointermove", last.clientX, last.clientY, true, options);
+    },
+    release() {
+      fire(container, "pointerup", last.clientX, last.clientY, false, options);
+    },
+  };
+}
+
+/**
  * A drag in plain client pixels (not sprite pixels) — for gestures measured on screen, like
  * panning, where the start and end are about the view rather than any one pixel.
  */

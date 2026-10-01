@@ -4,6 +4,7 @@ import { BRUSH_SIZES } from "@/constants/tools";
 import { createPalette } from "@/db/repositories/palettes";
 import { brushBounds } from "@/editor/pixels";
 import type { Point } from "@/editor/viewport";
+import { IS_APPLE } from "@/lib/keys";
 import { useEditorStore } from "@/stores/useEditorStore";
 import {
   KEYS,
@@ -15,6 +16,7 @@ import {
   session,
   type Editor,
 } from "@test/editor";
+import { keyDown, pressKey } from "@test/keys";
 
 /** Every pixel one stamp of `size` covers at `point` — the footprint the options bar promises. */
 function footprint(point: Point, size: number): Point[] {
@@ -228,4 +230,49 @@ test("strokes past the canvas edge clip instead of wrapping or throwing", async 
   // Size 4 spans x-1..x+2: only the in-canvas part of each stamp lands.
   expect(paintedPixels()).toEqual(keys([...rectPoints(0, 0, 3, 3), { x: 14, y: 14 }, { x: 15, y: 14 }, { x: 14, y: 15 }, { x: 15, y: 15 }]));
   expect(session().doc.width).toBe(16);
+});
+
+test("pressing P on the pencil cycles the brush size shown in the options bar", async () => {
+  const editor = await openEditor();
+
+  for (const [index, size] of [2, 3, 4, 6, 8, 1].entries()) {
+    pressKey("p", "KeyP", index * 1000, 50);
+    await expect
+      .element(editor.screen.getByRole("button", { name: `${size} pixels`, exact: true }))
+      .toHaveAttribute("aria-pressed", "true");
+  }
+  expect(useEditorStore.getState().heldTool).toBeNull();
+});
+
+test("a held P repeating on the pencil cycles only once", async () => {
+  await openEditor();
+
+  keyDown("p", { code: "KeyP", at: 0 });
+  keyDown("p", { code: "KeyP", at: 500, repeat: true });
+
+  expect(useEditorStore.getState().toolOptions.brushSize).toBe(2);
+});
+
+test("V toggles Mirror horizontally on the pencil, like the options-bar button", async () => {
+  const editor = await openEditor();
+  const button = editor.screen.getByRole("button", { name: "Mirror horizontally" });
+
+  pressKey("v", "KeyV", 0, 50);
+  await expect.element(button).toHaveAttribute("aria-pressed", "true");
+  editor.click({ x: 2, y: 3 });
+  expect(paintedPixels()).toEqual(keys([{ x: 2, y: 3 }, { x: 13, y: 3 }]));
+
+  pressKey("v", "KeyV", 1000, 50);
+  await expect.element(button).toHaveAttribute("aria-pressed", "false");
+});
+
+test("V does nothing on a tool without mirroring, and the command-key V never toggles it", async () => {
+  await openEditor();
+
+  keyDown("v", { code: "KeyV", at: 0, ctrlKey: !IS_APPLE, metaKey: IS_APPLE });
+  expect(useEditorStore.getState().toolOptions.mirrorHorizontal).toBe(false);
+
+  useEditorStore.getState().setTool("eraser");
+  pressKey("v", "KeyV", 100, 50);
+  expect(useEditorStore.getState().toolOptions.mirrorHorizontal).toBe(false);
 });

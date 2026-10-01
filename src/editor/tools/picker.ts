@@ -23,7 +23,6 @@ export const pickerTool = defineTool({
   label: "Color picker",
   group: "color",
   shortcut: { key: "o" },
-  holdKey: "alt",
   options: ["pickSource"],
   // Dragging keeps sampling, like Piskel.
   continuous: true,

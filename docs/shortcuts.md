@@ -7,15 +7,18 @@ cheat sheet (`?`) is generated from that.
 
 ## Tools
 
+Tap a tool key to switch to that tool. Hold it (0.3 s or longer) to use the tool until you let
+go, then you are back on the tool you had.
+
 | Key | Command | Notes |
 | --- | --- | --- |
-| `P` | Pencil | press again to cycle brush size 1→2→3→4 |
-| `V` | Mirror pencil | draws on both sides of the vertical axis |
-| `E` | Eraser | |
+| `P` | Pencil | press again (while the pencil is active) to cycle brush size 1→2→3→4→6→8→1 |
+| `V` | Mirror horizontally | pencil only: toggles drawing on both sides of the vertical axis, like the options-bar button. Doesn't spring back when held |
+| `E` | Eraser | press again (while the eraser is active) to cycle brush size, as with `P` |
 | `B` | Paint bucket | contiguous fill |
 | `G` | Fill similar | replaces matching colour across the whole layer |
-| `O` | Color picker | samples the composite; `Alt` held = temporary picker from any tool |
-| `S` | Select & move | click selects a pixel, drag selects a rectangle; drag inside the selection moves it, `Ctrl/⌘`+drag copies. The selection only exists while this tool is active |
+| `O` | Color picker | samples the composite; hold `O` to pick a colour and go back to your tool |
+| `S` | Select & move | click selects a pixel, drag selects a rectangle; drag inside the selection moves it, `Ctrl/⌘`+drag copies. The selection only exists while this tool is active, so releasing a held `S` drops it, and mid-drag cancels the move |
 | `Esc` | Cancel / deselect | |
 
 ## Colors
@@ -26,7 +29,6 @@ cheat sheet (`?`) is generated from that.
 | `D` | Reset to black/transparent |
 | `1` … `9` | Select palette slot 1–9 as primary |
 | `Shift`+`1` … `9` | Select palette slot 1–9 as secondary |
-| `Alt`+click | Pick colour under cursor (any drawing tool) |
 
 ## Edit
 
@@ -69,11 +71,15 @@ cheat sheet (`?`) is generated from that.
 Where things live:
 
 - **Tool keys and gestures live on the tool.** Each tool declares `shortcut` (the key that activates
-  it), an optional `holdKey` (held to borrow it from any tool) and `hints` (its non-obvious gestures,
-  e.g. `⌘ + Drag` to duplicate a selection) — see `src/editor/tools/*.ts`.
+  it), an optional `reselectCommand` (run when its key is pressed while it is already active, e.g.
+  the pencil's brush-size cycle) and `hints` (its non-obvious gestures, e.g. `⌘ + Drag` to
+  duplicate a selection) — see `src/editor/tools/*.ts`.
+- **Tap vs hold.** Tool commands carry a `hold` part (`CommandDefinition.hold`). `useShortcuts`
+  calls its `press` instead of `run()`, then `release` on that key's keyup (`cancel` on window
+  blur). The tap/hold decision (`TOOL_KEY_HOLD_MS`) lives in the tool slice.
 - **Every other key** is in `APP_SHORTCUTS` in `src/constants/shortcuts.ts`.
-- **`src/commands/keymap.ts`** merges both into `SHORTCUTS`, derives `HELD_TOOL_KEYS`, and exposes
-  `commandKeys(id)` — every chord for a command, formatted for display.
+- **`src/commands/keymap.ts`** merges both into `SHORTCUTS` and exposes `commandKeys(id)` — every
+  chord for a command, formatted for display.
 - **Inputs that are neither a tool's nor a command** (1–9, pan/zoom, right-drag for the secondary
   colour) are `HintSection`s exported next to the code that implements them. Each names the
   command group it belongs to, so the cheat sheet lists it there rather than in a section of its
@@ -86,7 +92,7 @@ Where things live:
 Rules that keep it honest:
 
 1. **Every entry maps to a command id, not to a handler.** The key handler resolves the id in the
-   command registry and calls `run()`. A shortcut for a command that does not exist is a type
+   command registry and calls `run()` (or `hold.press()` for a tool key). A shortcut for a command that does not exist is a type
    error.
 2. **No chord is bound twice** — a unit test (`tests/unit/commands/keymap.test.ts`) walks the
    merged table.
