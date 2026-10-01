@@ -5,9 +5,9 @@ import { formatZoom } from "@/lib/format";
 export interface ZoomControlsProps {
   zoom: number;
   /**
-   * The editor's zoom ladder, ascending, so − and + can disable at its ends. Passed rather than
-   * read from the commands' `isEnabled`: CommandButton reads that once and the React Compiler
-   * keeps the result, so it would not follow the zoom (the same reason undo passes `disabled`).
+   * The editor's zoom ladder, ascending, so − and + disable at its ends. The `disabled` it gives
+   * them takes precedence over the commands' `isEnabled`, which CommandButton also follows live
+   * through the provider's `subscribe`; both read the same ladder, so they agree.
    */
   levels: readonly number[];
 }

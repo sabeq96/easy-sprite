@@ -2,8 +2,7 @@ import type { SpriteDocument } from "@/core/document";
 import { StrokeRecorder, type History } from "@/core/history";
 import { useFramesStore } from "@/editor/frames/api";
 import { useLayersStore } from "@/editor/layers/api";
-import type { Edits } from "@/framework/host";
-import { createSurface } from "@/hooks/toolHost/surface";
+import type { Edits, Surface } from "@/framework/host";
 
 interface Target {
   layerId: string;
@@ -17,8 +16,24 @@ function activeTarget(): Target | null {
   return activeLayerId && activeFrameId ? { layerId: activeLayerId, frameId: activeFrameId } : null;
 }
 
+/**
+ * Builds one cel's drawing surface, recording into `recorder`. The canvas owns the surface and
+ * passes its factory in: importing it here would close an import cycle with the tool host, which
+ * imports this adapter.
+ */
+export type SurfaceFactory = (
+  doc: SpriteDocument,
+  layerId: string,
+  frameId: string,
+  recorder: StrokeRecorder,
+) => Surface;
+
 /** `ToolHost.history`: a tool's edit of the active cel, recorded as one undo entry. */
-export function createHistoryAdapter(doc: SpriteDocument, history: History): Edits {
+export function createHistoryAdapter(
+  doc: SpriteDocument,
+  history: History,
+  createSurface: SurfaceFactory,
+): Edits {
   return {
     edit(label, change) {
       const target = activeTarget();

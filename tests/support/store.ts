@@ -1,5 +1,6 @@
 import type { StoreApi } from "zustand";
 import { useAnimationStore } from "@/editor/animation/api";
+import { useCursorStore } from "@/editor/canvas/api";
 import { useFramesStore } from "@/editor/frames/api";
 import { useLayersStore } from "@/editor/layers/api";
 import { usePaletteStore } from "@/editor/palette/api";
@@ -18,4 +19,5 @@ export function resetEditorStores(): void {
   reset(useAnimationStore);
   reset(useViewStore);
   reset(useToolboxStore);
+  reset(useCursorStore);
 }

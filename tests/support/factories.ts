@@ -2,9 +2,9 @@ import { vi } from "vitest";
 import { SpriteDocument, type DocumentInit } from "@/core/document";
 import { StrokeRecorder } from "@/core/history";
 import type { Point } from "@/core/viewport";
+import { createSurface } from "@/editor/canvas/toolHost/surface";
 import type { ColorSlot, Gesture, PointerModifiers, Surface, ToolHost } from "@/framework/host";
 import { resolveSettings, type Settings, type StoredValues } from "@/framework/settings";
-import { createSurface } from "@/hooks/toolHost/surface";
 import type { RGBA } from "@/lib/color";
 import { TOOL_LIST } from "@/tools";
 

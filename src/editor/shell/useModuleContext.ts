@@ -1,8 +1,8 @@
 import { useNavigate } from "react-router";
 import { useDocumentSession } from "@/app/DocumentProvider";
+import { useToolHost } from "@/editor/canvas/api";
 import type { ModuleContext } from "@/editor/module";
 import { useCommandDispatch } from "@/hooks/useCommandDispatch";
-import { useToolHost } from "@/hooks/toolHost/ToolHostContext";
 
 /** The context every module's `commands` receives, built from the open document's session. */
 export function useModuleContext(showHelp: () => void): ModuleContext {

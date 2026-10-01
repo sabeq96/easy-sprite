@@ -1,12 +1,12 @@
 import { useDocumentSession } from "@/app/DocumentProvider";
 import { Panel } from "@/components/common/Panel";
 import { Separator } from "@/components/ui/separator";
+import { useCursorStore } from "@/editor/canvas/api";
 import { useFramesStore } from "@/editor/frames/api";
 import { useLayersStore } from "@/editor/layers/api";
 import { useDocumentSnapshot } from "@/hooks/useDocumentSnapshot";
 import { rgbaToHex } from "@/lib/color";
 import { cn } from "@/lib/utils";
-import { useCursorStore } from "@/stores/useCursorStore";
 
 export function EditorStatusBar() {
   const { doc } = useDocumentSession();

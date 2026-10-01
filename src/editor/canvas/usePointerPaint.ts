@@ -12,9 +12,9 @@ import { getTool } from "@/tools";
 import type { ColorSlot, Gesture, PointerModifiers, Surface, ToolHost } from "@/framework/host";
 import type { Tool, ToolPoint } from "@/framework/tool";
 import { screenToSprite } from "@/core/viewport";
-import { createSurface } from "@/hooks/toolHost/surface";
-import { useToolHost } from "@/hooks/toolHost/ToolHostContext";
-import { useCursorStore } from "@/stores/useCursorStore";
+import { createSurface } from "./toolHost/surface";
+import { useToolHost } from "./toolHost/ToolHostContext";
+import { useCursorStore } from "./store";
 
 export const POINTER_PAINT_HINTS: HintSection = {
   group: "Color",

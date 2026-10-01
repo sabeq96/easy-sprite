@@ -1,5 +1,5 @@
 import { createContext, useContext } from "react";
-import type { DocumentToolHost } from "@/hooks/toolHost/createToolHost";
+import type { DocumentToolHost } from "./createToolHost";
 
 const ToolHostContext = createContext<DocumentToolHost | null>(null);
 

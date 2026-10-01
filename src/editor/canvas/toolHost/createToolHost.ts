@@ -10,6 +10,7 @@ import { createHistoryAdapter } from "@/editor/shell/api";
 import { createToolAdapter } from "@/editor/toolbox/api";
 import type { Canvas, DocumentView, OverlayPaint, ToolHost } from "@/framework/host";
 import type { ToolId } from "@/tools";
+import { createSurface } from "./surface";
 
 export interface ToolHostDeps {
   doc: SpriteDocument;
@@ -97,7 +98,7 @@ export function createToolHost({ doc, history }: ToolHostDeps): DocumentToolHost
     colors: createColorsAdapter(),
     canvas,
     document: createDocumentView(doc),
-    history: createHistoryAdapter(doc, history),
+    history: createHistoryAdapter(doc, history, createSurface),
   };
   const views = new Map<ToolId, ToolHost>();
 

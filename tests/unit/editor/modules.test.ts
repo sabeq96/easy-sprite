@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import { SHORTCUTS } from "@/commands/keymap";
 import type { CommandRegistry } from "@/commands/types";
 import { History } from "@/core/history";
+import { createToolHost } from "@/editor/canvas/api";
 import type { ModuleContext } from "@/editor/module";
 import { EDITOR_MODULES } from "@/editor/modules";
-import { createToolHost } from "@/hooks/toolHost/createToolHost";
 import { bindingSignature } from "@/lib/keys";
 import { makeDocument } from "@test/factories";
 

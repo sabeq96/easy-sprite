@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { getPixel, setPixel } from "@/core/buffer";
 import { StrokeRecorder } from "@/core/history";
-import { createSurface } from "@/hooks/toolHost/surface";
+import { createSurface } from "@/editor/canvas/toolHost/surface";
 import { TRANSPARENT } from "@/lib/color";
 import { BLUE, makeDocument, RED } from "@test/factories";
 

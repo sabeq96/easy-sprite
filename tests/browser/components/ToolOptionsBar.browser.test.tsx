@@ -6,7 +6,7 @@ import { subscribeToModules } from "@/editor/modules";
 import { ToolOptionsBar, ToolSidebar, useToolboxStore } from "@/editor/toolbox/api";
 import { createContributedCommands } from "@/editor/toolbox/contributed";
 import { createToolCommands } from "@/editor/toolbox/toolCommands";
-import { createToolHost } from "@/hooks/toolHost/createToolHost";
+import { createToolHost } from "@/editor/canvas/api";
 import { TOOL_LIST, TOOLS } from "@/tools";
 import { makeDocument } from "@test/factories";
 import { render } from "@test/render";

@@ -2,8 +2,8 @@ import { useEffect, type RefObject } from "react";
 import type { CanvasRenderer } from "@/core/renderer";
 import { useToolboxStore } from "@/editor/toolbox/api";
 import { getTool, type ToolId } from "@/tools";
-import type { DocumentToolHost } from "@/hooks/toolHost/createToolHost";
-import { useToolHost } from "@/hooks/toolHost/ToolHostContext";
+import type { DocumentToolHost } from "./toolHost/createToolHost";
+import { useToolHost } from "./toolHost/ToolHostContext";
 
 /**
  * Activates the current tool now, and deactivates and activates again on every tool change,

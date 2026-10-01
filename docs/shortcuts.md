@@ -82,11 +82,12 @@ Where things live:
   `tool.toggleMirror` with `V` this way; `SettingCommandId` is derived from `TOOL_LIST`.
 - **Tap vs hold.** Tool commands carry a `hold` part (`CommandDefinition.hold`). `useShortcuts`
   calls its `press` instead of `run()`, then `release` on that key's keyup (`cancel` on window
-  blur). The tap/hold decision (`TOOL_KEY_HOLD_MS`) lives in the tool slice.
+  blur). The tap/hold decision (`TOOL_KEY_HOLD_MS`) lives in the toolbox module's store.
 - **A tool can contribute whole commands** (`Tool.commands`): each is a full definition — id,
   label, group, `keys`, `isEnabled`/`isActive` and `run`, all taking the tool's `ToolHost`. Select
   & move owns select all, deselect, copy, cut, paste and delete this way, with their keys.
-  `src/commands/contributed.ts` registers them bound to the host and collects their keys;
+  `src/editor/toolbox/contributed.ts` registers them bound to the host, and
+  `src/commands/keymap.ts` collects their keys from `TOOL_LIST`;
   `ContributedCommandId` is derived from `TOOL_LIST`, so the ids stay type-checked. The cheat
   sheet lists them in the tool's own section, not under Edit.
 - **Every other key** is in `APP_SHORTCUTS` in `src/constants/shortcuts.ts`.
@@ -94,9 +95,10 @@ Where things live:
   app keys) into `SHORTCUTS` and exposes `commandKeys(id)` — every chord for a command, formatted
   for display.
 - **Inputs that are neither a tool's nor a command** (1–9, pan/zoom, right-drag for the secondary
-  colour) are `HintSection`s exported next to the code that implements them. Each names the
-  command group it belongs to, so the cheat sheet lists it there rather than in a section of its
-  own.
+  colour) are `HintSection`s exported next to the code that implements them and declared on the
+  owning editor module's `hints` (`palette` for 1–9, `canvas` for right-drag and pan). Each names
+  the command group it belongs to, so the cheat sheet lists it there rather than in a section of
+  its own; within a group, rows follow `EDITOR_MODULES` order.
 - **Hints are only for what you can't discover by clicking the obvious thing** — keys, modifiers,
   hidden zones, non-primary buttons. No "drag to draw" or "click to pick".
 

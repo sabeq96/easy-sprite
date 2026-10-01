@@ -1,18 +1,24 @@
 import { useEffect } from "react";
 import { useDocumentSession } from "@/app/DocumentProvider";
+import type { EditorModule } from "@/editor/module";
 import { CheckerboardLayer, useViewStore } from "@/editor/view/api";
-import { useCanvasRenderer } from "@/hooks/useCanvasRenderer";
-import { useCanvasViewControls } from "@/hooks/useCanvasViewControls";
-import { usePointerPaint } from "@/hooks/usePointerPaint";
 import { useDocumentSnapshot } from "@/hooks/useDocumentSnapshot";
-import { useToolLifecycle } from "@/hooks/useToolLifecycle";
-import { useToolHost } from "@/hooks/toolHost/ToolHostContext";
+import { useToolHost } from "./toolHost/ToolHostContext";
+import { useCanvasRenderer } from "./useCanvasRenderer";
+import { useCanvasViewControls } from "./useCanvasViewControls";
+import { usePointerPaint } from "./usePointerPaint";
+import { useToolLifecycle } from "./useToolLifecycle";
+
+export interface EditorCanvasProps {
+  /** `EDITOR_MODULES`: each module's `attachCanvas` runs, in this order, when the renderer is created. */
+  modules: readonly EditorModule[];
+}
 
 /** The only component in the app that holds canvas refs. */
-export function EditorCanvas() {
+export function EditorCanvas({ modules }: EditorCanvasProps) {
   const { doc } = useDocumentSession();
   const snapshot = useDocumentSnapshot(doc);
-  const { containerRef, mainRef, onionRef, overlayRef, renderer } = useCanvasRenderer();
+  const { containerRef, mainRef, onionRef, overlayRef, renderer } = useCanvasRenderer(modules);
   const viewport = useViewStore((state) => state.viewport);
   const checkerSize = useViewStore((state) => state.checkerSize);
   const toolHost = useToolHost();

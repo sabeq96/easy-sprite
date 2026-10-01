@@ -3,7 +3,7 @@ import { useDocumentSession } from "@/app/DocumentProvider";
 import { CanvasRenderer, type RendererTargets } from "@/core/renderer";
 import { useAnimationStore } from "@/editor/animation/api";
 import { useFramesStore } from "@/editor/frames/api";
-import { EDITOR_MODULES } from "@/editor/modules";
+import type { EditorModule } from "@/editor/module";
 import { useToolboxStore } from "@/editor/toolbox/api";
 import { useViewStore } from "@/editor/view/api";
 
@@ -15,8 +15,12 @@ export interface CanvasRefs {
   renderer: CanvasRenderer | null;
 }
 
-/** Owns the imperative renderer and keeps it in sync with the store. */
-export function useCanvasRenderer(): CanvasRefs {
+/**
+ * Owns the imperative renderer and keeps it in sync with the module stores. `modules` is
+ * `EDITOR_MODULES`, passed in by the shell: importing it here would close an import cycle, since
+ * the list holds the canvas module.
+ */
+export function useCanvasRenderer(modules: readonly EditorModule[]): CanvasRefs {
   const { doc } = useDocumentSession();
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -48,7 +52,7 @@ export function useCanvasRenderer(): CanvasRefs {
     // Each module registers its own painters (the grid, the onion skin) and repaint listeners, in
     // module order. Registration order is stacking order: they go in before any tool attaches, so
     // a tool's overlay (added per activation through the tool host) always draws above the grid.
-    const detachModules = EDITOR_MODULES.map((module) => module.attachCanvas?.(instance, doc));
+    const detachModules = modules.map((module) => module.attachCanvas?.(instance, doc));
 
     setRenderer(instance);
     return () => {
@@ -56,7 +60,7 @@ export function useCanvasRenderer(): CanvasRefs {
       instance.dispose();
       setRenderer(null);
     };
-  }, [doc]);
+  }, [doc, modules]);
 
   // Size to the container, and fit the sprite on first layout.
   useEffect(() => {

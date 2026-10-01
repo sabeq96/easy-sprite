@@ -9,8 +9,8 @@ export interface CursorState {
 }
 
 /**
- * Deliberately separate from the editor store: this updates on every pointer move, and only
- * the status bar reads it.
+ * The canvas module's store: the pointer's sprite position and the colour under it. It updates
+ * on every pointer move; only the status bar reads it, and no command does.
  */
 export const useCursorStore = create<CursorState>()((set) => ({
   position: null,

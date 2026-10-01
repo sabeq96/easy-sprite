@@ -2,9 +2,9 @@ import { useMemo, useState, type ReactNode } from "react";
 import { useParams } from "react-router";
 import { DocumentProvider, useDocumentSession } from "@/app/DocumentProvider";
 import { NotFoundPage } from "@/components/common/NotFoundPage";
-import { EditorCanvas } from "@/components/editor/EditorCanvas";
 import { CommandsProvider } from "@/commands/CommandsContext";
 import type { CommandRegistry } from "@/commands/types";
+import { createToolHost, EditorCanvas, ToolHostProvider } from "@/editor/canvas/api";
 import { FramesBar, useActiveFrameGuard } from "@/editor/frames/api";
 import { useActiveLayerGuard } from "@/editor/layers/api";
 import { EDITOR_MODULES, subscribeToModules } from "@/editor/modules";
@@ -12,8 +12,6 @@ import { useColorHotkeys } from "@/editor/palette/api";
 import { ToolOptionsBar, ToolSidebar } from "@/editor/toolbox/api";
 import { useGridReset } from "@/editor/view/api";
 import { useShortcuts } from "@/hooks/useShortcuts";
-import { createToolHost } from "@/hooks/toolHost/createToolHost";
-import { ToolHostProvider } from "@/hooks/toolHost/ToolHostContext";
 import { EditorLoadError } from "./EditorLoadError";
 import { EditorSkeleton } from "./EditorSkeleton";
 import { EditorStatusBar } from "./EditorStatusBar";
@@ -69,7 +67,7 @@ function EditorShell() {
         <ToolOptionsBar />
         <div className="grid min-h-0 grid-cols-[3.5rem_1fr_18rem] gap-2">
           <ToolSidebar />
-          <EditorCanvas />
+          <EditorCanvas modules={EDITOR_MODULES} />
           <RightSidebar />
         </div>
         <FramesBar />

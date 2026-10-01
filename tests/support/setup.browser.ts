@@ -5,7 +5,6 @@ import { DB_NAME } from "@/constants/storage";
 import type * as StorageConstants from "@/constants/storage";
 import { db } from "@/db/db";
 import { useBuilderViewStore } from "@/stores/useBuilderViewStore";
-import { useCursorStore } from "@/stores/useCursorStore";
 import { resetEditorStores } from "@test/store";
 // Component tests never go through main.tsx, so nothing else loads Tailwind's base layer —
 // without it, Base UI's dialog overlay has no z-index/positioning and can sit on top of and
@@ -39,7 +38,6 @@ afterEach(async () => {
   // otherwise leak into the next — a fresh per-test store isn't an option here since components
   // import the singleton directly, not through a hook that could be swapped in tests.
   resetEditorStores();
-  useCursorStore.setState(useCursorStore.getInitialState(), true);
   useBuilderViewStore.setState(useBuilderViewStore.getInitialState(), true);
 
   // `db` is a module-level singleton that stays open across every test in this file. Deleting

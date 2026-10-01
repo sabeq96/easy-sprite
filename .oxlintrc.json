@@ -35,9 +35,11 @@
                   "@/services/*",
                   "@/framework/**",
                   "@/tools",
-                  "@/tools/**"
+                  "@/tools/**",
+                  "@/editor",
+                  "@/editor/**"
                 ],
-                "message": "src/core/** is framework-free: no React, no Dexie, no UI, no DB, and no framework/ or tools/ imports."
+                "message": "src/core/** is framework-free: no React, no Dexie, no UI, no DB, and no framework/, tools/ or editor/ (host module) imports."
               }
             ]
           }
@@ -112,7 +114,7 @@
             "patterns": [
               {
                 "group": ["@/components/*", "@/core/*", "@/hooks/*", "@/app/*", "react", "react-dom"],
-                "message": "src/db/** must not depend on the UI or the editor core."
+                "message": "src/db/** must not depend on the UI or the core."
               }
             ]
           }

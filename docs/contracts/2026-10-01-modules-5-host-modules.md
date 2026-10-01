@@ -155,7 +155,7 @@ function EditorShell() {
    - `toolSlice` + `settingsSlice` → `toolbox/store.ts`.
    - Move `ToolSidebar`, `ToolOptionsBar`, `toolCommands`, `contributed` and `useToolSettings`, and move the `tool` adapter.
    - Tool commands join through `toolbox`'s `module.commands`.
-8. **canvas + cleanup.**
+8. ✅ **canvas + cleanup.**
    - Move `EditorCanvas`, the renderer, pointer, lifecycle and pan/zoom hooks, `useCursorStore` and `toolHost/`.
    - `CANVAS_VIEW_HINTS` and `POINTER_PAINT_HINTS` → `module.hints`.
    - Delete `useEditorStore`, `stores/slices/`, `useEditorCommands` and `src/components/editor/`.
@@ -195,13 +195,15 @@ Command per PR: `npm run lint && npm run build && npm run test:coverage`
 
 ## Done when
 
-- [ ] 1. `src/components/editor/`, `src/stores/slices/`, `useEditorStore`, `useEditorCommands`, `FEATURE_HINTS` and `useActiveTargets` no longer exist.
-- [ ] 2. Every file of the pixel editor's host is under `src/editor/<domain>/`, and every cross-module import goes through `api.ts` (lint probe: `import "@/editor/frames/store"` from `src/editor/layers/LayersPanel.tsx` fails).
-- [ ] 3. Adding a command to a domain touches only that module's `commands.ts`.
-- [ ] 4. The cheat sheet, menus, tooltips and every key are identical to before.
-- [ ] 5. The builder and library are untouched, and their tests pass.
-- [ ] 6. Docs and the decision log describe the three kinds of code.
-- [ ] 7. The command passes on every PR.
+- [x] 1. `src/components/editor/`, `src/stores/slices/`, `useEditorStore`, `useEditorCommands`, `FEATURE_HINTS` and `useActiveTargets` no longer exist.
+- [x] 2. Every file of the pixel editor's host is under `src/editor/<domain>/`, and every cross-module import goes through `api.ts` (lint probe: `import "@/editor/frames/store"` from `src/editor/layers/LayersPanel.tsx` fails).
+- [ ] 3. Adding a command to a domain touches only that module's `commands.ts`. (Not met as
+  written: a new id also goes in `APP_COMMAND_IDS` in `src/constants/commands.ts`, and a key in
+  `APP_SHORTCUTS`; see the task 8 drift entry.)
+- [x] 4. The cheat sheet, menus, tooltips and every key are identical to before.
+- [x] 5. The builder and library are untouched, and their tests pass.
+- [x] 6. Docs and the decision log describe the three kinds of code.
+- [x] 7. The command passes on every PR.
 
 ## Open risks
 
@@ -797,6 +799,135 @@ None. Decisions 1-5 were settled on 2026-10-01.
     `docs/conventions.md` §3 (the `useEditorStore.ts` naming example) still use the old names;
     task 8 rewrites the docs.
 
+- **2026-10-01, Task 8: moves (`git mv`).** Into `src/editor/canvas/`: `EditorCanvas.tsx` (from
+  `components/editor/`), `useCanvasRenderer.ts`, `usePointerPaint.ts`, `useToolLifecycle.ts` and
+  `useCanvasViewControls.ts` (from `hooks/`), `useCursorStore.ts` (from `stores/`, now
+  `canvas/store.ts`; the export keeps its name), and `hooks/toolHost/{ToolHostContext,
+  createToolHost,surface}.ts` (now `canvas/toolHost/`). `tests/unit/toolHost/surface.test.ts`
+  became `tests/unit/editor/canvas/surface.test.ts` (Decision 12). `src/components/editor/`,
+  `src/hooks/toolHost/` and `tests/unit/toolHost/` are empty and removed.
+  `src/stores/useEditorStore.ts` (the empty store) is deleted. The canvas adapter and the
+  document view stay inside `createToolHost.ts`, as before: they were already canvas's.
+- **2026-10-01, Task 8: two import cycles, broken by passing the dependency in.** A first build
+  wired both the obvious way, and `npx oxlint` reported `import(no-cycle)` in `modules.ts`,
+  `canvas/api.ts`, `EditorCanvas.tsx`, `useCanvasRenderer.ts`, `shell/api.ts`,
+  `shell/historyAdapter.ts` and `canvas/toolHost/createToolHost.ts`:
+  - `modules.ts → canvas/api → EditorCanvas → useCanvasRenderer → modules.ts`. The list holds
+    `canvas`, and canvas read the list for its `attachCanvas` loop (the task 5 note). Now
+    `EditorCanvas` takes `modules: readonly EditorModule[]` and passes it to
+    `useCanvasRenderer(modules)`. `EditorShell` renders `<EditorCanvas modules={EDITOR_MODULES} />`.
+    The loop, its order and its timing are unchanged (Decision 7). `modules` is in the
+    renderer effect's dependencies, and it is a static constant, so the renderer is still
+    created once per document.
+  - `shell/historyAdapter → canvas/api → createToolHost → shell/api → historyAdapter`. The
+    history adapter needs `createSurface`, and `createToolHost` imports the history adapter
+    (Decision 9). Now `createHistoryAdapter(doc, history, createSurface: SurfaceFactory)` takes
+    the factory, and `createToolHost` passes `./surface`'s `createSurface`. `SurfaceFactory` is a
+    type in `historyAdapter.ts` with `createSurface`'s signature. No test called
+    `createHistoryAdapter`.
+- **2026-10-01, Task 8: `canvas/api.ts` exports** `module`, `EditorCanvas`, `createToolHost`,
+  `ToolHostProvider` (all for shell's `EditorPage`), `useToolHost` (shell's `useModuleContext`)
+  and `useCursorStore` (shell's `EditorStatusBar`, and `resetEditorStores()`). `createSurface`,
+  `startToolLifecycle`, the hooks and `DocumentToolHost` stay private. `canvas/api.ts` reaches
+  neither `EditorPage` nor `modules.ts` (`EditorModule` is a type import from `@/editor/module`).
+- **2026-10-01, Task 8: `canvasModule` is `{ id: "canvas", hints: [POINTER_PAINT_HINTS,
+  CANVAS_VIEW_HINTS] }`.** It has no commands and no `subscribe`: no command reads the cursor
+  store. The two hint constants stay next to the hooks that implement them, as
+  `COLOR_HOTKEY_HINTS` does in palette. `shellModule` is back to `{ id, commands }`.
+- **2026-10-01, Task 8: `EDITOR_MODULES` is `[shell, palette, layers, frames, animation, view,
+  toolbox, canvas]`**, the Layout order. The flattened hints are still `COLOR_HOTKEY_HINTS`,
+  `POINTER_PAINT_HINTS`, `CANVAS_VIEW_HINTS`, so the cheat sheet is unchanged. Shell's commands
+  now come first in the merged registry. Nothing visible reads that order: the sheet and
+  `useShortcuts` walk `SHORTCUTS`, and `toolsGroupCommands` keeps only Tools-group ids. Painter
+  order is unchanged (only animation and view attach).
+- **2026-10-01, Task 8: comments.** `ZoomControls`' `levels` comment now says that its `disabled`
+  takes precedence over `isEnabled`, which `CommandButton` also follows live. Both editors pass
+  the ladder their zoom commands' `isEnabled` reads. `useBuilderViewStore`'s comment says "the
+  pixel editor's view store" instead of `useEditorStore`. `canvas/store.ts`'s comment no longer
+  says "the editor store". No props changed.
+- **2026-10-01, Task 8: lint.** No rule changed and no override was removed: every override's
+  folder still exists (`components/` keeps common, ui, builder, manager and settings; `hooks/`
+  and `stores/` keep shared and builder files). The `src/db/**` message now says "the UI or the
+  core" instead of "the editor core" (the stage 0 drift note). `npm run lint` reports only the ten
+  pre-existing `only-export-components` warnings.
+- **2026-10-01, Task 8: tests.** No assertion changed, in either project.
+  - Imports only: `tests/unit/tools/select.test.ts` (`createToolHost` and `DocumentToolHost`
+    from `@/editor/canvas/toolHost/createToolHost`, `startToolLifecycle` from
+    `@/editor/canvas/useToolLifecycle`), `tests/unit/editor/toolbox/contributed.test.ts`
+    (`createToolHost` from `@/editor/canvas/api`, `startToolLifecycle` deep),
+    `tests/unit/editor/modules.test.ts` and `tests/browser/components/ToolOptionsBar.browser.test.tsx`
+    (`createToolHost` from `@/editor/canvas/api`), `tests/support/factories.ts` and the moved
+    `surface.test.ts` (`@/editor/canvas/toolHost/surface`). Tests deep-import what `api.ts` does
+    not export, as the module store tests already do.
+  - `resetEditorStores()` also resets `useCursorStore` (from `@/editor/canvas/api`), and
+    `setup.browser.ts` loses its own cursor-store reset line and import.
+  - The unit project stays at 328 tests and the browser project at 275.
+- **2026-10-01, Task 8: verification beyond the suites.**
+  - Lint probes, each file restored from a copy: `import "@/editor/frames/store"` at the top of
+    `layers/LayersPanel.tsx` (Done-when 2), `@/editor/canvas/store` in `shell/EditorStatusBar.tsx`,
+    `@/editor/canvas/toolHost/createToolHost` in `shell/EditorPage.tsx`,
+    `@/editor/canvas/toolHost/surface` in `shell/historyAdapter.ts` and `@/editor/view/store` in
+    `canvas/usePointerPaint.ts` each fail with `import is restricted from being used by a
+    pattern`; `../view/api` in `canvas/EditorCanvas.tsx` fails with the `../` message.
+  - A throwaway browser probe ran on this tree and on `0629fb6` in a scratch worktree (then
+    removed). It reads the DOM, `session()` and the canvases; its only store call sets the two
+    colours, through `usePaletteStore`, which is the same on both trees. On a 16×16 sprite it
+    dumped every button (name, `aria-keyshortcuts`, disabled, `aria-pressed`) at open (42) and
+    at the end (44), the tooltips of Pencil, Eraser, Color picker, Select & move, Zoom in, Zoom
+    out, Fit to window, Grid options, Undo, Redo, New layer, New frame and Swap colors, and the
+    whole cheat sheet. After each of 27 steps it recorded the status bar text, the zoom text, the
+    checkerboard box, every painted pixel, hashes of the main and overlay canvases, the colour
+    swatches, the pressed buttons and the canvas cursor. The steps: open; hover an empty pixel
+    and leave (status bar); set colours; a left stroke and a right-drag stroke; hover a primary
+    and a secondary pixel; the picker's hover, left pick on the secondary pixel and right pick
+    on the primary pixel, then a left and a right pencil click; a select drag, a hover inside,
+    a move drag and Esc; a middle-drag pan, a Space+drag pan, a wheel zoom in and out, a hover;
+    the keys `=`, `=`, `-`, `0`; and two undos. The two JSON dumps (19,583 bytes each, md5
+    `24b4f7e9…`) are byte-identical. The sprite menu was not dumped: no menu code or menu command
+    changed in this task (the task 1 probe covers it).
+  - `grep -rn` over `src` and `tests` finds no `useEditorStore`, `useEditorCommands`,
+    `FEATURE_HINTS`, `useActiveTargets`, `components/editor`, `stores/slices` or `hooks/toolHost`.
+    The hooks left in `src/hooks/` are used by the builder, the library, settings or `app/`, or
+    are on the Non-goals shared list (`useCommandDispatch`, `useDocumentSnapshot`,
+    `useDocumentRevision`, `useOptimisticOrder`, `useThumbnailCanvas`).
+  - `git diff HEAD --stat` over `src/components/{builder,manager,settings,common}`, the builder's
+    and library's hooks, `useBuilderCommands`, `SpritesheetProvider`, `tests/browser/{builder,flows}`,
+    `tests/unit/{stores,db,lib}` and `tests/support/builder.ts` lists only the two comment fixes
+    (`ZoomControls.tsx`, `useBuilderViewStore.ts`).
+- **2026-10-01, Task 8: Done-when 3 is not met as written (left unticked).** A command in an
+  existing domain is written in that module's `commands.ts`, but a new id also has to be added to
+  `APP_COMMAND_IDS` in `src/constants/commands.ts` (which types `CommandId`), and a key to
+  `APP_SHORTCUTS` in `src/constants/shortcuts.ts`. Both tables predate this stage, and no task
+  planned to move them. `docs/architecture.md` §11 states the real steps. Left to the maintainer.
+- **2026-10-01, Task 8: docs.**
+  - `docs/architecture.md`: the §1 diagram (module stores) and the line under it; the §2 folder
+    map (core, framework, tools, editor, then the shared folders); §4 names `view` and
+    `animation` as the modules that register painters, and `canvas` as the caller; §5 (the
+    viewport is in the view store); §9 gains an `editor/<m>/` row, notes that only the router
+    imports a module, adds the `api.ts` rule to the read-out-loud sentence, and states the
+    single-`*` limit of the older overrides; the tool-host table gains a "Provided by" column,
+    and the adapters paragraph and the settings paragraph name their modules; §10's examples
+    are corrected (`useSpritesheet` does not exist; the palette hooks are in `editor/palette/`);
+    new §11 "Modules".
+  - `docs/conventions.md`: §1 (an editor-domain row, the stores, hooks, action-hook and
+    components rows narrowed, and "the core" for "the editor core"); §1 rule 2; §3 (module
+    stores and files; the `useEditorStore.ts` example is gone); §5 (`api.ts` as the second kind
+    of barrel; `./` into own subfolders, never `../`); §6 (only the canvas module holds the
+    renderer); §7 (the `useAnimationPlayer` path); §10 (the lint as it is, including the editor
+    overrides, the `.ts`/`.tsx` split, the glob depth and override replacement, and "the core or
+    UI" for `db/`).
+  - `docs/README.md`: the two decision-log rows. The "zustand, sliced" row became "zustand, one
+    store per editor module", since nothing is sliced any more.
+  - `docs/shortcuts.md` (outside the Files list, stale): `contributed.ts` is in
+    `editor/toolbox/`, the keys are collected in `commands/keymap.ts`, the tap/hold decision is
+    in the toolbox store, and module hints are declared on `module.hints`.
+  - `.claude/skills/review-contribution/SKILL.md`: where a capability goes and where a tool
+    goes, `api.ts` exports as interface changes, and where keys go.
+  - `CONTRIBUTING.md`: one "Find your way around" bullet for changing the editor itself.
+  - Not changed: `.claude/skills/triage/SKILL.md` still says to look for built features in "the
+    command registry (`src/commands/`)"; the editor's commands are now in the modules.
+    `docs/phases/*` are historical and keep the old paths.
+
 ## Builder notes (from task 1, for tasks 2–8)
 
 - **Plugging in a module.**
@@ -906,3 +1037,4 @@ None. Decisions 1-5 were settled on 2026-10-01.
 - **Keymap (from task 7).** `commands/keymap.ts` derives the tool-declared keys from `TOOL_LIST`
   itself and imports no editor module. Keep it that way: `CommandButton` imports `keymap`, and
   every module's panels import `CommandButton`.
+- **Task 8, the maintainer's session:** the `src/core/**` lint override now also bans `@/editor` and `@/editor/**`, so the core can't import a host module (probed from `src/core/pixels.ts`). Done-when 3 stays open as a follow-up: a module command still needs its id added to `APP_COMMAND_IDS` and its key to `APP_SHORTCUTS`.
