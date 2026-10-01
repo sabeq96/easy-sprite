@@ -1,7 +1,7 @@
+import { SESSION_COMMANDS } from "@/commands/session";
 import { defineModule } from "@/editor/module";
-import { SHELL_COMMANDS } from "./commands";
 
 export const shellModule = defineModule({
   id: "shell",
-  commands: SHELL_COMMANDS,
+  commands: SESSION_COMMANDS,
 });

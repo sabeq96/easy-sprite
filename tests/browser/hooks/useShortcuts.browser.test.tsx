@@ -1,7 +1,7 @@
 import { expect, test, vi } from "vitest";
 import { userEvent } from "vitest/browser";
 import type { CommandRegistry } from "@/commands/types";
-import { SHARED_KEYS } from "@/constants/shortcuts";
+import { SESSION_COMMANDS } from "@/commands/session";
 import { useShortcuts } from "@/hooks/useShortcuts";
 import { IS_APPLE } from "@/lib/keys";
 import { keyDown, keyUp } from "@test/keys";
@@ -9,7 +9,7 @@ import { render } from "@test/render";
 
 /** `Ctrl+Z` (or `⌘Z` on a Mac runner) via testing-library's `{Modifier>}key{/Modifier}` syntax. */
 const UNDO_CHORD = IS_APPLE ? "{Meta>}z{/Meta}" : "{Control>}z{/Control}";
-const UNDO_KEYS = SHARED_KEYS["edit.undo"];
+const UNDO_KEYS = SESSION_COMMANDS.find(({ id }) => id === "edit.undo")?.keys ?? [];
 
 function Harness({ commands }: { commands: CommandRegistry }) {
   useShortcuts(commands);

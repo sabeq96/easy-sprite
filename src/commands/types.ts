@@ -1,3 +1,4 @@
+import type { BuilderCommandId } from "@/commands/builderCommands";
 import type { CommandGroup } from "@/constants/commands";
 import type { ModuleCommandId } from "@/editor/modules";
 import type { KeyBinding } from "@/lib/keys";
@@ -6,9 +7,15 @@ import type { ContributedCommandId, SettingCommandId, ToolId } from "@/tools";
 export type ToolCommandId = `tool.${ToolId}`;
 /**
  * One activation command per tool, the commands tools contribute, the ones the host generates
- * from their settings, and every host module's commands. All derived from their definitions.
+ * from their settings, every host module's commands and the spritesheet composer's. All derived
+ * from their definitions.
  */
-export type CommandId = ToolCommandId | ContributedCommandId | SettingCommandId | ModuleCommandId;
+export type CommandId =
+  | ToolCommandId
+  | ContributedCommandId
+  | SettingCommandId
+  | ModuleCommandId
+  | BuilderCommandId;
 
 export interface CommandDefinition {
   id: CommandId;

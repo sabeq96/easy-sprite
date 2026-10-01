@@ -1,9 +1,11 @@
 import { useEffect } from "react";
 import { expect, test } from "vitest";
 import { SpritesheetProvider } from "@/app/SpritesheetProvider";
-import type { CommandId, CommandRegistry } from "@/commands/types";
+import { BUILDER_COMMANDS } from "@/commands/builderCommands";
+import { SESSION_COMMANDS } from "@/commands/session";
+import type { CommandRegistry } from "@/commands/types";
 import { useBuilderCommands } from "@/commands/useBuilderCommands";
-import { SHARED_KEYS } from "@/constants/shortcuts";
+import { SHARED_KEYS, type SharedViewCommandId } from "@/constants/shortcuts";
 import { createSpritesheet } from "@/db/repositories/spritesheets";
 import { bindingSignature } from "@/lib/keys";
 import { render } from "@test/render";
@@ -46,11 +48,12 @@ test("the composer's registry files each command under its own id and binds no c
   expect(duplicates(chords)).toEqual([]);
 });
 
-test("the composer's commands take their keys from SHARED_KEYS, as the pixel editor's do", async () => {
+test("the composer binds BUILDER_COMMANDS in order, sharing the pixel editor's session commands and view keys", async () => {
   const registry = await builderRegistry();
 
-  expect(Object.keys(registry).sort()).toEqual(Object.keys(SHARED_KEYS).sort());
-  for (const id of Object.keys(registry) as CommandId[]) {
-    expect(registry[id]?.keys).toBe(SHARED_KEYS[id as keyof typeof SHARED_KEYS]);
+  expect(Object.keys(registry)).toEqual(BUILDER_COMMANDS.map(({ id }) => id));
+  for (const command of SESSION_COMMANDS) expect(registry[command.id]?.keys).toBe(command.keys);
+  for (const id of Object.keys(SHARED_KEYS) as SharedViewCommandId[]) {
+    expect(registry[id]?.keys).toBe(SHARED_KEYS[id]);
   }
 });

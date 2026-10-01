@@ -1,6 +1,7 @@
 import { describe, expect, expectTypeOf, it, vi } from "vitest";
 import type { CommandId } from "@/commands/types";
-import { SHARED_KEYS, type SharedCommandId } from "@/constants/shortcuts";
+import { SESSION_COMMANDS } from "@/commands/session";
+import { SHARED_KEYS, type SharedViewCommandId } from "@/constants/shortcuts";
 import { bindCommands, type ModuleCommand } from "@/editor/module";
 import { bindEditorCommands, EDITOR_MODULES, type ModuleCommandId } from "@/editor/modules";
 import { useToolboxStore } from "@/editor/toolbox/api";
@@ -33,16 +34,17 @@ describe("EDITOR_MODULES", () => {
     expect(duplicates(chords)).toEqual([]);
   });
 
-  it("takes the shared commands' keys from SHARED_KEYS", () => {
+  it("binds the session commands and takes the shared view keys from SHARED_KEYS", () => {
     const registry = bindEditorCommands(moduleContext());
-    for (const id of Object.keys(SHARED_KEYS) as SharedCommandId[]) {
+    for (const command of SESSION_COMMANDS) expect(registry[command.id]?.keys).toBe(command.keys);
+    for (const id of Object.keys(SHARED_KEYS) as SharedViewCommandId[]) {
       expect(registry[id]?.keys).toBe(SHARED_KEYS[id]);
     }
   });
 
   it("derives command ids from the module definitions", () => {
     expectTypeOf<"layer.add" | "view.toggleOnion" | "edit.undo">().toExtend<ModuleCommandId>();
-    expectTypeOf<SharedCommandId>().toExtend<CommandId>();
+    expectTypeOf<SharedViewCommandId>().toExtend<CommandId>();
     expectTypeOf<"layer.addd">().not.toExtend<CommandId>();
   });
 });
