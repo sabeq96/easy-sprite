@@ -3,11 +3,10 @@ import { useParams } from "react-router";
 import { DocumentProvider, useDocumentSession } from "@/app/DocumentProvider";
 import { NotFoundPage } from "@/components/common/NotFoundPage";
 import { CommandsProvider } from "@/commands/CommandsContext";
-import type { CommandRegistry } from "@/commands/types";
 import { createToolHost, EditorCanvas, ToolHostProvider } from "@/editor/canvas/api";
 import { FramesBar, useActiveFrameGuard } from "@/editor/frames/api";
 import { useActiveLayerGuard } from "@/editor/layers/api";
-import { EDITOR_MODULES, subscribeToModules } from "@/editor/modules";
+import { bindEditorCommands, EDITOR_MODULES, subscribeToModules } from "@/editor/modules";
 import { useColorHotkeys } from "@/editor/palette/api";
 import { ToolOptionsBar, ToolSidebar } from "@/editor/toolbox/api";
 import { useGridReset } from "@/editor/view/api";
@@ -55,9 +54,7 @@ function EditorShell() {
   useGridReset();
 
   const ctx = useModuleContext(() => setShowHelp(true));
-  const commands = mergeCommands(
-    EDITOR_MODULES.map((editorModule) => editorModule.commands?.(ctx) ?? {}),
-  );
+  const commands = bindEditorCommands(ctx);
   useShortcuts(commands);
 
   return (
@@ -77,9 +74,4 @@ function EditorShell() {
       </div>
     </CommandsProvider>
   );
-}
-
-/** Every module's commands as one registry. */
-function mergeCommands(registries: readonly CommandRegistry[]): CommandRegistry {
-  return Object.assign({}, ...registries) as CommandRegistry;
 }

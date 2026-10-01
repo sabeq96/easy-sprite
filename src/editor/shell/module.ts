@@ -1,7 +1,7 @@
-import type { EditorModule } from "@/editor/module";
-import { shellCommands } from "./commands";
+import { defineModule } from "@/editor/module";
+import { SHELL_COMMANDS } from "./commands";
 
-export const shellModule: EditorModule = {
+export const shellModule = defineModule({
   id: "shell",
-  commands: shellCommands,
-};
+  commands: SHELL_COMMANDS,
+});

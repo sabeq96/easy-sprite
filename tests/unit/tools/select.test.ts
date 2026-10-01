@@ -6,13 +6,15 @@ import { History, StrokeRecorder, type Command } from "@/core/history";
 import { useFramesStore } from "@/editor/frames/api";
 import { useLayersStore } from "@/editor/layers/api";
 import { useToolboxStore } from "@/editor/toolbox/api";
-import { createContributedCommands } from "@/editor/toolbox/contributed";
+import { bindCommands } from "@/editor/module";
+import { CONTRIBUTED_COMMANDS } from "@/editor/toolbox/contributed";
 import type { PointerModifiers } from "@/framework/host";
 import type { ToolPoint } from "@/framework/tool";
 import { createToolHost, type DocumentToolHost } from "@/editor/canvas/toolHost/createToolHost";
 import { startToolLifecycle } from "@/editor/canvas/useToolLifecycle";
 import { selectedRect, selectTool } from "@/tools/select/tool";
 import { makeDocument, makeGesture, NO_MODIFIERS, RED } from "@test/factories";
+import { moduleContext } from "@test/modules";
 import { resetEditorStores } from "@test/store";
 
 const CTRL: PointerModifiers = { ...NO_MODIFIERS, ctrl: true };
@@ -31,7 +33,7 @@ beforeEach(() => {
   useFramesStore.setState({ activeFrameId: "f1" });
   useLayersStore.setState({ activeLayerId: "l1" });
   host = createToolHost({ doc, history });
-  commands = createContributedCommands(host);
+  commands = bindCommands(CONTRIBUTED_COMMANDS, moduleContext({ doc, history, host }));
   stop = startToolLifecycle(host);
 });
 

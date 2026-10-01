@@ -1,11 +1,11 @@
-import type { EditorModule } from "@/editor/module";
-import { paletteCommands } from "./commands";
+import { defineModule } from "@/editor/module";
+import { PALETTE_COMMANDS } from "./commands";
 import { usePaletteStore } from "./store";
 import { COLOR_HOTKEY_HINTS } from "./useColorHotkeys";
 
-export const paletteModule: EditorModule = {
+export const paletteModule = defineModule({
   id: "palette",
-  commands: paletteCommands,
+  commands: PALETTE_COMMANDS,
   hints: [COLOR_HOTKEY_HINTS],
   subscribe: usePaletteStore.subscribe,
-};
+});

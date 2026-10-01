@@ -8,7 +8,7 @@ import { TooltipButton } from "@/components/common/TooltipButton";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ROUTES } from "@/constants/routes";
-import { commandKeys } from "@/commands/keymap";
+import { useCommandKeys } from "@/commands/CommandsContext";
 import { ViewControls } from "@/editor/view/api";
 import { useHistoryState } from "@/hooks/useHistoryState";
 import { useSpriteExport } from "@/hooks/useSpriteActions";
@@ -19,13 +19,14 @@ export function EditorTopBar() {
   const { doc, history, autosave, saveStatus } = useDocumentSession();
   const { canUndo, canRedo, undoLabel, redoLabel } = useHistoryState(history);
   const exportPng = useSpriteExport();
+  const backKeys = useCommandKeys("app.backToLibrary");
 
   return (
     <Panel render={<header />} className="flex items-center gap-2 px-2 py-1.5">
       {/* A link, not a command button: navigation belongs to the <Link>. */}
       <TooltipButton
         label="Back to sprites"
-        shortcut={commandKeys("app.backToLibrary")}
+        shortcut={backKeys}
         size="icon-sm"
         variant="ghost"
         nativeButton={false}

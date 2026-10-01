@@ -67,9 +67,9 @@ src/
                 domain action hooks (useSpriteActions, useSpritesheetActions, useBackupActions)
                 that are the only way components reach the database, services and export
   commands/     the command contract shared by both editors: types, CommandsProvider (a registry
-                plus a subscribe for live button state), the keymap merged from tool and app keys,
-                the gesture hint types; and the builder's commands. The pixel editor's commands
-                live in its modules
+                plus a subscribe for live button state), the keymap helpers that read a
+                registry's keys, the gesture hint types; and the builder's commands. The pixel
+                editor's commands, with their keys, live in its modules
   stores/       zustand stores outside the pixel editor: the builder's view store and the theme
   db/           Dexie schema and instance, repositories/ (the only code that queries tables),
                 typed errors, seed data, whole-database backup
@@ -235,7 +235,7 @@ export/     ──►  core, lib, constants, types; types from db/schema        
 services/   ──►  db, core, export, lib, constants, types                    lint (no React/UI)
 stores/     ──►  core, lib, constants, types; types from framework, tools   lint (no React/UI)
 commands/   ──►  core, framework, tools, stores, hooks, app (document context),
-                 lib, constants                                             lint (no db/UI)
+                 lib, constants; types from editor/modules                  lint (no db/UI)
 hooks/      ──►  services, export, db/repositories, stores, core, framework, tools,
                  commands, app (document context), lib, constants           lint (no raw db, no components)
 components/ ──►  hooks, stores, commands, core, framework, tools,
@@ -252,7 +252,8 @@ app/        ──►  everything
 
 Wherever `tools` appears on the host side (stores, commands, hooks, components, editor, app), it
 means the registry, `@/tools`: lint rejects any file inside a tool's folder. Nothing outside
-`src/editor/` imports a module except the router, which imports `@/editor/shell/EditorPage`.
+`src/editor/` imports a module at runtime except the router, which imports
+`@/editor/shell/EditorPage`.
 
 Reading it out loud: **pure things never import impure things, nothing below React imports React,
 components reach data only through hooks, and an editor module reaches another only through its
@@ -260,13 +261,13 @@ components reach data only through hooks, and an editor module reaches another o
 the only door to `db/`, `services/` and `export/` is what keeps loading, error reporting and
 toasts in one place per domain (§10).
 
-Two edges are known compromises: hooks, commands and editor modules read the open document
-through `app/DocumentProvider`, and `framework/` borrows the hint *type* from `commands/`. Both are
-type- or context-only; moving the document context below `app/` would remove the first.
+Three edges are known compromises: hooks, commands and editor modules read the open document
+through `app/DocumentProvider`; `framework/` borrows the hint *type* from `commands/`; and
+`commands/types.ts` derives `CommandId` from `editor/modules` by type (`ModuleCommandId`). All
+three are type- or context-only; moving the document context below `app/` would remove the first.
 
-Some older overrides write their groups with a single `*` (`@/components/*`), which in oxlint
-does not cross `/`, so they block only the first level under a folder. The newer ones (`tools/`,
-`framework/`, `editor/`) use `/**`.
+Every group is written with `/**` (`@/components/**`): in oxlint a `*` does not cross `/`, so a
+single `*` would block only the first level under a folder.
 
 ### Tool host
 
@@ -357,11 +358,14 @@ A module folder holds:
   only what they use: the components the shell places, store hooks, ToolHost adapters, and the
   module itself (`export { xModule as module }`). Lint rejects a deep import into another module
   and any `../`. It is a barrel by choice, not one that re-exports the folder (conventions §5).
-- **`module.ts`**, its `EditorModule` (`src/editor/module.ts`):
+- **`module.ts`**, its `EditorModule` (`src/editor/module.ts`), made with `defineModule` so its
+  command ids stay literal:
   - `id`;
-  - `commands(ctx)`: a plain function, not a hook, that returns its command registry. The shell
-    calls it on every render with a `ModuleContext` (`doc`, `history`, `dispatch`, `navigate`,
-    `showHelp`, `save`, `forTool`); handlers read stores when they run;
+  - `commands`: static `ModuleCommand` definitions (`id`, `label`, `group`, `keys`,
+    `isEnabled`/`isActive(ctx)`, `run(ctx)`, and `hold(ctx)` for the tool keys), the same shape
+    as `Tool.commands`. The shell binds them (`bindCommands`) on every render to a
+    `ModuleContext` (`doc`, `history`, `dispatch`, `navigate`, `showHelp`, `save`, `forTool`);
+    handlers read stores when they run;
   - `hints`: inputs that are not commands (1–9, right-drag, pan), each joining the cheat-sheet
     group it names;
   - `attachCanvas(renderer, doc)`: registers painters and repaint listeners when the renderer is
@@ -370,35 +374,44 @@ A module folder holds:
     store, so bound buttons follow the store. `canvas` declares none: its cursor store changes
     on every pointer move and no command reads it.
 - **`store.ts`**, its own zustand store. Nothing composes the stores.
-- **`commands.ts`**, its commands, and its components, hooks and adapters.
+- **`commands.ts`**, its command definitions with their keys (`defineCommands`), and its
+  components, hooks and adapters.
 
 `src/editor/modules.ts` lists every module once, in a static array:
 
 ```ts
-export const EDITOR_MODULES = [shell, palette, layers, frames, animation, view, toolbox, canvas];
+export const EDITOR_MODULES = [shell, palette, layers, frames, view, animation, toolbox, canvas];
 ```
 
-The order matters in two places. Hint rows in one cheat-sheet group follow it (`canvas` after
-`palette` keeps "Paint with secondary color" below the 1–9 keys), and `attachCanvas` runs in it.
-The shell merges every module's `commands(ctx)` into one registry for `useShortcuts`, the cheat
-sheet and `CommandsProvider`. It provides `subscribeToModules` (every module's `subscribe` as one)
-next to the registry, so a `CommandButton` re-reads `isActive` and `isEnabled` whenever any
-module store changes. The shell also hands `EDITOR_MODULES` to `<EditorCanvas modules>`, which
-calls each `attachCanvas`. `canvas` cannot import the list itself, because the list holds
-`canvas` and `import/no-cycle` would reject the loop.
+`ModuleCommandId`, every id the modules declare, is derived from this list, and `CommandId` (in
+`src/commands/types.ts`) includes it, so there is no hand-kept list of ids.
+
+The order matters in two places. Rows in one cheat-sheet group follow it: command rows in
+registry order (`view` before `animation` keeps the View group as zoom, fit, grid, onion), then
+hint rows (`canvas` after `palette` keeps "Paint with secondary color" below the 1–9 keys). And
+`attachCanvas` runs in it. Groups themselves follow `COMMAND_GROUPS` (`src/constants/commands.ts`).
+The shell binds every module's commands into one registry (`bindEditorCommands`) for
+`useShortcuts`, the cheat sheet and `CommandsProvider`; that registry is the keymap. It provides
+`subscribeToModules` (every module's `subscribe` as one) next to the registry, so a
+`CommandButton` re-reads `isActive` and `isEnabled` whenever any module store changes. The shell
+also hands `EDITOR_MODULES` to `<EditorCanvas modules>`, which calls each `attachCanvas`. `canvas`
+cannot import the list itself, because the list holds `canvas` and `import/no-cycle` would reject
+the loop.
 
 Adding to the editor:
 
-- **A command, key or panel in an existing domain** touches that module (its `commands.ts`, its
-  components), plus two shared tables: the new id in `APP_COMMAND_IDS`
-  (`src/constants/commands.ts`, which types `CommandId`) and its key in `APP_SHORTCUTS`
-  (`src/constants/shortcuts.ts`).
+- **A command, key or panel in an existing domain** touches only that module: a command and its
+  keys are one definition in its `commands.ts`, and a panel is its components. The id joins
+  `CommandId` by derivation. Keys the spritesheet composer shares (undo, redo, save, zoom, fit,
+  grid, help, back) come from `SHARED_KEYS` (`src/constants/shortcuts.ts`).
 - **A new domain** is a folder with `api.ts`, `module.ts` and whatever it owns, plus one line in
   `EDITOR_MODULES`. The shell places its panel in plain JSX: there is no slot system.
 - **A new tool** never touches a module: it is a folder in `src/tools/` plus one line in
   `TOOL_LIST`, and it reaches the host only through `ToolHost`.
 
 Two dependency rules keep the module graph acyclic, and `import/no-cycle` checks both. Nothing
-that a module's `api.ts` reaches may import `EditorPage` or `modules.ts`. And when the provider of
-a ToolHost adapter needs something from `canvas`, `canvas` passes it in: the history adapter takes
-the surface factory as an argument, because `canvas/toolHost/` imports `shell/api.ts`.
+that a module's `api.ts` reaches may import `EditorPage` or `modules.ts` at runtime (the type
+import of `ModuleCommandId` in `commands/types.ts` is fine: the rule ignores type-only imports).
+And when the provider of a ToolHost adapter needs something from `canvas`, `canvas` passes it in:
+the history adapter takes the surface factory as an argument, because `canvas/toolHost/` imports
+`shell/api.ts`.

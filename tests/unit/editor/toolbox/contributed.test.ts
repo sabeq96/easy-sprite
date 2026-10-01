@@ -1,16 +1,17 @@
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it } from "vitest";
-import { SHORTCUTS } from "@/commands/keymap";
 import { getPixel, setPixel } from "@/core/buffer";
 import type { SpriteDocument } from "@/core/document";
 import { History } from "@/core/history";
 import { useFramesStore } from "@/editor/frames/api";
 import { useLayersStore } from "@/editor/layers/api";
 import { useToolboxStore } from "@/editor/toolbox/api";
-import { createContributedCommands } from "@/editor/toolbox/contributed";
+import { bindCommands } from "@/editor/module";
+import { CONTRIBUTED_COMMANDS } from "@/editor/toolbox/contributed";
 import { createToolHost } from "@/editor/canvas/api";
 import { startToolLifecycle } from "@/editor/canvas/useToolLifecycle";
 import type { ContributedCommandId, SettingCommandId } from "@/tools";
 import { makeDocument, RED } from "@test/factories";
+import { moduleContext } from "@test/modules";
 import { resetEditorStores } from "@test/store";
 
 const SELECTION_COMMANDS = [
@@ -39,7 +40,7 @@ afterEach(() => stop?.());
 function setup() {
   const host = createToolHost({ doc, history });
   stop = startToolLifecycle(host);
-  return createContributedCommands(host);
+  return bindCommands(CONTRIBUTED_COMMANDS, moduleContext({ doc, history, host }));
 }
 
 describe("contributed commands", () => {
@@ -54,10 +55,10 @@ describe("contributed commands", () => {
     expect(Object.keys(commands).sort()).toEqual([...SELECTION_COMMANDS, "tool.toggleMirror"].sort());
     for (const id of SELECTION_COMMANDS) {
       expect(commands[id]?.id).toBe(id);
-      expect(SHORTCUTS[id]?.length).toBeGreaterThan(0);
+      expect(commands[id]?.keys?.length).toBeGreaterThan(0);
     }
-    expect(SHORTCUTS["edit.copy"]).toEqual([{ key: "c", mod: true }]);
-    expect(SHORTCUTS["edit.deleteSelection"]).toEqual([{ key: "delete" }, { key: "backspace" }]);
+    expect(commands["edit.copy"]?.keys).toEqual([{ key: "c", mod: true }]);
+    expect(commands["edit.deleteSelection"]?.keys).toEqual([{ key: "delete" }, { key: "backspace" }]);
   });
 
   it("paste activates select before selecting, so deselect becomes enabled", () => {
@@ -99,7 +100,7 @@ describe("contributed commands", () => {
     const mirror = commands["tool.toggleMirror"];
 
     expect(mirror).toMatchObject({ label: "Mirror horizontally", group: "Tools" });
-    expect(SHORTCUTS["tool.toggleMirror"]).toEqual([{ key: "v" }]);
+    expect(mirror?.keys).toEqual([{ key: "v" }]);
     expect(mirror?.isEnabled?.()).toBe(true);
     expect(mirror?.isActive?.()).toBe(false);
 

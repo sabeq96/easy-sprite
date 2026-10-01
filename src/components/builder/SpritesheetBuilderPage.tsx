@@ -18,7 +18,7 @@ import { ShortcutHelpDialog } from "@/components/common/ShortcutHelpDialog";
 import { TooltipButton } from "@/components/common/TooltipButton";
 import { Button } from "@/components/ui/button";
 import { CommandsProvider } from "@/commands/CommandsContext";
-import { commandKeys } from "@/commands/keymap";
+import { keysOf } from "@/commands/keymap";
 import { useBuilderCommands } from "@/commands/useBuilderCommands";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -87,7 +87,7 @@ function SpritesheetBuilderShell() {
           {/* A link, not a command button: navigation belongs to the <Link>. */}
           <TooltipButton
             label="Back to sprites"
-            shortcut={commandKeys("app.backToLibrary")}
+            shortcut={keysOf(commands["app.backToLibrary"])}
             size="icon-sm"
             variant="ghost"
             className="shrink-0"

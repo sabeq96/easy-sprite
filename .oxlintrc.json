@@ -27,12 +27,12 @@
                   "dexie-react-hooks",
                   "zustand",
                   "lucide-react",
-                  "@/components/*",
-                  "@/hooks/*",
-                  "@/stores/*",
-                  "@/db/*",
-                  "@/app/*",
-                  "@/services/*",
+                  "@/components/**",
+                  "@/hooks/**",
+                  "@/stores/**",
+                  "@/db/**",
+                  "@/app/**",
+                  "@/services/**",
                   "@/framework/**",
                   "@/tools",
                   "@/tools/**",
@@ -93,7 +93,7 @@
                 "message": "A tool may name commands by type only; it never runs host commands directly."
               },
               {
-                "group": ["@/tools", "@/tools/**", "!@/tools/shared/*"],
+                "group": ["@/tools", "@/tools/**", "!@/tools/shared/**"],
                 "message": "A tool folder never imports another tool or the registry; shared code lives in src/tools/shared/."
               },
               {
@@ -113,7 +113,7 @@
           {
             "patterns": [
               {
-                "group": ["@/components/*", "@/core/*", "@/hooks/*", "@/app/*", "react", "react-dom"],
+                "group": ["@/components/**", "@/core/**", "@/hooks/**", "@/app/**", "react", "react-dom"],
                 "message": "src/db/** must not depend on the UI or the core."
               }
             ]
@@ -129,7 +129,7 @@
           {
             "patterns": [
               {
-                "group": ["@/components/*", "@/core/*", "@/db/*", "@/hooks/*", "@/stores/*", "@/app/*", "react", "react-dom", "dexie"],
+                "group": ["@/components/**", "@/core/**", "@/db/**", "@/hooks/**", "@/stores/**", "@/app/**", "react", "react-dom", "dexie"],
                 "message": "src/lib/** and src/constants/** are pure: they may only import each other and types."
               }
             ]
@@ -148,9 +148,9 @@
             "patterns": [
               {
                 "group": [
-                  "@/db/*",
-                  "@/services/*",
-                  "@/export/*",
+                  "@/db/**",
+                  "@/services/**",
+                  "@/export/**",
                   "dexie",
                   "dexie-react-hooks"
                 ],
@@ -184,7 +184,7 @@
               },
               {
                 "group": [
-                  "@/components/*"
+                  "@/components/**"
                 ],
                 "message": "Hooks sit below components: move the shared piece into hooks/ or lib/."
               },
@@ -209,9 +209,9 @@
             "patterns": [
               {
                 "group": [
-                  "@/components/*",
-                  "@/hooks/*",
-                  "@/app/*",
+                  "@/components/**",
+                  "@/hooks/**",
+                  "@/app/**",
                   "react",
                   "react-dom"
                 ],
@@ -233,9 +233,9 @@
             "patterns": [
               {
                 "group": [
-                  "@/components/*",
-                  "@/hooks/*",
-                  "@/app/*",
+                  "@/components/**",
+                  "@/hooks/**",
+                  "@/app/**",
                   "react",
                   "react-dom"
                 ],
@@ -261,10 +261,10 @@
             "patterns": [
               {
                 "group": [
-                  "@/components/*",
-                  "@/db/*",
-                  "@/services/*",
-                  "@/export/*",
+                  "@/components/**",
+                  "@/db/**",
+                  "@/services/**",
+                  "@/export/**",
                   "dexie"
                 ],
                 "message": "commands/ wires editor actions to keys and UI state; data goes through hooks."
@@ -289,16 +289,16 @@
             "patterns": [
               {
                 "group": [
-                  "@/app/*",
-                  "@/commands/*",
-                  "@/components/*",
-                  "@/db/*",
-                  "@/core/*",
-                  "@/export/*",
-                  "@/hooks/*",
-                  "@/lib/*",
-                  "@/services/*",
-                  "@/stores/*",
+                  "@/app/**",
+                  "@/commands/**",
+                  "@/components/**",
+                  "@/db/**",
+                  "@/core/**",
+                  "@/export/**",
+                  "@/hooks/**",
+                  "@/lib/**",
+                  "@/services/**",
+                  "@/stores/**",
                   "react",
                   "dexie"
                 ],

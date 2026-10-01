@@ -1,12 +1,9 @@
-import type { EditorModule } from "@/editor/module";
-import { createContributedCommands } from "./contributed";
+import { defineModule } from "@/editor/module";
+import { TOOLBOX_COMMANDS } from "./commands";
 import { useToolboxStore } from "./store";
-import { createToolCommands } from "./toolCommands";
 
-export const toolboxModule: EditorModule = {
+export const toolboxModule = defineModule({
   id: "toolbox",
-  // One command per tool, then the commands tools contribute (the selection's copy, cut, paste, …)
-  // and those their settings declare (the mirror toggle). Handlers read the store when they run.
-  commands: (ctx) => ({ ...createToolCommands(), ...createContributedCommands(ctx) }),
+  commands: TOOLBOX_COMMANDS,
   subscribe: useToolboxStore.subscribe,
-};
+});

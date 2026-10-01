@@ -1,5 +1,4 @@
-import type { CommandRegistry } from "@/commands/types";
-import type { ModuleContext } from "@/editor/module";
+import type { ModuleCommand } from "@/editor/module";
 import type { ContributedCommand } from "@/framework/command";
 import type { ToolHost } from "@/framework/host";
 import type { Settings } from "@/framework/settings";
@@ -37,32 +36,29 @@ function settingCommands(toolId: ToolId, settings: Settings | undefined): Contri
   });
 }
 
-/** Each tool with the commands it contributes and those its settings declare, in registry order. */
-const CONTRIBUTIONS = TOOLS_WITH_COMMANDS.flatMap((tool) =>
-  [...(tool.commands ?? []), ...settingCommands(tool.id, tool.settings)].map((command) => ({
-    toolId: tool.id,
-    command,
-  })),
-);
-
 type ContributionId = ContributedCommandId | SettingCommandId;
 
-const idOf = (command: ContributedCommand) => command.id as ContributionId;
-
-/** Every tool-contributed command as a registry entry, bound to its tool's view of the host. */
-export function createContributedCommands(host: Pick<ModuleContext, "forTool">): CommandRegistry {
-  const registry: CommandRegistry = {};
-  for (const { toolId, command } of CONTRIBUTIONS) {
-    const toolHost = host.forTool(toolId);
-    const { isEnabled, isActive } = command;
-    registry[idOf(command)] = {
-      id: idOf(command),
-      label: command.label,
-      group: command.group,
-      isEnabled: isEnabled ? () => isEnabled(toolHost) : undefined,
-      isActive: isActive ? () => isActive(toolHost) : undefined,
-      run: () => command.run(toolHost),
-    };
-  }
-  return registry;
+/** One contributed command as a module command, run through its tool's view of the host. */
+function contribution(toolId: ToolId, command: ContributedCommand): ModuleCommand<ContributionId> {
+  const { isEnabled, isActive } = command;
+  return {
+    id: command.id as ContributionId,
+    label: command.label,
+    group: command.group,
+    keys: command.keys,
+    isEnabled: isEnabled && ((ctx) => isEnabled(ctx.forTool(toolId))),
+    isActive: isActive && ((ctx) => isActive(ctx.forTool(toolId))),
+    run: (ctx) => command.run(ctx.forTool(toolId)),
+  };
 }
+
+/**
+ * Each tool's contributed commands, then those its settings declare, in tool order. The shell
+ * binds them to the open document, so each runs through the document's own tool host.
+ */
+export const CONTRIBUTED_COMMANDS: readonly ModuleCommand<ContributionId>[] =
+  TOOLS_WITH_COMMANDS.flatMap((tool) =>
+    [...(tool.commands ?? []), ...settingCommands(tool.id, tool.settings)].map((command) =>
+      contribution(tool.id, command),
+    ),
+  );

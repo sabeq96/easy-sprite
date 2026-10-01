@@ -1,21 +1,18 @@
 import { expect, test } from "vitest";
 import { userEvent } from "vitest/browser";
 import { CommandsProvider, type CommandsValue } from "@/commands/CommandsContext";
-import { History } from "@/core/history";
+import { bindCommands } from "@/editor/module";
 import { subscribeToModules } from "@/editor/modules";
 import { ToolOptionsBar, ToolSidebar, useToolboxStore } from "@/editor/toolbox/api";
-import { createContributedCommands } from "@/editor/toolbox/contributed";
-import { createToolCommands } from "@/editor/toolbox/toolCommands";
-import { createToolHost } from "@/editor/canvas/api";
+import { TOOLBOX_COMMANDS } from "@/editor/toolbox/commands";
 import { TOOL_LIST, TOOLS } from "@/tools";
-import { makeDocument } from "@test/factories";
+import { moduleContext } from "@test/modules";
 import { render } from "@test/render";
 
 /** The bar's command buttons (the mirror toggle) read the registry, as they do in the editor. */
 function commands(): CommandsValue {
-  const host = createToolHost({ doc: makeDocument(), history: new History() });
   return {
-    registry: { ...createToolCommands(), ...createContributedCommands(host) },
+    registry: bindCommands(TOOLBOX_COMMANDS, moduleContext()),
     subscribe: subscribeToModules,
   };
 }

@@ -1,11 +1,11 @@
-import type { EditorModule } from "@/editor/module";
+import { defineModule } from "@/editor/module";
 import { attachOnion } from "./attachCanvas";
-import { animationCommands } from "./commands";
+import { ANIMATION_COMMANDS } from "./commands";
 import { useAnimationStore } from "./store";
 
-export const animationModule: EditorModule = {
+export const animationModule = defineModule({
   id: "animation",
-  commands: animationCommands,
+  commands: ANIMATION_COMMANDS,
   attachCanvas: attachOnion,
   subscribe: useAnimationStore.subscribe,
-};
+});

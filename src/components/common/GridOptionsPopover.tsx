@@ -5,7 +5,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import { commandKeys } from "@/commands/keymap";
+import { useCommandKeys } from "@/commands/CommandsContext";
 
 export interface GridOptionsPopoverProps {
   enabled: boolean;
@@ -31,6 +31,8 @@ export function GridOptionsPopover({
   checkerOptions,
   onCheckerSizeChange,
 }: GridOptionsPopoverProps) {
+  const toggleKeys = useCommandKeys("view.toggleGrid");
+
   return (
     <Popover>
       <PopoverTrigger
@@ -38,7 +40,7 @@ export function GridOptionsPopover({
           // Opens the options; the tooltip still teaches the key that toggles the grid.
           <TooltipButton
             label="Grid options"
-            shortcut={commandKeys("view.toggleGrid")}
+            shortcut={toggleKeys}
             variant={enabled ? "secondary" : "ghost"}
             aria-pressed={enabled}
           >

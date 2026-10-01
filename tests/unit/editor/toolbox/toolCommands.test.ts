@@ -1,12 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { useToolboxStore } from "@/editor/toolbox/store";
-import { createToolCommands, reselectLabel } from "@/editor/toolbox/toolCommands";
+import { bindCommands } from "@/editor/module";
+import { reselectLabel, TOOL_COMMANDS } from "@/editor/toolbox/toolCommands";
 import { getTool } from "@/tools";
+import { moduleContext } from "@test/modules";
 import { resetEditorStores } from "@test/store";
 
 function setup() {
   resetEditorStores();
-  return { store: useToolboxStore, commands: createToolCommands() };
+  return { store: useToolboxStore, commands: bindCommands(TOOL_COMMANDS, moduleContext()) };
 }
 
 describe("tool commands", () => {

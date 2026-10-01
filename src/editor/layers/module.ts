@@ -1,9 +1,9 @@
-import type { EditorModule } from "@/editor/module";
-import { layerCommands } from "./commands";
+import { defineModule } from "@/editor/module";
+import { LAYER_COMMANDS } from "./commands";
 import { useLayersStore } from "./store";
 
-export const layersModule: EditorModule = {
+export const layersModule = defineModule({
   id: "layers",
-  commands: layerCommands,
+  commands: LAYER_COMMANDS,
   subscribe: useLayersStore.subscribe,
-};
+});

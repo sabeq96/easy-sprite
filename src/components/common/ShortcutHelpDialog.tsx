@@ -1,6 +1,6 @@
 import { hintRow, type HintSection, type ShortcutRow } from "@/commands/hints";
-import { commandKeys, SHORTCUTS } from "@/commands/keymap";
-import type { CommandId, CommandRegistry } from "@/commands/types";
+import { keysOf } from "@/commands/keymap";
+import type { CommandRegistry } from "@/commands/types";
 import { ShortcutList } from "@/components/common/ShortcutList";
 import {
   Dialog,
@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import type { CommandGroup } from "@/constants/commands";
+import { COMMAND_GROUPS, type CommandGroup } from "@/constants/commands";
 
 export interface ShortcutSection {
   title: string;
@@ -31,8 +31,9 @@ export interface ShortcutHelpDialogProps {
 }
 
 /**
- * Generated entirely from what a page registers — its commands, the keymap and its feature hints
- * — so nothing here can go stale when a key or gesture changes.
+ * Generated entirely from what a page registers — its commands with their keys, and its feature
+ * hints — so nothing here can go stale when a key or gesture changes. Groups follow
+ * `COMMAND_GROUPS`; rows follow registry order, then the hints.
  */
 export function ShortcutHelpDialog({
   commands,
@@ -43,21 +44,25 @@ export function ShortcutHelpDialog({
   leadingSections = [],
   excludeCommands,
 }: ShortcutHelpDialogProps) {
-  const groups = new Map<CommandGroup, ShortcutRow[]>();
+  const rowsByGroup = new Map<CommandGroup, ShortcutRow[]>();
 
-  for (const commandId of Object.keys(SHORTCUTS) as CommandId[]) {
-    const command = commands[commandId];
-    const keys = commandKeys(commandId);
-    if (!command || keys.length === 0 || excludeCommands?.has(commandId)) continue;
+  for (const command of Object.values(commands)) {
+    const keys = keysOf(command);
+    if (!command || keys.length === 0 || excludeCommands?.has(command.id)) continue;
 
-    const rows = groups.get(command.group) ?? [];
+    const rows = rowsByGroup.get(command.group) ?? [];
     rows.push({ label: command.label, keys });
-    groups.set(command.group, rows);
+    rowsByGroup.set(command.group, rows);
   }
 
   for (const { group, hints: groupHints } of hints) {
-    groups.set(group, [...(groups.get(group) ?? []), ...groupHints.map(hintRow)]);
+    rowsByGroup.set(group, [...(rowsByGroup.get(group) ?? []), ...groupHints.map(hintRow)]);
   }
+
+  const groups = COMMAND_GROUPS.flatMap((group) => {
+    const rows = rowsByGroup.get(group);
+    return rows ? [{ group, rows }] : [];
+  });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -73,7 +78,7 @@ export function ShortcutHelpDialog({
               <Section key={section.title} title={section.title} rows={section.rows} />
             ))}
 
-            {[...groups.entries()].map(([group, rows]) => (
+            {groups.map(({ group, rows }) => (
               <Section key={group} title={group} rows={rows} />
             ))}
           </div>

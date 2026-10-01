@@ -1,5 +1,6 @@
 import type { Hint } from "@/commands/hints";
-import type { CommandHold, CommandRegistry } from "@/commands/types";
+import type { CommandHold, ToolCommandId } from "@/commands/types";
+import type { ModuleCommand } from "@/editor/module";
 import { TOOL_LIST, type ToolId } from "@/tools";
 import { nextChoice, resolveSettings, type ChoiceSetting } from "@/framework/settings";
 import type { Tool } from "@/framework/tool";
@@ -12,23 +13,17 @@ export const TOOL_KEY_HOLD_HINT: Hint = {
 };
 
 /** One command per tool, generated from the registry so the two cannot drift. */
-export function createToolCommands(): CommandRegistry {
-  const registry: CommandRegistry = {};
-
-  for (const tool of TOOL_LIST) {
-    const commandId = `tool.${tool.id}` as const;
-    registry[commandId] = {
-      id: commandId,
-      label: tool.label,
-      group: "Tools",
-      isActive: () => useToolboxStore.getState().toolId === tool.id,
-      run: () => useToolboxStore.getState().setTool(tool.id),
-      hold: toolKeyHold(tool),
-    };
-  }
-
-  return registry;
-}
+export const TOOL_COMMANDS: readonly ModuleCommand<ToolCommandId>[] = TOOL_LIST.map(
+  (tool): ModuleCommand<ToolCommandId> => ({
+    id: `tool.${tool.id}`,
+    label: tool.label,
+    group: "Tools",
+    keys: tool.shortcut ? [tool.shortcut] : undefined,
+    isActive: () => useToolboxStore.getState().toolId === tool.id,
+    run: () => useToolboxStore.getState().setTool(tool.id),
+    hold: () => toolKeyHold(tool),
+  }),
+);
 
 /** The choice setting a tool's key steps when pressed again (`Tool.reselect`), if any. */
 function reselectSetting(tool: Tool<ToolId>): { key: string; setting: ChoiceSetting } | null {

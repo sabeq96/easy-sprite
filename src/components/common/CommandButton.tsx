@@ -1,7 +1,6 @@
 import { TooltipButton, type TooltipButtonProps } from "@/components/common/TooltipButton";
-import { useCommand, useCommandState } from "@/commands/CommandsContext";
+import { useCommand, useCommandKeys, useCommandState } from "@/commands/CommandsContext";
 import type { CommandId } from "@/commands/types";
-import { commandKeys } from "@/commands/keymap";
 
 export interface CommandButtonProps extends Omit<TooltipButtonProps, "label" | "shortcut"> {
   command: CommandId;
@@ -31,12 +30,13 @@ export function CommandButton({
 }: CommandButtonProps) {
   const command = useCommand(id);
   const { isActive, isEnabled } = useCommandState(id);
+  const commandKeys = useCommandKeys(id);
   const toggles = command.isActive !== undefined;
 
   return (
     <TooltipButton
       label={label ?? command.label}
-      shortcut={keys ?? commandKeys(id)}
+      shortcut={keys ?? commandKeys}
       disabled={disabled ?? !isEnabled}
       aria-pressed={toggles ? isActive : undefined}
       variant={variant ?? (isActive ? "secondary" : "ghost")}

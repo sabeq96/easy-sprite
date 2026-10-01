@@ -1,9 +1,9 @@
-import type { EditorModule } from "@/editor/module";
-import { frameCommands } from "./commands";
+import { defineModule } from "@/editor/module";
+import { FRAME_COMMANDS } from "./commands";
 import { useFramesStore } from "./store";
 
-export const framesModule: EditorModule = {
+export const framesModule = defineModule({
   id: "frames",
-  commands: frameCommands,
+  commands: FRAME_COMMANDS,
   subscribe: useFramesStore.subscribe,
-};
+});

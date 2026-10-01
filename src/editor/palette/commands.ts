@@ -1,20 +1,20 @@
-import type { CommandRegistry } from "@/commands/types";
+import { defineCommands } from "@/editor/module";
 import { usePaletteStore } from "./store";
 
 /** Swapping and resetting the primary and secondary colors. */
-export function paletteCommands(): CommandRegistry {
-  return {
-    "color.swap": {
-      id: "color.swap",
-      label: "Swap colors",
-      group: "Color",
-      run: () => usePaletteStore.getState().swapColors(),
-    },
-    "color.reset": {
-      id: "color.reset",
-      label: "Reset colors",
-      group: "Color",
-      run: () => usePaletteStore.getState().resetColors(),
-    },
-  };
-}
+export const PALETTE_COMMANDS = defineCommands([
+  {
+    id: "color.swap",
+    label: "Swap colors",
+    group: "Color",
+    keys: [{ key: "x" }],
+    run: () => usePaletteStore.getState().swapColors(),
+  },
+  {
+    id: "color.reset",
+    label: "Reset colors",
+    group: "Color",
+    keys: [{ key: "d" }],
+    run: () => usePaletteStore.getState().resetColors(),
+  },
+]);

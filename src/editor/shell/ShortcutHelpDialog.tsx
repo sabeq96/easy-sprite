@@ -1,6 +1,6 @@
 import type { ShortcutRow } from "@/commands/hints";
 import { hintRow } from "@/commands/hints";
-import { commandKeys, reselectKeys } from "@/commands/keymap";
+import { keysOf, reselectKeys } from "@/commands/keymap";
 import type { CommandId, CommandRegistry } from "@/commands/types";
 import {
   ShortcutHelpDialog as CommonShortcutHelpDialog,
@@ -37,7 +37,9 @@ const TOOL_OWNED_COMMANDS = new Set<string>(
 function toolsGroupCommands(commands: CommandRegistry): CommandId[] {
   return (Object.keys(commands) as CommandId[]).filter(
     (id) =>
-      commands[id]?.group === "Tools" && !TOOL_OWNED_COMMANDS.has(id) && commandKeys(id).length > 0,
+      commands[id]?.group === "Tools" &&
+      !TOOL_OWNED_COMMANDS.has(id) &&
+      keysOf(commands[id]).length > 0,
   );
 }
 
@@ -53,12 +55,12 @@ const MODULE_HINTS = EDITOR_MODULES.flatMap((editorModule) => editorModule.hints
  */
 function toolsRows(commands: CommandRegistry): ShortcutRow[] {
   const rows = TOOLS_WITH_COMMANDS.flatMap((tool) => {
-    const row = { label: tool.label, keys: commandKeys(`tool.${tool.id}`) };
+    const row = { label: tool.label, keys: keysOf(commands[`tool.${tool.id}`]) };
     const reselect = reselectLabel(tool);
-    return reselect ? [row, { label: reselect, keys: reselectKeys(tool) }] : [row];
+    return reselect ? [row, { label: reselect, keys: reselectKeys(tool, commands) }] : [row];
   });
   for (const id of toolsGroupCommands(commands)) {
-    rows.push({ label: commands[id]?.label ?? id, keys: commandKeys(id) });
+    rows.push({ label: commands[id]?.label ?? id, keys: keysOf(commands[id]) });
   }
   rows.push(hintRow(TOOL_KEY_HOLD_HINT));
   return rows;
@@ -68,11 +70,11 @@ function toolsRows(commands: CommandRegistry): ShortcutRow[] {
  * Only tools with more to say than their key — their commands and hints — get a section, read
  * from the tool's own definitions so the sheet cannot drift from them.
  */
-function toolSections(): ShortcutSection[] {
+function toolSections(commands: CommandRegistry): ShortcutSection[] {
   return TOOLS_WITH_COMMANDS.flatMap((tool) => {
     const rows: ShortcutRow[] = (tool.commands ?? []).map((command) => ({
       label: command.label,
-      keys: commandKeys(command.id as CommandId),
+      keys: keysOf(commands[command.id as CommandId]),
     }));
     rows.push(...(tool.hints ?? []).map(hintRow));
     return rows.length > 0 ? [{ title: tool.label, rows }] : [];
@@ -88,7 +90,7 @@ export function ShortcutHelpDialog({ commands, open, onOpenChange }: ShortcutHel
       onOpenChange={onOpenChange}
       description="Every key and mouse gesture the editor understands."
       hints={MODULE_HINTS}
-      leadingSections={[{ title: "Tools", rows: toolsRows(commands) }, ...toolSections()]}
+      leadingSections={[{ title: "Tools", rows: toolsRows(commands) }, ...toolSections(commands)]}
       excludeCommands={new Set([...TOOL_OWNED_COMMANDS, ...toolsGroupCommands(commands)])}
     />
   );

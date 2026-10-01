@@ -1,11 +1,11 @@
-import type { EditorModule } from "@/editor/module";
+import { defineModule } from "@/editor/module";
 import { attachGrid } from "./attachCanvas";
-import { viewCommands } from "./commands";
+import { VIEW_COMMANDS } from "./commands";
 import { useViewStore } from "./store";
 
-export const viewModule: EditorModule = {
+export const viewModule = defineModule({
   id: "view",
-  commands: viewCommands,
+  commands: VIEW_COMMANDS,
   attachCanvas: attachGrid,
   subscribe: useViewStore.subscribe,
-};
+});

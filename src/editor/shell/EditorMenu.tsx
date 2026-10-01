@@ -9,12 +9,12 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useCommand } from "@/commands/CommandsContext";
-import { commandKeys } from "@/commands/keymap";
+import { useCommand, useCommandKeys } from "@/commands/CommandsContext";
 import { ResizeCanvasDialog } from "./ResizeCanvasDialog";
 
 export function EditorMenu() {
   const save = useCommand("edit.save");
+  const saveKeys = useCommandKeys("edit.save");
   const [isResizing, setResizing] = useState(false);
 
   return (
@@ -39,7 +39,7 @@ export function EditorMenu() {
           <DropdownMenuItem onClick={save.run}>
             <Save />
             {save.label}
-            <DropdownMenuShortcut>{commandKeys("edit.save").join(" ")}</DropdownMenuShortcut>
+            <DropdownMenuShortcut>{saveKeys.join(" ")}</DropdownMenuShortcut>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

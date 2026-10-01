@@ -14,7 +14,7 @@ Before writing anything, answer one question: *what does it depend on?*
 | manipulates pixels/documents, no React, no DB | `src/core/` | `floodFill()`, `SpriteDocument` |
 | is a tool (reads the host only through `ToolHost`) | `src/tools/<folder>/tool.ts` | `pencilTool`, `selectTool` |
 | is a tool option | a setting in that tool's `settings` (`choice`, `toggle`, `switch`) | the pencil's `size`, `mirrorHorizontal` |
-| belongs to one pixel-editor domain: its UI, state, commands, hints or painters | that host module, `src/editor/<domain>/` ([architecture.md §11](architecture.md)) | `<LayersPanel/>`, `frameCommands()`, `useViewStore`, `attachGrid()` |
+| belongs to one pixel-editor domain: its UI, state, commands, hints or painters | that host module, `src/editor/<domain>/` ([architecture.md §11](architecture.md)) | `<LayersPanel/>`, `FRAME_COMMANDS`, `useViewStore`, `attachGrid()` |
 | talks to IndexedDB | `src/db/repositories/` | `duplicateSprite()` |
 | wires the DB to the core | `src/services/` | `autosave.ts`, `documentService.ts` |
 | is UI state of the library, builder or settings | `src/stores/` | `useBuilderViewStore`, the theme |
@@ -270,9 +270,9 @@ which would drift. What it enforces, in intent:
     `types/` holds types only; `hooks/` never touch the raw Dexie instance or import components;
     `components/` never import `db/`, `services/`, `export/` or Dexie (type-only imports allowed).
 
-  In oxlint a `*` in a group does not cross `/`, so the older overrides, written with `@/x/*`,
-  block only the first level under a folder; the `tools/`, `framework/` and `editor/` overrides
-  use `/**` and `!` negations. A later override replaces an earlier one's
+  In oxlint a `*` in a group does not cross `/`, so every group is written with `/**`
+  (`@/components/**`), which blocks nested paths too, and `!` negations narrow it. A later
+  override replaces an earlier one's
   `no-restricted-imports` for the same file rather than merging, which is why the editor's
   `.tsx` override repeats the module groups. The table in [architecture.md §9](architecture.md)
   marks which edges these cover.

@@ -74,9 +74,9 @@ User sprites live only in the user's IndexedDB. A mistake here destroys someone'
   to a module is in the wrong place.
 - A new `api.ts` export is an interface change: is another module really using it? `api.ts`
   exports only what other modules need, never the whole folder.
-- New keys go through the command registry (a module's `commands.ts`, the id in
-  `src/constants/commands.ts`, the key in `src/constants/shortcuts.ts`, or the tool's own
-  definition) and must not conflict — see `docs/shortcuts.md`.
+- New keys go on the command definition itself (`keys` next to `run` in a module's
+  `commands.ts`, or in the tool's own definition; the keys both editors share come from
+  `SHARED_KEYS` in `src/constants/shortcuts.ts`) and must not conflict — see `docs/shortcuts.md`.
 
 ### C. Tests — usually blockers
 - Behavior changes come with tests. Location rule (conventions §11): under `tests/`, mirroring

@@ -1,6 +1,6 @@
 import { createContext, useContext, useSyncExternalStore } from "react";
-import type { CommandDefinition, CommandRegistry } from "@/commands/types";
-import type { CommandId } from "@/commands/types";
+import { keysOf } from "@/commands/keymap";
+import type { CommandDefinition, CommandId, CommandRegistry } from "@/commands/types";
 
 /** Registers a listener for every store a command's `isActive` or `isEnabled` may read. */
 export type CommandStateSubscribe = (listener: () => void) => () => void;
@@ -38,4 +38,12 @@ export function useCommandState(id: CommandId): CommandState {
   const isActive = useSyncExternalStore(subscribe, () => command.isActive?.() ?? false);
   const isEnabled = useSyncExternalStore(subscribe, () => command.isEnabled?.() ?? true);
   return { isActive, isEnabled };
+}
+
+/**
+ * Every chord bound to a command in the active registry, formatted for display. Empty when it
+ * has none, or outside a `CommandsProvider`.
+ */
+export function useCommandKeys(id: CommandId): string[] {
+  return keysOf(useContext(CommandsContext)?.registry[id]);
 }
