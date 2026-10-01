@@ -178,3 +178,16 @@ test("a hold survives the editor re-rendering while the key is down", async () =
 
   expect(useEditorStore.getState()).toMatchObject({ toolId: "pencil", heldTool: null });
 });
+
+test("pressing E on the eraser cycles the brush size shown in the options bar", async () => {
+  const editor = await openEditor();
+  await userEvent.click(editor.screen.getByRole("button", { name: "Eraser", exact: true }));
+
+  for (const [index, size] of [2, 3, 4, 6, 8, 1].entries()) {
+    pressKey("e", "KeyE", index * 1000, 50);
+    await expect
+      .element(editor.screen.getByRole("button", { name: `${size} pixels`, exact: true }))
+      .toHaveAttribute("aria-pressed", "true");
+  }
+  expect(useEditorStore.getState()).toMatchObject({ toolId: "eraser", heldTool: null });
+});

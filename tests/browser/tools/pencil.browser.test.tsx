@@ -235,7 +235,7 @@ test("strokes past the canvas edge clip instead of wrapping or throwing", async 
 test("pressing P on the pencil cycles the brush size shown in the options bar", async () => {
   const editor = await openEditor();
 
-  for (const [index, size] of [2, 3, 4, 1].entries()) {
+  for (const [index, size] of [2, 3, 4, 6, 8, 1].entries()) {
     pressKey("p", "KeyP", index * 1000, 50);
     await expect
       .element(editor.screen.getByRole("button", { name: `${size} pixels`, exact: true }))
