@@ -1,7 +1,7 @@
 import { TOOL_KEY_HOLD_MS } from "@/constants/shortcuts";
 import { BRUSH_SIZES, DEFAULT_BRUSH_SIZE } from "@/constants/tools";
-import type { ToolId } from "@/editor/tools";
-import type { ToolOptions } from "@/editor/tools/types";
+import type { ToolId } from "@/core/tools";
+import type { ToolOptions } from "@/core/tools/types";
 import type { SliceCreator } from "@/stores/slices/types";
 
 /** A tool key being held: it has switched tools, and its release decides whether that sticks. */

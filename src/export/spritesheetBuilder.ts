@@ -1,5 +1,5 @@
 import type { SpritesheetBlockRecord } from "@/db/schema";
-import type { SpriteDocument } from "@/editor/document";
+import type { SpriteDocument } from "@/core/document";
 import { downloadBlob, pngFilename } from "@/export/download";
 import { packSheet, sizesFromDocs } from "@/lib/sheetLayout";
 import { renderSpriteStrip } from "@/export/spriteStrip";

@@ -4,7 +4,7 @@ import { useSpritesheetSession } from "@/app/SpritesheetProvider";
 import type { CommandRegistry } from "@/commands/types";
 import { BUILDER_ZOOM_LEVELS } from "@/constants/builder";
 import { ROUTES } from "@/constants/routes";
-import type { Size } from "@/editor/viewport";
+import type { Size } from "@/core/viewport";
 import { useBuilderViewStore } from "@/stores/useBuilderViewStore";
 
 /**

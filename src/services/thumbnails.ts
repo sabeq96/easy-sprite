@@ -2,8 +2,8 @@ import { THUMBNAIL_MAX_PX } from "@/constants/storage";
 import { updateSprite } from "@/db/repositories/sprites";
 import { updateSpritesheet } from "@/db/repositories/spritesheets";
 import type { SpritesheetBlockRecord } from "@/db/schema";
-import { compositeFrame } from "@/editor/composite";
-import type { SpriteDocument } from "@/editor/document";
+import { compositeFrame } from "@/core/composite";
+import type { SpriteDocument } from "@/core/document";
 import { renderBuilderSheet } from "@/export/spritesheetBuilder";
 import { computeBuilderBounds, sizesFromDocs } from "@/lib/sheetLayout";
 

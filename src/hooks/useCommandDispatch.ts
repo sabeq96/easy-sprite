@@ -1,5 +1,5 @@
 import { useDocumentSession } from "@/app/DocumentProvider";
-import type { Command } from "@/editor/history";
+import type { Command } from "@/core/history";
 
 /**
  * Runs a command factory — which applies its own change — and records it for undo.

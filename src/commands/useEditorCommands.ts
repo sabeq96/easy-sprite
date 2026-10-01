@@ -5,27 +5,27 @@ import { createToolCommands } from "@/commands/toolCommands";
 import type { CommandRegistry } from "@/commands/types";
 import { ZOOM_LEVELS } from "@/constants/canvas";
 import { ROUTES } from "@/constants/routes";
-import { hasClipboard } from "@/editor/clipboard";
+import { hasClipboard } from "@/core/clipboard";
 import {
   addFrameCommand,
   duplicateFrameCommand,
   moveFrameCommand,
   removeFrameCommand,
-} from "@/editor/commands/frames";
+} from "@/core/commands/frames";
 import {
   addLayerCommand,
   duplicateLayerCommand,
   mergeLayerDownCommand,
   removeLayerCommand,
-} from "@/editor/commands/layers";
+} from "@/core/commands/layers";
 import {
   clearSelectionCommand,
   copySelection,
   cutSelectionCommand,
   pasteCommand,
   type EditTarget,
-} from "@/editor/commands/selection";
-import { selection } from "@/editor/tools/select";
+} from "@/core/commands/selection";
+import { selection } from "@/core/tools/select";
 import { useCommandDispatch } from "@/hooks/useCommandDispatch";
 import { useEditorStore } from "@/stores/useEditorStore";
 

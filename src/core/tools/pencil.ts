@@ -1,0 +1,31 @@
+import type { StampOptions } from "@/core/tools/paint";
+import { commitWrite, stamp, stampLine } from "@/core/tools/paint";
+import { defineTool, type ToolContext } from "@/core/tools/types";
+
+function stampOptions(ctx: ToolContext): StampOptions {
+  return {
+    color: ctx.color,
+    size: ctx.options.brushSize,
+    mirrorHorizontal: ctx.options.mirrorHorizontal,
+    mirrorVertical: ctx.options.mirrorVertical,
+  };
+}
+
+export const pencilTool = defineTool({
+  id: "pencil",
+  label: "Pencil",
+  group: "draw",
+  shortcut: { key: "p" },
+  reselectCommand: "tool.cycleBrushSize",
+  continuous: true,
+  options: ["brushSize", "mirror"],
+
+  onPointerDown(ctx, point) {
+    ctx.stroke.touch(ctx.layerId, ctx.frameId);
+    commitWrite(ctx, stamp(ctx, point, stampOptions(ctx)));
+  },
+
+  onPointerMove(ctx, point, previous) {
+    commitWrite(ctx, stampLine(ctx, previous, point, stampOptions(ctx)));
+  },
+});

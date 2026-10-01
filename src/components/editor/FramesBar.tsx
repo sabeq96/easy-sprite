@@ -10,8 +10,8 @@ import {
   duplicateFrameCommand,
   moveFrameCommand,
   removeFrameCommand,
-} from "@/editor/commands/frames";
-import type { FrameModel } from "@/editor/document";
+} from "@/core/commands/frames";
+import type { FrameModel } from "@/core/document";
 import { useCommandDispatch } from "@/hooks/useCommandDispatch";
 import { useDropZone } from "@/hooks/useDnd";
 import { useDocumentSnapshot } from "@/hooks/useDocumentSnapshot";

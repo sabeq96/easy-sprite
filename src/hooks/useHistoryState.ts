@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import type { History } from "@/editor/history";
+import type { History } from "@/core/history";
 
 export interface HistoryState {
   canUndo: boolean;

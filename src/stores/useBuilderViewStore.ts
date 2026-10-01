@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { BUILDER_ZOOM_LEVELS, DEFAULT_BUILDER_ZOOM } from "@/constants/builder";
 import { DEFAULT_CHECKER_SIZE, DEFAULT_TILE_SIZE } from "@/constants/canvas";
-import type { Size } from "@/editor/viewport";
+import type { Size } from "@/core/viewport";
 import { stepLadder } from "@/lib/math";
 
 export interface BuilderViewState {

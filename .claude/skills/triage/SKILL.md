@@ -34,7 +34,7 @@ available; otherwise `gh issue view` / `gh issue list`. Repo: `sabeq96/easy-spri
    | docs | wrong or missing documentation only |
 3. **Check it isn't already built** — for enhancements and questions, search by *concept*, not
    just the reporter's wording ("eyedropper" may live as a color-picker tool or a modifier key).
-   Look in the tool registry (`src/editor/tools/index.ts`), the command registry (`src/commands/`),
+   Look in the tool registry (`src/core/tools/index.ts`), the command registry (`src/commands/`),
    `docs/shortcuts.md`, the README, and grep `src/`. Record where you looked. Fully built →
    reclassify as `question`, reply with how to use it, close as `completed`. Partly built → say
    what exists and treat the rest as the request.
@@ -61,7 +61,7 @@ available; otherwise `gh issue view` / `gh issue list`. Repo: `sabeq96/easy-spri
    - **Data loss or corrupted sprites is always top priority.** Anything touching `src/db/`,
      autosave (`src/services/`), or backup import/export gets flagged at the top of your summary.
    - Browser-specific? Note it (Safari `OffscreenCanvas` and pointer-capture quirks are known
-     territory — see the comments in `src/editor/`).
+     territory — see the comments in `src/core/`).
 8. **Consider `good first issue`** — only if: the bug is confirmed (or the enhancement is clear),
    the fix is in one or two files you have identified, needs no design decision, and has an
    obvious test location under `tests/`. When suggesting it, also draft a short "Where to start"

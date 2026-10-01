@@ -8,7 +8,7 @@ import {
   type CreateSpriteOptions,
 } from "@/db/repositories/sprites";
 import type { SpriteRecord } from "@/db/schema";
-import type { SpriteDocument } from "@/editor/document";
+import type { SpriteDocument } from "@/core/document";
 import { downloadSpritePng } from "@/export/spritePng";
 import { runWithToast, useAsyncAction } from "@/hooks/useAsyncAction";
 import { plural } from "@/lib/format";

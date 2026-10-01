@@ -1,4 +1,4 @@
-import { spriteToScreen, type Point, type Viewport } from "@/editor/viewport";
+import { spriteToScreen, type Point, type Viewport } from "@/core/viewport";
 
 /**
  * `userEvent` has no low-level pointer-drag API (jsdom's does, but this project's browser

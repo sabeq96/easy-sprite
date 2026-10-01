@@ -1,5 +1,5 @@
 import { expect, test, vi } from "vitest";
-import { setPixel } from "@/editor/buffer";
+import { setPixel } from "@/core/buffer";
 import type { SpritesheetBlockRecord } from "@/db/schema";
 import { downloadBuilderSheetPng, renderBuilderSheet } from "@/export/spritesheetBuilder";
 import { renderSpriteStrip } from "@/export/spriteStrip";

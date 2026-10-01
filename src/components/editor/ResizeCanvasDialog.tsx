@@ -13,8 +13,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Field, FieldLabel } from "@/components/ui/field";
-import type { AnchorX, AnchorY } from "@/editor/buffer";
-import { resizeCanvasCommand, resizeWillCrop } from "@/editor/commands/canvas";
+import type { AnchorX, AnchorY } from "@/core/buffer";
+import { resizeCanvasCommand, resizeWillCrop } from "@/core/commands/canvas";
 import { useCommandDispatch } from "@/hooks/useCommandDispatch";
 import { useDocumentSnapshot } from "@/hooks/useDocumentSnapshot";
 import { DEFAULT_TILE_SIZE } from "@/constants/canvas";

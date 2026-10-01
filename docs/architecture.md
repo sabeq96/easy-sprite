@@ -26,7 +26,7 @@ So the app has two state systems that are deliberately kept apart:
                             IndexedDB (Dexie 4)
 ```
 
-Everything under `src/editor/` is framework-free and unit-testable without a DOM renderer.
+Everything under `src/core/` is framework-free and unit-testable without a DOM renderer.
 Everything under `src/components/` is React and holds no pixel data.
 
 One consequence is easy to get wrong: because the document mutates in place, React components
@@ -52,12 +52,12 @@ src/
   commands/     the editor command registry: ids → run/enabled/active/label, the keymap merged
                 from tool and app keys, and the gesture hints shown in tooltips
   stores/       zustand UI state: the editor store (built from slices/) and the builder's view store
-  editor/       the imperative core, zero React: SpriteDocument, cels, pixels, history, renderer,
+  core/         the imperative core, zero React: SpriteDocument, cels, pixels, history, renderer,
                 viewport, overlays, command factories (commands/), and tools/ — one file per tool
                 plus index.ts, the one registry every tool list derives from
   db/           Dexie schema and instance, repositories/ (the only code that queries tables),
                 typed errors, seed data, whole-database backup
-  services/     where db/ and editor/ meet: open/save a document, autosave, thumbnails, PNG import
+  services/     where db/ and core/ meet: open/save a document, autosave, thumbnails, PNG import
   export/       renders documents to PNG and triggers downloads
   lib/          pure functions (color, rects, sheet rows and layout, library search/sort, …)
   constants/    tuning values and static config, grouped by domain; no logic
@@ -197,26 +197,26 @@ says whether `.oxlintrc.json` enforces it, so the table never claims more than t
 constants/  ──►  constants; types from lib                                  lint
 lib/        ──►  lib, constants, types                                      lint
 types/      ──►  types from db/schema                                       lint (types only)
-editor/     ──►  lib, constants, types; types from commands/hints           lint (no React/DB/UI)
-db/         ──►  lib, constants, types                                      lint (no editor/UI)
-export/     ──►  editor, lib, constants, types; types from db/schema        lint (no React/UI)
-services/   ──►  db, editor, export, lib, constants, types                  lint (no React/UI)
-stores/     ──►  editor, lib, constants, types                              lint (no React/UI)
-commands/   ──►  editor, stores, hooks, app (document context), lib, constants  lint (no db/UI)
-hooks/      ──►  services, export, db/repositories, stores, editor, commands,
+core/       ──►  lib, constants, types; types from commands/hints           lint (no React/DB/UI)
+db/         ──►  lib, constants, types                                      lint (no core/UI)
+export/     ──►  core, lib, constants, types; types from db/schema          lint (no React/UI)
+services/   ──►  db, core, export, lib, constants, types                    lint (no React/UI)
+stores/     ──►  core, lib, constants, types                                lint (no React/UI)
+commands/   ──►  core, stores, hooks, app (document context), lib, constants  lint (no db/UI)
+hooks/      ──►  services, export, db/repositories, stores, core, commands,
                  app (document context), lib, constants                     lint (no raw db, no components)
-components/ ──►  hooks, stores, commands, editor, app (document context),
+components/ ──►  hooks, stores, commands, core, app (document context),
                  lib, constants, types; types from db/schema                lint (no db/services/export)
 app/        ──►  everything
 ```
 
 Reading it out loud: **pure things never import impure things, nothing below React imports React,
-and components reach data only through hooks.** `editor/` staying React-free is what makes the
+and components reach data only through hooks.** `core/` staying React-free is what makes the
 core testable with no DOM; hooks being the only door to `db/`, `services/` and `export/` is what
 keeps loading, error reporting and toasts in one place per domain (§10).
 
 Two edges are known compromises: hooks and commands read the open document through
-`app/DocumentProvider`, and `editor/tools` borrows the hint *type* from `commands/`. Both are
+`app/DocumentProvider`, and `core/tools` borrows the hint *type* from `commands/`. Both are
 type- or context-only; moving the document context below `app/` would remove the first.
 
 ## 10. Data access

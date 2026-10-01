@@ -1,6 +1,6 @@
 import { THUMBNAIL_THROTTLE_MS } from "@/constants/storage";
 import { flushCels } from "@/db/repositories/cels";
-import type { CelData, SpriteDocument } from "@/editor/document";
+import type { CelData, SpriteDocument } from "@/core/document";
 import type { SaveSource } from "@/services/autosave";
 import { saveDocumentStructure } from "@/services/documentService";
 import { saveThumbnail } from "@/services/thumbnails";

@@ -3,8 +3,8 @@ import { useDocumentSession } from "@/app/DocumentProvider";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Slider } from "@/components/ui/slider";
-import { setLayerPropsCommand } from "@/editor/commands/layers";
-import type { LayerModel } from "@/editor/document";
+import { setLayerPropsCommand } from "@/core/commands/layers";
+import type { LayerModel } from "@/core/document";
 import { useCommandDispatch } from "@/hooks/useCommandDispatch";
 
 export function LayerOpacityControl({ layer }: { layer: LayerModel }) {

@@ -1,13 +1,13 @@
 import { useEffect, type RefObject } from "react";
 import { useDocumentSession } from "@/app/DocumentProvider";
 import type { HintSection } from "@/commands/hints";
-import { compositeFrame } from "@/editor/composite";
-import { StrokeRecorder } from "@/editor/history";
-import { brushCursorPainter } from "@/editor/overlays/brushCursor";
-import type { CanvasRenderer } from "@/editor/renderer";
-import { getTool } from "@/editor/tools";
-import type { PointerModifiers, Tool, ToolContext, ToolPoint } from "@/editor/tools/types";
-import { screenToSprite } from "@/editor/viewport";
+import { compositeFrame } from "@/core/composite";
+import { StrokeRecorder } from "@/core/history";
+import { brushCursorPainter } from "@/core/overlays/brushCursor";
+import type { CanvasRenderer } from "@/core/renderer";
+import { getTool } from "@/core/tools";
+import type { PointerModifiers, Tool, ToolContext, ToolPoint } from "@/core/tools/types";
+import { screenToSprite } from "@/core/viewport";
 import { useCursorStore } from "@/stores/useCursorStore";
 import { useEditorStore } from "@/stores/useEditorStore";
 

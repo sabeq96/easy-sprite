@@ -1,6 +1,6 @@
 import { saveLayers, pruneLayers } from "@/db/repositories/layers";
 import { loadSnapshot, updateSprite } from "@/db/repositories/sprites";
-import { SpriteDocument } from "@/editor/document";
+import { SpriteDocument } from "@/core/document";
 
 export async function openDocument(spriteId: string): Promise<SpriteDocument> {
   const { sprite, layers, cels } = await loadSnapshot(spriteId);

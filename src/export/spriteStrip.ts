@@ -1,5 +1,5 @@
-import { compositeFrame } from "@/editor/composite";
-import type { SpriteDocument } from "@/editor/document";
+import { compositeFrame } from "@/core/composite";
+import type { SpriteDocument } from "@/core/document";
 
 /** All of a sprite's frames, visible layers only, laid out left-to-right in one 1× canvas. */
 export function renderSpriteStrip(doc: SpriteDocument): OffscreenCanvas {
