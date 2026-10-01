@@ -6,9 +6,9 @@ import type {
   DragStartEvent,
 } from "@dnd-kit/dom";
 import type { SpritesheetBlockRecord } from "@/db/schema";
-import { setBlocksCommand } from "@/editor/commands/spritesheet";
-import type { History } from "@/editor/history";
-import type { SpritesheetDocument } from "@/editor/spritesheetDocument";
+import { setBlocksCommand } from "@/core/commands/spritesheet";
+import type { History } from "@/core/history";
+import type { SpritesheetDocument } from "@/core/spritesheetDocument";
 import type { BlockSizes } from "@/lib/sheetLayout";
 import { useDocumentCache } from "@/hooks/useDocumentCache";
 import { useSpritesheetSnapshot } from "@/hooks/useSpritesheetSnapshot";

@@ -1,7 +1,7 @@
 import { BuilderBlock } from "@/components/builder/BuilderBlock";
 import { gutterDropId, type BuilderRowView } from "@/hooks/useBuilderDnd";
 
-import type { SpriteDocument } from "@/editor/document";
+import type { SpriteDocument } from "@/core/document";
 import type { BlockSizes } from "@/lib/sheetLayout";
 import { useDropZone } from "@/hooks/useDnd";
 import { cn } from "@/lib/utils";

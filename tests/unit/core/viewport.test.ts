@@ -7,7 +7,7 @@ import {
   spriteToScreen,
   zoomAt,
   zoomStep,
-} from "@/editor/viewport";
+} from "@/core/viewport";
 
 describe("viewport", () => {
   it("keeps the pixel under the cursor fixed while zooming", () => {

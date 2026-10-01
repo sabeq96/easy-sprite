@@ -1,5 +1,5 @@
-import { syncCelRaster } from "@/editor/cel";
-import type { SpriteDocument } from "@/editor/document";
+import { syncCelRaster } from "@/core/cel";
+import type { SpriteDocument } from "@/core/document";
 
 export interface CompositeOptions {
   /** Render a single layer only — used by layer thumbnails. */

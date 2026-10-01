@@ -1,6 +1,6 @@
 import { TRANSPARENT } from "@/lib/color";
-import { commitWrite, stamp, stampLine } from "@/editor/tools/paint";
-import { defineTool } from "@/editor/tools/types";
+import { commitWrite, stamp, stampLine } from "@/core/tools/paint";
+import { defineTool } from "@/core/tools/types";
 
 // `replace: true` — erasing must zero the pixel, not blend transparency over it.
 const eraseOptions = (size: number) => ({ color: TRANSPARENT, size, replace: true });

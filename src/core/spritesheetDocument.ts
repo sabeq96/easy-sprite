@@ -1,5 +1,5 @@
 import type { SheetBlock } from "@/lib/sheetLayout";
-import { Emitter } from "@/editor/emitter";
+import { Emitter } from "@/core/emitter";
 
 export interface SpritesheetDocumentInit {
   id: string;

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { setBlocksCommand, setTileSizeCommand } from "@/editor/commands/spritesheet";
-import { SpritesheetDocument } from "@/editor/spritesheetDocument";
+import { setBlocksCommand, setTileSizeCommand } from "@/core/commands/spritesheet";
+import { SpritesheetDocument } from "@/core/spritesheetDocument";
 
 const A = { id: "a", spriteId: "s1", row: 0 };
 const B = { id: "b", spriteId: "s2", row: 0 };

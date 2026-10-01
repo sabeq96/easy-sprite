@@ -2,8 +2,8 @@ import { Panel } from "@/components/common/Panel";
 import { CommandButton } from "@/components/common/CommandButton";
 import { TOOL_ICONS } from "@/components/editor/toolIcons";
 import { Separator } from "@/components/ui/separator";
-import { TOOL_LIST, type ToolId } from "@/editor/tools";
-import type { Tool } from "@/editor/tools/types";
+import { TOOL_LIST, type ToolId } from "@/core/tools";
+import type { Tool } from "@/core/tools/types";
 
 /** Consecutive tools of the same group share a section; the registry order is the sidebar order. */
 function groupTools(): Tool<ToolId>[][] {

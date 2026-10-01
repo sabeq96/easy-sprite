@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 import { userEvent } from "vitest/browser";
-import { spriteToScreen } from "@/editor/viewport";
+import { spriteToScreen } from "@/core/viewport";
 import { useEditorStore } from "@/stores/useEditorStore";
 import { KEYS, chooseTool, openEditor, paintedPixels, type Editor } from "@test/editor";
 

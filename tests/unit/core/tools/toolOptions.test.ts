@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { TOOL_LIST, TOOLS } from "@/editor/tools";
+import { TOOL_LIST, TOOLS } from "@/core/tools";
 
 const TOOL_IDS = TOOL_LIST.map((tool) => tool.id);
 

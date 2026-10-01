@@ -1,7 +1,7 @@
-import { clearRegion, cropRegion, pasteRegion } from "@/editor/buffer";
-import { getClipboard, setClipboard } from "@/editor/clipboard";
-import type { SpriteDocument } from "@/editor/document";
-import type { Command } from "@/editor/history";
+import { clearRegion, cropRegion, pasteRegion } from "@/core/buffer";
+import { getClipboard, setClipboard } from "@/core/clipboard";
+import type { SpriteDocument } from "@/core/document";
+import type { Command } from "@/core/history";
 import type { Rect } from "@/lib/rect";
 
 export interface EditTarget {

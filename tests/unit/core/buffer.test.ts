@@ -9,7 +9,7 @@ import {
   pasteRegion,
   resizeBuffer,
   setPixel,
-} from "@/editor/buffer";
+} from "@/core/buffer";
 
 describe("buffer primitives", () => {
   it("sets and reads a pixel", () => {

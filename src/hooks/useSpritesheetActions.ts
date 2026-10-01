@@ -5,7 +5,7 @@ import {
   type CreateSpritesheetOptions,
 } from "@/db/repositories/spritesheets";
 import type { SpritesheetBlockRecord, SpritesheetRecord } from "@/db/schema";
-import type { SpriteDocument } from "@/editor/document";
+import type { SpriteDocument } from "@/core/document";
 import { downloadBuilderSheetPng } from "@/export/spritesheetBuilder";
 import { runWithToast, useAsyncAction } from "@/hooks/useAsyncAction";
 

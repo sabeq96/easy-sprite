@@ -1,5 +1,5 @@
-import type { CelData, LayerModel, SpriteDocument } from "@/editor/document";
-import type { Command } from "@/editor/history";
+import type { CelData, LayerModel, SpriteDocument } from "@/core/document";
+import type { Command } from "@/core/history";
 import { createId } from "@/lib/id";
 
 const bytesOf = (cels: CelData[]) =>

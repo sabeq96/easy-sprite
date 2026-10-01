@@ -1,6 +1,6 @@
-import type { SpriteDocument } from "@/editor/document";
-import type { History } from "@/editor/history";
-import type { SpritesheetDocument } from "@/editor/spritesheetDocument";
+import type { SpriteDocument } from "@/core/document";
+import type { History } from "@/core/history";
+import type { SpritesheetDocument } from "@/core/spritesheetDocument";
 import type { Autosave } from "@/services/autosave";
 
 declare global {

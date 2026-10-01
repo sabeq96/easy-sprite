@@ -1,6 +1,6 @@
-import { getPixel } from "@/editor/buffer";
-import { compositeFrame } from "@/editor/composite";
-import { defineTool, type ToolContext, type ToolPoint } from "@/editor/tools/types";
+import { getPixel } from "@/core/buffer";
+import { compositeFrame } from "@/core/composite";
+import { defineTool, type ToolContext, type ToolPoint } from "@/core/tools/types";
 
 function sample(ctx: ToolContext, point: ToolPoint): void {
   const { doc } = ctx;

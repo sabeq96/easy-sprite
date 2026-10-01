@@ -1,6 +1,6 @@
 import { DEFAULT_CHECKER_SIZE, DEFAULT_TILE_SIZE, DEFAULT_ZOOM } from "@/constants/canvas";
 import { ONION_DEFAULT, type OnionDirection } from "@/constants/animation";
-import { clampViewport, fitViewport, zoomStep, type Point, type Size, type Viewport } from "@/editor/viewport";
+import { clampViewport, fitViewport, zoomStep, type Point, type Size, type Viewport } from "@/core/viewport";
 import type { SliceCreator } from "@/stores/slices/types";
 
 export interface OnionConfig {

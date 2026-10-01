@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { setPixel } from "@/editor/buffer";
+import { setPixel } from "@/core/buffer";
 import { makeDocument, RED } from "@test/factories";
 
 describe("SpriteDocument", () => {

@@ -1,9 +1,9 @@
 import { onionOffset, type OnionDirection } from "@/constants/animation";
 import { GRID_LINE_WIDTH, GRID_MIN_SCALE, MAX_GRID_SIZE } from "@/constants/canvas";
-import { compositeFrame } from "@/editor/composite";
-import type { SpriteDocument } from "@/editor/document";
-import { snapTileSize, tileSizeOptions } from "@/editor/grid";
-import type { Viewport } from "@/editor/viewport";
+import { compositeFrame } from "@/core/composite";
+import type { SpriteDocument } from "@/core/document";
+import { snapTileSize, tileSizeOptions } from "@/core/grid";
+import type { Viewport } from "@/core/viewport";
 
 export interface OnionSettings {
   enabled: boolean;

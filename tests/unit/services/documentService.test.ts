@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db/db";
 import { flushCels } from "@/db/repositories/cels";
 import { createSprite, loadSnapshot } from "@/db/repositories/sprites";
-import { setPixel } from "@/editor/buffer";
+import { setPixel } from "@/core/buffer";
 import { openDocument, saveDocumentStructure } from "@/services/documentService";
 import { RED } from "@test/factories";
 

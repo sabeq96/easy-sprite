@@ -1,9 +1,9 @@
-import { bucketTool, fillSimilarTool } from "@/editor/tools/fill";
-import { eraserTool } from "@/editor/tools/eraser";
-import { pencilTool } from "@/editor/tools/pencil";
-import { pickerTool } from "@/editor/tools/picker";
-import { selectTool } from "@/editor/tools/select";
-import type { Tool } from "@/editor/tools/types";
+import { bucketTool, fillSimilarTool } from "@/core/tools/fill";
+import { eraserTool } from "@/core/tools/eraser";
+import { pencilTool } from "@/core/tools/pencil";
+import { pickerTool } from "@/core/tools/picker";
+import { selectTool } from "@/core/tools/select";
+import type { Tool } from "@/core/tools/types";
 
 /**
  * The only list of tools, in sidebar order. Ids, tool commands, their keys and the sidebar

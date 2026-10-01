@@ -1,8 +1,8 @@
 import { createContext, use, useEffect, useState, type ReactNode } from "react";
 import { DEFAULT_TILE_SIZE } from "@/constants/canvas";
 import { findSpritesheet } from "@/db/repositories/spritesheets";
-import { History } from "@/editor/history";
-import { SpritesheetDocument } from "@/editor/spritesheetDocument";
+import { History } from "@/core/history";
+import { SpritesheetDocument } from "@/core/spritesheetDocument";
 import { Autosave, type SaveStatus } from "@/services/autosave";
 import { spritesheetSaveSource } from "@/services/spritesheetSaveSource";
 

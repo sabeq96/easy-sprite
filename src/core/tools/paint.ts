@@ -1,6 +1,6 @@
-import { blendPixel, setPixel } from "@/editor/buffer";
-import { forEachBrushPixel, forEachLinePixel } from "@/editor/pixels";
-import type { ToolContext, ToolPoint } from "@/editor/tools/types";
+import { blendPixel, setPixel } from "@/core/buffer";
+import { forEachBrushPixel, forEachLinePixel } from "@/core/pixels";
+import type { ToolContext, ToolPoint } from "@/core/tools/types";
 import type { RGBA } from "@/lib/color";
 import { rectUnion, type Rect } from "@/lib/rect";
 

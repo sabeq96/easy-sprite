@@ -11,7 +11,7 @@ Before writing anything, answer one question: *what does it depend on?*
 | --- | --- | --- |
 | is a literal value with no logic | `src/constants/` | `MAX_ZOOM`, `DEFAULT_FPS`, `BRUSH_SIZES` |
 | is a pure function of its arguments | `src/lib/` | `hexToRgba()`, `rectUnion()`, `clamp()` |
-| manipulates pixels/documents, no React, no DB | `src/editor/` | `floodFill()`, `SpriteDocument` |
+| manipulates pixels/documents, no React, no DB | `src/core/` | `floodFill()`, `SpriteDocument` |
 | talks to IndexedDB | `src/db/repositories/` | `duplicateSprite()` |
 | wires the DB to the editor core | `src/services/` | `autosave.ts`, `documentService.ts` |
 | is cross-component UI state | `src/stores/` | active tool, primary color, zoom |
@@ -83,9 +83,9 @@ If a value needs computing, it is a `lib/` function, not a constant.
 
 ## 5. Modules and barrels
 
-- Import from the file, not from a barrel: `import { floodFill } from '@/editor/pixels'`.
+- Import from the file, not from a barrel: `import { floodFill } from '@/core/pixels'`.
 - The **only** barrels allowed are registries where the collection itself is the API:
-  `editor/tools/index.ts` is the only one today.
+  `core/tools/index.ts` is the only one today.
   Everywhere else barrels create import cycles and defeat tree-shaking.
 - Always use the `@/` alias. Relative imports only within the same folder (`./pixels`).
 - One concept per file. `pixels.ts` exporting `plot`, `line`, `floodFill` is one concept
@@ -201,7 +201,7 @@ export function useAnimationPlayer(options: AnimationPlayerOptions): AnimationPl
 ```
 
 Hooks own subscriptions and cleanup; they do not own algorithms. `useFloodFill` would be wrong —
-flood fill is `editor/pixels.ts`, the hook would only wire it to state.
+flood fill is `core/pixels.ts`, the hook would only wire it to state.
 
 ## 8. Errors and edge cases
 
@@ -231,7 +231,7 @@ Comment *why*, never *what*. The code says what. Three places where a comment is
 The source of truth is [`.oxlintrc.json`](../.oxlintrc.json) — read it rather than a copy here,
 which would drift. What it enforces, in intent:
 
-- **Layer boundaries** (`no-restricted-imports` overrides per folder): `editor/` is framework-free;
+- **Layer boundaries** (`no-restricted-imports` overrides per folder): `core/` is framework-free;
   `db/` never imports the editor or UI; `lib/` and `constants/` are pure; `services/`, `export/`
   and `stores/` never import React code; `commands/` never reach the database or components; `types/`
   holds types only; `hooks/` never touch the raw Dexie instance or import components; `components/` never import `db/`, `services/`, `export/` or Dexie (type-only
@@ -246,7 +246,7 @@ A disable comment must name a rule that is actually enabled, and say why.
 ## 11. Testing
 
 - **Tests never sit next to the file they cover.** They live under `tests/`, mirroring `src/`
-  one level down: `src/editor/history.ts` → `tests/unit/editor/history.test.ts`. Do not
+  one level down: `src/core/history.ts` → `tests/unit/core/history.test.ts`. Do not
   colocate `*.test.ts` files next to their source.
 - **Two Vitest projects, chosen by one question:** does the code under test import React, touch
   the DOM, or read a canvas? No → `tests/unit/**` (jsdom, `*.test.ts`). Yes → `tests/browser/**`

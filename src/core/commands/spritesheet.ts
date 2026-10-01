@@ -1,6 +1,6 @@
 import type { SheetBlock } from "@/lib/sheetLayout";
-import type { Command } from "@/editor/history";
-import type { SpritesheetDocument } from "@/editor/spritesheetDocument";
+import type { Command } from "@/core/history";
+import type { SpritesheetDocument } from "@/core/spritesheetDocument";
 
 /** Rough retained size of a block record, for History's memory bound. */
 const BLOCK_BYTES = 128;

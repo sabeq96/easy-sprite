@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resizeCanvasCommand } from "@/editor/commands/canvas";
+import { resizeCanvasCommand } from "@/core/commands/canvas";
 import { makeDocument } from "@test/factories";
 
 describe("resizeCanvasCommand", () => {

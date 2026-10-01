@@ -1,7 +1,7 @@
 import type { Hint } from "@/commands/hints";
 import type { CommandHold, CommandRegistry } from "@/commands/types";
-import { getTool, TOOL_LIST, type ToolId } from "@/editor/tools";
-import type { Tool } from "@/editor/tools/types";
+import { getTool, TOOL_LIST, type ToolId } from "@/core/tools";
+import type { Tool } from "@/core/tools/types";
 import type { EditorStore } from "@/stores/slices/types";
 import type { StoreApi, UseBoundStore } from "zustand";
 

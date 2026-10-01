@@ -3,7 +3,7 @@ import type { SpritesheetBlockRecord } from "@/db/schema";
 import type {
   SpritesheetDocument,
   SpritesheetRevisionChannel,
-} from "@/editor/spritesheetDocument";
+} from "@/core/spritesheetDocument";
 
 export interface SpritesheetSnapshot {
   revision: number;

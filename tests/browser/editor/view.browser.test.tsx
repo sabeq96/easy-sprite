@@ -1,7 +1,7 @@
 import { expect, test } from "vitest";
 import { userEvent } from "vitest/browser";
 import { ZOOM_LEVELS } from "@/constants/canvas";
-import { screenToSprite, spriteToScreen, type Point } from "@/editor/viewport";
+import { screenToSprite, spriteToScreen, type Point } from "@/core/viewport";
 import { useEditorStore } from "@/stores/useEditorStore";
 import { KEYS, mod, openEditor, paintedPixels, session, type Editor } from "@test/editor";
 import { dragClientPoints } from "@test/pointer";

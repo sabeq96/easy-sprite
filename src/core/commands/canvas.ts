@@ -1,6 +1,6 @@
-import type { ResizeOptions } from "@/editor/buffer";
-import type { CelData, SpriteDocument } from "@/editor/document";
-import type { Command } from "@/editor/history";
+import type { ResizeOptions } from "@/core/buffer";
+import type { CelData, SpriteDocument } from "@/core/document";
+import type { Command } from "@/core/history";
 
 /**
  * Resizing touches every cel, and shrinking discards pixels outright, so undo carries a full

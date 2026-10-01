@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { getPixel, setPixel } from "@/editor/buffer";
+import { getPixel, setPixel } from "@/core/buffer";
 import {
   clearSelectionCommand,
   copySelection,
   cutSelectionCommand,
   pasteCommand,
-} from "@/editor/commands/selection";
-import { setClipboard } from "@/editor/clipboard";
-import { liftRegion, stampRegion } from "@/editor/selection";
+} from "@/core/commands/selection";
+import { setClipboard } from "@/core/clipboard";
+import { liftRegion, stampRegion } from "@/core/selection";
 import { BLUE, makeDocument, RED } from "@test/factories";
 
 describe("lift and stamp", () => {

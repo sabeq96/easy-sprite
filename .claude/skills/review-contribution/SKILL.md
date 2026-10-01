@@ -51,21 +51,21 @@ User sprites live only in the user's IndexedDB. A mistake here destroys someone'
   `tests/unit/db/` that opens an old-version database and checks the upgrade?
 - **Backups** (`src/db/backup.ts`, `BACKUP_FORMAT_VERSION` in `src/constants/storage.ts`): if the
   exported shape changes, the version is bumped **and** older backups still import.
-- **Autosave / document runtime** (`src/services/`, `src/editor/document*`): any change to when or
+- **Autosave / document runtime** (`src/services/`, `src/core/document*`): any change to when or
   what is saved needs a test proving nothing is lost on reload.
 - Pixel data stays raw RGBA — no PNG round-trip for source data (architecture §3).
 
 ### B. Architecture — blockers
 - Layer boundaries from `docs/architecture.md` §9. `npm run lint` enforces most of them, but check
   the edges lint does not: components reach data **only** through domain hooks
-  (`use<Domain>Actions`, live-query hooks); `editor/` stays React-free.
+  (`use<Domain>Actions`, live-query hooks); `core/` stays React-free.
 - **Pixels never re-render React** (architecture §1). A component reading document fields during
   render instead of via `useDocumentSnapshot`, or state that updates per pixel/pointer-move in a
   React store, is a blocker.
 - React Compiler and Base UI traps: `docs/conventions.md` §6c and §6d. Mutating document arrays in
   place, or `<TooltipTrigger render={<Button onClick/>}/>` instead of `<TooltipButton>`, are
   known silent bugs.
-- New tools go through the registry in `src/editor/tools/index.ts`; new keys through the command
+- New tools go through the registry in `src/core/tools/index.ts`; new keys through the command
   registry (`src/commands/`) and must not conflict — see `docs/shortcuts.md`.
 
 ### C. Tests — usually blockers

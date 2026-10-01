@@ -1,6 +1,6 @@
-import { brushBounds } from "@/editor/pixels";
-import type { OverlayPainter } from "@/editor/renderer";
-import type { ToolPoint } from "@/editor/tools/types";
+import { brushBounds } from "@/core/pixels";
+import type { OverlayPainter } from "@/core/renderer";
+import type { ToolPoint } from "@/core/tools/types";
 
 /** Highlights the pixels the brush would cover, including mirrored copies. */
 export function brushCursorPainter(

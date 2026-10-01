@@ -1,6 +1,6 @@
-import type { StampOptions } from "@/editor/tools/paint";
-import { commitWrite, stamp, stampLine } from "@/editor/tools/paint";
-import { defineTool, type ToolContext } from "@/editor/tools/types";
+import type { StampOptions } from "@/core/tools/paint";
+import { commitWrite, stamp, stampLine } from "@/core/tools/paint";
+import { defineTool, type ToolContext } from "@/core/tools/types";
 
 function stampOptions(ctx: ToolContext): StampOptions {
   return {

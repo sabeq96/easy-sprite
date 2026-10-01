@@ -1,6 +1,6 @@
-import { floodFill } from "@/editor/pixels";
-import { commitWrite } from "@/editor/tools/paint";
-import { defineTool, type Tool } from "@/editor/tools/types";
+import { floodFill } from "@/core/pixels";
+import { commitWrite } from "@/core/tools/paint";
+import { defineTool, type Tool } from "@/core/tools/types";
 import type { KeyBinding } from "@/lib/keys";
 
 interface FillSpec<Id extends string> {

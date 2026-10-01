@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { setPixel } from "@/editor/buffer";
-import { History, StrokeRecorder, type Command } from "@/editor/history";
+import { setPixel } from "@/core/buffer";
+import { History, StrokeRecorder, type Command } from "@/core/history";
 import { makeDocument, RED } from "@test/factories";
 
 function noopCommand(label: string, sizeBytes = 0): Command {

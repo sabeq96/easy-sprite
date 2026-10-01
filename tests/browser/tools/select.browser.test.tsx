@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 import { userEvent } from "vitest/browser";
-import { selection } from "@/editor/tools/select";
+import { selection } from "@/core/tools/select";
 import { useEditorStore } from "@/stores/useEditorStore";
 import {
   KEYS,

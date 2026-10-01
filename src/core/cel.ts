@@ -1,4 +1,4 @@
-import { createBuffer } from "@/editor/buffer";
+import { createBuffer } from "@/core/buffer";
 import type { PixelBuffer } from "@/types/pixels";
 
 export interface Cel {

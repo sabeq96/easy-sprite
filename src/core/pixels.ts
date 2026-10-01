@@ -1,4 +1,4 @@
-import { getPixel, setPixel } from "@/editor/buffer";
+import { getPixel, setPixel } from "@/core/buffer";
 import type { RGBA } from "@/lib/color";
 import { rectUnion, type Rect } from "@/lib/rect";
 import type { PixelBuffer } from "@/types/pixels";

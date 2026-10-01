@@ -1,6 +1,6 @@
 import { createContext, use, useEffect, useState, type ReactNode } from "react";
-import { History } from "@/editor/history";
-import type { SpriteDocument } from "@/editor/document";
+import { History } from "@/core/history";
+import type { SpriteDocument } from "@/core/document";
 import { Autosave, type SaveStatus } from "@/services/autosave";
 import { openDocument } from "@/services/documentService";
 import { spriteSaveSource } from "@/services/spriteSaveSource";

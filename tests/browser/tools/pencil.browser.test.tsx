@@ -2,8 +2,8 @@ import { expect, test } from "vitest";
 import { userEvent } from "vitest/browser";
 import { BRUSH_SIZES } from "@/constants/tools";
 import { createPalette } from "@/db/repositories/palettes";
-import { brushBounds } from "@/editor/pixels";
-import type { Point } from "@/editor/viewport";
+import { brushBounds } from "@/core/pixels";
+import type { Point } from "@/core/viewport";
 import { IS_APPLE } from "@/lib/keys";
 import { useEditorStore } from "@/stores/useEditorStore";
 import {

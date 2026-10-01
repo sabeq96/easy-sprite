@@ -1,6 +1,6 @@
 import { CHECKER_GRADIENT, MAX_CHECKER_SIZE } from "@/constants/canvas";
-import { snapTileSize, tileSizeOptions } from "@/editor/grid";
-import type { Viewport } from "@/editor/viewport";
+import { snapTileSize, tileSizeOptions } from "@/core/grid";
+import type { Viewport } from "@/core/viewport";
 
 export interface CheckerboardLayerProps {
   viewport: Viewport;

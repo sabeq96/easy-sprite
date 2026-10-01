@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { collectColorUsage, type ColorUsage } from "@/editor/colorUsage";
-import type { SpriteDocument } from "@/editor/document";
+import { collectColorUsage, type ColorUsage } from "@/core/colorUsage";
+import type { SpriteDocument } from "@/core/document";
 
 const RECOMPUTE_DELAY_MS = 400;
 

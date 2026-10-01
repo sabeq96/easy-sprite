@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { defaultGridSize, snapTileSize, tileSizeOptions } from "@/editor/grid";
+import { defaultGridSize, snapTileSize, tileSizeOptions } from "@/core/grid";
 
 describe("tileSizeOptions", () => {
   it("only includes sizes that evenly divide both dimensions", () => {

@@ -1,7 +1,7 @@
-import type { SpriteDocument } from "@/editor/document";
-import { selectionPainter, type SelectionView } from "@/editor/overlays/selectionOverlay";
-import { liftRegion, stampRegion, type LiftedRegion } from "@/editor/selection";
-import { defineTool, type ToolPoint, type ToolSession } from "@/editor/tools/types";
+import type { SpriteDocument } from "@/core/document";
+import { selectionPainter, type SelectionView } from "@/core/overlays/selectionOverlay";
+import { liftRegion, stampRegion, type LiftedRegion } from "@/core/selection";
+import { defineTool, type ToolPoint, type ToolSession } from "@/core/tools/types";
 import {
   rectClamp,
   rectContains,

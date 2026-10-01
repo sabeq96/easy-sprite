@@ -4,7 +4,7 @@ import { ZoomControls } from "@/components/common/ZoomControls";
 import { OnionSkinControl } from "@/components/editor/OnionSkinControl";
 import { Separator } from "@/components/ui/separator";
 import { MAX_CHECKER_SIZE, MAX_GRID_SIZE, ZOOM_LEVELS } from "@/constants/canvas";
-import { snapTileSize, tileSizeOptions } from "@/editor/grid";
+import { snapTileSize, tileSizeOptions } from "@/core/grid";
 import { useDocumentSnapshot } from "@/hooks/useDocumentSnapshot";
 import { useEditorStore } from "@/stores/useEditorStore";
 

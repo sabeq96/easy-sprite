@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { SpriteDocument } from "@/editor/document";
+import type { SpriteDocument } from "@/core/document";
 
 export interface AnimationPlayer {
   isPlaying: boolean;

@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { getPixel, setPixel } from "@/editor/buffer";
+import { getPixel, setPixel } from "@/core/buffer";
 import {
   addFrameCommand,
   duplicateFrameCommand,
   moveFrameCommand,
   removeFrameCommand,
-} from "@/editor/commands/frames";
+} from "@/core/commands/frames";
 import { BLUE, makeDocument, RED } from "@test/factories";
 
 describe("frame commands", () => {

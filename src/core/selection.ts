@@ -1,5 +1,5 @@
-import { clearRegion, cropRegion } from "@/editor/buffer";
-import type { SpriteDocument } from "@/editor/document";
+import { clearRegion, cropRegion } from "@/core/buffer";
+import type { SpriteDocument } from "@/core/document";
 import { rectClamp, type Rect } from "@/lib/rect";
 import type { PixelBuffer } from "@/types/pixels";
 

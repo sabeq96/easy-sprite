@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useDocumentSession } from "@/app/DocumentProvider";
-import { defaultGridSize } from "@/editor/grid";
+import { defaultGridSize } from "@/core/grid";
 import { useDocumentSnapshot } from "@/hooks/useDocumentSnapshot";
 import { useEditorStore } from "@/stores/useEditorStore";
 

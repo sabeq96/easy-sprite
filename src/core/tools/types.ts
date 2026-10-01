@@ -1,8 +1,8 @@
 import type { Hint } from "@/commands/hints";
 import type { AppCommandId } from "@/constants/commands";
-import type { SpriteDocument } from "@/editor/document";
-import type { History, StrokeRecorder } from "@/editor/history";
-import type { OverlayPainter } from "@/editor/renderer";
+import type { SpriteDocument } from "@/core/document";
+import type { History, StrokeRecorder } from "@/core/history";
+import type { OverlayPainter } from "@/core/renderer";
 import type { RGBA } from "@/lib/color";
 import type { KeyBinding } from "@/lib/keys";
 

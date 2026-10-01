@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { SpriteDocument } from "@/editor/document";
+import type { SpriteDocument } from "@/core/document";
 import { openDocument } from "@/services/documentService";
 
 /**

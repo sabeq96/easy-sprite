@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getPixel, setPixel } from "@/editor/buffer";
+import { getPixel, setPixel } from "@/core/buffer";
 import {
   addLayerCommand,
   duplicateLayerCommand,
@@ -7,7 +7,7 @@ import {
   removeLayerCommand,
   reorderLayerCommand,
   setLayerPropsCommand,
-} from "@/editor/commands/layers";
+} from "@/core/commands/layers";
 import { BLUE, makeDocument, RED } from "@test/factories";
 
 describe("layer commands", () => {

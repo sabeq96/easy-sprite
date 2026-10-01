@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { setTileSizeCommand } from "@/editor/commands/spritesheet";
+import { setTileSizeCommand } from "@/core/commands/spritesheet";
 
 export interface TileSizeDialogProps {
   open: boolean;

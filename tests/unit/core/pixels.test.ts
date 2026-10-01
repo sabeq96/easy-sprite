@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createBuffer, getPixel, setPixel } from "@/editor/buffer";
+import { createBuffer, getPixel, setPixel } from "@/core/buffer";
 import {
   brushBounds,
   colorDistance,
@@ -7,7 +7,7 @@ import {
   forEachBrushPixel,
   forEachLinePixel,
   pickColor,
-} from "@/editor/pixels";
+} from "@/core/pixels";
 import { BLUE, RED } from "@test/factories";
 
 function target(width: number, height: number) {

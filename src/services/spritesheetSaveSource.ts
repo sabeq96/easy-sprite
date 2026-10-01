@@ -1,6 +1,6 @@
 import { updateSpritesheet } from "@/db/repositories/spritesheets";
-import type { SpriteDocument } from "@/editor/document";
-import type { SpritesheetDocument } from "@/editor/spritesheetDocument";
+import type { SpriteDocument } from "@/core/document";
+import type { SpritesheetDocument } from "@/core/spritesheetDocument";
 import type { SaveSource } from "@/services/autosave";
 import { openDocument } from "@/services/documentService";
 import { saveSpritesheetThumbnail } from "@/services/thumbnails";

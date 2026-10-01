@@ -1,6 +1,6 @@
 import { FlipHorizontal, FlipVertical } from "lucide-react";
 import { BRUSH_SIZES } from "@/constants/tools";
-import { TOOLS } from "@/editor/tools";
+import { TOOLS } from "@/core/tools";
 import { CommandButton } from "@/components/common/CommandButton";
 import { Panel } from "@/components/common/Panel";
 import { Label } from "@/components/ui/label";

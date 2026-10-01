@@ -1,7 +1,7 @@
 import { HISTORY_MAX_BYTES, HISTORY_MAX_ENTRIES } from "@/constants/storage";
-import { cropRegion, pasteRegion } from "@/editor/buffer";
-import type { SpriteDocument } from "@/editor/document";
-import { Emitter } from "@/editor/emitter";
+import { cropRegion, pasteRegion } from "@/core/buffer";
+import type { SpriteDocument } from "@/core/document";
+import { Emitter } from "@/core/emitter";
 import { rectUnion, type Rect } from "@/lib/rect";
 import type { PixelBuffer } from "@/types/pixels";
 

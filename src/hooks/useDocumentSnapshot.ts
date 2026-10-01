@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import type { FrameModel, LayerModel, SpriteDocument } from "@/editor/document";
+import type { FrameModel, LayerModel, SpriteDocument } from "@/core/document";
 import { useDocumentRevision } from "@/hooks/useDocumentRevision";
 
 export interface DocumentSnapshot {

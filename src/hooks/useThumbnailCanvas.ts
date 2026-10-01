@@ -1,6 +1,6 @@
 import { useEffect, type RefObject } from "react";
-import { compositeFrame, type CompositeOptions } from "@/editor/composite";
-import type { SpriteDocument } from "@/editor/document";
+import { compositeFrame, type CompositeOptions } from "@/core/composite";
+import type { SpriteDocument } from "@/core/document";
 
 /**
  * Paints a frame (optionally one layer) into a canvas and repaints on change, throttled to

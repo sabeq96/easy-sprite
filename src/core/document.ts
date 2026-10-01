@@ -1,6 +1,6 @@
-import { createBuffer, isBufferEmpty, resizeBuffer, type ResizeOptions } from "@/editor/buffer";
-import { type Cel, celKey, createCel } from "@/editor/cel";
-import { Emitter } from "@/editor/emitter";
+import { createBuffer, isBufferEmpty, resizeBuffer, type ResizeOptions } from "@/core/buffer";
+import { type Cel, celKey, createCel } from "@/core/cel";
+import { Emitter } from "@/core/emitter";
 import { createId } from "@/lib/id";
 import type { Rect } from "@/lib/rect";
 import type { PixelBuffer } from "@/types/pixels";

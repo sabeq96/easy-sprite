@@ -1,5 +1,5 @@
-import type { CelData, SpriteDocument } from "@/editor/document";
-import type { Command } from "@/editor/history";
+import type { CelData, SpriteDocument } from "@/core/document";
+import type { Command } from "@/core/history";
 
 const bytesOf = (cels: CelData[]) =>
   cels.reduce((total, cel) => total + cel.pixels.length, 0);

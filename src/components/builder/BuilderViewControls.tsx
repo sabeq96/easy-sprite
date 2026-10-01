@@ -1,7 +1,7 @@
 import { GridOptionsPopover } from "@/components/common/GridOptionsPopover";
 import { ZoomControls } from "@/components/common/ZoomControls";
 import { BUILDER_ZOOM_LEVELS } from "@/constants/builder";
-import { snapTileSize } from "@/editor/grid";
+import { snapTileSize } from "@/core/grid";
 import { sheetTileOptions } from "@/lib/tiles";
 import { useBuilderViewStore } from "@/stores/useBuilderViewStore";
 

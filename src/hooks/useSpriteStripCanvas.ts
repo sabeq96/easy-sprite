@@ -1,5 +1,5 @@
 import { useEffect, useRef, type RefObject } from "react";
-import type { SpriteDocument } from "@/editor/document";
+import type { SpriteDocument } from "@/core/document";
 import { renderSpriteStrip } from "@/export/spriteStrip";
 
 /** Paints `doc`'s frames, left to right at 1×, into the returned canvas whenever `doc` changes. */

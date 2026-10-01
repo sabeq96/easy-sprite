@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useDocumentSession } from "@/app/DocumentProvider";
-import { CanvasRenderer, type RendererTargets } from "@/editor/renderer";
+import { CanvasRenderer, type RendererTargets } from "@/core/renderer";
 import { useEditorStore } from "@/stores/useEditorStore";
 
 export interface CanvasRefs {

@@ -5,7 +5,7 @@ import { Panel } from "@/components/common/Panel";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { DEFAULT_FPS, MAX_FPS, MIN_FPS } from "@/constants/animation";
-import { compositeFrame } from "@/editor/composite";
+import { compositeFrame } from "@/core/composite";
 import { useAnimationPlayer } from "@/hooks/useAnimationPlayer";
 import { useDocumentSnapshot } from "@/hooks/useDocumentSnapshot";
 import { useEditorStore } from "@/stores/useEditorStore";

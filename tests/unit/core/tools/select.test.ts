@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { getPixel, setPixel } from "@/editor/buffer";
-import type { SpriteDocument } from "@/editor/document";
-import { History, type Command } from "@/editor/history";
-import { selection, selectTool } from "@/editor/tools/select";
-import type { PointerModifiers, ToolPoint, ToolSession } from "@/editor/tools/types";
+import { getPixel, setPixel } from "@/core/buffer";
+import type { SpriteDocument } from "@/core/document";
+import { History, type Command } from "@/core/history";
+import { selection, selectTool } from "@/core/tools/select";
+import type { PointerModifiers, ToolPoint, ToolSession } from "@/core/tools/types";
 import { makeDocument, makeToolContext, RED } from "@test/factories";
 
 const NO_MODIFIERS: PointerModifiers = { button: 0, shift: false, alt: false, ctrl: false };

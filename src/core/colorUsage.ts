@@ -1,4 +1,4 @@
-import type { SpriteDocument } from "@/editor/document";
+import type { SpriteDocument } from "@/core/document";
 import { packRgba, rgbaToHex, unpackRgba } from "@/lib/color";
 
 export interface ColorUsage {

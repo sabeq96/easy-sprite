@@ -2,7 +2,7 @@ import { expect, test } from "vitest";
 import { userEvent } from "vitest/browser";
 import { AppRoutes } from "@/app/routes";
 import { createSprite } from "@/db/repositories/sprites";
-import { getPixel } from "@/editor/buffer";
+import { getPixel } from "@/core/buffer";
 import { IS_APPLE } from "@/lib/keys";
 import { useEditorStore } from "@/stores/useEditorStore";
 import { render } from "@test/render";

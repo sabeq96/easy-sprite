@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import type { RevisionChannel, SpriteDocument } from "@/editor/document";
+import type { RevisionChannel, SpriteDocument } from "@/core/document";
 
 /**
  * The only correct way for a component to re-render on a document change: the snapshot is a
