@@ -3,12 +3,11 @@ import type { KeyBinding } from "@/lib/keys";
 
 /**
  * Every key that is not a tool's. Entries map to a command id, not a handler, so a shortcut for a
- * command that does not exist is a type error. Tool keys live on the tool (`Tool.shortcut`, and
- * `keys` on each command in `Tool.commands`); `@/commands/keymap` merges them all.
+ * command that does not exist is a type error. Tool keys live on the tool (`Tool.shortcut`,
+ * `keys` on each command in `Tool.commands`, and on each setting's `command`);
+ * `@/commands/keymap` merges them all.
  */
 export const APP_SHORTCUTS: Partial<Record<AppCommandId, KeyBinding[]>> = {
-  "tool.toggleMirror": [{ key: "v" }],
-
   "edit.undo": [{ key: "z", mod: true }],
   "edit.redo": [{ key: "z", mod: true, shift: true }, { key: "y", mod: true }],
   "edit.save": [{ key: "s", mod: true }],

@@ -4,6 +4,7 @@ import { pencilTool } from "@/tools/pencil/tool";
 import { pickerTool } from "@/tools/picker/tool";
 import { selectTool } from "@/tools/select/tool";
 import type { ContributedCommand } from "@/framework/command";
+import type { SettingCommandIdOf, Settings } from "@/framework/settings";
 import type { Tool } from "@/framework/tool";
 
 /**
@@ -25,6 +26,13 @@ export type ToolId = (typeof TOOL_LIST)[number]["id"];
 export type ContributedCommandId = (typeof TOOL_LIST)[number] extends infer T
   ? T extends Tool<string, infer C extends readonly ContributedCommand[]>
     ? C[number]["id"]
+    : never
+  : never;
+
+/** Every command id a tool's settings declare (`tool.toggleMirror`), kept literal the same way. */
+export type SettingCommandId = (typeof TOOL_LIST)[number] extends infer T
+  ? T extends Tool<string, readonly ContributedCommand[], infer S extends Settings>
+    ? SettingCommandIdOf<S>
     : never
   : never;
 

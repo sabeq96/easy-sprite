@@ -41,12 +41,9 @@ export class CanvasRenderer {
   private readonly offPixels: () => void;
 
   private state: RendererState;
-  /** The active tool's own preview — brush cursor, drag marquee, floating-move ghost. */
-  private overlayPainter: OverlayPainter | null = null;
-  private overlayAnimating = false;
   /**
-   * The active tool's persistent overlay (installed through the tool host's canvas), drawn under
-   * the per-gesture preview. It lives for as long as the tool is active, independent of hover.
+   * The active tool's overlay (installed through the tool host's canvas): its brush preview,
+   * selection, marquee or floating-move ghost. It lives for as long as the tool is active.
    */
   private toolPainter: OverlayPainter | null = null;
   private rafId = 0;
@@ -78,12 +75,6 @@ export class CanvasRenderer {
     if (patch.isPlaying !== undefined && patch.isPlaying !== previous.isPlaying) {
       this.invalidate("onion");
     }
-  }
-
-  setOverlayPainter(painter: OverlayPainter | null, animate = false): void {
-    this.overlayPainter = painter;
-    this.overlayAnimating = painter !== null && animate;
-    this.invalidate("overlay");
   }
 
   setToolOverlay(painter: OverlayPainter | null): void {
@@ -132,9 +123,6 @@ export class CanvasRenderer {
     if (this.dirty.has("main")) this.renderMain();
     if (this.dirty.has("overlay")) this.renderOverlay();
     this.dirty.clear();
-
-    // Brush previews need a continuous repaint while active.
-    if (this.overlayAnimating) this.invalidate("overlay");
   }
 
   private context(canvas: HTMLCanvasElement): CanvasRenderingContext2D | null {
@@ -173,7 +161,6 @@ export class CanvasRenderer {
     if (!ctx) return;
     if (this.state.gridEnabled) this.drawGrid(ctx);
     this.toolPainter?.(ctx, this.state.viewport);
-    this.overlayPainter?.(ctx, this.state.viewport);
   }
 
   private present(ctx: CanvasRenderingContext2D, source: OffscreenCanvas, alpha: number): void {

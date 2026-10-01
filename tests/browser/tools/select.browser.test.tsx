@@ -22,7 +22,7 @@ const RED = { r: 255, g: 0, b: 0, a: 255 };
 /** A 3×3 red block at (2,2)–(4,4), painted with a 3px pencil, then the select tool. */
 async function withRedBlock(editor: Editor) {
   useEditorStore.getState().setPrimaryColor(RED);
-  useEditorStore.getState().setToolOptions({ brushSize: 3 });
+  useEditorStore.getState().setSetting("pencil", "size", 3);
   editor.click({ x: 3, y: 3 });
   expect(paintedPixels()).toEqual(keys(rectPoints(2, 2, 3, 3)));
   await chooseTool(editor, "Select & move");
@@ -230,7 +230,7 @@ test("tapping S keeps Select & move", async () => {
 test("releasing a held S mid-move puts the pixels back and adds no undo step", async () => {
   const editor = await openEditor();
   useEditorStore.getState().setPrimaryColor(RED);
-  useEditorStore.getState().setToolOptions({ brushSize: 3 });
+  useEditorStore.getState().setSetting("pencil", "size", 3);
   editor.click({ x: 3, y: 3 });
   const before = session().history.undoLabel;
 

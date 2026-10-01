@@ -1,33 +1,39 @@
 import { brushBounds } from "@/core/pixels";
-import type { OverlayPainter } from "@/core/renderer";
 import type { Point } from "@/core/viewport";
+import type { OverlayPaint } from "@/framework/host";
+
+/** What the brush preview draws: where, how big, which mirrored copies, and on what sprite. */
+export interface BrushCursor {
+  point: Point;
+  size: number;
+  mirrorHorizontal: boolean;
+  mirrorVertical: boolean;
+  sprite: { width: number; height: number };
+}
 
 /** Highlights the pixels the brush would cover, including mirrored copies. */
-export function brushCursorPainter(
-  getPoint: () => Point | null,
-  getSize: () => number,
-  sprite: { width: number; height: number },
-  mirror: { horizontal: boolean; vertical: boolean },
-): OverlayPainter {
+export function brushCursorPainter(getCursor: () => BrushCursor | null): OverlayPaint {
   return (ctx, viewport) => {
-    const point = getPoint();
+    const cursor = getCursor();
+    if (!cursor) return;
+    const { point, size, sprite } = cursor;
     // No preview once the pointer leaves the sprite — hovering the padding around
     // the canvas shouldn't light up pixels that don't exist.
-    if (!point || point.x < 0 || point.y < 0 || point.x >= sprite.width || point.y >= sprite.height) {
+    if (point.x < 0 || point.y < 0 || point.x >= sprite.width || point.y >= sprite.height) {
       return;
     }
 
     const points: Point[] = [point];
-    if (mirror.horizontal) points.push({ x: sprite.width - 1 - point.x, y: point.y });
-    if (mirror.vertical) points.push({ x: point.x, y: sprite.height - 1 - point.y });
-    if (mirror.horizontal && mirror.vertical) {
+    if (cursor.mirrorHorizontal) points.push({ x: sprite.width - 1 - point.x, y: point.y });
+    if (cursor.mirrorVertical) points.push({ x: point.x, y: sprite.height - 1 - point.y });
+    if (cursor.mirrorHorizontal && cursor.mirrorVertical) {
       points.push({ x: sprite.width - 1 - point.x, y: sprite.height - 1 - point.y });
     }
 
     ctx.save();
 
     for (const [index, position] of points.entries()) {
-      const bounds = brushBounds(position.x, position.y, getSize());
+      const bounds = brushBounds(position.x, position.y, size);
       // Clamp to the sprite so a brush footprint near an edge doesn't spill into the padding.
       const left = Math.max(bounds.x, 0);
       const top = Math.max(bounds.y, 0);

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { createToolCommands } from "@/commands/toolCommands";
+import { createToolCommands, reselectLabel } from "@/commands/toolCommands";
+import { getTool } from "@/tools";
 import { createTestStore } from "@test/store";
 
 function setup() {
@@ -8,23 +9,33 @@ function setup() {
 }
 
 describe("tool commands", () => {
-  it("pressing the active pencil's key again cycles the brush size and holds nothing", () => {
+  it("pressing the active pencil's key again cycles only the pencil's size and holds nothing", () => {
     const { store, commands } = setup();
 
     commands["tool.pencil"]?.hold?.press({ code: "KeyP", at: 0 });
 
-    expect(store.getState().toolOptions.brushSize).toBe(2);
+    expect(store.getState().settings).toEqual({ pencil: { size: 2 } });
     expect(store.getState().heldTool).toBeNull();
   });
 
-  it("pressing the active eraser's key again cycles the brush size and holds nothing", () => {
+  it("pressing the active eraser's key again cycles only the eraser's size and holds nothing", () => {
     const { store, commands } = setup();
     store.getState().setTool("eraser");
+    store.getState().setSetting("pencil", "size", 4);
 
     commands["tool.eraser"]?.hold?.press({ code: "KeyE", at: 0 });
 
     expect(store.getState()).toMatchObject({ toolId: "eraser", heldTool: null });
-    expect(store.getState().toolOptions.brushSize).toBe(2);
+    expect(store.getState().settings).toEqual({ pencil: { size: 4 }, eraser: { size: 2 } });
+  });
+
+  it("pressing it again from the largest size wraps to the smallest", () => {
+    const { store, commands } = setup();
+    store.getState().setSetting("pencil", "size", 8);
+
+    commands["tool.pencil"]?.hold?.press({ code: "KeyP", at: 0 });
+
+    expect(store.getState().settings.pencil).toEqual({ size: 1 });
   });
 
   it("pressing the active picker's key again does nothing", () => {
@@ -33,8 +44,7 @@ describe("tool commands", () => {
 
     commands["tool.picker"]?.hold?.press({ code: "KeyO", at: 0 });
 
-    expect(store.getState()).toMatchObject({ toolId: "picker", heldTool: null });
-    expect(store.getState().toolOptions.brushSize).toBe(1);
+    expect(store.getState()).toMatchObject({ toolId: "picker", heldTool: null, settings: {} });
   });
 
   it("pressing another tool's key starts a hold that its release resolves", () => {
@@ -57,17 +67,9 @@ describe("tool commands", () => {
     expect(store.getState().toolId).toBe("pencil");
   });
 
-  it("toggles horizontal mirroring, only for a tool that mirrors", () => {
-    const { store, commands } = setup();
-    const toggle = commands["tool.toggleMirror"];
-
-    expect(toggle?.isEnabled?.()).toBe(true);
-    toggle?.run();
-    expect(store.getState().toolOptions).toMatchObject({ mirrorHorizontal: true, mirrorVertical: false });
-    toggle?.run();
-    expect(store.getState().toolOptions.mirrorHorizontal).toBe(false);
-
-    store.getState().setTool("eraser");
-    expect(toggle?.isEnabled?.()).toBe(false);
+  it("names the press-again row after the setting it cycles", () => {
+    expect(reselectLabel(getTool("pencil"))).toBe("Cycle brush size");
+    expect(reselectLabel(getTool("eraser"))).toBe("Cycle brush size");
+    expect(reselectLabel(getTool("picker"))).toBeNull();
   });
 });

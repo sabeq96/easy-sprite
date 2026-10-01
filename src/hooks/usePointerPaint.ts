@@ -3,7 +3,6 @@ import { useDocumentSession } from "@/app/DocumentProvider";
 import type { HintSection } from "@/commands/hints";
 import { compositeFrame } from "@/core/composite";
 import { StrokeRecorder } from "@/core/history";
-import { brushCursorPainter } from "@/core/overlays/brushCursor";
 import type { CanvasRenderer } from "@/core/renderer";
 import { getTool } from "@/tools";
 import type { ColorSlot, Gesture, PointerModifiers, Surface, ToolHost } from "@/framework/host";
@@ -18,9 +17,6 @@ export const POINTER_PAINT_HINTS: HintSection = {
   group: "Color",
   hints: [{ action: "Paint with secondary color", inputs: [{ pointer: "right-drag" }] }],
 };
-
-// Which tools preview a brush footprint, and whether that preview mirrors, both come from the
-// tool's own declared options — a tool that ignores an option can never have it drawn for it.
 
 interface ActiveStroke {
   /** Pinned at pointerdown, so a tool switch mid-drag cannot hand the gesture to another tool. */
@@ -51,7 +47,6 @@ export function usePointerPaint(
     if (!element || !renderer) return;
 
     let active: ActiveStroke | null = null;
-    let hover: ToolPoint | null = null;
 
     const toSprite = (event: PointerEvent): ToolPoint => {
       const rect = element.getBoundingClientRect();
@@ -80,27 +75,6 @@ export function usePointerPaint(
       previous: ToolPoint,
       modifiers: PointerModifiers,
     ): Gesture => ({ point, previous, modifiers, slot: stroke.slot, surface: stroke.surface });
-
-    const showBrushPreview = () => {
-      const state = useEditorStore.getState();
-      const toolOptions = getTool(state.toolId).options;
-      if (active || !toolOptions.includes("brushSize")) return;
-
-      const mirrors = toolOptions.includes("mirror");
-      renderer.setOverlayPainter(
-        brushCursorPainter(
-          () => hover,
-          () => useEditorStore.getState().toolOptions.brushSize,
-          { width: doc.width, height: doc.height },
-          {
-            horizontal: mirrors && state.toolOptions.mirrorHorizontal,
-            vertical: mirrors && state.toolOptions.mirrorVertical,
-          },
-        ),
-        true,
-      );
-      renderer.invalidate("overlay");
-    };
 
     const updateHover = (point: ToolPoint | null) => {
       const tool = getTool(useEditorStore.getState().toolId);
@@ -154,10 +128,9 @@ export function usePointerPaint(
 
     const onPointerMove = (event: PointerEvent) => {
       if (!active) {
-        hover = toSprite(event);
+        const hover = toSprite(event);
         reportCursor(hover);
         updateHover(hover);
-        showBrushPreview();
         return;
       }
 
@@ -173,8 +146,7 @@ export function usePointerPaint(
         active.last = point;
       }
 
-      hover = active.last;
-      reportCursor(hover);
+      reportCursor(active.last);
     };
 
     const endStroke = (event: PointerEvent) => {
@@ -195,15 +167,12 @@ export function usePointerPaint(
       }
       active = null;
       updateHover(toSprite(event));
-      showBrushPreview();
     };
 
     const onPointerLeave = () => {
       if (active) return;
-      hover = null;
       reportCursor(null);
       updateHover(null);
-      renderer.setOverlayPainter(null);
     };
 
     element.addEventListener("pointerdown", onPointerDown);

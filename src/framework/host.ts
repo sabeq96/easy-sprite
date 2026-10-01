@@ -1,6 +1,7 @@
 import type { Point, Viewport } from "@/core/viewport";
 import type { RGBA } from "@/lib/color";
 import type { Rect } from "@/lib/rect";
+import type { Settings, SettingValues } from "@/framework/settings";
 import type { PixelBuffer } from "@/types/pixels";
 
 /**
@@ -8,12 +9,12 @@ import type { PixelBuffer } from "@/types/pixels";
  * value cached at activation would silently go stale. A tool never sees the document, the undo
  * stack, the store, or layer and frame ids — only these interfaces.
  */
-export interface ToolHost {
+export interface ToolHost<S extends Settings = Settings> {
   readonly colors: Colors;
   readonly canvas: Canvas;
   readonly document: DocumentView;
   readonly history: Edits;
-  readonly tool: ToolControl;
+  readonly tool: ToolControl<S>;
 }
 
 /** Which colour a gesture paints or picks with: the left button is primary, the right secondary. */
@@ -27,14 +28,6 @@ export interface PointerModifiers {
   shift: boolean;
   alt: boolean;
   ctrl: boolean;
-}
-
-export interface ToolOptions {
-  brushSize: number;
-  mirrorHorizontal: boolean;
-  mirrorVertical: boolean;
-  /** The colour picker samples the merged image rather than the active layer. */
-  pickFromComposite: boolean;
 }
 
 export interface Colors {
@@ -80,11 +73,13 @@ export interface Edits {
   onUndoRedo(listener: () => void): () => void;
 }
 
-export interface ToolControl {
+/** The calling tool itself: its activation and its own declared settings. */
+export interface ToolControl<S extends Settings = Settings> {
   /** Makes the calling tool active, synchronously. */
   activate(): void;
-  /** Stage 2 only: today's ToolOptions, replaced by settings in stage 3. */
-  options(): ToolOptions;
+  /** Every declared setting's current value (its default until changed). */
+  settings(): SettingValues<S>;
+  set<K extends keyof S>(key: K, value: S[K]["default"]): void;
 }
 
 /** What is happening now: one sample of a pointer gesture. */

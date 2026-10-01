@@ -58,22 +58,54 @@ test("the pencil previews its mirrored footprint only while mirroring is on", as
   await hoverAndSettle(canvas);
   expect(overlayAlphaAt(MIRRORED)).toBe(0);
 
-  useEditorStore.getState().setToolOptions({ mirrorHorizontal: true });
+  useEditorStore.getState().setSetting("pencil", "mirrorHorizontal", true);
   await hoverAndSettle(canvas);
   expect(overlayAlphaAt(MIRRORED)).toBeGreaterThan(0);
 });
 
-test("a tool that ignores mirroring never previews a mirrored footprint", async () => {
+test("the eraser preview is never mirrored", async () => {
   const canvas = await openEditor();
 
-  // Force the flag on while the eraser is active — the stale state the tool-switch reset
-  // normally prevents. The preview must still refuse to mirror, because the eraser does not
-  // declare mirroring, and previewing it would promise an erase that never happens.
-  useEditorStore.getState().setTool("eraser");
-  useEditorStore.getState().setToolOptions({ mirrorHorizontal: true, mirrorVertical: true });
+  const { setSetting, setTool } = useEditorStore.getState();
+  setSetting("pencil", "mirrorHorizontal", true);
+  setSetting("pencil", "mirrorVertical", true);
+  setSetting("eraser", "mirrorHorizontal", true);
+  setSetting("eraser", "mirrorVertical", true);
+  setTool("eraser");
 
   await hoverAndSettle(canvas);
 
   expect(overlayAlphaAt(HOVERED)).toBeGreaterThan(0); // it still has a brush preview
   expect(overlayAlphaAt(MIRRORED)).toBe(0); // but no mirrored ghost
+});
+
+async function nextFrames() {
+  await new Promise((resolve) =>
+    requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(resolve, 50))),
+  );
+}
+
+test("the preview follows the pointer, leaving nothing behind", async () => {
+  const canvas = await openEditor();
+  const elsewhere = { x: 10, y: 10 };
+
+  await hoverAndSettle(canvas);
+  expect(overlayAlphaAt(HOVERED)).toBeGreaterThan(0);
+
+  hoverSpritePixel(canvas, useEditorStore.getState().viewport, elsewhere);
+  await nextFrames();
+  expect(overlayAlphaAt(elsewhere)).toBeGreaterThan(0);
+  expect(overlayAlphaAt(HOVERED)).toBe(0);
+});
+
+test("a new brush size shows at once, without moving the pointer", async () => {
+  const canvas = await openEditor();
+  const below = { x: HOVERED.x + 1, y: HOVERED.y + 1 };
+
+  await hoverAndSettle(canvas);
+  expect(overlayAlphaAt(below)).toBe(0);
+
+  useEditorStore.getState().setSetting("pencil", "size", 2);
+  await nextFrames();
+  expect(overlayAlphaAt(below)).toBeGreaterThan(0);
 });

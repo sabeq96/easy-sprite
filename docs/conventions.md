@@ -13,6 +13,7 @@ Before writing anything, answer one question: *what does it depend on?*
 | is a pure function of its arguments | `src/lib/` | `hexToRgba()`, `rectUnion()`, `clamp()` |
 | manipulates pixels/documents, no React, no DB | `src/core/` | `floodFill()`, `SpriteDocument` |
 | is a tool (reads the host only through `ToolHost`) | `src/tools/<folder>/tool.ts` | `pencilTool`, `selectTool` |
+| is a tool option | a setting in that tool's `settings` (`choice`, `toggle`, `switch`) | the pencil's `size`, `mirrorHorizontal` |
 | talks to IndexedDB | `src/db/repositories/` | `duplicateSprite()` |
 | wires the DB to the editor core | `src/services/` | `autosave.ts`, `documentService.ts` |
 | is cross-component UI state | `src/stores/` | active tool, primary color, zoom |

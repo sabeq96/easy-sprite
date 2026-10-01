@@ -2,16 +2,11 @@ import { vi } from "vitest";
 import { SpriteDocument, type DocumentInit } from "@/core/document";
 import { StrokeRecorder } from "@/core/history";
 import type { Point } from "@/core/viewport";
-import type {
-  ColorSlot,
-  Gesture,
-  PointerModifiers,
-  Surface,
-  ToolHost,
-  ToolOptions,
-} from "@/framework/host";
+import type { ColorSlot, Gesture, PointerModifiers, Surface, ToolHost } from "@/framework/host";
+import { resolveSettings, type Settings, type StoredValues } from "@/framework/settings";
 import { createSurface } from "@/hooks/toolHost/surface";
 import type { RGBA } from "@/lib/color";
+import { TOOL_LIST } from "@/tools";
 
 /** A 4×4, one-layer, one-frame document — the default fixture for core tests. */
 export function makeDocument(overrides: Partial<DocumentInit> = {}): SpriteDocument {
@@ -32,21 +27,24 @@ export const BLUE: RGBA = { r: 0, g: 0, b: 255, a: 255 };
 
 export const NO_MODIFIERS: PointerModifiers = { button: 0, shift: false, alt: false, ctrl: false };
 
-export const DEFAULT_TOOL_OPTIONS: ToolOptions = {
-  brushSize: 1,
-  mirrorHorizontal: false,
-  mirrorVertical: false,
-  pickFromComposite: false,
-};
+/** Every registered tool's setting defaults, merged: what a tool reads from a fresh host. */
+const SETTING_DEFAULTS: StoredValues = Object.fromEntries(
+  TOOL_LIST.flatMap((tool) => Object.entries(resolveSettings(tool.settings, undefined))),
+);
 
-type HostOverrides = { [K in keyof ToolHost]?: Partial<ToolHost[K]> };
+type HostOverrides = { [K in keyof ToolHost]?: Partial<ToolHost[K]> } & {
+  /** Setting values over the defaults; `tool.set` writes here too. */
+  settings?: StoredValues;
+};
 
 /**
  * A ToolHost of plain objects, with spies where a test may assert a call. The primary colour is
- * RED and the secondary BLUE; the document is 4×4 with nothing editable.
+ * RED and the secondary BLUE; the document is 4×4 with nothing editable. Typed as whichever
+ * tool's host the call site expects.
  */
-export function fakeHost(overrides: HostOverrides = {}): ToolHost {
-  return {
+export function fakeHost<S extends Settings = Settings>(overrides: HostOverrides = {}): ToolHost<S> {
+  let settings: StoredValues = { ...SETTING_DEFAULTS, ...overrides.settings };
+  const host: ToolHost = {
     colors: {
       get: (slot) => (slot === "secondary" ? BLUE : RED),
       set: vi.fn(),
@@ -62,8 +60,16 @@ export function fakeHost(overrides: HostOverrides = {}): ToolHost {
       ...overrides.document,
     },
     history: { edit: vi.fn(() => false), onUndoRedo: () => () => {}, ...overrides.history },
-    tool: { activate: vi.fn(), options: () => DEFAULT_TOOL_OPTIONS, ...overrides.tool },
+    tool: {
+      activate: vi.fn(),
+      settings: () => settings,
+      set: vi.fn((key: string, value: number | boolean) => {
+        settings = { ...settings, [key]: value };
+      }),
+      ...overrides.tool,
+    },
   };
+  return host as unknown as ToolHost<S>;
 }
 
 export interface GestureOptions {

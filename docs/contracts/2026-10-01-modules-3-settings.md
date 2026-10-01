@@ -185,13 +185,13 @@ Command: `npm run lint && npm run build && npm run test:coverage`
 
 ## Done when
 
-- [ ] 1. `grep -rn "ToolOptions\|ToolOptionField\|toolOptions\|withoutMirror\|cycleBrushSize\|reselectCommand\|setOverlayPainter" src tests` is empty.
-- [ ] 2. A setting is added by editing only its tool. Probe: add a `switchSetting` to the picker, see it in the bar, then revert.
-- [ ] 3. Separate pencil and eraser sizes, and `P`/`E` again cycle their own.
-- [ ] 4. `V` toggles pencil mirror (pressed state, `V` in the tooltip) and does nothing elsewhere. Mirror survives a tool switch.
-- [ ] 5. The brush preview looks and follows the pointer as before.
-- [ ] 6. The editor store has no field named after a tool or option.
-- [ ] 7. The command above passes.
+- [x] 1. `grep -rnw "ToolOptions\|ToolOptionField\|toolOptions\|withoutMirror\|cycleBrushSize\|reselectCommand\|setOverlayPainter" src tests` is empty.
+- [x] 2. A setting is added by editing only its tool. Probe: add a `switchSetting` to the picker, see it in the bar, then revert.
+- [x] 3. Separate pencil and eraser sizes, and `P`/`E` again cycle their own.
+- [x] 4. `V` toggles pencil mirror (pressed state, `V` in the tooltip) and does nothing elsewhere. Mirror survives a tool switch.
+- [x] 5. The brush preview looks and follows the pointer as before.
+- [x] 6. The editor store has no field named after a tool or option.
+- [x] 7. The command above passes.
 
 ## Open risks
 
@@ -206,3 +206,107 @@ Command: `npm run lint && npm run build && npm run test:coverage`
 None.
 
 ## Drift log
+
+- **2026-10-01, the Done-when 1 grep matches `ToolOptionsBar`.** The pattern `ToolOptions` also
+  matches the component this contract keeps by name (Files, Test plan), so the literal grep
+  lists `EditorPage.tsx`, `ToolOptionsBar.tsx` and its browser test. With whole-word matching
+  (`grep -rnw …`), or with `ToolOptionsBar` filtered out, it is empty. Ticked on that reading;
+  renaming the component is left to the maintainer.
+- **2026-10-01, `Tool.reselect` is a `string`; `defineTool` checks it (Open risk 2: hit).**
+  `ToolHost<S>` in method-syntax handlers fits a heterogeneous `TOOL_LIST`, but
+  `reselect?: ChoiceKey<S>` on the interface (a conditional type) made `S` invariant, so no tool
+  with settings widened to `Tool<ToolId>`. The interface field is a plain `string`, and
+  `defineTool`'s parameter is `Tool<Id, C, S> & { reselect?: ChoiceKey<S> }`, so a typo or a
+  non-choice key is still a compile error at the definition (probed: `"flip"` and `"nope"` are
+  rejected, `"size"` passes). No `satisfies` or extra cast was needed. `toolCommands` checks
+  `kind === "choice"` at run time.
+- **2026-10-01, `SettingCommandId`.** Derived from `TOOL_LIST` like `ContributedCommandId`
+  (`T extends Tool<string, readonly ContributedCommand[], infer S extends Settings>`, then
+  `SettingCommandIdOf<S>`, which reads `ToggleSetting<infer Id> | SwitchSetting<infer Id>`).
+  `toggle` and `switchSetting` take a `const Id` generic that defaults to `never`, so a setting
+  without a command adds nothing. `contributed.test.ts` pins it to `"tool.toggleMirror"` with
+  `expectTypeOf`.
+- **2026-10-01, `ChoiceSetting.unit?`.** It is not in the Interfaces sketch. The generic bar names
+  each value `${value} ${unit}` (the bare number when there is no unit), so the brush size toggles
+  keep their "3 pixels" accessible names. `brushSize()` sets `unit: "pixels"`.
+- **2026-10-01, `BrushPreview<S>` is generic.** A tool's handlers get `ToolHost<S>`, so
+  `createBrushPreview<S>(read: (host: ToolHost<S>) => BrushShape)` returns a preview whose
+  `activate` takes that host. The tools annotate the reader:
+  `createBrushPreview((host: PencilHost) => host.tool.settings())`. `brushCursorPainter` now
+  takes one getter returning `{ point, size, mirrorHorizontal, mirrorVertical, sprite }` and
+  draws `OverlayPaint` from `framework/host`, because `core/renderer` is off-limits in a tool
+  folder.
+- **2026-10-01, a setting change repaints the overlay (Open risk 3, extended).** `move()` only
+  repaints when the pixel under the pointer changes, and the continuous repaint is gone. So
+  `useCanvasRenderer` invalidates the overlay whenever the store's `settings` change. Without it,
+  `P` again or `V` while hovering showed nothing until the pointer moved. A mutation check (effect
+  disabled) failed two brush-preview browser tests; they pass with it. Viewport changes already
+  repaint the overlay, as the risk said.
+- **2026-10-01, the preview also moves on pointerdown.** The pencil and eraser call
+  `preview.move(point)` in `onPointerDown` too (the sketch only did so in `onPointerMove`), so a
+  pen or touch press with no prior hover shows the footprint.
+- **2026-10-01, setting commands go through the contributed path.** `contributed.ts` turns each
+  declared `command` into a `ContributedCommand`, and registers it in the same loop as
+  `Tool.commands`, bound to `forTool(toolId)`. Its value and its flip go through
+  `host.tool.settings()`/`set`. `ToolControl` has no "am I active" query, so `isEnabled` reads
+  `useEditorStore.getState().toolId` (commands/ may import stores). `CONTRIBUTED_SHORTCUTS`
+  carries their keys. The cheat sheet's mirror row still comes from `toolsGroupCommands` (a
+  Tools command that is neither a tool key nor in `Tool.commands`), so the rows are unchanged
+  (`core-editing` passes untouched).
+- **2026-10-01, `reselectLabel(tool)`.** Exported from `toolCommands.ts` next to the press path.
+  It returns `Cycle ${label.toLowerCase()}` or null, and the cheat sheet uses it.
+- **2026-10-01, test placement and fixtures.**
+  - The "generated `tool.toggleMirror` is enabled only on the pencil and flips its value" test
+    lives in `contributed.test.ts`, where the command is generated, not in
+    `toolCommands.test.ts`.
+  - `fakeHost<S>({ settings })` returns `ToolHost<S>` (one `as unknown as` cast in the fixture)
+    and starts from every registered tool's declared defaults. Where a test stores the host in a
+    variable first, it annotates it with that tool's host type.
+  - The picker unit tests that sample the active layer now pass `pickFromComposite: false`,
+    because the real default (`true`) applies; the old fixture defaulted it to `false`. A new
+    unit test covers "samples the merged image by default".
+  - New `tests/unit/tools/brush.test.ts` covers `brushSize()` and `createBrushPreview`. New
+    browser tests: "the preview follows the pointer, leaving nothing behind" and "a new brush
+    size shows at once, without moving the pointer" (Done-when 5).
+- **2026-10-01, browser tests whose assertions changed.**
+  - `pencil.browser`: "mirroring is switched off when another tool is chosen, and stays off coming
+    back" became "mirror survives pencil → eraser → pencil": `aria-pressed` is now `true`, and the
+    click paints the mirrored pixel too (behaviour change 2).
+  - `pencil.browser`: "the brush size is shared with the eraser and survives a tool switch" became
+    "pencil size 4 → eraser shows 1 → back to pencil shows 4" (behaviour change 1).
+  - `pencil.browser`: "a held P repeating cycles only once" reads `settings.pencil?.size` (still
+    2). "V does nothing on a tool without mirroring…" asserts that `settings` stays `{}`, in place
+    of `toolOptions.mirrorHorizontal === false`. Same meaning, and stricter.
+  - `ToolOptionsBar.browser`: "picking another tool turns mirroring off…" became "mirror survives
+    pencil → eraser → pencil, and the eraser never shows it" (behaviour change 2). The pencil test
+    also asserts the "Brush size" and "Mirror" labels (behaviour change 3). The per-tool
+    `test.each` reads the declared setting keys in place of `Tool.options`. The bar is rendered
+    with `createContributedCommands` too, because the mirror button's command is now generated.
+  - `brush-preview.browser`: "a tool that ignores mirroring never previews a mirrored footprint"
+    became "the eraser preview is never mirrored". It can no longer force a shared stale flag, so
+    it turns on the pencil's mirror and writes stray mirror keys under `eraser`. Its assertions
+    are unchanged.
+  - `eraser.browser`: "…never mirrors even if the flag is stale" became "…even with the pencil's
+    on", with the same setup change and unchanged assertions.
+  - `select.browser` and `tool-matrix.browser`: setup only (`setSetting("pencil", "size", n)`).
+  - Unit tests: `toolSlice.test.ts` lost the mirror-reset, `setToolOptions` and `cycleBrushSize`
+    tests, as planned. `toolOptions.test.ts` became `settings.test.ts`. `toolCommands.test.ts`
+    asserts per-tool sizes. `contributed.test.ts` expects `tool.toggleMirror` among the
+    registered ids.
+- **2026-10-01, keyboard tool switch while hovering.** The host does not expose the pointer, so a
+  tool switched by key shows its preview on the next pointer move. Before, the previous tool's
+  brush painter (with its mirror flags captured at install) stayed on screen until the next move,
+  even onto a tool with no brush, such as the bucket.
+- **2026-10-01, not built: a tool's own JSX in the bar.** Decision 4's "why" column says a tool can
+  still ship its own JSX. No tool needs it, so there is no slot for it yet.
+- **2026-10-01, files outside the list.**
+  - `src/hooks/useCanvasRenderer.ts`: the settings repaint.
+  - `src/stores/slices/types.ts` and `tests/support/store.ts`: the new slice.
+  - `src/tools/fill/tool.ts` and `src/tools/select/tool.ts`: `options: []` removed.
+  - `tests/support/factories.ts`: `fakeHost`.
+  - `docs/architecture.md`: the folder map, the overlay row of the canvas table, and the `tool`
+    row and a settings paragraph under "Tool host".
+- **2026-10-01, lint.** No new rule. `tools/shared/brush.ts` and `brushCursor.ts` import only
+  `@/framework/*`, `@/constants/tools`, `@/core/pixels` and `@/core/viewport`, which the
+  existing tool-folder override allows. `npm run lint` reports only the ten
+  `only-export-components` warnings, all in files this stage does not touch.

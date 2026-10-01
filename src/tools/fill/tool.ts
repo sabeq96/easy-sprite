@@ -26,7 +26,6 @@ function createFill<const Id extends string>({
     shortcut,
     // A drag must not repeat the fill.
     continuous: false,
-    options: [],
 
     onPointerDown(host, { surface, point, slot }) {
       const dirty = floodFill(

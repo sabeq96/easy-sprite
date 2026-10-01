@@ -206,7 +206,6 @@ export const selectTool = defineTool({
     },
   ],
   continuous: true,
-  options: [],
 
   onActivate(host) {
     state.host = host;

@@ -1,9 +1,12 @@
 import type { AppCommandId, CommandGroup } from "@/constants/commands";
-import type { ContributedCommandId, ToolId } from "@/tools";
+import type { ContributedCommandId, SettingCommandId, ToolId } from "@/tools";
 
 export type ToolCommandId = `tool.${ToolId}`;
-/** App commands, one activation command per tool, and the commands tools contribute. */
-export type CommandId = AppCommandId | ToolCommandId | ContributedCommandId;
+/**
+ * App commands, one activation command per tool, the commands tools contribute, and the ones
+ * the host generates from their settings.
+ */
+export type CommandId = AppCommandId | ToolCommandId | ContributedCommandId | SettingCommandId;
 
 export interface CommandDefinition {
   id: CommandId;

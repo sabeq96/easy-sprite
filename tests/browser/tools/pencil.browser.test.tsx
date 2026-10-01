@@ -126,7 +126,7 @@ test("turning a mirror off again stops reflecting", async () => {
   expect(paintedPixels()).toEqual(keys([{ x: 2, y: 3 }]));
 });
 
-test("mirroring is switched off when another tool is chosen, and stays off coming back", async () => {
+test("mirror survives pencil → eraser → pencil", async () => {
   const editor = await openEditor();
   await toggleMirror(editor, "vertically");
 
@@ -135,20 +135,23 @@ test("mirroring is switched off when another tool is chosen, and stays off comin
 
   await expect
     .element(editor.screen.getByRole("button", { name: "Mirror vertically" }))
-    .toHaveAttribute("aria-pressed", "false");
+    .toHaveAttribute("aria-pressed", "true");
   editor.click({ x: 2, y: 3 });
-  expect(paintedPixels()).toEqual(keys([{ x: 2, y: 3 }]));
+  expect(paintedPixels()).toEqual(keys([{ x: 2, y: 3 }, { x: 2, y: 12 }]));
 });
 
-test("the brush size is shared with the eraser and survives a tool switch", async () => {
+test("pencil size 4 → eraser shows 1 → back to pencil shows 4", async () => {
   const editor = await openEditor();
   await pickSize(editor, 4);
 
   await userEvent.click(editor.screen.getByRole("button", { name: "Eraser", exact: true }));
   await expect
-    .element(editor.screen.getByRole("button", { name: "4 pixels", exact: true }))
+    .element(editor.screen.getByRole("button", { name: "1 pixels", exact: true }))
     .toHaveAttribute("aria-pressed", "true");
   await userEvent.click(editor.screen.getByRole("button", { name: "Pencil", exact: true }));
+  await expect
+    .element(editor.screen.getByRole("button", { name: "4 pixels", exact: true }))
+    .toHaveAttribute("aria-pressed", "true");
 
   editor.click({ x: 7, y: 7 });
   expect(paintedPixels()).toHaveLength(16);
@@ -250,7 +253,7 @@ test("a held P repeating on the pencil cycles only once", async () => {
   keyDown("p", { code: "KeyP", at: 0 });
   keyDown("p", { code: "KeyP", at: 500, repeat: true });
 
-  expect(useEditorStore.getState().toolOptions.brushSize).toBe(2);
+  expect(useEditorStore.getState().settings.pencil?.size).toBe(2);
 });
 
 test("V toggles Mirror horizontally on the pencil, like the options-bar button", async () => {
@@ -270,9 +273,9 @@ test("V does nothing on a tool without mirroring, and the command-key V never to
   await openEditor();
 
   keyDown("v", { code: "KeyV", at: 0, ctrlKey: !IS_APPLE, metaKey: IS_APPLE });
-  expect(useEditorStore.getState().toolOptions.mirrorHorizontal).toBe(false);
+  expect(useEditorStore.getState().settings).toEqual({});
 
   useEditorStore.getState().setTool("eraser");
   pressKey("v", "KeyV", 100, 50);
-  expect(useEditorStore.getState().toolOptions.mirrorHorizontal).toBe(false);
+  expect(useEditorStore.getState().settings).toEqual({});
 });

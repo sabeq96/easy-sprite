@@ -1,7 +1,7 @@
 import type { ShortcutRow } from "@/commands/hints";
 import { hintRow } from "@/commands/hints";
 import { commandKeys, reselectKeys } from "@/commands/keymap";
-import { TOOL_KEY_HOLD_HINT } from "@/commands/toolCommands";
+import { reselectLabel, TOOL_KEY_HOLD_HINT } from "@/commands/toolCommands";
 import type { CommandId, CommandRegistry } from "@/commands/types";
 import {
   ShortcutHelpDialog as CommonShortcutHelpDialog,
@@ -32,7 +32,10 @@ const TOOL_OWNED_COMMANDS = new Set<string>(
   ]),
 );
 
-/** Tools-group commands that aren't a tool's own key (the mirror toggle): shown under Tools too. */
+/**
+ * Tools-group commands that aren't a tool's own key or contributed command (the commands its
+ * settings declare, such as the mirror toggle): shown under Tools too.
+ */
 function toolsGroupCommands(commands: CommandRegistry): CommandId[] {
   return (Object.keys(commands) as CommandId[]).filter(
     (id) =>
@@ -51,10 +54,10 @@ const FEATURE_HINTS = [COLOR_HOTKEY_HINTS, POINTER_PAINT_HINTS, CANVAS_VIEW_HINT
  * commands, and last the hold gesture every tool key shares.
  */
 function toolsRows(commands: CommandRegistry): ShortcutRow[] {
-  const rows = TOOL_LIST.flatMap((tool) => {
+  const rows = TOOLS_WITH_COMMANDS.flatMap((tool) => {
     const row = { label: tool.label, keys: commandKeys(`tool.${tool.id}`) };
-    const reselect = tool.reselectCommand && commands[tool.reselectCommand];
-    return reselect ? [row, { label: reselect.label, keys: reselectKeys(tool) }] : [row];
+    const reselect = reselectLabel(tool);
+    return reselect ? [row, { label: reselect, keys: reselectKeys(tool) }] : [row];
   });
   for (const id of toolsGroupCommands(commands)) {
     rows.push({ label: commands[id]?.label ?? id, keys: commandKeys(id) });

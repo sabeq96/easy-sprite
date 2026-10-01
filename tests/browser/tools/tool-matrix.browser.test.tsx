@@ -70,9 +70,9 @@ const WRITERS = [
 test.each(WRITERS)("$label: one gesture is one undo step, and redo replays it exactly", async (tool) => {
   const editor = await openEditor();
   // A starting picture every tool can visibly change: a filled 8×8 block top-left.
-  useEditorStore.getState().setToolOptions({ brushSize: 8 });
+  useEditorStore.getState().setSetting("pencil", "size", 8);
   editor.click({ x: 3, y: 3 });
-  useEditorStore.getState().setToolOptions({ brushSize: 1 });
+  useEditorStore.getState().setSetting("pencil", "size", 1);
   useEditorStore.getState().setPrimaryColor({ r: 255, g: 0, b: 0, a: 255 });
   const before = paintedPixels();
 

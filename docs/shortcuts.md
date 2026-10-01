@@ -12,9 +12,9 @@ go, then you are back on the tool you had.
 
 | Key | Command | Notes |
 | --- | --- | --- |
-| `P` | Pencil | press again (while the pencil is active) to cycle brush size 1→2→3→4→6→8→1 |
-| `V` | Mirror horizontally | pencil only: toggles drawing on both sides of the vertical axis, like the options-bar button. Doesn't spring back when held |
-| `E` | Eraser | press again (while the eraser is active) to cycle brush size, as with `P` |
+| `P` | Pencil | press again (while the pencil is active) to cycle its brush size 1→2→3→4→6→8→1 |
+| `V` | Mirror horizontally | pencil only: toggles drawing on both sides of the vertical axis, like the options-bar button. Doesn't spring back when held. The pencil remembers it when you switch to another tool and back |
+| `E` | Eraser | press again (while the eraser is active) to cycle its brush size, as with `P`. The pencil and the eraser each remember their own size |
 | `B` | Paint bucket | contiguous fill |
 | `G` | Fill similar | replaces matching colour across the whole layer |
 | `O` | Color picker | samples the composite; hold `O` to pick a colour and go back to your tool |
@@ -71,9 +71,15 @@ go, then you are back on the tool you had.
 Where things live:
 
 - **Tool keys and gestures live on the tool.** Each tool declares `shortcut` (the key that activates
-  it), an optional `reselectCommand` (run when its key is pressed while it is already active, e.g.
-  the pencil's brush-size cycle) and `hints` (its non-obvious gestures, e.g. `⌘ + Drag` to
-  duplicate a selection) — see `src/tools/<tool>/tool.ts`.
+  it), an optional `reselect` (the choice setting its key steps when pressed while the tool is
+  already active, e.g. the pencil's `size`; the sheet's row reads "Cycle brush size", from the
+  setting's label) and `hints` (its non-obvious gestures, e.g. `⌘ + Drag` to duplicate a
+  selection) — see `src/tools/<tool>/tool.ts`.
+- **A setting can carry a command.** A `toggle` or `switch` in `Tool.settings` may declare
+  `command: { id, label?, keys? }`. The host turns it into a Tools command (enabled only while
+  that tool is active, active while the value is on, flipping it when run), and the options bar
+  renders that toggle as its `CommandButton`. The pencil's `mirrorHorizontal` declares
+  `tool.toggleMirror` with `V` this way; `SettingCommandId` is derived from `TOOL_LIST`.
 - **Tap vs hold.** Tool commands carry a `hold` part (`CommandDefinition.hold`). `useShortcuts`
   calls its `press` instead of `run()`, then `release` on that key's keyup (`cancel` on window
   blur). The tap/hold decision (`TOOL_KEY_HOLD_MS`) lives in the tool slice.
@@ -84,8 +90,9 @@ Where things live:
   `ContributedCommandId` is derived from `TOOL_LIST`, so the ids stay type-checked. The cheat
   sheet lists them in the tool's own section, not under Edit.
 - **Every other key** is in `APP_SHORTCUTS` in `src/constants/shortcuts.ts`.
-- **`src/commands/keymap.ts`** merges all three (tool keys, contributed keys, app keys) into
-  `SHORTCUTS` and exposes `commandKeys(id)` — every chord for a command, formatted for display.
+- **`src/commands/keymap.ts`** merges all three (tool keys, contributed and setting command keys,
+  app keys) into `SHORTCUTS` and exposes `commandKeys(id)` — every chord for a command, formatted
+  for display.
 - **Inputs that are neither a tool's nor a command** (1–9, pan/zoom, right-drag for the secondary
   colour) are `HintSection`s exported next to the code that implements them. Each names the
   command group it belongs to, so the cheat sheet lists it there rather than in a section of its

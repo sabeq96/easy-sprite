@@ -28,6 +28,7 @@ export function useCanvasRenderer(): CanvasRefs {
   const activeFrameId = useEditorStore((state) => state.activeFrameId);
   const isPlaying = useEditorStore((state) => state.isPlaying);
   const fitToContainer = useEditorStore((state) => state.fitToContainer);
+  const toolSettings = useEditorStore((state) => state.settings);
 
   // One renderer per document.
   useEffect(() => {
@@ -88,6 +89,12 @@ export function useCanvasRenderer(): CanvasRefs {
       isPlaying,
     });
   }, [renderer, viewport, gridEnabled, gridSize, onion, activeFrameId, isPlaying, doc]);
+
+  // A tool's overlay may draw its settings (the brush preview's size and mirror), and the
+  // overlay only repaints on demand, so a changed setting shows without moving the pointer.
+  useEffect(() => {
+    if (renderer && toolSettings) renderer.invalidate("overlay");
+  }, [renderer, toolSettings]);
 
   // Structural changes (layer order, visibility, opacity) are not pixel events.
   useEffect(() => {

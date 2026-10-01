@@ -58,7 +58,7 @@ src/
                 viewport, overlays, command factories (commands/). Knows nothing about tools
   framework/    the host↔tool contract: types and tiny pure helpers that both tools and the host
                 depend on (host.ts: ToolHost, Gesture, Surface; tool.ts: Tool, defineTool;
-                command.ts: ContributedCommand)
+                command.ts: ContributedCommand; settings.ts: setting kinds, resolveSettings)
   tools/        one folder per tool (<tool>/tool.ts, plus anything else it needs: icon, overlay,
                 JSX), shared/ for code several tools use, and index.ts, the one registry every
                 tool list derives from. Adding a tool is a folder plus one line in TOOL_LIST
@@ -111,7 +111,7 @@ Four stacked `<canvas>` elements, identical CSS box, `position:absolute`, painte
 | 0 | `checker` | viewport changes | transparency checkerboard (CSS gradient div, not canvas) |
 | 1 | `onion` | frame/onion config changes | previous/next frame composites, tinted + faded |
 | 2 | `main` | any dirty cel, frame or layer change | composite of visible layers of current frame |
-| 3 | `overlay` | pointer move, active tool's state, grid toggle | grid, active tool's persistent overlay (e.g. the selection), brush preview |
+| 3 | `overlay` | the active tool asks (pointer move, its own state), a tool setting changes, grid toggle | grid, the active tool's overlay (the selection, or the pencil's and eraser's brush preview) |
 
 Per-frame work:
 
@@ -252,11 +252,18 @@ frame). The host groups its capabilities by domain, all as methods so every read
 | `canvas` | `setOverlay(paint)`, `requestRender()` | the renderer's tool overlay, once `EditorCanvas` attaches it |
 | `document` | `width`, `height`, `sampleComposite`, `crop`, `onResize` | the open `SpriteDocument` and the active frame |
 | `history` | `edit(label, change)`, `onUndoRedo` | a `StrokeRecorder` over the active layer and frame, pushed as one undo entry |
-| `tool` | `activate()`, `options()` | `setTool` (synchronous) and, until stage 3, the store's tool options |
+| `tool` | `activate()`, `settings()`, `set(key, value)` | `setTool` (synchronous), and the store's `settings[toolId]` resolved against the tool's declared defaults |
 
 The adapters live in `src/hooks/toolHost/`; `ToolHostProvider` builds one host per open
 document in the editor shell, so the shell's commands and the canvas's gestures share it. A tool
 never sees the document, the undo stack, the store, or layer and frame ids.
+
+A tool's options are **settings** it declares as data (`Tool.settings`, built with `choice`,
+`toggle` and `switchSetting` from `src/framework/settings.ts`). The host stores only changed
+values, keyed `settings[toolId][key]`, so the store names no setting; `ToolOptionsBar` renders
+them by kind through `useToolSettings`; and a setting's `command` becomes a Tools command with
+its key. ToolHost is generic over the declaration (`ToolHost<S>`), so `host.tool.settings()` is
+typed. The brush preview is the pencil's and eraser's own overlay (`src/tools/shared/brush.ts`).
 
 ## 10. Data access
 

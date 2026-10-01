@@ -1,7 +1,5 @@
 import { TOOL_KEY_HOLD_MS } from "@/constants/shortcuts";
-import { BRUSH_SIZES, DEFAULT_BRUSH_SIZE } from "@/constants/tools";
 import type { ToolId } from "@/tools";
-import type { ToolOptions } from "@/framework/host";
 import type { SliceCreator } from "@/stores/slices/types";
 
 /** A tool key being held: it has switched tools, and its release decides whether that sticks. */
@@ -17,7 +15,6 @@ export interface HeldTool {
 export interface ToolSlice {
   toolId: ToolId;
   heldTool: HeldTool | null;
-  toolOptions: ToolOptions;
 
   setTool: (toolId: ToolId) => void;
   /** Switches to `toolId` now; `releaseToolKey` later decides between a tap and a hold. */
@@ -26,33 +23,13 @@ export interface ToolSlice {
   releaseToolKey: (code: string, at: number) => void;
   /** The key's release will never arrive (window blur): hand back the tool from before it. */
   dropHeldTool: () => void;
-  setToolOptions: (patch: Partial<ToolOptions>) => void;
-  cycleBrushSize: () => void;
 }
 
 export const createToolSlice: SliceCreator<ToolSlice> = (set, get) => ({
   toolId: "pencil",
   heldTool: null,
-  toolOptions: {
-    brushSize: DEFAULT_BRUSH_SIZE,
-    mirrorHorizontal: false,
-    mirrorVertical: false,
-    pickFromComposite: true,
-  },
 
-  /**
-   * Mirror is a pencil-only option, but the brush preview draws its mirrored cells for any tool
-   * that has a brush cursor — so leaving it set while switching to the eraser highlights pixels
-   * that will never be touched. Clearing it on a real tool change keeps the preview honest.
-   * Re-selecting the current tool leaves it alone, and so does a held tool key, which restores
-   * the previous tool rather than choosing a new one.
-   */
-  setTool: (toolId) =>
-    set((state) =>
-      state.toolId === toolId
-        ? { toolId, heldTool: null }
-        : { toolId, heldTool: null, toolOptions: withoutMirror(state.toolOptions) },
-    ),
+  setTool: (toolId) => set({ toolId, heldTool: null }),
 
   holdToolKey: (toolId, code, at) => {
     const { toolId: current, heldTool } = get();
@@ -63,41 +40,16 @@ export const createToolSlice: SliceCreator<ToolSlice> = (set, get) => ({
   },
 
   releaseToolKey: (code, at) => {
-    const { heldTool, toolId, toolOptions } = get();
+    const { heldTool } = get();
     if (!heldTool || heldTool.code !== code) return;
 
-    if (at - heldTool.pressedAt >= TOOL_KEY_HOLD_MS) {
-      set({ heldTool: null, toolId: heldTool.restoreToolId });
-      return;
-    }
-
-    // A tap is a real choice: it ends exactly where clicking the tool would (see `setTool`).
-    const changed = toolId !== heldTool.restoreToolId;
-    set({ heldTool: null, toolOptions: changed ? withoutMirror(toolOptions) : toolOptions });
+    // A hold hands back the tool from before it; a tap keeps the tool, as clicking it would.
+    const held = at - heldTool.pressedAt >= TOOL_KEY_HOLD_MS;
+    set(held ? { heldTool: null, toolId: heldTool.restoreToolId } : { heldTool: null });
   },
 
   dropHeldTool: () => {
     const { heldTool } = get();
     if (heldTool) set({ heldTool: null, toolId: heldTool.restoreToolId });
   },
-
-  setToolOptions: (patch) =>
-    set(({ toolOptions }) => ({ toolOptions: { ...toolOptions, ...patch } })),
-
-  cycleBrushSize: () =>
-    set(({ toolOptions }) => ({
-      toolOptions: {
-        ...toolOptions,
-        brushSize: nextBrushSize(toolOptions.brushSize),
-      },
-    })),
 });
-
-/** The next of BRUSH_SIZES above `size`, wrapping from the largest back to the smallest. */
-function nextBrushSize(size: number): number {
-  return BRUSH_SIZES.find((candidate) => candidate > size) ?? BRUSH_SIZES[0];
-}
-
-function withoutMirror(options: ToolOptions): ToolOptions {
-  return { ...options, mirrorHorizontal: false, mirrorVertical: false };
-}

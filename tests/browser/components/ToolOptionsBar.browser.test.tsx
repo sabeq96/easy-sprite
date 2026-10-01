@@ -2,16 +2,25 @@ import { expect, test } from "vitest";
 import { userEvent } from "vitest/browser";
 import { ToolOptionsBar } from "@/components/editor/ToolOptionsBar";
 import { CommandsProvider } from "@/commands/CommandsContext";
+import { createContributedCommands } from "@/commands/contributed";
 import { createToolCommands } from "@/commands/toolCommands";
 import { ToolSidebar } from "@/components/editor/ToolSidebar";
+import { History } from "@/core/history";
+import { createToolHost } from "@/hooks/toolHost/createToolHost";
 import { TOOL_LIST, TOOLS } from "@/tools";
 import { useEditorStore } from "@/stores/useEditorStore";
+import { makeDocument } from "@test/factories";
 import { render } from "@test/render";
 
 /** The bar's command buttons (the mirror toggle) read the registry, as they do in the editor. */
+function commands() {
+  const host = createToolHost({ doc: makeDocument(), history: new History() });
+  return { ...createToolCommands(useEditorStore), ...createContributedCommands(host) };
+}
+
 function renderBar() {
   return render(
-    <CommandsProvider value={createToolCommands(useEditorStore)}>
+    <CommandsProvider value={commands()}>
       <ToolOptionsBar />
     </CommandsProvider>,
   );
@@ -45,31 +54,31 @@ test("the pencil tool keeps brush size and its own mirror option", async () => {
   useEditorStore.getState().setTool("pencil");
   const screen = await renderBar();
 
+  await expect.element(screen.getByText("Brush size", { exact: true })).toBeVisible();
   await expect.element(screen.getByRole("group", { name: "Brush size" })).toBeVisible();
+  await expect.element(screen.getByText("Mirror", { exact: true })).toBeVisible();
   await expect.element(screen.getByRole("button", { name: "Mirror horizontally" })).toBeVisible();
   await expect.element(screen.getByRole("button", { name: "Mirror vertically" })).toBeVisible();
 });
 
-test.each(TOOL_LIST.map((tool) => tool.id))("the %s bar shows exactly the options that tool declares", async (toolId) => {
+test.each(TOOL_LIST.map((tool) => tool.id))("the %s bar shows exactly the settings that tool declares", async (toolId) => {
   useEditorStore.getState().setTool(toolId);
   const screen = await renderBar();
-  const declared = TOOLS[toolId].options;
+  const declared = Object.keys(TOOLS[toolId].settings ?? {});
 
-  // Each control appears only when the tool itself claims to honour it — the guard against a
-  // control drifting onto a tool that ignores it, which is how the inert Mirror toggle happened.
   const brushSize = screen.getByRole("group", { name: "Brush size" }).elements().length;
   const mirror = screen.getByRole("button", { name: "Mirror horizontally" }).elements().length;
   const pickSource = screen.getByText("Sample merged image").elements().length;
 
-  expect(brushSize).toBe(declared.includes("brushSize") ? 1 : 0);
-  expect(mirror).toBe(declared.includes("mirror") ? 1 : 0);
-  expect(pickSource).toBe(declared.includes("pickSource") ? 1 : 0);
+  expect(brushSize).toBe(declared.includes("size") ? 1 : 0);
+  expect(mirror).toBe(declared.includes("mirrorHorizontal") ? 1 : 0);
+  expect(pickSource).toBe(declared.includes("pickFromComposite") ? 1 : 0);
 });
 
-test("picking another tool turns mirroring off, so it can't linger unapplied", async () => {
+test("mirror survives pencil → eraser → pencil, and the eraser never shows it", async () => {
   useEditorStore.getState().setTool("pencil");
   const screen = await render(
-    <CommandsProvider value={createToolCommands(useEditorStore)}>
+    <CommandsProvider value={commands()}>
       <ToolSidebar />
       <ToolOptionsBar />
     </CommandsProvider>,
@@ -79,12 +88,12 @@ test("picking another tool turns mirroring off, so it can't linger unapplied", a
   await userEvent.click(mirror);
   await expect.element(mirror).toHaveAttribute("aria-pressed", "true");
 
-  // The eraser draws the same brush preview but never mirrors, so the option must not survive.
   await userEvent.click(screen.getByRole("button", { name: "Eraser", exact: true }).first());
-  expect(useEditorStore.getState().toolOptions.mirrorHorizontal).toBe(false);
+  await expect.element(screen.getByRole("button", { name: "Mirror horizontally" })).not.toBeInTheDocument();
+  expect(useEditorStore.getState().settings.pencil).toEqual({ mirrorHorizontal: true });
 
   await userEvent.click(screen.getByRole("button", { name: "Pencil", exact: true }).first());
   await expect
     .element(screen.getByRole("button", { name: "Mirror horizontally" }))
-    .toHaveAttribute("aria-pressed", "false");
+    .toHaveAttribute("aria-pressed", "true");
 });

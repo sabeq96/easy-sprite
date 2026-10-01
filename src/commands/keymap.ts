@@ -25,8 +25,8 @@ export function commandKeys(commandId: CommandId): string[] {
   return (SHORTCUTS[commandId] ?? []).map(formatBinding);
 }
 
-/** "P again": the key that runs a tool's `reselectCommand`. Empty when it has none. */
+/** "P again": the key that steps a tool's `reselect` setting. Empty when it has none. */
 export function reselectKeys(tool: Tool<ToolId>): string[] {
-  if (!tool.reselectCommand) return [];
+  if (!tool.reselect) return [];
   return commandKeys(`tool.${tool.id}`).map((key) => `${key} again`);
 }

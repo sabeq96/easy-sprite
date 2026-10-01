@@ -7,7 +7,7 @@ import { History } from "@/core/history";
 import { createToolHost } from "@/hooks/toolHost/createToolHost";
 import { startToolLifecycle } from "@/hooks/useToolLifecycle";
 import { useEditorStore } from "@/stores/useEditorStore";
-import type { ContributedCommandId } from "@/tools";
+import type { ContributedCommandId, SettingCommandId } from "@/tools";
 import { makeDocument, RED } from "@test/factories";
 
 const SELECTION_COMMANDS = [
@@ -43,12 +43,13 @@ function setup() {
 describe("contributed commands", () => {
   it("derives their ids from the tools", () => {
     expectTypeOf<ContributedCommandId>().toEqualTypeOf<(typeof SELECTION_COMMANDS)[number]>();
+    expectTypeOf<SettingCommandId>().toEqualTypeOf<"tool.toggleMirror">();
   });
 
-  it("registers the select tool's six commands, each with its keys once", () => {
+  it("registers the select tool's six commands and the pencil's mirror, each with its keys once", () => {
     const commands = setup();
 
-    expect(Object.keys(commands).sort()).toEqual([...SELECTION_COMMANDS].sort());
+    expect(Object.keys(commands).sort()).toEqual([...SELECTION_COMMANDS, "tool.toggleMirror"].sort());
     for (const id of SELECTION_COMMANDS) {
       expect(commands[id]?.id).toBe(id);
       expect(SHORTCUTS[id]?.length).toBeGreaterThan(0);
@@ -89,5 +90,24 @@ describe("contributed commands", () => {
 
     expect(useEditorStore.getState().toolId).toBe("pencil");
     expect(history.canUndo).toBe(false);
+  });
+
+  it("generates the mirror command from the pencil's setting: enabled only on the pencil, flipping its value", () => {
+    const commands = setup();
+    const mirror = commands["tool.toggleMirror"];
+
+    expect(mirror).toMatchObject({ label: "Mirror horizontally", group: "Tools" });
+    expect(SHORTCUTS["tool.toggleMirror"]).toEqual([{ key: "v" }]);
+    expect(mirror?.isEnabled?.()).toBe(true);
+    expect(mirror?.isActive?.()).toBe(false);
+
+    mirror?.run();
+    expect(useEditorStore.getState().settings).toEqual({ pencil: { mirrorHorizontal: true } });
+    expect(mirror?.isActive?.()).toBe(true);
+    mirror?.run();
+    expect(useEditorStore.getState().settings.pencil).toEqual({ mirrorHorizontal: false });
+
+    useEditorStore.getState().setTool("eraser");
+    expect(mirror?.isEnabled?.()).toBe(false);
   });
 });

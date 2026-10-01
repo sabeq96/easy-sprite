@@ -1,11 +1,9 @@
 /**
- * Every command the app itself owns. "Activate tool X" and the commands a tool contributes
- * (the selection's copy, cut, …) are derived from the tool registry instead.
+ * Every command the app itself owns. "Activate tool X", the commands a tool contributes (the
+ * selection's copy, cut, …) and its settings' commands (mirror) are derived from the tool
+ * registry instead.
  */
 const APP_COMMAND_IDS = [
-  // tools
-  "tool.cycleBrushSize",
-  "tool.toggleMirror",
   // edit
   "edit.undo",
   "edit.redo",

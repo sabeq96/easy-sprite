@@ -57,7 +57,7 @@ test("the right button erases too — the eraser has no secondary colour to pain
   expect(paintedPixels()).toHaveLength(255);
 });
 
-test("the eraser offers a size but no mirror, and never mirrors even if the flag is stale", async () => {
+test("the eraser offers a size but no mirror, and never mirrors, even with the pencil's on", async () => {
   const editor = await openEditor();
   await filledCanvasWithEraser(editor);
 
@@ -66,7 +66,11 @@ test("the eraser offers a size but no mirror, and never mirrors even if the flag
     .element(editor.screen.getByRole("button", { name: "Mirror horizontally" }))
     .not.toBeInTheDocument();
 
-  useEditorStore.getState().setToolOptions({ mirrorHorizontal: true, mirrorVertical: true });
+  const { setSetting } = useEditorStore.getState();
+  setSetting("pencil", "mirrorHorizontal", true);
+  setSetting("pencil", "mirrorVertical", true);
+  setSetting("eraser", "mirrorHorizontal", true);
+  setSetting("eraser", "mirrorVertical", true);
   editor.click({ x: 2, y: 2 });
 
   expect(paintedPixels()).toHaveLength(255);

@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { TOOL_KEY_HOLD_MS } from "@/constants/shortcuts";
-import { BRUSH_SIZES } from "@/constants/tools";
 import { createTestStore } from "@test/store";
 
 describe("toolSlice", () => {
@@ -19,21 +18,6 @@ describe("toolSlice", () => {
     store.getState().holdToolKey("eraser", "KeyE", 0);
     store.getState().releaseToolKey("KeyE", TOOL_KEY_HOLD_MS);
     expect(store.getState()).toMatchObject({ toolId: "pencil", heldTool: null });
-  });
-
-  it("a tap clears mirroring like clicking the tool; a hold hands it back intact", () => {
-    const tapped = createTestStore();
-    tapped.getState().setToolOptions({ mirrorHorizontal: true });
-    tapped.getState().holdToolKey("eraser", "KeyE", 0);
-    tapped.getState().releaseToolKey("KeyE", 10);
-    expect(tapped.getState().toolOptions.mirrorHorizontal).toBe(false);
-
-    const held = createTestStore();
-    held.getState().setToolOptions({ mirrorHorizontal: true });
-    held.getState().holdToolKey("eraser", "KeyE", 0);
-    held.getState().releaseToolKey("KeyE", 1000);
-    expect(held.getState()).toMatchObject({ toolId: "pencil" });
-    expect(held.getState().toolOptions.mirrorHorizontal).toBe(true);
   });
 
   it("a second key takes over a hold, and quick overlapping taps end on it", () => {
@@ -78,62 +62,5 @@ describe("toolSlice", () => {
     store.getState().setTool("bucket");
     store.getState().releaseToolKey("KeyE", 1000);
     expect(store.getState()).toMatchObject({ toolId: "bucket", heldTool: null });
-  });
-
-  it("setTool clears mirroring, which only the pencil applies", () => {
-    const store = createTestStore();
-    store.getState().setToolOptions({ mirrorHorizontal: true, mirrorVertical: true });
-
-    store.getState().setTool("eraser");
-
-    expect(store.getState().toolOptions).toMatchObject({
-      mirrorHorizontal: false,
-      mirrorVertical: false,
-    });
-  });
-
-  it("setTool leaves other tool options alone", () => {
-    const store = createTestStore();
-    store.getState().setToolOptions({ brushSize: 3, mirrorHorizontal: true });
-
-    store.getState().setTool("eraser");
-
-    expect(store.getState().toolOptions).toMatchObject({ brushSize: 3, pickFromComposite: true });
-  });
-
-  it("re-selecting the tool already in use keeps mirroring on", () => {
-    const store = createTestStore();
-    store.getState().setTool("pencil");
-    store.getState().setToolOptions({ mirrorHorizontal: true });
-
-    store.getState().setTool("pencil");
-
-    expect(store.getState().toolOptions.mirrorHorizontal).toBe(true);
-  });
-
-  it("cycleBrushSize steps through every brush size and wraps back to 1", () => {
-    const store = createTestStore();
-    const sizes = BRUSH_SIZES.map(() => {
-      store.getState().cycleBrushSize();
-      return store.getState().toolOptions.brushSize;
-    });
-    expect(sizes).toEqual([2, 3, 4, 6, 8, 1]);
-  });
-
-  it.each([
-    [4, 6],
-    [6, 8],
-    [8, 1],
-  ])("cycleBrushSize from %i goes to %i", (from, to) => {
-    const store = createTestStore();
-    store.getState().setToolOptions({ brushSize: from });
-    store.getState().cycleBrushSize();
-    expect(store.getState().toolOptions.brushSize).toBe(to);
-  });
-
-  it("setToolOptions merges a partial patch", () => {
-    const store = createTestStore();
-    store.getState().setToolOptions({ mirrorHorizontal: true });
-    expect(store.getState().toolOptions).toMatchObject({ mirrorHorizontal: true, brushSize: 1 });
   });
 });

@@ -12,7 +12,8 @@ import type {
   ToolControl,
   ToolHost,
 } from "@/framework/host";
-import type { ToolId } from "@/tools";
+import { resolveSettings } from "@/framework/settings";
+import { getTool, type ToolId } from "@/tools";
 import { createSurface } from "@/hooks/toolHost/surface";
 import { useEditorStore } from "@/stores/useEditorStore";
 
@@ -110,11 +111,14 @@ function createEdits(doc: SpriteDocument, history: History): Edits {
   };
 }
 
+/** The calling tool's own control: its settings are read and written under its id only. */
 function createToolControl(toolId: ToolId): ToolControl {
+  const declared = getTool(toolId).settings;
   return {
     // setTool notifies subscribers synchronously, so the tool is active when this returns.
     activate: () => useEditorStore.getState().setTool(toolId),
-    options: () => useEditorStore.getState().toolOptions,
+    settings: () => resolveSettings(declared, useEditorStore.getState().settings[toolId]),
+    set: (key, value) => useEditorStore.getState().setSetting(toolId, String(key), value),
   };
 }
 

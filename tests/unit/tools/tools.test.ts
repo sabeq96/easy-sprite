@@ -6,14 +6,11 @@ import { eraserTool } from "@/tools/eraser/tool";
 import { bucketTool, fillSimilarTool } from "@/tools/fill/tool";
 import { pencilTool } from "@/tools/pencil/tool";
 import { pickerTool } from "@/tools/picker/tool";
-import {
-  BLUE,
-  DEFAULT_TOOL_OPTIONS,
-  fakeHost,
-  makeDocument,
-  makeGesture,
-  RED,
-} from "@test/factories";
+import { BLUE, fakeHost, makeDocument, makeGesture, RED } from "@test/factories";
+
+type PencilHost = Parameters<typeof pencilTool.onPointerDown>[0];
+type EraserHost = Parameters<typeof eraserTool.onPointerDown>[0];
+type PickerHost = Parameters<typeof pickerTool.onPointerDown>[0];
 
 describe("pencil", () => {
   it("paints a single pixel on pointer down", () => {
@@ -34,7 +31,7 @@ describe("pencil", () => {
 
   it("joins sampled positions with no gaps", () => {
     const doc = makeDocument();
-    const host = fakeHost();
+    const host: PencilHost = fakeHost();
     const first = makeGesture(doc, { x: 0, y: 0 });
 
     pencilTool.onPointerDown(host, first);
@@ -49,7 +46,7 @@ describe("pencil", () => {
 
   it("stamps a square brush for larger sizes", () => {
     const doc = makeDocument();
-    const host = fakeHost({ tool: { options: () => ({ ...DEFAULT_TOOL_OPTIONS, brushSize: 2 }) } });
+    const host: PencilHost = fakeHost({ settings: { size: 2 } });
 
     pencilTool.onPointerDown(host, makeGesture(doc, { x: 0, y: 0 }));
 
@@ -68,9 +65,7 @@ describe("pencil", () => {
 
   it("mirrors across the vertical axis when the mirror option is on", () => {
     const doc = makeDocument();
-    const host = fakeHost({
-      tool: { options: () => ({ ...DEFAULT_TOOL_OPTIONS, mirrorHorizontal: true }) },
-    });
+    const host: PencilHost = fakeHost({ settings: { mirrorHorizontal: true } });
 
     pencilTool.onPointerDown(host, makeGesture(doc, { x: 0, y: 2 }));
 
@@ -89,6 +84,18 @@ describe("eraser", () => {
     eraserTool.onPointerDown(fakeHost(), makeGesture(doc, { x: 2, y: 2 }));
 
     expect(getPixel(cel.pixels, 2, 2, 4)).toEqual({ r: 0, g: 0, b: 0, a: 0 });
+  });
+
+  it("erases its own brush size and never mirrors", () => {
+    const doc = makeDocument();
+    const cel = doc.ensureCel("l1", "f1");
+    cel.pixels.fill(255);
+    const host: EraserHost = fakeHost({ settings: { size: 2, mirrorHorizontal: true } });
+
+    eraserTool.onPointerDown(host, makeGesture(doc, { x: 0, y: 0 }));
+
+    expect(getPixel(cel.pixels, 1, 1, 4).a).toBe(0);
+    expect(getPixel(cel.pixels, 3, 0, 4).a).toBe(255);
   });
 });
 
@@ -130,17 +137,27 @@ describe("picker", () => {
   it("samples the active layer when not sampling the merged image", () => {
     const doc = makeDocument();
     setPixel(doc.ensureCel("l1", "f1").pixels, 1, 1, 4, BLUE);
-    const host = fakeHost();
+    const host: PickerHost = fakeHost({ settings: { pickFromComposite: false } });
 
     pickerTool.onPointerDown(host, makeGesture(doc, { x: 1, y: 1 }));
 
     expect(host.colors.set).toHaveBeenCalledWith("primary", BLUE);
   });
 
+  it("samples the merged image by default", () => {
+    const doc = makeDocument();
+    setPixel(doc.ensureCel("l1", "f1").pixels, 1, 1, 4, BLUE);
+    const host: PickerHost = fakeHost({ document: { sampleComposite: () => RED } });
+
+    pickerTool.onPointerDown(host, makeGesture(doc, { x: 1, y: 1 }));
+
+    expect(host.colors.set).toHaveBeenCalledWith("primary", RED);
+  });
+
   it("writes the colour to the gesture's slot", () => {
     const doc = makeDocument();
     setPixel(doc.ensureCel("l1", "f1").pixels, 1, 1, 4, BLUE);
-    const host = fakeHost();
+    const host: PickerHost = fakeHost({ settings: { pickFromComposite: false } });
 
     pickerTool.onPointerDown(host, makeGesture(doc, { x: 1, y: 1 }, { slot: "secondary" }));
 
@@ -149,7 +166,7 @@ describe("picker", () => {
 
   it("ignores samples outside the canvas", () => {
     const doc = makeDocument();
-    const host = fakeHost();
+    const host: PickerHost = fakeHost();
 
     pickerTool.onPointerDown(host, makeGesture(doc, { x: 9, y: 9 }));
 
