@@ -8,11 +8,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import type { CommandId } from "@/commands/types";
 import { reorderLayerCommand } from "@/core/commands/layers";
 import type { LayerModel } from "@/core/document";
+import { useFramesStore } from "@/editor/frames/api";
 import { useCommandDispatch } from "@/hooks/useCommandDispatch";
 import { useDropZone } from "@/hooks/useDnd";
 import { useDocumentSnapshot } from "@/hooks/useDocumentSnapshot";
 import { cn } from "@/lib/utils";
-import { useEditorStore } from "@/stores/useEditorStore";
 import { LayerDragPreview, LayerRow } from "./LayerRow";
 import { useLayersStore } from "./store";
 
@@ -29,7 +29,7 @@ export function LayersPanel() {
 
   const dispatch = useCommandDispatch();
   const activeLayerId = useLayersStore((state) => state.activeLayerId);
-  const activeFrameId = useEditorStore((state) => state.activeFrameId);
+  const activeFrameId = useFramesStore((state) => state.activeFrameId);
   const setActiveLayer = useLayersStore((state) => state.setActiveLayer);
 
   // Rendered top-first: the topmost layer is the last entry in the underlying array.

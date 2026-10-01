@@ -140,7 +140,7 @@ function EditorShell() {
    - `COLOR_HOTKEY_HINTS` → `module.hints`.
    - The `colors` adapter moves here.
 3. ✅ **layers.** `activeLayerId` → `layers/store.ts`. Move the components and the layer commands, and the layer half of `useActiveTargets`.
-4. **frames.** `activeFrameId` → `frames/store.ts`. Move the components and the frame commands, and the frame half of `useActiveTargets` (then delete `useActiveTargets`).
+4. ✅ **frames.** `activeFrameId` → `frames/store.ts`. Move the components and the frame commands, and the frame half of `useActiveTargets` (then delete `useActiveTargets`).
 5. **animation.**
    - `onion` and `isPlaying` → `animation/store.ts`.
    - Move `PreviewPanel`, the player and `OnionSkinControl`.
@@ -392,6 +392,61 @@ None. Decisions 1-5 were settled on 2026-10-01.
   compare. `docs/conventions.md` §1 still uses `<LayersPanel/>` as its `src/components/`
   example; task 8 rewrites §1.
 
+- **2026-10-01, Task 4: the store is `useFramesStore` (`FramesState`): `activeFrameId` and
+  `setActiveFrame`, unchanged from `viewSlice`, which loses both.** `frames/api.ts` exports
+  `FramesBar` (shell's `EditorShell`), `useFramesStore`, `useActiveFrameGuard` (shell's
+  `EditorShell`) and `module`. `FrameCard`, `FrameThumbnail`, `commands.ts` and `store.ts` stay
+  private. As in task 3, the sketched `activeFrameId(doc)` selector helper was not added: every
+  reader keeps its own fallback (`?? doc.frames[0].id`, `?? doc.frames[0]?.id`, or none), so
+  behaviour is unchanged. Readers outside the module, all through `@/editor/frames/api`:
+  - `layers/LayersPanel` and `shell/EditorStatusBar` (selector hooks);
+  - `shell/historyAdapter` and `hooks/toolHost/createToolHost` (`activeTarget()`, and
+    `sampleComposite` in the tool host, both `getState()`);
+  - `hooks/usePointerPaint` (`resolveTarget` and `reportCursor`, `getState()`);
+  - `hooks/useCanvasRenderer` (the selector for `setState`, and `getState()` for the renderer's
+    initial frame, which used to come from the same `useEditorStore.getState()` snapshot as the
+    viewport);
+  - `components/editor/PreviewPanel` (selector hook).
+- **2026-10-01, Task 4: `frame.add`, `frame.duplicate`, `frame.delete`, `frame.previous`,
+  `frame.next`, `frame.moveLeft` and `frame.moveRight` are `frameCommands(ctx)` in
+  `frames/commands.ts`.** They use `ctx.doc` and `ctx.dispatch`, with the same labels, group,
+  `isEnabled` and bodies (the wrap-around `stepFrame` moved with them). `useEditorCommands`
+  loses them, `stepFrame`, the `core/commands/frames` import, and its now-unused
+  `useCommandDispatch` call and import.
+- **2026-10-01, Task 4: `useActiveTargets` is deleted.** `useActiveFrameGuard()` in
+  `frames/useActiveFrameGuard.ts` is its frame half, unchanged (same effect, first-frame
+  default). `EditorShell` calls `useActiveLayerGuard()` then `useActiveFrameGuard()`, the order
+  the two halves ran in before.
+- **2026-10-01, Task 4: `EDITOR_MODULES` is `[palette, shell, layers, frames]`.** Frames declares
+  no hints and no painters, so only commands join. No import cycle: `LayersPanel` now imports
+  `@/editor/frames/api`, and nothing `frames/api.ts` reaches imports `@/editor/layers/api`
+  (`npm run lint` with `import/no-cycle` passes).
+- **2026-10-01, Task 4: tests.**
+  - The "tracks the active frame" case left `tests/unit/stores/viewSlice.test.ts` for the new
+    `tests/unit/editor/frames/store.test.ts` (singleton after `resetEditorStores()`, same
+    expected value). The unit project stays at 323 tests; the browser project has 274.
+  - `resetEditorStores()` also resets `useFramesStore`.
+  - Setup that set `activeFrameId` on `useEditorStore` now sets it on `useFramesStore` from
+    `@/editor/frames/api`: `tests/unit/tools/select.test.ts` (the `toolId` stays on
+    `useEditorStore`) and `tests/unit/commands/contributed.test.ts`.
+  - Reads that changed store and nothing else: in `tests/support/editor.ts`, `resolveCel()`'s and
+    `compositeAt()`'s default frame; in `tests/browser/editor/frames.browser.test.tsx`, the
+    `activeFrameIndex()` helper. Every expected value is unchanged.
+- **2026-10-01, Task 4: verification beyond the suites.**
+  - Lint probe (Done-when 2): `import "@/editor/frames/store"` added to the top of
+    `layers/LayersPanel.tsx` fails `npx oxlint` with `'@/editor/frames/store' import is
+    restricted from being used by a pattern`. The file was restored from a copy.
+  - A throwaway browser probe ran on this tree and on `2ce81ab` in a scratch worktree (then
+    removed). It reads only the DOM and the live document, so the same file runs on both. It
+    dumped all 42 buttons (name, `aria-keyshortcuts`, disabled, `aria-pressed`), the frame order,
+    the cards' pressed state and actions, and the status bar after each of 16 states: open, New
+    frame (button), N, ⇧N, `,`, `,`, `.`, ⌥`,`, ⌥`.`, ⌥`.` (at the end, a no-op), a click on Frame 1,
+    `,` (wraps), `.` (wraps), Duplicate frame on card 2, Delete frame on card 1, and undo. It also
+    dumped the three frame tooltips ("New frame N", "Duplicate frame ⇧N", "Delete frame") and
+    the whole cheat sheet. The two JSON dumps are byte-identical. The Frames group reads "New
+    frame N, Duplicate frame ⇧N, Previous frame `,`, Next frame `.`, Move frame left ⌥`,`, Move
+    frame right ⌥`.`". There is no frame menu or context menu to compare.
+
 ## Builder notes (from task 1, for tasks 2–8)
 
 - **Plugging in a module.**
@@ -421,3 +476,16 @@ None. Decisions 1-5 were settled on 2026-10-01.
   throwaway probe with `--silent=false`. Hover a disabled `CommandButton`'s tooltip through its
   wrapper span (`button.parentElement`, `{ force: true }`), and read the text from
   `[data-slot="tooltip-content"]`.
+- **Active targets (from task 4).** The active frame lives in `useFramesStore`
+  (`@/editor/frames/api`). `useActiveTargets` is gone; `EditorShell` runs both guards.
+  `useEditorStore` no longer holds either active target.
+- **Cycles between module APIs (from task 4).** `layers → frames` is now a real edge
+  (`LayersPanel` imports `@/editor/frames/api`). Task 5 moves `PreviewPanel`, which imports
+  `@/editor/frames/api`, into `animation`; task 8 moves `useCanvasRenderer` and `usePointerPaint`,
+  which import it too, into `canvas`. So nothing `frames/api.ts` reaches may import
+  `@/editor/animation/api`, `@/editor/canvas/api` or `@/editor/layers/api`.
+- **UI probe (from task 4).** A probe that reads only the DOM and `session().doc`, never a store,
+  runs unchanged on both trees. Read a tooltip on an enabled `CommandButton` right after
+  `openEditor()`: after several keyboard steps, hovering the "New frame" button's wrapper
+  opened no tooltip in time. Frame-card actions are hidden until hover, so hover the card's
+  `li` first, then the button, both with `{ force: true }`.

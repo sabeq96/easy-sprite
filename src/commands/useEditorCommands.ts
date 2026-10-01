@@ -3,13 +3,6 @@ import { createContributedCommands } from "@/commands/contributed";
 import { createToolCommands } from "@/commands/toolCommands";
 import type { CommandRegistry } from "@/commands/types";
 import { ZOOM_LEVELS } from "@/constants/canvas";
-import {
-  addFrameCommand,
-  duplicateFrameCommand,
-  moveFrameCommand,
-  removeFrameCommand,
-} from "@/core/commands/frames";
-import { useCommandDispatch } from "@/hooks/useCommandDispatch";
 import { useToolHost } from "@/hooks/toolHost/ToolHostContext";
 import { useEditorStore } from "@/stores/useEditorStore";
 
@@ -20,7 +13,6 @@ import { useEditorStore } from "@/stores/useEditorStore";
  */
 export function useEditorCommands(): CommandRegistry {
   const { doc } = useDocumentSession();
-  const dispatch = useCommandDispatch();
   const toolHost = useToolHost();
 
   // Read via getState() inside handlers so the registry does not churn every render.
@@ -28,73 +20,10 @@ export function useEditorCommands(): CommandRegistry {
 
   const spriteSize = () => ({ width: doc.width, height: doc.height });
 
-  const stepFrame = (offset: number) => {
-    const { activeFrameId, setActiveFrame } = store.getState();
-    const index = doc.frameIndex(activeFrameId ?? "");
-    const next = (index + offset + doc.frames.length) % doc.frames.length;
-    setActiveFrame(doc.frames[next].id);
-  };
-
   return {
     ...createToolCommands(store),
     // The selection's copy, cut, paste, … are the select tool's own (see `Tool.commands`).
     ...createContributedCommands(toolHost),
-
-    "frame.add": {
-      id: "frame.add",
-      label: "New frame",
-      group: "Frames",
-      run: () => dispatch(() => addFrameCommand(doc, store.getState().activeFrameId ?? undefined)),
-    },
-    "frame.duplicate": {
-      id: "frame.duplicate",
-      label: "Duplicate frame",
-      group: "Frames",
-      run: () => {
-        const frameId = store.getState().activeFrameId;
-        if (frameId) dispatch(() => duplicateFrameCommand(doc, frameId));
-      },
-    },
-    "frame.delete": {
-      id: "frame.delete",
-      label: "Delete frame",
-      group: "Frames",
-      isEnabled: () => doc.frames.length > 1,
-      run: () => {
-        const frameId = store.getState().activeFrameId;
-        if (frameId) dispatch(() => removeFrameCommand(doc, frameId));
-      },
-    },
-    "frame.previous": {
-      id: "frame.previous",
-      label: "Previous frame",
-      group: "Frames",
-      run: () => stepFrame(-1),
-    },
-    "frame.next": {
-      id: "frame.next",
-      label: "Next frame",
-      group: "Frames",
-      run: () => stepFrame(1),
-    },
-    "frame.moveLeft": {
-      id: "frame.moveLeft",
-      label: "Move frame left",
-      group: "Frames",
-      run: () => {
-        const index = doc.frameIndex(store.getState().activeFrameId ?? "");
-        dispatch(() => moveFrameCommand(doc, index, index - 1));
-      },
-    },
-    "frame.moveRight": {
-      id: "frame.moveRight",
-      label: "Move frame right",
-      group: "Frames",
-      run: () => {
-        const index = doc.frameIndex(store.getState().activeFrameId ?? "");
-        dispatch(() => moveFrameCommand(doc, index, index + 1));
-      },
-    },
 
     "view.zoomIn": {
       id: "view.zoomIn",

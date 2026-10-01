@@ -3,6 +3,7 @@ import { compositeFrame } from "@/core/composite";
 import type { SpriteDocument } from "@/core/document";
 import type { History } from "@/core/history";
 import type { CanvasRenderer } from "@/core/renderer";
+import { useFramesStore } from "@/editor/frames/api";
 import { useLayersStore } from "@/editor/layers/api";
 import { createColorsAdapter } from "@/editor/palette/api";
 import { createHistoryAdapter } from "@/editor/shell/api";
@@ -41,7 +42,7 @@ interface Target {
 /** The active layer and frame, as chosen in the panels; null before they are chosen. */
 function activeTarget(): Target | null {
   const { activeLayerId } = useLayersStore.getState();
-  const { activeFrameId } = useEditorStore.getState();
+  const { activeFrameId } = useFramesStore.getState();
   return activeLayerId && activeFrameId ? { layerId: activeLayerId, frameId: activeFrameId } : null;
 }
 
@@ -55,7 +56,7 @@ function createDocumentView(doc: SpriteDocument): DocumentView {
     },
     sampleComposite(x, y) {
       if (x < 0 || y < 0 || x >= doc.width || y >= doc.height) return null;
-      const frameId = useEditorStore.getState().activeFrameId ?? doc.frames[0].id;
+      const frameId = useFramesStore.getState().activeFrameId ?? doc.frames[0].id;
       const data = compositeFrame(doc, frameId).getContext("2d")?.getImageData(x, y, 1, 1)?.data;
       return data ? { r: data[0], g: data[1], b: data[2], a: data[3] } : null;
     },

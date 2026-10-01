@@ -1,12 +1,12 @@
 import { useDocumentSession } from "@/app/DocumentProvider";
 import { Panel } from "@/components/common/Panel";
 import { Separator } from "@/components/ui/separator";
+import { useFramesStore } from "@/editor/frames/api";
 import { useLayersStore } from "@/editor/layers/api";
 import { useDocumentSnapshot } from "@/hooks/useDocumentSnapshot";
 import { rgbaToHex } from "@/lib/color";
 import { cn } from "@/lib/utils";
 import { useCursorStore } from "@/stores/useCursorStore";
-import { useEditorStore } from "@/stores/useEditorStore";
 
 export function EditorStatusBar() {
   const { doc } = useDocumentSession();
@@ -14,7 +14,7 @@ export function EditorStatusBar() {
 
   const position = useCursorStore((state) => state.position);
   const color = useCursorStore((state) => state.color);
-  const activeFrameId = useEditorStore((state) => state.activeFrameId);
+  const activeFrameId = useFramesStore((state) => state.activeFrameId);
   const activeLayerId = useLayersStore((state) => state.activeLayerId);
 
   const frameNumber =

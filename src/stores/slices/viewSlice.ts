@@ -17,7 +17,6 @@ export interface ViewSlice {
   onion: OnionConfig;
   /** Last known container size, so zoom commands can clamp without a DOM read. */
   containerSize: Size;
-  activeFrameId: string | null;
   /** Mirrors the preview player so the renderer can skip onion skin during playback. */
   isPlaying: boolean;
 
@@ -33,7 +32,6 @@ export interface ViewSlice {
   /** Grid to `gridSize` (a sprite's tile), chessboard to its default — done whenever a sprite opens. */
   resetGrid: (gridSize: number) => void;
   setOnion: (patch: Partial<OnionConfig>) => void;
-  setActiveFrame: (frameId: string) => void;
   setPlaying: (isPlaying: boolean) => void;
 }
 
@@ -44,7 +42,6 @@ export const createViewSlice: SliceCreator<ViewSlice> = (set, get) => ({
   checkerSize: DEFAULT_CHECKER_SIZE,
   onion: { ...ONION_DEFAULT },
   containerSize: { width: 0, height: 0 },
-  activeFrameId: null,
   isPlaying: false,
 
   setViewport: (viewport) => set({ viewport }),
@@ -77,6 +74,5 @@ export const createViewSlice: SliceCreator<ViewSlice> = (set, get) => ({
   setCheckerSize: (checkerSize) => set({ checkerSize }),
   resetGrid: (gridSize) => set({ gridSize, checkerSize: DEFAULT_CHECKER_SIZE }),
   setOnion: (patch) => set(({ onion }) => ({ onion: { ...onion, ...patch } })),
-  setActiveFrame: (activeFrameId) => set({ activeFrameId }),
   setPlaying: (isPlaying) => set({ isPlaying }),
 });

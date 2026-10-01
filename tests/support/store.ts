@@ -1,4 +1,5 @@
 import { create, type StoreApi } from "zustand";
+import { useFramesStore } from "@/editor/frames/api";
 import { useLayersStore } from "@/editor/layers/api";
 import { usePaletteStore } from "@/editor/palette/api";
 import { createSettingsSlice } from "@/stores/slices/settingsSlice";
@@ -25,4 +26,5 @@ export function resetEditorStores(): void {
   reset(useEditorStore);
   reset(usePaletteStore);
   reset(useLayersStore);
+  reset(useFramesStore);
 }

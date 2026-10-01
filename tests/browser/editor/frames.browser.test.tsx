@@ -12,6 +12,7 @@ import {
 } from "@test/editor";
 import { settled } from "@test/dom";
 import { holdDrag, releaseDrag } from "@test/pointer";
+import { useFramesStore } from "@/editor/frames/api";
 import { usePaletteStore } from "@/editor/palette/api";
 
 const RED = { r: 255, g: 0, b: 0, a: 255 };
@@ -19,7 +20,7 @@ const BLUE = { r: 0, g: 0, b: 255, a: 255 };
 
 const frameCount = () => session().doc.frames.length;
 const activeFrameIndex = () =>
-  session().doc.frames.findIndex((frame) => frame.id === useEditorStore.getState().activeFrameId);
+  session().doc.frames.findIndex((frame) => frame.id === useFramesStore.getState().activeFrameId);
 
 /** Paints `point` on the active frame in `color`. */
 function paintOn(editor: Editor, point: { x: number; y: number }, color = RED) {

@@ -4,7 +4,6 @@ import { useDocumentSession } from "@/app/DocumentProvider";
 import { DragBoard, type DragEndEvent } from "@/components/common/DragBoard";
 import { CommandButton } from "@/components/common/CommandButton";
 import { Panel } from "@/components/common/Panel";
-import { FrameCard, FrameDragPreview } from "@/components/editor/FrameCard";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   duplicateFrameCommand,
@@ -16,14 +15,15 @@ import { useCommandDispatch } from "@/hooks/useCommandDispatch";
 import { useDropZone } from "@/hooks/useDnd";
 import { useDocumentSnapshot } from "@/hooks/useDocumentSnapshot";
 import { cn } from "@/lib/utils";
-import { useEditorStore } from "@/stores/useEditorStore";
+import { FrameCard, FrameDragPreview } from "./FrameCard";
+import { useFramesStore } from "./store";
 
 export function FramesBar() {
   const { doc } = useDocumentSession();
   const snapshot = useDocumentSnapshot(doc);
   const dispatch = useCommandDispatch();
-  const activeFrameId = useEditorStore((state) => state.activeFrameId);
-  const setActiveFrame = useEditorStore((state) => state.setActiveFrame);
+  const activeFrameId = useFramesStore((state) => state.activeFrameId);
+  const setActiveFrame = useFramesStore((state) => state.setActiveFrame);
 
   const frameIds = snapshot.frames.map((frame) => frame.id);
 

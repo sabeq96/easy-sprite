@@ -3,6 +3,7 @@ import { useDocumentSession } from "@/app/DocumentProvider";
 import { drawGrid } from "@/core/painters/grid";
 import { drawOnion } from "@/core/painters/onion";
 import { CanvasRenderer, type RendererTargets } from "@/core/renderer";
+import { useFramesStore } from "@/editor/frames/api";
 import { useEditorStore } from "@/stores/useEditorStore";
 
 export interface CanvasRefs {
@@ -24,7 +25,7 @@ export function useCanvasRenderer(): CanvasRefs {
   const [renderer, setRenderer] = useState<CanvasRenderer | null>(null);
 
   const viewport = useEditorStore((state) => state.viewport);
-  const activeFrameId = useEditorStore((state) => state.activeFrameId);
+  const activeFrameId = useFramesStore((state) => state.activeFrameId);
   const isPlaying = useEditorStore((state) => state.isPlaying);
   const fitToContainer = useEditorStore((state) => state.fitToContainer);
   const toolSettings = useEditorStore((state) => state.settings);
@@ -40,7 +41,7 @@ export function useCanvasRenderer(): CanvasRefs {
     const store = useEditorStore.getState();
     const instance = new CanvasRenderer(doc, targets, {
       viewport: store.viewport,
-      frameId: store.activeFrameId ?? doc.frames[0].id,
+      frameId: useFramesStore.getState().activeFrameId ?? doc.frames[0].id,
       isPlaying: false,
     });
 

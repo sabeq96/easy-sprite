@@ -1,6 +1,6 @@
 import { Copy, Trash2 } from "lucide-react";
 import { CommandButton } from "@/components/common/CommandButton";
-import { FrameThumbnail } from "@/components/editor/FrameThumbnail";
+import { FrameThumbnail } from "./FrameThumbnail";
 import { useSortableItem } from "@/hooks/useDnd";
 import { cn } from "@/lib/utils";
 

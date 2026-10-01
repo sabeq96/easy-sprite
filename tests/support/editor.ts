@@ -6,6 +6,7 @@ import { createSprite } from "@/db/repositories/sprites";
 import { getPixel } from "@/core/buffer";
 import { compositeFrame } from "@/core/composite";
 import type { Point } from "@/core/viewport";
+import { useFramesStore } from "@/editor/frames/api";
 import { useLayersStore } from "@/editor/layers/api";
 import { usePaletteStore } from "@/editor/palette/api";
 import { IS_APPLE } from "@/lib/keys";
@@ -132,7 +133,7 @@ export interface CelTarget {
 function resolveCel({ layer, frame }: CelTarget) {
   const { doc } = session();
   const layerId = layer === undefined ? useLayersStore.getState().activeLayerId! : doc.layers[layer].id;
-  const frameId = frame === undefined ? useEditorStore.getState().activeFrameId! : doc.frames[frame].id;
+  const frameId = frame === undefined ? useFramesStore.getState().activeFrameId! : doc.frames[frame].id;
   return { doc, cel: doc.getCel(layerId, frameId) };
 }
 
@@ -148,7 +149,7 @@ export function pixelAt(x: number, y: number, target: CelTarget = {}): string {
 /** One pixel of the merged image (all visible layers, with opacity) as `#rrggbbaa`. */
 export function compositeAt(x: number, y: number, frame?: number): string {
   const { doc } = session();
-  const frameId = frame === undefined ? useEditorStore.getState().activeFrameId! : doc.frames[frame].id;
+  const frameId = frame === undefined ? useFramesStore.getState().activeFrameId! : doc.frames[frame].id;
   const data = compositeFrame(doc, frameId).getContext("2d")!.getImageData(x, y, 1, 1).data;
   if (data[3] === 0) return "#00000000";
   return `#${[...data].map((channel) => channel.toString(16).padStart(2, "0")).join("")}`;

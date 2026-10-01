@@ -1,9 +1,9 @@
 import type { SpriteDocument } from "@/core/document";
 import { StrokeRecorder, type History } from "@/core/history";
+import { useFramesStore } from "@/editor/frames/api";
 import { useLayersStore } from "@/editor/layers/api";
 import type { Edits } from "@/framework/host";
 import { createSurface } from "@/hooks/toolHost/surface";
-import { useEditorStore } from "@/stores/useEditorStore";
 
 interface Target {
   layerId: string;
@@ -13,7 +13,7 @@ interface Target {
 /** The active layer and frame, as chosen in the panels; null before they are chosen. */
 function activeTarget(): Target | null {
   const { activeLayerId } = useLayersStore.getState();
-  const { activeFrameId } = useEditorStore.getState();
+  const { activeFrameId } = useFramesStore.getState();
   return activeLayerId && activeFrameId ? { layerId: activeLayerId, frameId: activeFrameId } : null;
 }
 

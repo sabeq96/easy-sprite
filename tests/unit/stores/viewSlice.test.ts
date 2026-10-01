@@ -54,12 +54,6 @@ describe("viewSlice", () => {
     expect(store.getState().onion.direction).toBe("before"); // untouched fields survive the patch
   });
 
-  it("tracks the active frame", () => {
-    const store = createTestStore();
-    store.getState().setActiveFrame("f1");
-    expect(store.getState().activeFrameId).toBe("f1");
-  });
-
   it("resetGrid sets the grid to the given tile and the chessboard back to 1px", () => {
     const store = createTestStore();
     store.getState().setCheckerSize(8);

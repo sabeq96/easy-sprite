@@ -3,16 +3,15 @@ import { useParams } from "react-router";
 import { DocumentProvider, useDocumentSession } from "@/app/DocumentProvider";
 import { NotFoundPage } from "@/components/common/NotFoundPage";
 import { EditorCanvas } from "@/components/editor/EditorCanvas";
-import { FramesBar } from "@/components/editor/FramesBar";
 import { ToolOptionsBar } from "@/components/editor/ToolOptionsBar";
 import { ToolSidebar } from "@/components/editor/ToolSidebar";
 import { CommandsProvider } from "@/commands/CommandsContext";
 import type { CommandRegistry } from "@/commands/types";
 import { useEditorCommands } from "@/commands/useEditorCommands";
+import { FramesBar, useActiveFrameGuard } from "@/editor/frames/api";
 import { useActiveLayerGuard } from "@/editor/layers/api";
 import { EDITOR_MODULES } from "@/editor/modules";
 import { useColorHotkeys } from "@/editor/palette/api";
-import { useActiveTargets } from "@/hooks/useActiveTargets";
 import { useGridDefaults } from "@/hooks/useGridDefaults";
 import { useShortcuts } from "@/hooks/useShortcuts";
 import { createToolHost } from "@/hooks/toolHost/createToolHost";
@@ -55,7 +54,7 @@ function EditorShell() {
   const [showHelp, setShowHelp] = useState(false);
 
   useActiveLayerGuard();
-  useActiveTargets();
+  useActiveFrameGuard();
   useColorHotkeys();
   useGridDefaults();
 

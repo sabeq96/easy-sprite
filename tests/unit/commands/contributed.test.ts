@@ -4,6 +4,7 @@ import { SHORTCUTS } from "@/commands/keymap";
 import { getPixel, setPixel } from "@/core/buffer";
 import type { SpriteDocument } from "@/core/document";
 import { History } from "@/core/history";
+import { useFramesStore } from "@/editor/frames/api";
 import { useLayersStore } from "@/editor/layers/api";
 import { createToolHost } from "@/hooks/toolHost/createToolHost";
 import { startToolLifecycle } from "@/hooks/useToolLifecycle";
@@ -29,7 +30,7 @@ beforeEach(() => {
   doc = makeDocument();
   history = new History();
   resetEditorStores();
-  useEditorStore.setState({ activeFrameId: "f1" });
+  useFramesStore.setState({ activeFrameId: "f1" });
   useLayersStore.setState({ activeLayerId: "l1" });
 });
 

@@ -1,18 +1,18 @@
 import { useEffect } from "react";
 import { useDocumentSession } from "@/app/DocumentProvider";
 import { useDocumentRevision } from "@/hooks/useDocumentRevision";
-import { useEditorStore } from "@/stores/useEditorStore";
+import { useFramesStore } from "./store";
 
 /**
- * Keeps the active frame pointing at something that still exists, so no panel has to guard
- * against a stale id after a delete. The layers module guards the active layer.
+ * Keeps the active frame pointing at a frame that still exists, so no panel has to guard against
+ * a stale id after a delete.
  */
-export function useActiveTargets(): void {
+export function useActiveFrameGuard(): void {
   const { doc } = useDocumentSession();
   const revision = useDocumentRevision(doc, "structure");
 
-  const activeFrameId = useEditorStore((state) => state.activeFrameId);
-  const setActiveFrame = useEditorStore((state) => state.setActiveFrame);
+  const activeFrameId = useFramesStore((state) => state.activeFrameId);
+  const setActiveFrame = useFramesStore((state) => state.setActiveFrame);
 
   useEffect(() => {
     if (!activeFrameId || !doc.frames.some((frame) => frame.id === activeFrameId)) {
