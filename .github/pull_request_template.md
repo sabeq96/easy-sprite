@@ -1,6 +1,26 @@
-## What does this change?
+<!-- Title: short conventional-commit style, e.g. `feat: add new sprite export option`. Link the issue if there is one: Closes #123 -->
 
-<!-- A sentence or two is enough. Link the issue if there is one: Closes #123 -->
+## Summary
+
+<!--
+The smallest view that makes the point: pseudocode, a call tree, a component or file tree,
+a Mermaid diagram, or a ```diff sketch of what changes. Keep prose brief.
+-->
+
+## Evidence
+
+<!-- A screenshot for visual changes; otherwise test output or the exact test that now fails and passes. -->
+
+- **Before:**
+  **After:**
+
+## Merge Danger
+
+**Door:** <!-- one-way (hard to undo: data, schema, destructive) or two-way (cheap to revert) -->
+
+**Blast Radius:** <!-- one word, e.g. keyboard, layout, storage -->
+
+<!-- Optional: what could break if this merges. -->
 
 ## Checklist
 
