@@ -62,7 +62,7 @@ The same PR makes the `docs/shortcuts.md` rows for `P` and `V` true, since neith
 | 11 | `setTool` (sidebar, palette, Paste, Select all) clears `heldTool`. The pending release is then a no-op | An explicit choice beats a held key | Reverting anyway on keyup |
 | 12 | A tool key for the **already active** tool, with no hold running, starts no hold. It runs the tool's `reselectCommand` if it has one, and otherwise does nothing. This lives in the tool command's `hold.press` | Nothing to hand back, and it is exactly the "press again" gesture | Recording a hold that restores the same tool |
 | 13 | **`P` again = `tool.cycleBrushSize`.** `pencilTool.reselectCommand = "tool.cycleBrushSize"`. It fires once per physical press, because `useShortcuts` already drops non-repeatable repeats. Holding `P` from another tool is a normal hold | The command exists and only lacks a key. Declaring it on the tool keeps "tool keys live on the tool". It can't be an `APP_SHORTCUTS` entry, because `p` is already `tool.pencil` and the uniqueness test forbids a second binding | A `{key:"p"}` app shortcut (chord clash) |
-| 14 | **Settled by the maintainer.** `cycleBrushSize` wraps any size of `MAX_CYCLE_BRUSH_SIZE` or more to 1: `size >= MAX_CYCLE_BRUSH_SIZE ? 1 : size + 1` | `(size % 4) + 1` sends 6→3 and 8→1 | Leaving it. Cycling through every `BRUSH_SIZES` entry |
+| 14 | **Revised by the maintainer (2026-10-01).** `cycleBrushSize` steps to the next `BRUSH_SIZES` entry above the current size, wrapping 8 to 1: 1→2→3→4→6→8→1 | Every size the options bar offers is reachable from the keyboard. The earlier cap at 4 left 6 and 8 unreachable | Wrapping sizes of 4 or more to 1. `(size % 4) + 1` |
 | 15 | **Settled by the maintainer. `V` is a plain app command, `tool.toggleMirror`** ("Mirror horizontally", group `Tools`), bound to `{key:"v"}` in `APP_SHORTCUTS`. `isEnabled` is true when the active tool declares the `"mirror"` option (today only the pencil). `run` toggles `mirrorHorizontal` through `setToolOptions`, which is exactly what the options-bar button does. It has no `hold` and doesn't spring back | Matches today's mirror behaviour, with no new tool, factory, icon or preview change. When disabled, `useShortcuts` leaves the key alone. `v` and `mod+v` are different chords, so paste is unaffected | A separate Mirror pencil tool. `V` also switching to the pencil |
 | 16 | Repeats and keydowns in typing targets are ignored, as `useShortcuts` does today. Keyup and blur are **not** filtered by target | A release that lands after focus moved into a field must still resolve | Filtering keyup too |
 | 17 | Cheat sheet, leading **Tools** section:<br>• After the Pencil row comes "Cycle brush size" / "P again" (`reselectKeys(tool)`).<br>• "Mirror horizontally" / `V` comes from the command's group automatically.<br>• At the end comes "Use a tool until you let go" / "Hold tool key" (`TOOL_KEY_HOLD_HINT`, exported next to the tool commands).<br>• The picker row loses "Hold ⌥" | Hints live next to their code | "Hold X" on every row |
@@ -124,7 +124,7 @@ export interface HeldTool {
 }
 // ToolSlice: + heldTool, holdToolKey(toolId, press), releaseToolKey(code, at), dropHeldTool()
 //            setTool also clears heldTool; setTool and the tap path share `withoutMirror(options)`
-//            cycleBrushSize wraps sizes >= MAX_CYCLE_BRUSH_SIZE to 1
+//            cycleBrushSize steps to the next BRUSH_SIZES entry, 8 wraps to 1
 //            − previousToolId, pushTemporaryTool, popTemporaryTool
 
 // src/commands/keymap.ts: − HELD_TOOL_KEYS, − toolKeys; +
@@ -195,7 +195,7 @@ cleanup:     remove listeners; cancel any still-pressed holds (a registry change
 - `src/stores/slices/toolSlice.ts`:
   - Add the `heldTool` state and `holdToolKey` / `releaseToolKey` / `dropHeldTool`.
   - `setTool` clears `heldTool`, and `withoutMirror` is extracted for it and the tap path to share.
-  - `cycleBrushSize` wraps sizes of 4 or more to 1.
+  - `cycleBrushSize` steps through every `BRUSH_SIZES` entry; 8 wraps to 1.
   - Remove `previousToolId`, `pushTemporaryTool` and `popTemporaryTool`.
 
   Serves 1–4, 7, 8.
@@ -237,7 +237,7 @@ Unit (`npm test`):
   5. A foreign code release is a no-op.
   6. `dropHeldTool` restores.
   7. `setTool` mid-hold clears the hold.
-  8. `cycleBrushSize` from 4, 6 and 8 → 1, and from 1, 2 and 3 → the next size.
+  8. `cycleBrushSize` walks 1→2→3→4→6→8→1.
 - `tests/unit/commands/toolCommands.test.ts` (new):
   - `hold.press` on the active tool with no hold runs its reselect command (pencil → brush size +1) and records no hold. Another tool without a reselect command does nothing.
   - `hold.press` from another tool calls `holdToolKey`.

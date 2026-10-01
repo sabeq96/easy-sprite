@@ -17,13 +17,23 @@ describe("tool commands", () => {
     expect(store.getState().heldTool).toBeNull();
   });
 
-  it("pressing the active eraser's key again does nothing", () => {
+  it("pressing the active eraser's key again cycles the brush size and holds nothing", () => {
     const { store, commands } = setup();
     store.getState().setTool("eraser");
 
     commands["tool.eraser"]?.hold?.press({ code: "KeyE", at: 0 });
 
     expect(store.getState()).toMatchObject({ toolId: "eraser", heldTool: null });
+    expect(store.getState().toolOptions.brushSize).toBe(2);
+  });
+
+  it("pressing the active picker's key again does nothing", () => {
+    const { store, commands } = setup();
+    store.getState().setTool("picker");
+
+    commands["tool.picker"]?.hold?.press({ code: "KeyO", at: 0 });
+
+    expect(store.getState()).toMatchObject({ toolId: "picker", heldTool: null });
     expect(store.getState().toolOptions.brushSize).toBe(1);
   });
 

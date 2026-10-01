@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { TOOL_KEY_HOLD_MS } from "@/constants/shortcuts";
+import { BRUSH_SIZES } from "@/constants/tools";
 import { createTestStore } from "@test/store";
 
 describe("toolSlice", () => {
@@ -110,22 +111,24 @@ describe("toolSlice", () => {
     expect(store.getState().toolOptions.mirrorHorizontal).toBe(true);
   });
 
-  it("cycleBrushSize wraps back to 1 after the cycle cap", () => {
+  it("cycleBrushSize steps through every brush size and wraps back to 1", () => {
     const store = createTestStore();
-    const sizes = [1, 2, 3, 4].map(() => {
+    const sizes = BRUSH_SIZES.map(() => {
       store.getState().cycleBrushSize();
       return store.getState().toolOptions.brushSize;
     });
-    expect(sizes).toEqual([2, 3, 4, 1]);
+    expect(sizes).toEqual([2, 3, 4, 6, 8, 1]);
   });
 
-  it("cycleBrushSize starts over from sizes past the cycle", () => {
-    for (const size of [6, 8]) {
-      const store = createTestStore();
-      store.getState().setToolOptions({ brushSize: size });
-      store.getState().cycleBrushSize();
-      expect(store.getState().toolOptions.brushSize).toBe(1);
-    }
+  it.each([
+    [4, 6],
+    [6, 8],
+    [8, 1],
+  ])("cycleBrushSize from %i goes to %i", (from, to) => {
+    const store = createTestStore();
+    store.getState().setToolOptions({ brushSize: from });
+    store.getState().cycleBrushSize();
+    expect(store.getState().toolOptions.brushSize).toBe(to);
   });
 
   it("setToolOptions merges a partial patch", () => {

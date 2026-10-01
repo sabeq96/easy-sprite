@@ -1,5 +1,5 @@
 import { TOOL_KEY_HOLD_MS } from "@/constants/shortcuts";
-import { DEFAULT_BRUSH_SIZE, MAX_CYCLE_BRUSH_SIZE } from "@/constants/tools";
+import { BRUSH_SIZES, DEFAULT_BRUSH_SIZE } from "@/constants/tools";
 import type { ToolId } from "@/editor/tools";
 import type { ToolOptions } from "@/editor/tools/types";
 import type { SliceCreator } from "@/stores/slices/types";
@@ -88,11 +88,15 @@ export const createToolSlice: SliceCreator<ToolSlice> = (set, get) => ({
     set(({ toolOptions }) => ({
       toolOptions: {
         ...toolOptions,
-        // Sizes past the cycle (6 and 8, from the options bar) start it over rather than landing mid-way.
-        brushSize: toolOptions.brushSize >= MAX_CYCLE_BRUSH_SIZE ? 1 : toolOptions.brushSize + 1,
+        brushSize: nextBrushSize(toolOptions.brushSize),
       },
     })),
 });
+
+/** The next of BRUSH_SIZES above `size`, wrapping from the largest back to the smallest. */
+function nextBrushSize(size: number): number {
+  return BRUSH_SIZES.find((candidate) => candidate > size) ?? BRUSH_SIZES[0];
+}
 
 function withoutMirror(options: ToolOptions): ToolOptions {
   return { ...options, mirrorHorizontal: false, mirrorVertical: false };

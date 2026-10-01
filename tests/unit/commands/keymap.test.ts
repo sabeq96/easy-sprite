@@ -29,7 +29,8 @@ describe("keymap", () => {
 
   it("labels a tool's press-again key only when it has something to reselect", () => {
     expect(reselectKeys(getTool("pencil"))).toEqual(commandKeys("tool.pencil").map((key) => `${key} again`));
-    expect(reselectKeys(getTool("eraser"))).toEqual([]);
+    expect(reselectKeys(getTool("eraser"))).toEqual(commandKeys("tool.eraser").map((key) => `${key} again`));
+    expect(reselectKeys(getTool("picker"))).toEqual([]);
   });
 
   it("binds V to the mirror toggle, apart from paste", () => {
