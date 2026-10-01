@@ -18,7 +18,6 @@ export interface ViewSlice {
   /** Last known container size, so zoom commands can clamp without a DOM read. */
   containerSize: Size;
   activeFrameId: string | null;
-  activeLayerId: string | null;
   /** Mirrors the preview player so the renderer can skip onion skin during playback. */
   isPlaying: boolean;
 
@@ -35,7 +34,6 @@ export interface ViewSlice {
   resetGrid: (gridSize: number) => void;
   setOnion: (patch: Partial<OnionConfig>) => void;
   setActiveFrame: (frameId: string) => void;
-  setActiveLayer: (layerId: string) => void;
   setPlaying: (isPlaying: boolean) => void;
 }
 
@@ -47,7 +45,6 @@ export const createViewSlice: SliceCreator<ViewSlice> = (set, get) => ({
   onion: { ...ONION_DEFAULT },
   containerSize: { width: 0, height: 0 },
   activeFrameId: null,
-  activeLayerId: null,
   isPlaying: false,
 
   setViewport: (viewport) => set({ viewport }),
@@ -81,6 +78,5 @@ export const createViewSlice: SliceCreator<ViewSlice> = (set, get) => ({
   resetGrid: (gridSize) => set({ gridSize, checkerSize: DEFAULT_CHECKER_SIZE }),
   setOnion: (patch) => set(({ onion }) => ({ onion: { ...onion, ...patch } })),
   setActiveFrame: (activeFrameId) => set({ activeFrameId }),
-  setActiveLayer: (activeLayerId) => set({ activeLayerId }),
   setPlaying: (isPlaying) => set({ isPlaying }),
 });

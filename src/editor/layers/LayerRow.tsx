@@ -1,8 +1,6 @@
 import { useState } from "react";
 import { Eye, EyeOff, Lock, LockOpen } from "lucide-react";
 import { useDocumentSession } from "@/app/DocumentProvider";
-import { LayerOpacityControl } from "@/components/editor/LayerOpacityControl";
-import { LayerThumbnail } from "@/components/editor/LayerThumbnail";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { setLayerPropsCommand } from "@/core/commands/layers";
@@ -10,6 +8,8 @@ import type { LayerModel } from "@/core/document";
 import { useCommandDispatch } from "@/hooks/useCommandDispatch";
 import { useSortableItem } from "@/hooks/useDnd";
 import { cn } from "@/lib/utils";
+import { LayerOpacityControl } from "./LayerOpacityControl";
+import { LayerThumbnail } from "./LayerThumbnail";
 
 export interface LayerRowProps {
   layer: LayerModel;

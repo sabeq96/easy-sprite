@@ -9,12 +9,6 @@ import {
   moveFrameCommand,
   removeFrameCommand,
 } from "@/core/commands/frames";
-import {
-  addLayerCommand,
-  duplicateLayerCommand,
-  mergeLayerDownCommand,
-  removeLayerCommand,
-} from "@/core/commands/layers";
 import { useCommandDispatch } from "@/hooks/useCommandDispatch";
 import { useToolHost } from "@/hooks/toolHost/ToolHostContext";
 import { useEditorStore } from "@/stores/useEditorStore";
@@ -41,70 +35,10 @@ export function useEditorCommands(): CommandRegistry {
     setActiveFrame(doc.frames[next].id);
   };
 
-  const stepLayer = (offset: number) => {
-    const { activeLayerId, setActiveLayer } = store.getState();
-    const index = doc.layerIndex(activeLayerId ?? "");
-    const next = index + offset;
-    if (next < 0 || next >= doc.layers.length) return;
-    setActiveLayer(doc.layers[next].id);
-  };
-
   return {
     ...createToolCommands(store),
     // The selection's copy, cut, paste, … are the select tool's own (see `Tool.commands`).
     ...createContributedCommands(toolHost),
-
-    "layer.add": {
-      id: "layer.add",
-      label: "New layer",
-      group: "Layers",
-      run: () => dispatch(() => addLayerCommand(doc, store.getState().activeLayerId ?? undefined)),
-    },
-    "layer.duplicate": {
-      id: "layer.duplicate",
-      label: "Duplicate layer",
-      group: "Layers",
-      isEnabled: () => store.getState().activeLayerId !== null,
-      run: () => {
-        const layerId = store.getState().activeLayerId;
-        if (layerId) dispatch(() => duplicateLayerCommand(doc, layerId));
-      },
-    },
-    "layer.delete": {
-      id: "layer.delete",
-      label: "Delete layer",
-      group: "Layers",
-      isEnabled: () => doc.layers.length > 1,
-      run: () => {
-        const layerId = store.getState().activeLayerId;
-        if (layerId) dispatch(() => removeLayerCommand(doc, layerId));
-      },
-    },
-    "layer.mergeDown": {
-      id: "layer.mergeDown",
-      label: "Merge layer down",
-      group: "Layers",
-      isEnabled: () => {
-        const layerId = store.getState().activeLayerId;
-        return layerId !== null && doc.layerIndex(layerId) > 0;
-      },
-      run: () => {
-        const layerId = store.getState().activeLayerId;
-        if (layerId) dispatch(() => mergeLayerDownCommand(doc, layerId));
-      },
-    },
-    "layer.selectAbove": {
-      id: "layer.selectAbove",
-      label: "Select layer above",
-      group: "Layers",
-      run: () => stepLayer(1),
-    },
-    "layer.selectBelow": {
-      id: "layer.selectBelow",
-      label: "Select layer below",
-      group: "Layers",
-      run: () => stepLayer(-1),
-    },
 
     "frame.add": {
       id: "frame.add",

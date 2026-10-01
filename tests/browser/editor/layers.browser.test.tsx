@@ -14,6 +14,7 @@ import {
 } from "@test/editor";
 import { settled } from "@test/dom";
 import { holdDrag, releaseDrag } from "@test/pointer";
+import { useLayersStore } from "@/editor/layers/api";
 import { usePaletteStore } from "@/editor/palette/api";
 
 const RED = { r: 255, g: 0, b: 0, a: 255 };
@@ -22,7 +23,7 @@ const BLUE = { r: 0, g: 0, b: 255, a: 255 };
 /** Layer names bottom-first, as the document stores them. */
 const layerNames = () => session().doc.layers.map((layer) => layer.name);
 const activeLayerName = () =>
-  session().doc.layers.find((layer) => layer.id === useEditorStore.getState().activeLayerId)?.name;
+  session().doc.layers.find((layer) => layer.id === useLayersStore.getState().activeLayerId)?.name;
 
 /** Layer 1 with a red pixel at (2,2), Layer 2 on top with a blue one at (5,5); Layer 2 active. */
 async function twoPaintedLayers(editor: Editor) {

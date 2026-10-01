@@ -4,7 +4,6 @@ import { useDocumentSession } from "@/app/DocumentProvider";
 import { DragBoard, type DragEndEvent } from "@/components/common/DragBoard";
 import { Panel } from "@/components/common/Panel";
 import { CommandButton } from "@/components/common/CommandButton";
-import { LayerDragPreview, LayerRow } from "@/components/editor/LayerRow";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { CommandId } from "@/commands/types";
 import { reorderLayerCommand } from "@/core/commands/layers";
@@ -14,6 +13,8 @@ import { useDropZone } from "@/hooks/useDnd";
 import { useDocumentSnapshot } from "@/hooks/useDocumentSnapshot";
 import { cn } from "@/lib/utils";
 import { useEditorStore } from "@/stores/useEditorStore";
+import { LayerDragPreview, LayerRow } from "./LayerRow";
+import { useLayersStore } from "./store";
 
 const ACTIONS: { command: CommandId; icon: LucideIcon }[] = [
   { command: "layer.add", icon: Plus },
@@ -27,9 +28,9 @@ export function LayersPanel() {
   const snapshot = useDocumentSnapshot(doc);
 
   const dispatch = useCommandDispatch();
-  const activeLayerId = useEditorStore((state) => state.activeLayerId);
+  const activeLayerId = useLayersStore((state) => state.activeLayerId);
   const activeFrameId = useEditorStore((state) => state.activeFrameId);
-  const setActiveLayer = useEditorStore((state) => state.setActiveLayer);
+  const setActiveLayer = useLayersStore((state) => state.setActiveLayer);
 
   // Rendered top-first: the topmost layer is the last entry in the underlying array.
   const displayLayers = [...snapshot.layers].reverse();

@@ -1,7 +1,7 @@
 import { Panel } from "@/components/common/Panel";
-import { LayersPanel } from "@/components/editor/LayersPanel";
 import { PreviewPanel } from "@/components/editor/PreviewPanel";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { LayersPanel } from "@/editor/layers/api";
 import { PalettePanel } from "@/editor/palette/api";
 
 export function RightSidebar() {

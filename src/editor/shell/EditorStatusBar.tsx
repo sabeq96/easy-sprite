@@ -1,6 +1,7 @@
 import { useDocumentSession } from "@/app/DocumentProvider";
 import { Panel } from "@/components/common/Panel";
 import { Separator } from "@/components/ui/separator";
+import { useLayersStore } from "@/editor/layers/api";
 import { useDocumentSnapshot } from "@/hooks/useDocumentSnapshot";
 import { rgbaToHex } from "@/lib/color";
 import { cn } from "@/lib/utils";
@@ -14,7 +15,7 @@ export function EditorStatusBar() {
   const position = useCursorStore((state) => state.position);
   const color = useCursorStore((state) => state.color);
   const activeFrameId = useEditorStore((state) => state.activeFrameId);
-  const activeLayerId = useEditorStore((state) => state.activeLayerId);
+  const activeLayerId = useLayersStore((state) => state.activeLayerId);
 
   const frameNumber =
     snapshot.frames.findIndex((frame) => frame.id === activeFrameId) + 1;

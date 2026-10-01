@@ -3,6 +3,7 @@ import { compositeFrame } from "@/core/composite";
 import type { SpriteDocument } from "@/core/document";
 import type { History } from "@/core/history";
 import type { CanvasRenderer } from "@/core/renderer";
+import { useLayersStore } from "@/editor/layers/api";
 import { createColorsAdapter } from "@/editor/palette/api";
 import { createHistoryAdapter } from "@/editor/shell/api";
 import type {
@@ -39,7 +40,8 @@ interface Target {
 
 /** The active layer and frame, as chosen in the panels; null before they are chosen. */
 function activeTarget(): Target | null {
-  const { activeLayerId, activeFrameId } = useEditorStore.getState();
+  const { activeLayerId } = useLayersStore.getState();
+  const { activeFrameId } = useEditorStore.getState();
   return activeLayerId && activeFrameId ? { layerId: activeLayerId, frameId: activeFrameId } : null;
 }
 

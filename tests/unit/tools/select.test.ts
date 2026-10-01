@@ -4,6 +4,7 @@ import type { CommandId, CommandRegistry } from "@/commands/types";
 import { getPixel, setPixel } from "@/core/buffer";
 import type { SpriteDocument } from "@/core/document";
 import { History, StrokeRecorder, type Command } from "@/core/history";
+import { useLayersStore } from "@/editor/layers/api";
 import type { PointerModifiers } from "@/framework/host";
 import type { ToolPoint } from "@/framework/tool";
 import { createToolHost, type DocumentToolHost } from "@/hooks/toolHost/createToolHost";
@@ -25,7 +26,8 @@ beforeEach(() => {
   doc = makeDocument();
   history = new History();
   resetEditorStores();
-  useEditorStore.setState({ toolId: "select", activeLayerId: "l1", activeFrameId: "f1" });
+  useEditorStore.setState({ toolId: "select", activeFrameId: "f1" });
+  useLayersStore.setState({ activeLayerId: "l1" });
   host = createToolHost({ doc, history });
   commands = createContributedCommands(host);
   stop = startToolLifecycle(host);

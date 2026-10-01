@@ -9,6 +9,7 @@ import { ToolSidebar } from "@/components/editor/ToolSidebar";
 import { CommandsProvider } from "@/commands/CommandsContext";
 import type { CommandRegistry } from "@/commands/types";
 import { useEditorCommands } from "@/commands/useEditorCommands";
+import { useActiveLayerGuard } from "@/editor/layers/api";
 import { EDITOR_MODULES } from "@/editor/modules";
 import { useColorHotkeys } from "@/editor/palette/api";
 import { useActiveTargets } from "@/hooks/useActiveTargets";
@@ -53,6 +54,7 @@ function EditorToolHost({ children }: { children: ReactNode }) {
 function EditorShell() {
   const [showHelp, setShowHelp] = useState(false);
 
+  useActiveLayerGuard();
   useActiveTargets();
   useColorHotkeys();
   useGridDefaults();

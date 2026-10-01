@@ -139,7 +139,7 @@ function EditorShell() {
    - Move the components and hooks, and the color commands.
    - `COLOR_HOTKEY_HINTS` → `module.hints`.
    - The `colors` adapter moves here.
-3. **layers.** `activeLayerId` → `layers/store.ts`. Move the components and the layer commands, and the layer half of `useActiveTargets`.
+3. ✅ **layers.** `activeLayerId` → `layers/store.ts`. Move the components and the layer commands, and the layer half of `useActiveTargets`.
 4. **frames.** `activeFrameId` → `frames/store.ts`. Move the components and the frame commands, and the frame half of `useActiveTargets` (then delete `useActiveTargets`).
 5. **animation.**
    - `onion` and `isPlaying` → `animation/store.ts`.
@@ -343,6 +343,55 @@ None. Decisions 1-5 were settled on 2026-10-01.
   color Right-drag". `docs/architecture.md` still names `usePaletteActions` and `usePalettes`
   as hooks; task 8 rewrites the docs.
 
+- **2026-10-01, Task 3: the store is `useLayersStore` (`LayersState`): `activeLayerId` and
+  `setActiveLayer`, unchanged from `viewSlice`, which loses both.** `layers/api.ts` exports
+  `LayersPanel` (shell's `RightSidebar`), `useLayersStore`, `useActiveLayerGuard` (shell's
+  `EditorShell`) and `module`. `LayerRow`, `LayerThumbnail`, `LayerOpacityControl`,
+  `commands.ts` and `store.ts` stay private. No selector helper (like the sketched
+  `activeFrameId(doc)`) was added: every reader keeps its own fallback, so behaviour is unchanged.
+  Readers outside the module, all through `@/editor/layers/api`: `shell/EditorStatusBar`
+  (selector hook), `shell/historyAdapter` and `hooks/toolHost/createToolHost` (`activeTarget()`,
+  `getState()`), and `hooks/usePointerPaint` (`resolveTarget`, `getState()`; this is the
+  surface's target). The two `activeTarget()` copies now read the layer from `useLayersStore`
+  and the frame from `useEditorStore`.
+- **2026-10-01, Task 3: `layer.add`, `layer.duplicate`, `layer.delete`, `layer.mergeDown`,
+  `layer.selectAbove` and `layer.selectBelow` are `layerCommands(ctx)` in `layers/commands.ts`.**
+  They use `ctx.doc` and `ctx.dispatch`, with the same labels, groups, `isEnabled` and bodies.
+  `useEditorCommands` loses them, its `stepLayer` and the `core/commands/layers` import. In the
+  merged registry the layer ids now come before `tool.*`; nothing visible reads registry order
+  for them (the sheet orders groups and rows by `SHORTCUTS`, and `toolsGroupCommands` only
+  keeps Tools-group ids).
+- **2026-10-01, Task 3: `useActiveTargets` keeps only the frame half and now returns `void`.**
+  Its `ActiveTargets` return value (`{ layerId, frameId }`) had no reader; keeping `layerId`
+  would have made `hooks/` read the layers store for nothing. `useActiveLayerGuard()` in
+  `layers/useActiveLayerGuard.ts` holds the layer half (same effect, same topmost-layer
+  default). `EditorShell` calls `useActiveLayerGuard()` then `useActiveTargets()`, the order the
+  one effect used to run them in.
+- **2026-10-01, Task 3: `EDITOR_MODULES` is `[palette, shell, layers]`.** Layers declares no
+  hints and no painters, so only commands join.
+- **2026-10-01, Task 3: tests.**
+  - The "tracks the active frame and layer" case in `tests/unit/stores/viewSlice.test.ts` was
+    split: the frame half stays there as "tracks the active frame"; the layer half is
+    "tracks the active layer" in the new `tests/unit/editor/layers/store.test.ts` (singleton
+    after `resetEditorStores()`, same expected value). The unit project goes from 322 to 323 tests.
+  - `resetEditorStores()` also resets `useLayersStore`.
+  - Setup that set `activeLayerId` on `useEditorStore` now sets it on `useLayersStore` from
+    `@/editor/layers/api`: `tests/unit/tools/select.test.ts` and
+    `tests/unit/commands/contributed.test.ts` (the frame stays on `useEditorStore`).
+  - Reads that changed store and nothing else: in `tests/support/editor.ts`, `openEditor()`'s
+    "active layer is not null" poll, `selectLayer()`'s active-name poll and `resolveCel()`'s
+    default layer; in `tests/browser/editor/layers.browser.test.tsx`, the `activeLayerName()`
+    helper. Every expected value is unchanged.
+- **2026-10-01, Task 3: verification beyond the suites.** A throwaway browser probe ran on this
+  tree and on `9a0775c` in a scratch worktree (then removed). It dumped all 42 buttons (name,
+  `aria-keyshortcuts`, disabled, `aria-pressed`) four times, the Layers panel text and the status
+  bar after each of: New layer (button), PgUp, PgUp, PgDn, PgDn, ⌘⇧N, ⌘E, Duplicate layer and
+  Delete layer (buttons); the four layer action tooltips; and the whole cheat sheet. The two
+  JSON dumps are byte-identical. The Layers group reads "New layer ⌘⇧N, Merge layer down ⌘E,
+  Select layer above PgUp, Select layer below PgDn". There is no layer menu or context menu to
+  compare. `docs/conventions.md` §1 still uses `<LayersPanel/>` as its `src/components/`
+  example; task 8 rewrites §1.
+
 ## Builder notes (from task 1, for tasks 2–8)
 
 - **Plugging in a module.**
@@ -359,3 +408,16 @@ None. Decisions 1-5 were settled on 2026-10-01.
 - **Unit tests load `api.ts` whole (from task 2).** Any `createToolHost` or support import of an `api.ts` also loads that module's panels. jsdom gaps (like `ResizeObserver`, now stubbed) surface as import failures in unrelated unit files. Stub them in `tests/support/setup.unit.ts`.
 - **`dexie-react-hooks` in modules (from task 2).** Decision 10's `dexie*` bans `useLiveQuery` inside `src/editor/*/**`. `palette/usePalettes.ts` carries the one disable comment. If the maintainer narrows the rule, remove it.
 - **Lint, decided by the maintainer's session (task 2):** in module `.ts` files (hooks), the database ban is `@/db/db` + `dexie` only, the same as `src/hooks/**`, so `dexie-react-hooks` (`useLiveQuery`) is allowed. Module `.tsx` files keep `dexie*`. The disable comment in `palette/usePalettes.ts` is removed.
+- **Active targets (from task 3).** The active layer lives in `useLayersStore`; the active frame
+  is still `useEditorStore.activeFrameId`. Task 4 must update the frame half of: both
+  `activeTarget()` copies (`shell/historyAdapter.ts`, `hooks/toolHost/createToolHost.ts`),
+  `usePointerPaint`'s `resolveTarget`, `EditorStatusBar`, and `layers/LayersPanel.tsx` (which
+  reads `activeFrameId` for its thumbnails). `useActiveTargets` is now frame-only and returns
+  `void`; task 4 replaces it with a frames guard next to `useActiveLayerGuard()` in `EditorShell`.
+- **Cycles between module APIs (from task 3).** Once `LayersPanel` imports `@/editor/frames/api`,
+  nothing that `frames/api.ts` reaches may import `@/editor/layers/api`, or `import/no-cycle`
+  fails. Run `npm run lint` after adding any cross-module import.
+- **UI probe (from task 3).** Vitest hides `console.log` from passing browser tests; run a
+  throwaway probe with `--silent=false`. Hover a disabled `CommandButton`'s tooltip through its
+  wrapper span (`button.parentElement`, `{ force: true }`), and read the text from
+  `[data-slot="tooltip-content"]`.

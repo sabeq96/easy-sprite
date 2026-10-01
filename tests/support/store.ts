@@ -1,4 +1,5 @@
 import { create, type StoreApi } from "zustand";
+import { useLayersStore } from "@/editor/layers/api";
 import { usePaletteStore } from "@/editor/palette/api";
 import { createSettingsSlice } from "@/stores/slices/settingsSlice";
 import { createToolSlice } from "@/stores/slices/toolSlice";
@@ -23,4 +24,5 @@ function reset<T>(store: StoreApi<T>): void {
 export function resetEditorStores(): void {
   reset(useEditorStore);
   reset(usePaletteStore);
+  reset(useLayersStore);
 }

@@ -4,6 +4,7 @@ import type { HintSection } from "@/commands/hints";
 import { compositeFrame } from "@/core/composite";
 import { StrokeRecorder } from "@/core/history";
 import type { CanvasRenderer } from "@/core/renderer";
+import { useLayersStore } from "@/editor/layers/api";
 import { getTool } from "@/tools";
 import type { ColorSlot, Gesture, PointerModifiers, Surface, ToolHost } from "@/framework/host";
 import type { Tool, ToolPoint } from "@/framework/tool";
@@ -58,9 +59,8 @@ export function usePointerPaint(
 
     /** The layer and frame a stroke lands on; null when drawing there is a no-op. */
     const resolveTarget = () => {
-      const state = useEditorStore.getState();
-      const layerId = state.activeLayerId ?? doc.layers.at(-1)?.id;
-      const frameId = state.activeFrameId ?? doc.frames[0]?.id;
+      const layerId = useLayersStore.getState().activeLayerId ?? doc.layers.at(-1)?.id;
+      const frameId = useEditorStore.getState().activeFrameId ?? doc.frames[0]?.id;
       if (!layerId || !frameId) return null;
 
       const layer = doc.getLayer(layerId);

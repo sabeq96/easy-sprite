@@ -6,6 +6,7 @@ import { createSprite } from "@/db/repositories/sprites";
 import { getPixel } from "@/core/buffer";
 import { compositeFrame } from "@/core/composite";
 import type { Point } from "@/core/viewport";
+import { useLayersStore } from "@/editor/layers/api";
 import { usePaletteStore } from "@/editor/palette/api";
 import { IS_APPLE } from "@/lib/keys";
 import { useEditorStore } from "@/stores/useEditorStore";
@@ -53,7 +54,7 @@ export async function openEditor({ width = 16, height = 16 } = {}) {
   // The first fit can land before the layout settles; wait for a scale that makes one sprite
   // pixel at least a few screen pixels, so every aimed point hits exactly one pixel.
   await expect.poll(() => useEditorStore.getState().viewport.scale).toBeGreaterThanOrEqual(4);
-  await expect.poll(() => useEditorStore.getState().activeLayerId).not.toBeNull();
+  await expect.poll(() => useLayersStore.getState().activeLayerId).not.toBeNull();
 
   const canvas = canvasLocator.element();
   const viewport = () => useEditorStore.getState().viewport;
@@ -88,7 +89,7 @@ export async function selectLayer(editor: Editor, name: string): Promise<void> {
   const { screen } = editor;
   await userEvent.click(screen.getByRole("button", { name, exact: true }));
   await expect
-    .poll(() => session().doc.layers.find((layer) => layer.id === useEditorStore.getState().activeLayerId)?.name)
+    .poll(() => session().doc.layers.find((layer) => layer.id === useLayersStore.getState().activeLayerId)?.name)
     .toBe(name);
 }
 
@@ -130,9 +131,8 @@ export interface CelTarget {
 
 function resolveCel({ layer, frame }: CelTarget) {
   const { doc } = session();
-  const state = useEditorStore.getState();
-  const layerId = layer === undefined ? state.activeLayerId! : doc.layers[layer].id;
-  const frameId = frame === undefined ? state.activeFrameId! : doc.frames[frame].id;
+  const layerId = layer === undefined ? useLayersStore.getState().activeLayerId! : doc.layers[layer].id;
+  const frameId = frame === undefined ? useEditorStore.getState().activeFrameId! : doc.frames[frame].id;
   return { doc, cel: doc.getCel(layerId, frameId) };
 }
 
