@@ -12,12 +12,15 @@ Before writing anything, answer one question: *what does it depend on?*
 | is a literal value with no logic | `src/constants/` | `MAX_ZOOM`, `DEFAULT_FPS`, `BRUSH_SIZES` |
 | is a pure function of its arguments | `src/lib/` | `hexToRgba()`, `rectUnion()`, `clamp()` |
 | manipulates pixels/documents, no React, no DB | `src/core/` | `floodFill()`, `SpriteDocument` |
+| is a tool (reads the host only through `ToolHost`) | `src/tools/<folder>/tool.ts` | `pencilTool`, `selectTool` |
+| is a tool option | a setting in that tool's `settings` (`choice`, `toggle`, `switch`) | the pencil's `size`, `mirrorHorizontal` |
+| belongs to one pixel-editor domain: its UI, state, commands, hints or painters | that host module, `src/editor/<domain>/` ([architecture.md §11](architecture.md)) | `<LayersPanel/>`, `FRAME_COMMANDS`, `useViewStore`, `attachGrid()` |
 | talks to IndexedDB | `src/db/repositories/` | `duplicateSprite()` |
-| wires the DB to the editor core | `src/services/` | `autosave.ts`, `documentService.ts` |
-| is cross-component UI state | `src/stores/` | active tool, primary color, zoom |
-| bridges React to a non-React source | `src/hooks/` | `useDocumentRevision()` |
-| is a user action that writes data | `src/hooks/use<Domain>Actions.ts` | `useSpriteActions().duplicate` |
-| renders DOM | `src/components/` | `<LayersPanel/>` |
+| wires the DB to the core | `src/services/` | `autosave.ts`, `documentService.ts` |
+| is UI state of the library, builder or settings | `src/stores/` | `useBuilderViewStore`, the theme |
+| bridges React to a non-React source, for several surfaces | `src/hooks/` | `useDocumentRevision()` |
+| is a user action that writes data | `src/hooks/use<Domain>Actions.ts`, or the editor module that owns the domain | `useSpriteActions().duplicate`, `editor/palette/usePaletteActions` |
+| renders DOM for the library, builder or settings, or for several surfaces | `src/components/<surface>/`, or `src/components/common/` when shared | `<SpriteCard/>`, `<CommandButton/>` |
 
 Two rules resolve almost every "where should this live" argument:
 
@@ -25,7 +28,8 @@ Two rules resolve almost every "where should this live" argument:
    a sequence of named calls. Colocate it with its only caller first; promote it to `lib/` (with
    a unit test) the moment a second caller needs it.
 2. **If two components need it, it is not component state.** Lift it to a store or a hook — never
-   to prop-drilling through three levels.
+   to prop-drilling through three levels. In the pixel editor that store is the owning module's
+   `store.ts`; a component in another module reads it through that module's `api.ts`.
 
 ## 2. Size: review heuristics, not limits
 
@@ -46,18 +50,21 @@ an arbitrary line.
 ```
 Components         PascalCase.tsx           LayersPanel.tsx
 Hooks              useThing.ts              useAnimationPlayer.ts
-Stores             useXStore.ts             useEditorStore.ts
+Stores             useXStore.ts             useBuilderViewStore.ts
+Module stores      store.ts → useXStore     editor/view/store.ts → useViewStore
+Module files       api.ts, module.ts,       editor/frames/module.ts → framesModule
+                   commands.ts
 Core classes       PascalCase.ts            SpriteDocument (document.ts)
 Utils / modules    camelCase                color.ts, paletteSort.ts
 Constants          SCREAMING_SNAKE          DEFAULT_CANVAS_SIZE
-Types              PascalCase               CelKey, ToolContext
+Types              PascalCase               CelKey, ToolHost
 Booleans           is/has/should/can        isDirty, hasSelection
 Event handlers     handleX (local), onX (prop)
 Async that hits DB verbs: load/save/create/duplicate/remove
 ```
 
 Types over interfaces for unions and aliases; `interface` for object shapes that get extended
-(`Tool`, `ToolContext`). Always `import type { … }` for type-only imports — `verbatimModuleSyntax`
+(`Tool`, `ToolHost`). Always `import type { … }` for type-only imports — `verbatimModuleSyntax`
 is on and will error otherwise.
 
 Two compiler settings shape how classes are written in this repo:
@@ -84,10 +91,17 @@ If a value needs computing, it is a `lib/` function, not a constant.
 ## 5. Modules and barrels
 
 - Import from the file, not from a barrel: `import { floodFill } from '@/core/pixels'`.
-- The **only** barrels allowed are registries where the collection itself is the API:
-  `core/tools/index.ts` is the only one today.
+- Two kinds of barrel are allowed, and nothing else:
+  - **registries**, where the collection itself is the API: `tools/index.ts` is the only one
+    today;
+  - **an editor module's `api.ts`**, its public face. It re-exports by choice only what other
+    modules use (the components the shell places, store hooks, ToolHost adapters, and the
+    module as `module`), never the whole folder. Other modules import `@/editor/<m>/api` and
+    nothing deeper; lint enforces it. Treat every new `api.ts` export as an interface change.
+
   Everywhere else barrels create import cycles and defeat tree-shaking.
-- Always use the `@/` alias. Relative imports only within the same folder (`./pixels`).
+- Always use the `@/` alias. Relative imports only within the same folder (`./pixels`), or, in an
+  editor module or a tool folder, into its own subfolders (`./toolHost/surface`). Never `../`.
 - One concept per file. `pixels.ts` exporting `plot`, `line`, `floodFill` is one concept
   (pixel primitives). A file exporting `floodFill` and `LayersPanel` is not.
 
@@ -99,8 +113,10 @@ The React Compiler is enabled in `vite.config.ts`.
   memoisation; hand-written memos add noise and can defeat it. Exception: a value passed into a
   non-React system (a renderer, an event listener) where identity is load-bearing — comment why.
 - Components receive data via props or hooks, never by reaching into the document/renderer
-  directly. Only `<EditorCanvas/>` talks to the `CanvasRenderer`; other canvases (thumbnails,
-  previews, strips) are painted by a hook such as `useThumbnailCanvas` or `useSpriteStripCanvas`.
+  directly. Only the `canvas` module (`<EditorCanvas/>` and its hooks) holds the `CanvasRenderer`;
+  other modules reach it only through their `attachCanvas` painters, and tools through
+  `ToolHost.canvas`. Other canvases (thumbnails, previews, strips) are painted by a hook such as
+  `useThumbnailCanvas` or `useSpriteStripCanvas`.
 - No `useEffect` for derived state. Effects are for subscriptions, imperative sync, and cleanup.
   To reset state when a prop changes, adjust it during render or remount with a `key`.
 - Every list that can change gets a stable `key` from a domain id — never an array index (frames
@@ -189,7 +205,7 @@ A hook returns either a value, or one object with a flat, named API — never a 
 of more than two.
 
 ```ts
-// src/hooks/useAnimationPlayer.ts
+// src/editor/animation/useAnimationPlayer.ts
 export interface AnimationPlayer {
   isPlaying: boolean;
   frameIndex: number;
@@ -231,13 +247,40 @@ Comment *why*, never *what*. The code says what. Three places where a comment is
 The source of truth is [`.oxlintrc.json`](../.oxlintrc.json) — read it rather than a copy here,
 which would drift. What it enforces, in intent:
 
-- **Layer boundaries** (`no-restricted-imports` overrides per folder): `core/` is framework-free;
-  `db/` never imports the editor or UI; `lib/` and `constants/` are pure; `services/`, `export/`
-  and `stores/` never import React code; `commands/` never reach the database or components; `types/`
-  holds types only; `hooks/` never touch the raw Dexie instance or import components; `components/` never import `db/`, `services/`, `export/` or Dexie (type-only
-  imports allowed). The table in [architecture.md §9](architecture.md) marks which edges these
-  cover.
-- **Hooks and imports**: `rules-of-hooks`, `consistent-type-imports`, `no-explicit-any`, `import/no-cycle`.
+- **Layer boundaries** (`no-restricted-imports` overrides per folder):
+  - `core/` is framework-free (no React, zustand, Dexie, UI, `db/`, `services/` or `app/`), and
+    never imports `framework/` or `tools/`.
+  - `framework/` holds types and tiny pure helpers: no components, hooks, app or React runtime
+    (type-only imports allowed).
+  - A tool folder (`tools/<folder>/`, `shared/` included) never imports host state or data
+    (`db/`, `services/`, `export/`, Dexie, `stores/`, `app/`, `hooks/`) or the concrete core
+    (`core/document`, `core/history`, `core/renderer`: it uses `ToolHost` instead). It imports
+    `commands/` for types only, and never imports another tool, the registry or `../` (code
+    shared between tools goes in `tools/shared/`).
+  - An editor module (`src/editor/<m>/**`) reaches another module only through
+    `@/editor/<m>/api` (plus `@/editor/module` and `@/editor/modules`), never with `../`. It
+    never imports `@/db/db` or `dexie`, and imports tools only through the registry. Its `.ts`
+    files may use `db/repositories`, `services/`, `export/` and `dexie-react-hooks` (the
+    module's hooks); its `.tsx` files may not (type-only imports allowed). `src/editor/module.ts`
+    and `modules.ts` sit outside that glob.
+  - `commands/`, `hooks/`, `components/`, `stores/` and `app/` import tools only through the
+    registry (`@/tools`), never a file inside a tool's folder.
+  - `db/` never imports the core or UI; `lib/` and `constants/` are pure; `services/`, `export/`
+    and `stores/` never import React code; `commands/` never reach the database or components;
+    `types/` holds types only; `hooks/` never touch the raw Dexie instance or import components;
+    `components/` never import `db/`, `services/`, `export/` or Dexie (type-only imports allowed).
+
+  In oxlint a `*` in a group does not cross `/`, so every group is written with `/**`
+  (`@/components/**`), which blocks nested paths too, and `!` negations narrow it. A later
+  override replaces an earlier one's
+  `no-restricted-imports` for the same file rather than merging, which is why the editor's
+  `.tsx` override repeats the module groups. The table in [architecture.md §9](architecture.md)
+  marks which edges these cover.
+- **Hooks and imports**: `rules-of-hooks`, `consistent-type-imports`, `no-explicit-any`,
+  `import/no-cycle`. The cycle rule is what keeps editor modules honest: run `npm run lint` after
+  adding a cross-module import ([architecture.md §11](architecture.md)).
+- **Fast refresh**: `only-export-components` warns (it does not fail) when a component file
+  exports something else; the ten warnings in `components/ui/` and `app/` are known.
 - **Design system**: `shadcn/no-restyle` — a `ui/` component is never restyled inline; add a
   variant to its `cva` config instead (§6b).
 

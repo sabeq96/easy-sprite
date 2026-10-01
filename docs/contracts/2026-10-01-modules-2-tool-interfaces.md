@@ -270,15 +270,16 @@ Command: `npm run lint && npm run build && npm run test:coverage`
 
 ## Done when
 
-- [ ] 1. `grep -rnE "SpriteDocument|StrokeRecorder|History|useEditorStore|layerId|frameId" src/tools` is empty.
-- [ ] 2. `ToolContext` and `ToolSession` no longer exist. Every tool callback takes `(host, …)`.
-- [ ] 3. `grep -rn "export const selection\|@/core/selection\|@/core/clipboard\|@/core/commands/selection" src tests` is empty. `edit.copy` and the other five ids are defined only in `src/tools/select/`.
-- [ ] 4. Drawing, erasing, fills, picker (left and right button), selection, move, ⌘-drag duplicate, copy/cut/paste/delete/select all/deselect, and undo/redo behave exactly as before.
-- [ ] 5. `<CommandButton command="edit.copyy" />` is a type error, and lint rejects `import "@/tools/select/tool"` from `src/commands/useEditorCommands.ts` (probe both, then revert).
-- [ ] 6. The command above passes.
+- [x] 1. `grep -rnE "SpriteDocument|StrokeRecorder|History|useEditorStore|layerId|frameId" src/tools` is empty.
+- [x] 2. `ToolContext` and `ToolSession` no longer exist. Every tool callback takes `(host, …)`.
+- [x] 3. `grep -rn "export const selection\|@/core/selection\|@/core/clipboard\|@/core/commands/selection" src tests` is empty. `edit.copy` and the other five ids are defined only in `src/tools/select/`.
+- [x] 4. Drawing, erasing, fills, picker (left and right button), selection, move, ⌘-drag duplicate, copy/cut/paste/delete/select all/deselect, and undo/redo behave exactly as before. Verified by the unchanged browser suites; the locked-layer, no-op-edit and empty-cel edge cases are in the Drift log.
+- [x] 5. `<CommandButton command="edit.copyy" />` is a type error, and lint rejects `import "@/tools/select/tool"` from `src/commands/useEditorCommands.ts` (probe both, then revert).
+- [x] 6. The command above passes.
 
 ## Open risks
 
+- **oxlint globs (found in stage 1):** a `*` in a `no-restricted-imports` group does not cross `/`. Write every pattern in this contract with `/**` (`@/tools/**`, `@/editor/*/**`, `../**`), keep `!` negations, and prove each rule with a lint probe.
 - Derived `ContributedCommandId` through `const` generics in a heterogeneous `TOOL_LIST`
   tuple. Fallback: each tool exports its ids as a `const` tuple from its own folder. Log it.
 - `history.edit` for Paste must push exactly one entry, with the label "Paste", and keep
@@ -291,3 +292,72 @@ Command: `npm run lint && npm run build && npm run test:coverage`
 None. Decisions 1 and 2 were settled on 2026-10-01, and the rest follow from them.
 
 ## Drift log
+
+- **2026-10-01, one host per document, one view per tool (Decision 3, 12).** `tool.activate()`
+  has to know which tool is calling, and one shared object cannot. So `createToolHost` returns a
+  `DocumentToolHost` (`forTool(toolId): ToolHost`, `attachRenderer(r)`), and every callback and
+  contributed command gets `forTool(tool.id)`: the same `colors`, `canvas`, `document` and
+  `history` objects, with only `tool` bound to that tool. The view is cached, so a tool always
+  sees the same `ToolHost`. `ToolHostProvider` and `useToolHost()` carry the `DocumentToolHost`,
+  not a bare `ToolHost`. The provider is a small `EditorToolHost` wrapper in `EditorPage.tsx`
+  around `EditorShell`, because `useEditorCommands` runs in the shell and needs the provider
+  above it.
+- **2026-10-01, the canvas adapter remembers the overlay (Decision 12).** `canvas.setOverlay`
+  stores its painter and `attachRenderer` re-applies it, so the order of `EditorCanvas`'s attach
+  effect and the tool lifecycle effect doesn't matter. `requestRender` is a no-op before attach,
+  as agreed.
+- **2026-10-01, `ContributedCommandId` (Open risk 2: not hit).** It is derived from `TOOL_LIST`
+  through `defineTool`'s `const C` generic (`T extends Tool<string, infer C>`), so no fallback
+  was needed. One TS limit: a command handler with an untyped `host` parameter is
+  context-sensitive, and TS then drops the tuple inference to the `readonly []` default. So
+  the select tool's handlers that take the host annotate it (`run(host: ToolHost)`). `createFill`
+  lost its `: Tool<Id>` return annotation, because the wide default `C` would widen the id union
+  to `string`. `contributed.test.ts` pins the derived union with `expectTypeOf` (checked by
+  `tsc -b`).
+- **2026-10-01, a read-only `selectedRect()` export (Decision 11).** `selection` is gone, but
+  the browser suite `tests/browser/tools/select.browser.test.tsx` asserts the exact selected
+  rectangle, and nothing in the app exposes it. `src/tools/select/tool.ts` exports
+  `selectedRect(): Rect | null` (read-only; Decision 13's lint keeps the host from importing it).
+  In that browser file the import changed, and its ten `selection.get()` calls became
+  `selectedRect()`. Every expected value is unchanged. The unit tests use it for geometry too,
+  and cover copy, paste, deselect, `isEnabled` and the undo count through the commands.
+- **2026-10-01, `history.edit` is a recorder, so a no-op edit records nothing.** Cut, delete and
+  paste now go through a `StrokeRecorder`, like strokes. Labels ("Cut", "Delete", "Paste") and
+  one entry per edit are kept. But an edit that changes no pixel now pushes nothing, where the
+  old hand-built commands pushed an inert entry: deleting an already-empty selection, or pasting
+  the identical pixels back. Paste still activates the select tool and selects the region in
+  that case (`edit` returns true for an editable target).
+- **2026-10-01, edge cases that follow from Decisions 2, 5 and 6.**
+  - Cut, delete and paste now do nothing on a locked or hidden layer (Decision 5). Before, they
+    edited it.
+  - Copy of a never-painted cel now copies transparent pixels (Decision 6, "transparent where
+    empty"). Before, it left the clipboard alone.
+  - In "active layer" mode, the picker on a never-painted cel now picks transparent
+    (`Surface.read`, Decision 2). Before, it did nothing. On a painted cel's empty pixel it
+    already picked transparent.
+  - A stroke's surface is pinned at pointerdown (Data flow). The pipeline no longer re-checks the
+    layer's lock or visibility on every move, so the whole stroke lands on the cel it started on.
+- **2026-10-01, `commitWrite` removed.** It would have been `surface.commit(dirty)` under another
+  name, so tools call `surface.commit` directly, as in the Interfaces sketches. `writePixel`,
+  `stamp` and `stampLine` take a `Surface`.
+- **2026-10-01, `PointerModifiers` and `ToolOptions` moved to `framework/host.ts`.** `Gesture`
+  and `ToolControl` need them, and `tool.ts` imports `host.ts`. Keeping them in `tool.ts` would
+  make a type cycle. `stores/slices/toolSlice.ts` now imports `ToolOptions` from there.
+- **2026-10-01, `startToolLifecycle` extracted.** `useToolLifecycle.ts` exports the React-free
+  `startToolLifecycle(host, onDeactivate)`, which the hook calls. The unit tests use it, so
+  "paste activates select before selecting" runs through the real synchronous subscription.
+- **2026-10-01, lint.** In oxlint, a later override that sets `no-restricted-imports` replaces an
+  earlier one for the same file rather than merging (probed). So the tools group
+  (`@/tools/**` with `!@/tools/index`) went into the existing `components`, `hooks` and
+  `commands` overrides. A new `src/app/**` override was added. The shared
+  `services/export/stores` override was split, so `stores/` gets the tools group and
+  `services/` and `export/` keep exactly their old rule. Each new pattern was probed: a deep
+  import is rejected from each of the five host folders, `@/tools` and `@/tools/index` pass,
+  `@/core/document|history|renderer` are rejected in a tool folder, and `@/core/buffer` passes.
+- **2026-10-01, files outside the list.**
+  - `src/core/renderer.ts`: one comment named `ToolSession.setOverlay`.
+  - `src/stores/slices/toolSlice.ts`: the `ToolOptions` import.
+  - `tests/unit/toolHost/surface.test.ts`, `tests/unit/tools/select/region.test.ts` and
+    `tests/unit/commands/contributed.test.ts`: as planned.
+  - `tests/unit/core/selection.test.ts`: deleted (moved).
+  - `docs/conventions.md` §3 and §10: the naming examples, and the lint summary for Decision 13.

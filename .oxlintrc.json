@@ -27,14 +27,78 @@
                   "dexie-react-hooks",
                   "zustand",
                   "lucide-react",
-                  "@/components/*",
-                  "@/hooks/*",
-                  "@/stores/*",
-                  "@/db/*",
-                  "@/app/*",
-                  "@/services/*"
+                  "@/components/**",
+                  "@/hooks/**",
+                  "@/stores/**",
+                  "@/db/**",
+                  "@/app/**",
+                  "@/services/**",
+                  "@/framework/**",
+                  "@/tools",
+                  "@/tools/**",
+                  "@/editor",
+                  "@/editor/**"
                 ],
-                "message": "src/core/** is framework-free: no React, no Dexie, no UI, no DB imports."
+                "message": "src/core/** is framework-free: no React, no Dexie, no UI, no DB, and no framework/, tools/ or editor/ (host module) imports."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/framework/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@/components/**", "@/hooks/**", "@/app/**", "react", "react-dom"],
+                "allowTypeImports": true,
+                "message": "src/framework/** is the host-tool contract: types and tiny pure helpers, no components, hooks, app or React runtime. Type-only imports are fine."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/tools/*/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "@/db/**",
+                  "@/services/**",
+                  "@/export/**",
+                  "dexie",
+                  "dexie-react-hooks",
+                  "@/stores/**",
+                  "@/app/**",
+                  "@/hooks/**"
+                ],
+                "message": "A tool reaches the editor only through src/framework/: no host state, data or side effects."
+              },
+              {
+                "group": ["@/core/document", "@/core/history", "@/core/renderer"],
+                "message": "A tool reaches the document, undo history and renderer only through ToolHost (src/framework/host.ts)."
+              },
+              {
+                "group": ["@/commands/**"],
+                "allowTypeImports": true,
+                "message": "A tool may name commands by type only; it never runs host commands directly."
+              },
+              {
+                "group": ["@/tools", "@/tools/**", "!@/tools/shared/**"],
+                "message": "A tool folder never imports another tool or the registry; shared code lives in src/tools/shared/."
+              },
+              {
+                "group": ["../**"],
+                "message": "A tool folder is self-contained: import within it with ./, and anything else through @/."
               }
             ]
           }
@@ -49,8 +113,8 @@
           {
             "patterns": [
               {
-                "group": ["@/components/*", "@/core/*", "@/hooks/*", "@/app/*", "react", "react-dom"],
-                "message": "src/db/** must not depend on the UI or the editor core."
+                "group": ["@/components/**", "@/core/**", "@/hooks/**", "@/app/**", "react", "react-dom"],
+                "message": "src/db/** must not depend on the UI or the core."
               }
             ]
           }
@@ -65,7 +129,7 @@
           {
             "patterns": [
               {
-                "group": ["@/components/*", "@/core/*", "@/db/*", "@/hooks/*", "@/stores/*", "@/app/*", "react", "react-dom", "dexie"],
+                "group": ["@/components/**", "@/core/**", "@/db/**", "@/hooks/**", "@/stores/**", "@/app/**", "react", "react-dom", "dexie"],
                 "message": "src/lib/** and src/constants/** are pure: they may only import each other and types."
               }
             ]
@@ -84,14 +148,18 @@
             "patterns": [
               {
                 "group": [
-                  "@/db/*",
-                  "@/services/*",
-                  "@/export/*",
+                  "@/db/**",
+                  "@/services/**",
+                  "@/export/**",
                   "dexie",
                   "dexie-react-hooks"
                 ],
                 "allowTypeImports": true,
                 "message": "Components reach data and side effects through a hook in src/hooks/ (e.g. useSpriteActions). Type-only imports are fine."
+              },
+              {
+                "group": ["@/tools/**", "!@/tools/index"],
+                "message": "The host sees tools only through the registry (@/tools): never a file inside a tool's folder."
               }
             ]
           }
@@ -116,9 +184,13 @@
               },
               {
                 "group": [
-                  "@/components/*"
+                  "@/components/**"
                 ],
                 "message": "Hooks sit below components: move the shared piece into hooks/ or lib/."
+              },
+              {
+                "group": ["@/tools/**", "!@/tools/index"],
+                "message": "The host sees tools only through the registry (@/tools): never a file inside a tool's folder."
               }
             ]
           }
@@ -128,7 +200,30 @@
     {
       "files": [
         "src/services/**",
-        "src/export/**",
+        "src/export/**"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "@/components/**",
+                  "@/hooks/**",
+                  "@/app/**",
+                  "react",
+                  "react-dom"
+                ],
+                "message": "services/, export/ and stores/ sit below React: no components, hooks or app imports."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
         "src/stores/**"
       ],
       "rules": {
@@ -138,13 +233,17 @@
             "patterns": [
               {
                 "group": [
-                  "@/components/*",
-                  "@/hooks/*",
-                  "@/app/*",
+                  "@/components/**",
+                  "@/hooks/**",
+                  "@/app/**",
                   "react",
                   "react-dom"
                 ],
                 "message": "services/, export/ and stores/ sit below React: no components, hooks or app imports."
+              },
+              {
+                "group": ["@/tools/**", "!@/tools/index"],
+                "message": "The host sees tools only through the registry (@/tools): never a file inside a tool's folder."
               }
             ]
           }
@@ -162,13 +261,17 @@
             "patterns": [
               {
                 "group": [
-                  "@/components/*",
-                  "@/db/*",
-                  "@/services/*",
-                  "@/export/*",
+                  "@/components/**",
+                  "@/db/**",
+                  "@/services/**",
+                  "@/export/**",
                   "dexie"
                 ],
                 "message": "commands/ wires editor actions to keys and UI state; data goes through hooks."
+              },
+              {
+                "group": ["@/tools/**", "!@/tools/index"],
+                "message": "The host sees tools only through the registry (@/tools): never a file inside a tool's folder."
               }
             ]
           }
@@ -186,21 +289,100 @@
             "patterns": [
               {
                 "group": [
-                  "@/app/*",
-                  "@/commands/*",
-                  "@/components/*",
-                  "@/db/*",
-                  "@/core/*",
-                  "@/export/*",
-                  "@/hooks/*",
-                  "@/lib/*",
-                  "@/services/*",
-                  "@/stores/*",
+                  "@/app/**",
+                  "@/commands/**",
+                  "@/components/**",
+                  "@/db/**",
+                  "@/core/**",
+                  "@/export/**",
+                  "@/hooks/**",
+                  "@/lib/**",
+                  "@/services/**",
+                  "@/stores/**",
                   "react",
                   "dexie"
                 ],
                 "allowTypeImports": true,
                 "message": "src/types/** holds types only: it may import other types, never runtime code."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "src/app/**"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@/tools/**", "!@/tools/index"],
+                "message": "The host sees tools only through the registry (@/tools): never a file inside a tool's folder."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/editor/*/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@/editor/*/**", "!@/editor/*/api", "!@/editor/module", "!@/editor/modules"],
+                "message": "Another editor module is reached only through its api.ts (@/editor/<module>/api); within a module, import with ./."
+              },
+              {
+                "group": ["../**"],
+                "message": "An editor module is self-contained: import within it with ./, and anything else through @/."
+              },
+              {
+                "group": ["@/db/db", "dexie"],
+                "message": "Editor modules read the database through src/db/repositories/, never the raw Dexie instance."
+              },
+              {
+                "group": ["@/tools/**", "!@/tools/index"],
+                "message": "The host sees tools only through the registry (@/tools): never a file inside a tool's folder."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/editor/*/**/*.tsx"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@/editor/*/**", "!@/editor/*/api", "!@/editor/module", "!@/editor/modules"],
+                "message": "Another editor module is reached only through its api.ts (@/editor/<module>/api); within a module, import with ./."
+              },
+              {
+                "group": ["../**"],
+                "message": "An editor module is self-contained: import within it with ./, and anything else through @/."
+              },
+              {
+                "group": ["@/db/db", "dexie*"],
+                "message": "Editor modules read the database through src/db/repositories/, never the raw Dexie instance."
+              },
+              {
+                "group": ["@/tools/**", "!@/tools/index"],
+                "message": "The host sees tools only through the registry (@/tools): never a file inside a tool's folder."
+              },
+              {
+                "group": ["@/db/**", "@/services/**", "@/export/**"],
+                "allowTypeImports": true,
+                "message": "Components reach data and side effects through a hook (e.g. useSpriteActions). Type-only imports are fine."
               }
             ]
           }

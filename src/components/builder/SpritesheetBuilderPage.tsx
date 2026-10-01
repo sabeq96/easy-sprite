@@ -18,7 +18,7 @@ import { ShortcutHelpDialog } from "@/components/common/ShortcutHelpDialog";
 import { TooltipButton } from "@/components/common/TooltipButton";
 import { Button } from "@/components/ui/button";
 import { CommandsProvider } from "@/commands/CommandsContext";
-import { commandKeys } from "@/commands/keymap";
+import { keysOf } from "@/commands/keymap";
 import { useBuilderCommands } from "@/commands/useBuilderCommands";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -81,13 +81,13 @@ function SpritesheetBuilderShell() {
   };
 
   return (
-    <CommandsProvider value={commands}>
+    <CommandsProvider value={{ registry: commands, subscribe: useBuilderViewStore.subscribe }}>
       <div className="grid h-dvh grid-cols-1 grid-rows-[auto_1fr_auto_auto] gap-2 overflow-hidden bg-background p-2">
         <Panel render={<header />} className="flex min-w-0 items-center gap-2 px-2 py-1.5">
           {/* A link, not a command button: navigation belongs to the <Link>. */}
           <TooltipButton
             label="Back to sprites"
-            shortcut={commandKeys("app.backToLibrary")}
+            shortcut={keysOf(commands["app.backToLibrary"])}
             size="icon-sm"
             variant="ghost"
             className="shrink-0"

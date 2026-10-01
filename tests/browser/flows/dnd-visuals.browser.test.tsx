@@ -6,7 +6,8 @@ import {
   createSpritesheet,
   updateSpritesheet,
 } from "@/db/repositories/spritesheets";
-import { useEditorStore } from "@/stores/useEditorStore";
+import { usePaletteStore } from "@/editor/palette/api";
+import { useViewStore } from "@/editor/view/api";
 import { blocksSized, builderSaveSettled, savedSheet } from "@test/builder";
 import { settled } from "@test/dom";
 import { holdDrag, releaseDrag as release, releaseDragNow } from "@test/pointer";
@@ -16,7 +17,7 @@ async function openEditor() {
   const sprite = await createSprite({ width: 16, height: 16 });
   const screen = await render(<AppRoutes />, { route: `/sprites/${sprite.id}` });
   await expect.element(screen.getByRole("application", { name: "Sprite canvas" })).toBeVisible();
-  await expect.poll(() => useEditorStore.getState().containerSize.width > 0).toBe(true);
+  await expect.poll(() => useViewStore.getState().containerSize.width > 0).toBe(true);
   return screen;
 }
 
@@ -24,7 +25,7 @@ test("dragging a palette color shows a preview, rings the grid and opens an empt
   // Every palette is a sortable drop zone now — this one just has predictable starting colors.
   const palette = await createPalette("Editable", ["#ff0000", "#00ff00", "#0000ff", "#ffff00"]);
   await openEditor();
-  useEditorStore.getState().setActivePalette(palette.id);
+  usePaletteStore.getState().setActivePalette(palette.id);
 
   await expect.poll(() => paletteSwatches().length).toBe(4);
   await settled(() => paletteSwatches()[3]);
@@ -68,7 +69,7 @@ function swatchHex(node: Element): string | undefined {
 test("a reordered palette shows its new order before the write returns from Dexie", async () => {
   const palette = await createPalette("Editable", ["#ff0000", "#00ff00", "#0000ff", "#ffff00"]);
   await openEditor();
-  useEditorStore.getState().setActivePalette(palette.id);
+  usePaletteStore.getState().setActivePalette(palette.id);
 
   const gridColors = () =>
     [...document.querySelectorAll('[data-drag-item="sortable"]')]
@@ -219,8 +220,8 @@ test("dragging a block along its row moves its hollow slot past its neighbour", 
 test("a color dragged in from outside the palette opens a slot for itself before the drop", async () => {
   const palette = await createPalette("Editable", ["#ff0000", "#00ff00", "#0000ff"]);
   await openEditor();
-  useEditorStore.getState().setActivePalette(palette.id);
-  useEditorStore.getState().setPrimaryColor({ r: 0x12, g: 0x34, b: 0x56, a: 255 });
+  usePaletteStore.getState().setActivePalette(palette.id);
+  usePaletteStore.getState().setPrimaryColor({ r: 0x12, g: 0x34, b: 0x56, a: 255 });
 
   await expect.poll(() => paletteSwatches().length).toBe(3);
 

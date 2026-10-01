@@ -2,7 +2,8 @@ import { expect, test } from "vitest";
 import { userEvent } from "vitest/browser";
 import { createPalette, findPalette } from "@/db/repositories/palettes";
 import { db } from "@/db/db";
-import { useEditorStore } from "@/stores/useEditorStore";
+import { usePaletteStore } from "@/editor/palette/api";
+import { useToolboxStore } from "@/editor/toolbox/api";
 import { activeColors, openEditor, pixelAt, type Editor } from "@test/editor";
 import { settled } from "@test/dom";
 import { holdDrag, releaseDrag } from "@test/pointer";
@@ -13,7 +14,7 @@ const RED = { r: 255, g: 0, b: 0, a: 255 };
 async function withPalette(colors: string[]) {
   const palette = await createPalette("Test palette", colors);
   const editor = await openEditor();
-  useEditorStore.getState().setActivePalette(palette.id);
+  usePaletteStore.getState().setActivePalette(palette.id);
   await expect.poll(() => paletteSwatches().length).toBe(colors.length);
   return { editor, paletteId: palette.id };
 }
@@ -72,8 +73,8 @@ test("digits typed into a text field never pick colours", async () => {
 
 test("X swaps primary and secondary, and D resets them to black and transparent", async () => {
   await openEditor();
-  useEditorStore.getState().setPrimaryColor(RED);
-  useEditorStore.getState().setSecondaryColor({ r: 0, g: 0, b: 255, a: 255 });
+  usePaletteStore.getState().setPrimaryColor(RED);
+  usePaletteStore.getState().setSecondaryColor({ r: 0, g: 0, b: 255, a: 255 });
 
   await userEvent.keyboard("x");
   expect(activeColors()).toEqual({ primary: "#0000ffff", secondary: "#ff0000ff" });
@@ -84,7 +85,7 @@ test("X swaps primary and secondary, and D resets them to black and transparent"
 
 test("the swap button does what X does", async () => {
   const editor = await openEditor();
-  useEditorStore.getState().setPrimaryColor(RED);
+  usePaletteStore.getState().setPrimaryColor(RED);
 
   await userEvent.click(editor.screen.getByRole("button", { name: "Swap colors" }));
 
@@ -102,9 +103,9 @@ test("a colour picked from the palette is the one the pencil paints", async () =
 
 test("colours painted into the sprite are listed under 'Used in sprite' and can be picked", async () => {
   const editor = await openEditor();
-  useEditorStore.getState().setPrimaryColor(RED);
+  usePaletteStore.getState().setPrimaryColor(RED);
   editor.click({ x: 1, y: 1 });
-  useEditorStore.getState().setPrimaryColor({ r: 0, g: 0, b: 0, a: 255 });
+  usePaletteStore.getState().setPrimaryColor({ r: 0, g: 0, b: 0, a: 255 });
 
   const used = swatch(editor, "#ff0000");
   await expect.element(used).toBeVisible();
@@ -124,7 +125,7 @@ test("the typed hex in the primary colour's picker sets the colour", async () =>
   expect(activeColors().primary).toBe("#ff8800ff");
   // The keys typed into the field never reached the shortcut handler ("f" etc. would be no-ops,
   // but "8"… and every letter must stay inside the field).
-  expect(useEditorStore.getState().toolId).toBe("pencil");
+  expect(useToolboxStore.getState().toolId).toBe("pencil");
 });
 
 test("double-clicking a palette swatch removes it from the palette", async () => {
@@ -150,7 +151,7 @@ test("dragging a swatch out of the palette removes it", async () => {
 
 test("dragging a 'used in sprite' colour into the palette adds it at the drop slot", async () => {
   const { editor, paletteId } = await withPalette(["#ff0000", "#00ff00"]);
-  useEditorStore.getState().setPrimaryColor({ r: 0x12, g: 0x34, b: 0x56, a: 255 });
+  usePaletteStore.getState().setPrimaryColor({ r: 0x12, g: 0x34, b: 0x56, a: 255 });
   editor.click({ x: 1, y: 1 });
 
   const used = await settled(() =>
@@ -170,7 +171,7 @@ test("dragging a 'used in sprite' colour into the palette adds it at the drop sl
 test("'Add colors from sprite' appends every painted colour the palette lacks", async () => {
   const { editor, paletteId } = await withPalette(["#ff0000"]);
   editor.click({ x: 0, y: 0 }); // black
-  useEditorStore.getState().setPrimaryColor(RED);
+  usePaletteStore.getState().setPrimaryColor(RED);
   editor.click({ x: 1, y: 0 }); // red, already in the palette
 
   await userEvent.click(editor.screen.getByRole("button", { name: "Palette actions" }));
@@ -193,7 +194,7 @@ test("a new palette from the menu is created empty and becomes the active one", 
     "Test palette",
   ]);
   const forest = (await db.palettes.toArray()).find((palette) => palette.name === "Forest")!;
-  await expect.poll(() => useEditorStore.getState().activePaletteId).toBe(forest.id);
+  await expect.poll(() => usePaletteStore.getState().activePaletteId).toBe(forest.id);
   await expect.element(editor.screen.getByText("Drag colors here to add them.")).toBeVisible();
 });
 
@@ -201,7 +202,7 @@ test("the palette picker switches between palettes", async () => {
   const warm = await createPalette("Warm", ["#ff0000", "#ff8800"]);
   await createPalette("Cool", ["#0000ff"]);
   const editor = await openEditor();
-  useEditorStore.getState().setActivePalette(warm.id);
+  usePaletteStore.getState().setActivePalette(warm.id);
   await expect.poll(paletteHexes).toEqual(["#ff0000", "#ff8800"]);
 
   await userEvent.click(editor.screen.getByRole("combobox", { name: "Active palette" }));

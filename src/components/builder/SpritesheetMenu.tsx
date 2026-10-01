@@ -10,12 +10,12 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useCommand } from "@/commands/CommandsContext";
-import { commandKeys } from "@/commands/keymap";
+import { useCommand, useCommandKeys } from "@/commands/CommandsContext";
 
 /** The composer's ☰ menu, mirroring the sprite editor's: its one size setting, and save. */
 export function SpritesheetMenu() {
   const save = useCommand("edit.save");
+  const saveKeys = useCommandKeys("edit.save");
   const [isEditingTile, setEditingTile] = useState(false);
 
   return (
@@ -39,7 +39,7 @@ export function SpritesheetMenu() {
           <DropdownMenuItem onClick={save.run}>
             <Save />
             {save.label}
-            <DropdownMenuShortcut>{commandKeys("edit.save").join(" ")}</DropdownMenuShortcut>
+            <DropdownMenuShortcut>{saveKeys.join(" ")}</DropdownMenuShortcut>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

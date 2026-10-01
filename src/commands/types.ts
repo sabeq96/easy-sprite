@@ -1,14 +1,22 @@
-import type { AppCommandId, CommandGroup } from "@/constants/commands";
-import type { ToolId } from "@/core/tools";
+import type { CommandGroup } from "@/constants/commands";
+import type { ModuleCommandId } from "@/editor/modules";
+import type { KeyBinding } from "@/lib/keys";
+import type { ContributedCommandId, SettingCommandId, ToolId } from "@/tools";
 
 export type ToolCommandId = `tool.${ToolId}`;
-export type CommandId = AppCommandId | ToolCommandId;
+/**
+ * One activation command per tool, the commands tools contribute, the ones the host generates
+ * from their settings, and every host module's commands. All derived from their definitions.
+ */
+export type CommandId = ToolCommandId | ContributedCommandId | SettingCommandId | ModuleCommandId;
 
 export interface CommandDefinition {
   id: CommandId;
   /** Shown in menus, tooltips and the cheat sheet — one source of truth for wording. */
   label: string;
   group: CommandGroup;
+  /** The chords that run this command; read by useShortcuts, tooltips and the cheat sheet. */
+  keys?: readonly KeyBinding[];
   /** Computed at read time; surfaces dim disabled commands rather than hiding them. */
   isEnabled?: () => boolean;
   isActive?: () => boolean;
@@ -30,4 +38,5 @@ export interface CommandHold {
   cancel: () => void;
 }
 
+/** The active commands by id: the keymap, the cheat sheet and every bound control read it. */
 export type CommandRegistry = Partial<Record<CommandId, CommandDefinition>>;

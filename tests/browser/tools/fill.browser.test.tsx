@@ -1,7 +1,7 @@
 import { expect, test } from "vitest";
 import { userEvent } from "vitest/browser";
-import { useEditorStore } from "@/stores/useEditorStore";
 import { KEYS, keys, openEditor, paintedPixels, pixelAt, rectPoints, type Editor } from "@test/editor";
+import { usePaletteStore } from "@/editor/palette/api";
 
 const RED = { r: 255, g: 0, b: 0, a: 255 };
 const BLUE = { r: 0, g: 0, b: 255, a: 255 };
@@ -27,7 +27,7 @@ test("the bucket fills the enclosed room and nothing outside its walls", async (
   const editor = await openEditor();
   drawBox(editor);
   await chooseTool(editor, "Paint bucket");
-  useEditorStore.getState().setPrimaryColor(RED);
+  usePaletteStore.getState().setPrimaryColor(RED);
 
   editor.click({ x: 7, y: 7 });
 
@@ -42,7 +42,7 @@ test("the bucket fills around the room from outside without leaking in", async (
   const editor = await openEditor();
   drawBox(editor);
   await chooseTool(editor, "Paint bucket");
-  useEditorStore.getState().setPrimaryColor(RED);
+  usePaletteStore.getState().setPrimaryColor(RED);
 
   editor.click({ x: 0, y: 0 });
 
@@ -57,10 +57,10 @@ test("fill similar recolours every matching pixel, connected or not", async () =
   editor.click({ x: 1, y: 1 });
   editor.click({ x: 14, y: 2 });
   editor.click({ x: 8, y: 13 });
-  useEditorStore.getState().setPrimaryColor(BLUE);
+  usePaletteStore.getState().setPrimaryColor(BLUE);
   editor.click({ x: 5, y: 5 }); // a different colour that must survive
   await chooseTool(editor, "Fill similar");
-  useEditorStore.getState().setPrimaryColor(RED);
+  usePaletteStore.getState().setPrimaryColor(RED);
 
   editor.click({ x: 1, y: 1 });
 
@@ -77,7 +77,7 @@ test("fill similar on empty space also reaches inside closed rooms — unlike th
   const editor = await openEditor();
   drawBox(editor);
   await chooseTool(editor, "Fill similar");
-  useEditorStore.getState().setPrimaryColor(RED);
+  usePaletteStore.getState().setPrimaryColor(RED);
 
   editor.click({ x: 0, y: 0 });
 
@@ -89,7 +89,7 @@ test("fill similar on empty space also reaches inside closed rooms — unlike th
 test("the right button fills with the secondary colour", async () => {
   const editor = await openEditor();
   await chooseTool(editor, "Paint bucket");
-  useEditorStore.getState().setSecondaryColor(BLUE);
+  usePaletteStore.getState().setSecondaryColor(BLUE);
 
   editor.click({ x: 3, y: 3 }, { button: 2 });
 
@@ -101,7 +101,7 @@ test("dragging the bucket is still a single fill and a single undo step", async 
   const editor = await openEditor();
   drawBox(editor);
   await chooseTool(editor, "Paint bucket");
-  useEditorStore.getState().setPrimaryColor(RED);
+  usePaletteStore.getState().setPrimaryColor(RED);
 
   // Starts inside the room and ends outside it: a one-shot tool ignores where the drag goes.
   editor.drag([{ x: 7, y: 7 }, { x: 8, y: 8 }, { x: 0, y: 0 }]);

@@ -90,15 +90,15 @@ Command: `npm run lint && npm run build && npm run test:coverage`
 
 ## Done when
 
-- [ ] 1. `src/core/tools/` and `toolIcons.ts` are gone, and `grep -rn "@/core/tools" src tests` is empty.
-- [ ] 2. Icons are declared in each `tool.ts`, and the sidebar is unchanged.
-- [ ] 3. Lint rejects each probe (add it, run lint, revert):
+- [x] 1. `src/core/tools/` and `toolIcons.ts` are gone, and `grep -rn "@/core/tools" src tests` is empty.
+- [x] 2. Icons are declared in each `tool.ts`, and the sidebar is unchanged.
+- [x] 3. Lint rejects each probe (add it, run lint, revert):
   - `import "@/tools/eraser/tool"` in the pencil
   - `import "../eraser/tool"` there
   - `import { useEditorStore } from "@/stores/useEditorStore"` there
   - `import "@/framework/tool"` in `src/core/pixels.ts`
-- [ ] 4. Docs and the review skill name the new paths.
-- [ ] 5. The command above passes, with no assertion changed.
+- [x] 4. Docs and the review skill name the new paths.
+- [x] 5. The command above passes, with no assertion changed.
 
 ## Open risks
 
@@ -112,3 +112,25 @@ Command: `npm run lint && npm run build && npm run test:coverage`
 None. Decision 4 was approved on 2026-10-01.
 
 ## Drift log
+
+- **2026-10-01, lint glob depth (Open risk 1).** `!` negation in `group` patterns works in oxlint
+  1.83, so the `regex` form was not needed. But in oxlint a `*` in a group pattern does not cross
+  `/`: `@/tools/*` does not match `@/tools/eraser/tool`, `../*` does not match `../eraser/tool`,
+  and `@/stores/*` does not match `@/stores/slices/toolSlice`. So the patterns this stage adds use
+  `/**`: `@/tools/**` with `!@/tools/shared/*`, `../**`, `@/db/**`, `@/stores/**`, `@/commands/**`
+  (and so on) in the `src/tools/*/**` override, `@/components/**`, `@/hooks/**` and `@/app/**` for
+  `src/framework/**`, and `@/framework/**` and `@/tools/**` added to `src/core/**`. The older
+  overrides still use single `*`, so today they only block the first level under each folder (for
+  example, `core/` could import `@/components/editor/X`). Fixing that is outside this stage.
+- **2026-10-01, select overlay import.** `select/tool.ts` imports its overlay as `./overlay`, not
+  `@/tools/select/overlay`, because Decision 10 forbids `@/tools/*` other than `shared/` inside a
+  tool folder (conventions §5 allows `./` within a folder).
+- **2026-10-01, files outside the list.** `.claude/skills/triage/SKILL.md` also named
+  `src/core/tools/index.ts`; its path now reads `src/tools/index.ts`. The registry comment in
+  `src/tools/index.ts` now says "its folder plus one line here" instead of "(plus its icon)".
+- **2026-10-01, architecture §9 importers.** Besides the new `framework/` and `tools/` rows, the
+  `stores/`, `commands/`, `hooks/` and `components/` rows now list `framework`/`tools` (they used
+  to reach tools through `core`), and the `core/` row drops "types from commands/hints", since
+  `core/` no longer imports it.
+- **Not hit: Open risk 2.** `import/no-cycle` passed with the type-only
+  `framework/tool.ts → commands/hints` edge, so `Hint` stayed in `commands/`.

@@ -1,6 +1,7 @@
 import { expect, test, vi } from "vitest";
 import { userEvent } from "vitest/browser";
 import type { CommandRegistry } from "@/commands/types";
+import { SHARED_KEYS } from "@/constants/shortcuts";
 import { useShortcuts } from "@/hooks/useShortcuts";
 import { IS_APPLE } from "@/lib/keys";
 import { keyDown, keyUp } from "@test/keys";
@@ -8,6 +9,7 @@ import { render } from "@test/render";
 
 /** `Ctrl+Z` (or `⌘Z` on a Mac runner) via testing-library's `{Modifier>}key{/Modifier}` syntax. */
 const UNDO_CHORD = IS_APPLE ? "{Meta>}z{/Meta}" : "{Control>}z{/Control}";
+const UNDO_KEYS = SHARED_KEYS["edit.undo"];
 
 function Harness({ commands }: { commands: CommandRegistry }) {
   useShortcuts(commands);
@@ -20,7 +22,7 @@ function Harness({ commands }: { commands: CommandRegistry }) {
 }
 
 function undoRegistry(run: () => void): CommandRegistry {
-  return { "edit.undo": { id: "edit.undo", label: "Undo", group: "Edit", run } };
+  return { "edit.undo": { id: "edit.undo", label: "Undo", group: "Edit", keys: UNDO_KEYS, run } };
 }
 
 test("a bound key fires its command", async () => {
@@ -55,7 +57,14 @@ test("typing in a contenteditable region does not trigger the shortcut", async (
 test("a disabled command does not run", async () => {
   const undo = vi.fn();
   const commands: CommandRegistry = {
-    "edit.undo": { id: "edit.undo", label: "Undo", group: "Edit", isEnabled: () => false, run: undo },
+    "edit.undo": {
+      id: "edit.undo",
+      label: "Undo",
+      group: "Edit",
+      keys: UNDO_KEYS,
+      isEnabled: () => false,
+      run: undo,
+    },
   };
   const screen = await render(<Harness commands={commands} />);
   await expect.element(screen.getByLabelText("Sprite name")).toBeVisible();
@@ -68,7 +77,7 @@ function holdRegistry() {
   const hold = { press: vi.fn(), release: vi.fn(), cancel: vi.fn() };
   const run = vi.fn();
   const commands: CommandRegistry = {
-    "tool.eraser": { id: "tool.eraser", label: "Eraser", group: "Tools", run, hold },
+    "tool.eraser": { id: "tool.eraser", label: "Eraser", group: "Tools", keys: [{ key: "e" }], run, hold },
   };
   return { commands, hold, run };
 }

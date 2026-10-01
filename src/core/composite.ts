@@ -1,5 +1,6 @@
 import { syncCelRaster } from "@/core/cel";
 import type { SpriteDocument } from "@/core/document";
+import type { Viewport } from "@/core/viewport";
 
 export interface CompositeOptions {
   /** Render a single layer only — used by layer thumbnails. */
@@ -43,6 +44,20 @@ export function compositeFrame(
 
   ctx.globalAlpha = 1;
   return canvas;
+}
+
+/** Draws a sprite-resolution `source` scaled to the viewport, at `alpha`. */
+export function presentSprite(
+  ctx: CanvasRenderingContext2D,
+  source: CanvasImageSource,
+  viewport: Viewport,
+  doc: SpriteDocument,
+  alpha: number,
+): void {
+  const { scale, originX, originY } = viewport;
+  ctx.globalAlpha = alpha;
+  ctx.drawImage(source, originX, originY, doc.width * scale, doc.height * scale);
+  ctx.globalAlpha = 1;
 }
 
 function ensureSize(canvas: OffscreenCanvas, width: number, height: number): OffscreenCanvas {

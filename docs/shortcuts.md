@@ -12,9 +12,9 @@ go, then you are back on the tool you had.
 
 | Key | Command | Notes |
 | --- | --- | --- |
-| `P` | Pencil | press again (while the pencil is active) to cycle brush size 1→2→3→4→6→8→1 |
-| `V` | Mirror horizontally | pencil only: toggles drawing on both sides of the vertical axis, like the options-bar button. Doesn't spring back when held |
-| `E` | Eraser | press again (while the eraser is active) to cycle brush size, as with `P` |
+| `P` | Pencil | press again (while the pencil is active) to cycle its brush size 1→2→3→4→6→8→1 |
+| `V` | Mirror horizontally | pencil only: toggles drawing on both sides of the vertical axis, like the options-bar button. Doesn't spring back when held. The pencil remembers it when you switch to another tool and back |
+| `E` | Eraser | press again (while the eraser is active) to cycle its brush size, as with `P`. The pencil and the eraser each remember their own size |
 | `B` | Paint bucket | contiguous fill |
 | `G` | Fill similar | replaces matching colour across the whole layer |
 | `O` | Color picker | samples the composite; hold `O` to pick a colour and go back to your tool |
@@ -68,39 +68,67 @@ go, then you are back on the tool you had.
 
 ## Implementation contract
 
-Where things live:
+Where things live: **every key is declared on the command it runs** (`keys` next to `run`), and
+the active command registry *is* the keymap. There is no separate key table.
 
 - **Tool keys and gestures live on the tool.** Each tool declares `shortcut` (the key that activates
-  it), an optional `reselectCommand` (run when its key is pressed while it is already active, e.g.
-  the pencil's brush-size cycle) and `hints` (its non-obvious gestures, e.g. `⌘ + Drag` to
-  duplicate a selection) — see `src/core/tools/*.ts`.
+  it), an optional `reselect` (the choice setting its key steps when pressed while the tool is
+  already active, e.g. the pencil's `size`; the sheet's row reads "Cycle brush size", from the
+  setting's label) and `hints` (its non-obvious gestures, e.g. `⌘ + Drag` to duplicate a
+  selection) — see `src/tools/<tool>/tool.ts`.
+- **A setting can carry a command.** A `toggle` or `switch` in `Tool.settings` may declare
+  `command: { id, label?, keys? }`. The host turns it into a Tools command (enabled only while
+  that tool is active, active while the value is on, flipping it when run), and the options bar
+  renders that toggle as its `CommandButton`. The pencil's `mirrorHorizontal` declares
+  `tool.toggleMirror` with `V` this way; `SettingCommandId` is derived from `TOOL_LIST`.
 - **Tap vs hold.** Tool commands carry a `hold` part (`CommandDefinition.hold`). `useShortcuts`
   calls its `press` instead of `run()`, then `release` on that key's keyup (`cancel` on window
-  blur). The tap/hold decision (`TOOL_KEY_HOLD_MS`) lives in the tool slice.
-- **Every other key** is in `APP_SHORTCUTS` in `src/constants/shortcuts.ts`.
-- **`src/commands/keymap.ts`** merges both into `SHORTCUTS` and exposes `commandKeys(id)` — every
-  chord for a command, formatted for display.
+  blur). The tap/hold decision (`TOOL_KEY_HOLD_MS`) lives in the toolbox module's store.
+- **A tool can contribute whole commands** (`Tool.commands`): each is a full definition — id,
+  label, group, `keys`, `isEnabled`/`isActive` and `run`, all taking the tool's `ToolHost`. Select
+  & move owns select all, deselect, copy, cut, paste and delete this way, with their keys.
+  The toolbox module (`src/editor/toolbox/`) turns each tool's key, contributed commands and
+  setting commands into its own module commands, generated from `TOOL_LIST`, so their keys
+  travel with them; `ContributedCommandId` is derived from `TOOL_LIST`, so the ids stay
+  type-checked. The cheat sheet lists them in the tool's own section, not under Edit.
+- **Every other key is on its module's command**: each editor module's `commands.ts`
+  (`src/editor/<module>/commands.ts`) declares static definitions — id, label, group, `keys`,
+  `isEnabled`/`isActive` and `run`, all taking the `ModuleContext` — and the shell binds them to
+  the open document. `ModuleCommandId` is derived from `EDITOR_MODULES`, so a command id typo is a
+  type error. Adding a key-bound command to a module touches only that module's `commands.ts`.
+- **Keys both editors share** (undo, redo, save, zoom in/out, fit, grid, the cheat sheet and back
+  to the library) come from one constant, `SHARED_KEYS` in `src/constants/shortcuts.ts`: the
+  `shell` and `view` modules and the spritesheet composer's `useBuilderCommands` all read it.
+- **Reading keys**: `useShortcuts` matches a key press against the `keys` of the registry it is
+  given (`boundCommand` in `src/commands/keymap.ts`); a control reads a command's formatted chords
+  with `useCommandKeys(id)` from the active `CommandsProvider`; the cheat sheet reads them from the
+  registry it lists (`keysOf`, and `reselectKeys` for the "P again" rows).
 - **Inputs that are neither a tool's nor a command** (1–9, pan/zoom, right-drag for the secondary
-  colour) are `HintSection`s exported next to the code that implements them. Each names the
-  command group it belongs to, so the cheat sheet lists it there rather than in a section of its
-  own.
-- **A tool can claim commands** (`Tool.commands`): Select & move lists select all, deselect, copy,
-  cut, paste and delete in its own section, and they are not repeated under Edit.
+  colour) are `HintSection`s exported next to the code that implements them and declared on the
+  owning editor module's `hints` (`palette` for 1–9, `canvas` for right-drag and pan). Each names
+  the command group it belongs to, so the cheat sheet lists it there rather than in a section of
+  its own.
+- **Sheet order**: groups follow `COMMAND_GROUPS` in `src/constants/commands.ts`; within a group,
+  command rows follow registry order (`EDITOR_MODULES` order, then each module's definition order)
+  and hint rows come after them, in `EDITOR_MODULES` order. A browser test
+  (`tests/browser/flows/shortcut-sheet.browser.test.tsx`) pins both editors' sheets.
 - **Hints are only for what you can't discover by clicking the obvious thing** — keys, modifiers,
   hidden zones, non-primary buttons. No "drag to draw" or "click to pick".
 
 Rules that keep it honest:
 
-1. **Every entry maps to a command id, not to a handler.** The key handler resolves the id in the
-   command registry and calls `run()` (or `hold.press()` for a tool key). A shortcut for a command that does not exist is a type
+1. **Every key belongs to a command, not to a handler.** The key handler finds the registered
+   command whose `keys` match and calls `run()` (or `hold.press()` for a tool key). Command ids
+   are derived from the definitions, so a control bound to an id that does not exist is a type
    error.
-2. **No chord is bound twice** — a unit test (`tests/unit/commands/keymap.test.ts`) walks the
-   merged table.
+2. **No chord is bound twice in one registry** — the editor's is checked by
+   `tests/unit/editor/modules.test.ts`, the composer's by
+   `tests/browser/commands/useBuilderCommands.browser.test.tsx`.
 3. **Every control that runs a command is a `CommandButton`**, which reads the label, all keys,
    enabled and active state from the registry — so a button cannot show a stale or missing
-   shortcut. Popover triggers show their toggle command's keys via `commandKeys`.
+   shortcut. Popover triggers show their toggle command's keys via `useCommandKeys`.
 4. **Typing is never intercepted.** The global handler bails when the event target is an
    `input`, `textarea`, `[contenteditable]`, or inside an open dialog — except for `Escape`.
 
-`Ctrl` and `⌘` are normalised to a single `mod` modifier so one table serves both platforms;
+`Ctrl` and `⌘` are normalised to a single `mod` modifier so one binding serves both platforms;
 the cheat sheet renders the right glyph per OS from `navigator.platform`.

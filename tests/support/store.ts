@@ -1,14 +1,23 @@
-import { create } from "zustand";
-import { createColorSlice } from "@/stores/slices/colorSlice";
-import { createToolSlice } from "@/stores/slices/toolSlice";
-import { createViewSlice } from "@/stores/slices/viewSlice";
-import type { EditorStore } from "@/stores/slices/types";
+import type { StoreApi } from "zustand";
+import { useAnimationStore } from "@/editor/animation/api";
+import { useCursorStore } from "@/editor/canvas/api";
+import { useFramesStore } from "@/editor/frames/api";
+import { useLayersStore } from "@/editor/layers/api";
+import { usePaletteStore } from "@/editor/palette/api";
+import { useToolboxStore } from "@/editor/toolbox/api";
+import { useViewStore } from "@/editor/view/api";
 
-/** Same slice composition as `useEditorStore`, but a fresh instance per test. */
-export function createTestStore() {
-  return create<EditorStore>()((...args) => ({
-    ...createViewSlice(...args),
-    ...createToolSlice(...args),
-    ...createColorSlice(...args),
-  }));
+function reset<T>(store: StoreApi<T>): void {
+  store.setState(store.getInitialState(), true);
+}
+
+/** Puts every editor module store back to its initial state. */
+export function resetEditorStores(): void {
+  reset(usePaletteStore);
+  reset(useLayersStore);
+  reset(useFramesStore);
+  reset(useAnimationStore);
+  reset(useViewStore);
+  reset(useToolboxStore);
+  reset(useCursorStore);
 }

@@ -3,10 +3,10 @@ import { AppLayout } from "@/app/AppLayout";
 import { RouteErrorBoundary } from "@/app/RouteErrorBoundary";
 import { SpritesheetBuilderPage } from "@/components/builder/SpritesheetBuilderPage";
 import { NotFoundPage } from "@/components/common/NotFoundPage";
-import { EditorPage } from "@/components/editor/EditorPage";
 import { SpriteManagerPage } from "@/components/manager/SpriteManagerPage";
 import { SettingsPage } from "@/components/settings/SettingsPage";
 import { ROUTES } from "@/constants/routes";
+import { EditorPage } from "@/editor/shell/EditorPage";
 
 export function AppRoutes() {
   return (

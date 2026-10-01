@@ -1,0 +1,18 @@
+import { Panel } from "@/components/common/Panel";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { PreviewPanel } from "@/editor/animation/api";
+import { LayersPanel } from "@/editor/layers/api";
+import { PalettePanel } from "@/editor/palette/api";
+
+export function RightSidebar() {
+  return (
+    <aside className="flex min-h-0 flex-col gap-2">
+      <PreviewPanel />
+      {/* The palette can grow long; layers keep their own scroll area below it. */}
+      <Panel render={<ScrollArea />} className="max-h-[40%] shrink-0">
+        <PalettePanel />
+      </Panel>
+      <LayersPanel />
+    </aside>
+  );
+}

@@ -1,0 +1,124 @@
+import { useState } from "react";
+import { Eye, EyeOff, Lock, LockOpen } from "lucide-react";
+import { useDocumentSession } from "@/app/DocumentProvider";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { setLayerPropsCommand } from "@/core/commands/layers";
+import type { LayerModel } from "@/core/document";
+import { useCommandDispatch } from "@/hooks/useCommandDispatch";
+import { useSortableItem } from "@/hooks/useDnd";
+import { cn } from "@/lib/utils";
+import { LayerOpacityControl } from "./LayerOpacityControl";
+import { LayerThumbnail } from "./LayerThumbnail";
+
+export interface LayerRowProps {
+  layer: LayerModel;
+  /** Position in the displayed (top-first) list. */
+  index: number;
+  frameId: string | null;
+  isActive: boolean;
+  onSelect: () => void;
+}
+
+export function LayerRow({ layer, index, frameId, isActive, onSelect }: LayerRowProps) {
+  const { doc } = useDocumentSession();
+  const dispatch = useCommandDispatch();
+  const [isRenaming, setRenaming] = useState(false);
+  const { dragProps, dragClass } = useSortableItem(layer.id, { index, collision: "nearest" });
+
+  const toggle = (patch: Partial<LayerModel>, label: string) =>
+    dispatch(() => setLayerPropsCommand(doc, layer.id, patch, label));
+
+  return (
+    <li
+      data-active={isActive || undefined}
+      {...dragProps}
+      className={cn(
+        "mx-1 my-0.5 flex items-center gap-1.5 rounded-lg px-1.5 py-1 transition-colors",
+        "hover:bg-muted/50 data-active:bg-muted",
+        dragClass,
+      )}
+    >
+      <Button
+        size="icon-xs"
+        variant="ghost"
+        aria-label={layer.visible ? `Hide ${layer.name}` : `Show ${layer.name}`}
+        aria-pressed={layer.visible}
+        onClick={() => toggle({ visible: !layer.visible }, "Toggle layer visibility")}
+      >
+        {layer.visible ? <Eye /> : <EyeOff className="opacity-40" />}
+      </Button>
+
+      <LayerThumbnail layerId={layer.id} frameId={frameId} />
+
+      {isRenaming ? (
+        <LayerNameInput layer={layer} onDone={() => setRenaming(false)} />
+      ) : (
+        <button
+          type="button"
+          className="min-w-0 flex-1 truncate text-left text-xs"
+          onClick={onSelect}
+          onDoubleClick={() => setRenaming(true)}
+        >
+          {layer.name}
+        </button>
+      )}
+
+      <LayerOpacityControl layer={layer} />
+
+      <Button
+        size="icon-xs"
+        variant="ghost"
+        aria-label={layer.locked ? `Unlock ${layer.name}` : `Lock ${layer.name}`}
+        aria-pressed={layer.locked}
+        onClick={() => toggle({ locked: !layer.locked }, "Toggle layer lock")}
+      >
+        {layer.locked ? <Lock /> : <LockOpen className="opacity-30" />}
+      </Button>
+    </li>
+  );
+}
+
+/** The row's own visual, for the board's drag overlay — DragBoard supplies the lift and ring. */
+export function LayerDragPreview({ layer, frameId }: { layer: LayerModel; frameId: string | null }) {
+  return (
+    <div className="flex items-center gap-1.5 rounded-lg bg-card px-1.5 py-1">
+      {layer.visible ? <Eye className="size-3.5" /> : <EyeOff className="size-3.5 opacity-40" />}
+      <LayerThumbnail layerId={layer.id} frameId={frameId} />
+      <span className="max-w-32 truncate text-xs">{layer.name}</span>
+    </div>
+  );
+}
+
+function LayerNameInput({ layer, onDone }: { layer: LayerModel; onDone: () => void }) {
+  const { doc } = useDocumentSession();
+  const dispatch = useCommandDispatch();
+  const [draft, setDraft] = useState(layer.name);
+
+  const commit = () => {
+    const name = draft.trim();
+    if (name && name !== layer.name) {
+      dispatch(() => setLayerPropsCommand(doc, layer.id, { name }, "Rename layer"));
+    }
+    onDone();
+  };
+
+  return (
+    <Input
+      autoFocus
+      className="h-6 flex-1"
+      inputSize="sm"
+      aria-label="Layer name"
+      value={draft}
+      onChange={(event) => setDraft(event.target.value)}
+      onBlur={commit}
+      onKeyDown={(event) => {
+        // Typing must never reach the global shortcut handler — this also conveniently keeps
+        // typing out of KeyboardSensor's drag-activation keys.
+        event.stopPropagation();
+        if (event.key === "Enter") commit();
+        if (event.key === "Escape") onDone();
+      }}
+    />
+  );
+}

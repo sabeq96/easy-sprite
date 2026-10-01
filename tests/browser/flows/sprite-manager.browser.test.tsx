@@ -3,8 +3,8 @@ import { userEvent } from "vitest/browser";
 import { AppRoutes } from "@/app/routes";
 import { createSprite, listSprites } from "@/db/repositories/sprites";
 import { createSpritesheet, listSpritesheets } from "@/db/repositories/spritesheets";
+import { useViewStore } from "@/editor/view/api";
 import { useBuilderViewStore } from "@/stores/useBuilderViewStore";
-import { useEditorStore } from "@/stores/useEditorStore";
 import { render } from "@test/render";
 
 test("creating a sprite from the library opens it in the editor, and it lists on the way back", async () => {
@@ -37,8 +37,8 @@ test("a new sprite is sized in tiles, and opens with a one-tile grid and a 1px c
   await expect.element(screen.getByRole("application", { name: "Sprite canvas" })).toBeVisible();
   const [sprite] = await listSprites();
   expect([sprite.width, sprite.height, sprite.tileSize]).toEqual([72, 48, 24]);
-  await expect.poll(() => useEditorStore.getState().gridSize).toBe(24);
-  expect(useEditorStore.getState().checkerSize).toBe(1);
+  await expect.poll(() => useViewStore.getState().gridSize).toBe(24);
+  expect(useViewStore.getState().checkerSize).toBe(1);
 });
 
 test("a bigger tile pulls the column and row counts back under the canvas limit", async () => {

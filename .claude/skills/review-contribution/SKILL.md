@@ -65,8 +65,18 @@ User sprites live only in the user's IndexedDB. A mistake here destroys someone'
 - React Compiler and Base UI traps: `docs/conventions.md` §6c and §6d. Mutating document arrays in
   place, or `<TooltipTrigger render={<Button onClick/>}/>` instead of `<TooltipButton>`, are
   known silent bugs.
-- New tools go through the registry in `src/core/tools/index.ts`; new keys through the command
-  registry (`src/commands/`) and must not conflict — see `docs/shortcuts.md`.
+- **Where it goes** (`docs/architecture.md` §11): a new editor capability goes in its domain
+  module, `src/editor/<domain>/` (its UI, store, commands, hints, painters), and reaches other
+  modules only through their `api.ts`; a new tool goes in `src/tools/`. A tool is a folder
+  `src/tools/<tool>/` (entry `tool.ts`, declaring its own `icon`) plus one line in `TOOL_LIST`
+  in `src/tools/index.ts`, and it reaches the host only through `ToolHost`. A PR that adds
+  editor state to `src/stores/`, an editor panel to `src/components/`, or a tool-specific branch
+  to a module is in the wrong place.
+- A new `api.ts` export is an interface change: is another module really using it? `api.ts`
+  exports only what other modules need, never the whole folder.
+- New keys go on the command definition itself (`keys` next to `run` in a module's
+  `commands.ts`, or in the tool's own definition; the keys both editors share come from
+  `SHARED_KEYS` in `src/constants/shortcuts.ts`) and must not conflict — see `docs/shortcuts.md`.
 
 ### C. Tests — usually blockers
 - Behavior changes come with tests. Location rule (conventions §11): under `tests/`, mirroring

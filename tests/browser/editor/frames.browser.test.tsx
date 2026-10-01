@@ -1,6 +1,5 @@
 import { expect, test } from "vitest";
 import { userEvent } from "vitest/browser";
-import { useEditorStore } from "@/stores/useEditorStore";
 import {
   KEYS,
   modShift,
@@ -12,17 +11,21 @@ import {
 } from "@test/editor";
 import { settled } from "@test/dom";
 import { holdDrag, releaseDrag } from "@test/pointer";
+import { useAnimationStore } from "@/editor/animation/api";
+import { useFramesStore } from "@/editor/frames/api";
+import { usePaletteStore } from "@/editor/palette/api";
+import { useViewStore } from "@/editor/view/api";
 
 const RED = { r: 255, g: 0, b: 0, a: 255 };
 const BLUE = { r: 0, g: 0, b: 255, a: 255 };
 
 const frameCount = () => session().doc.frames.length;
 const activeFrameIndex = () =>
-  session().doc.frames.findIndex((frame) => frame.id === useEditorStore.getState().activeFrameId);
+  session().doc.frames.findIndex((frame) => frame.id === useFramesStore.getState().activeFrameId);
 
 /** Paints `point` on the active frame in `color`. */
 function paintOn(editor: Editor, point: { x: number; y: number }, color = RED) {
-  useEditorStore.getState().setPrimaryColor(color);
+  usePaletteStore.getState().setPrimaryColor(color);
   editor.click(point);
 }
 
@@ -171,7 +174,7 @@ test("dragging a frame card past its neighbour reorders the animation", async ()
 /** Alpha of the onion-skin canvas at the centre of sprite pixel `point`. */
 function onionAlphaAt(point: { x: number; y: number }) {
   const canvas = document.querySelector<HTMLCanvasElement>('canvas[data-canvas="onion"]')!;
-  const { viewport } = useEditorStore.getState();
+  const { viewport } = useViewStore.getState();
   const ratio = canvas.width / canvas.getBoundingClientRect().width;
   const x = Math.round((viewport.originX + (point.x + 0.5) * viewport.scale) * ratio);
   const y = Math.round((viewport.originY + (point.y + 0.5) * viewport.scale) * ratio);
@@ -203,10 +206,10 @@ test("play is disabled for a single frame, and with two it plays and pauses", as
   await userEvent.click(editor.screen.getByRole("button", { name: "Play animation" }));
 
   await expect.element(editor.screen.getByRole("button", { name: "Pause animation" })).toBeVisible();
-  expect(useEditorStore.getState().isPlaying).toBe(true);
+  expect(useAnimationStore.getState().isPlaying).toBe(true);
 
   await userEvent.click(editor.screen.getByRole("button", { name: "Pause animation" }));
-  expect(useEditorStore.getState().isPlaying).toBe(false);
+  expect(useAnimationStore.getState().isPlaying).toBe(false);
 });
 
 /** The preview canvas's colour at the centre of sprite pixel `point` (16px sprite, see paint). */

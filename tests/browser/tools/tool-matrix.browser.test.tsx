@@ -1,7 +1,9 @@
 import { expect, test } from "vitest";
 import { userEvent } from "vitest/browser";
 import { spriteToScreen } from "@/core/viewport";
-import { useEditorStore } from "@/stores/useEditorStore";
+import { usePaletteStore } from "@/editor/palette/api";
+import { useToolboxStore } from "@/editor/toolbox/api";
+import { useViewStore } from "@/editor/view/api";
 import { KEYS, chooseTool, openEditor, paintedPixels, type Editor } from "@test/editor";
 
 /**
@@ -49,7 +51,7 @@ test("tool keys typed into a text field never switch tools", async () => {
   await userEvent.click(editor.screen.getByRole("textbox", { name: "Sprite name" }));
   await userEvent.keyboard("bogeps");
 
-  expect(useEditorStore.getState().toolId).toBe("pencil");
+  expect(useToolboxStore.getState().toolId).toBe("pencil");
 });
 
 /** A gesture per writing tool, each of which changes the (empty or filled) canvas. */
@@ -70,10 +72,10 @@ const WRITERS = [
 test.each(WRITERS)("$label: one gesture is one undo step, and redo replays it exactly", async (tool) => {
   const editor = await openEditor();
   // A starting picture every tool can visibly change: a filled 8×8 block top-left.
-  useEditorStore.getState().setToolOptions({ brushSize: 8 });
+  useToolboxStore.getState().setSetting("pencil", "size", 8);
   editor.click({ x: 3, y: 3 });
-  useEditorStore.getState().setToolOptions({ brushSize: 1 });
-  useEditorStore.getState().setPrimaryColor({ r: 255, g: 0, b: 0, a: 255 });
+  useToolboxStore.getState().setSetting("pencil", "size", 1);
+  usePaletteStore.getState().setPrimaryColor({ r: 255, g: 0, b: 0, a: 255 });
   const before = paintedPixels();
 
   await chooseTool(editor, tool.label);
@@ -91,7 +93,7 @@ test.each(WRITERS)("$label: one gesture is one undo step, and redo replays it ex
 function overlayAlphaAt(point: { x: number; y: number }) {
   const canvas = document.querySelector<HTMLCanvasElement>('canvas[data-canvas="overlay"]')!;
   const ratio = canvas.width / canvas.getBoundingClientRect().width;
-  const screen = spriteToScreen(useEditorStore.getState().viewport, { x: point.x + 0.5, y: point.y + 0.5 });
+  const screen = spriteToScreen(useViewStore.getState().viewport, { x: point.x + 0.5, y: point.y + 0.5 });
   return canvas.getContext("2d")!.getImageData(Math.round(screen.x * ratio), Math.round(screen.y * ratio), 1, 1)
     .data[3];
 }
@@ -103,7 +105,7 @@ async function hoverAndSettle(editor: Editor, point: { x: number; y: number }) {
 
 test.each(["Pencil", "Eraser"])("%s: the hover preview is as big as the brush", async (label) => {
   const editor = await openEditor();
-  useEditorStore.getState().setGridEnabled(false);
+  useViewStore.getState().setGridEnabled(false);
   await chooseTool(editor, label);
 
   await hoverAndSettle(editor, { x: 8, y: 8 });
@@ -120,7 +122,7 @@ test("a tool switched mid-stroke does not hijack the stroke already in progress"
   const editor = await openEditor();
   const box = editor.canvas.getBoundingClientRect();
   const at = (x: number, y: number) => {
-    const screen = spriteToScreen(useEditorStore.getState().viewport, { x: x + 0.5, y: y + 0.5 });
+    const screen = spriteToScreen(useViewStore.getState().viewport, { x: x + 0.5, y: y + 0.5 });
     return { clientX: box.left + screen.x, clientY: box.top + screen.y };
   };
   const fire = (type: string, x: number, y: number, buttons: number) =>
@@ -135,7 +137,7 @@ test("a tool switched mid-stroke does not hijack the stroke already in progress"
 
   // The pencil started the stroke, so the pencil finishes it.
   expect(paintedPixels()).toEqual(["2,2", "3,2", "4,2", "5,2", "6,2"]);
-  expect(useEditorStore.getState().toolId).toBe("eraser");
+  expect(useToolboxStore.getState().toolId).toBe("eraser");
 
   // …and the next stroke is the eraser's.
   editor.drag([{ x: 2, y: 2 }, { x: 4, y: 2 }]);

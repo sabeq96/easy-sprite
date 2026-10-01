@@ -125,10 +125,10 @@ Command: `npm run lint && npm run build && npm run test:coverage`
 
 ## Done when
 
-- [ ] 1. `CanvasRenderer`'s public members are exactly `setState`, `addPainter`, `invalidate`, `invalidateAll`, `resize` and `dispose`, and `RendererState` is `{ viewport, frameId, isPlaying }`.
-- [ ] 2. `grep -n "grid\|Grid\|onion\|Onion" src/core/renderer.ts` is empty.
-- [ ] 3. Grid, onion (before/after, opacity, hidden during playback), selection and brush preview look exactly as before.
-- [ ] 4. The command above passes.
+- [x] 1. `CanvasRenderer`'s public members are exactly `setState`, `addPainter`, `invalidate`, `invalidateAll`, `resize` and `dispose`, and `RendererState` is `{ viewport, frameId, isPlaying }`.
+- [x] 2. `grep -n "grid\|Grid\|onion\|Onion" src/core/renderer.ts | grep -v "\"onion\""` is empty: the renderer has no grid or onion-skin logic, and only the approved channel name `"onion"` remains (wording fixed by the maintainer's session).
+- [x] 3. Grid, onion (before/after, opacity, hidden during playback), selection and brush preview look exactly as before.
+- [x] 4. The command above passes.
 
 ## Open risks
 
@@ -139,3 +139,55 @@ Command: `npm run lint && npm run build && npm run test:coverage`
 None.
 
 ## Drift log
+
+- **2026-10-01, Done-when 2 is not literally empty: the channel is named `onion` (open).**
+  Decision 2 and the Interfaces fix `PaintChannel = "onion" | "overlay"`, so
+  `grep -n "grid\|Grid\|onion\|Onion" src/core/renderer.ts` lists eight lines, every one the
+  channel name (`PaintChannel`, the `dirty` set, the `invalidate` calls, `render`). No `grid`,
+  `Grid` or `Onion` remains, and nothing in the renderer knows what an onion skin is: no
+  direction, opacity or enabled flag, no neighbouring frame, no scratch canvas. Left unticked:
+  making the grep empty means renaming the channel (and `RendererTargets.onion`), which changes
+  the approved interface. Left to the maintainer.
+- **2026-10-01, tools get `ToolPaintContext = Omit<PaintContext, "doc">` (stage 2's rule that a tool never sees the document).** `OverlayPaint` takes it; the host still passes the full `PaintContext`, a structural superset. Probe: an overlay in `src/tools/select/overlay.ts` reading `p.doc.width` fails `tsc -b` with TS2339; restored from a copy.
+- **2026-10-01, `RendererTargets` is `Record<Channel, HTMLCanvasElement>`.** Same three keys as
+  the old interface; `resize` iterates `Object.values(targets)`.
+- **2026-10-01, the tool host re-registers the overlay per `setOverlay`.** `createToolHost` keeps
+  the paint (as in stage 2) and the remover of its painter. `setOverlay` and `attachRenderer`
+  both remove the old painter (bound to the renderer it was added to) and add the new one when
+  there are both a renderer and a paint, so a tool's overlay is always registered after the
+  host's grid painter.
+- **2026-10-01, `isPlaying` stays a renderer field.** It is in the agreed `RendererState`, and a
+  change still invalidates `onion` inside `setState`. The store subscription (Decision 6) covers
+  `gridEnabled`, `gridSize` and `onion`. The playback check moved from `renderOnion` to the host's
+  onion painter (`onion.enabled && !p.isPlaying`), as in the sketch, so `drawOnion` is the
+  neighbour lookup plus `presentSprite` only.
+- **2026-10-01, verification beyond the suites (Done-when 3).** A throwaway browser probe, run on
+  this branch and on `79adc21` in a scratch worktree, then deleted, gave identical results:
+  - onion alpha at the ghosted pixel: off 0, before at 0.35 → 89, at 0.7 → 179, playing → 0,
+    stopped → 179, frame 1 with before → 0, frame 1 with after → 179 at the other frame's pixel;
+  - a hash of every overlay byte for: the default grid, grid size 4, grid plus a mirrored size-3
+    brush preview, the preview alone, grid plus select-all, and select-all with the pointer
+    outside. All six hashes match.
+- **2026-10-01, tests.**
+  - New `tests/unit/core/painters.test.ts`: the two planned cases, plus "nothing at the last frame
+    with after" and "ghosts the neighbour once, at its opacity, and restores full alpha".
+  - New browser test "the selection fill draws above the grid lines" in
+    `tests/browser/tools/select.browser.test.tsx`. It reads the overlay at a device pixel the
+    1.5px grid line fully covers inside a select-all, and asserts its colour is nearer the
+    selection blue than the grid grey. Probe: iterating the painters in reverse in
+    `renderPainters` fails it (82.5 vs 54.2); restored from a copy.
+  - Probe of Decision 6: with the store subscription disabled, "onion skin ghosts the previous
+    frame…" fails. No existing test fails with the grid half disabled (other invalidations
+    repaint the overlay in time), so grid-toggle repaint is not pinned by a test.
+  - `tests/unit/tools/brush.test.ts`: setup only. `paint` gets a `ToolPaintContext` object in place of
+    `(ctx, VIEWPORT)`. Assertions unchanged.
+- **2026-10-01, files outside the list.**
+  - `src/constants/builder.ts`: a comment pointed at `renderer.drawGrid`; it now points at
+    `core/painters/grid.ts`.
+  - `docs/architecture.md`: besides the two §4 rows, a short paragraph under the §4 table on
+    channels and registration order, the `core/` line of the folder map, and the `canvas` row of
+    the tool-host table.
+- **2026-10-01, lint.** No new rule. `core/painters/*` imports only `@/constants/*` and `@/core/*`;
+  `framework/host.ts` imports `PaintContext` as a type from `@/core/renderer`, which the
+  framework override allows. `npm run lint` reports only the ten pre-existing
+  `only-export-components` warnings.

@@ -1,40 +1,52 @@
 import { describe, expect, it } from "vitest";
-import { commandKeys, reselectKeys, SHORTCUTS } from "@/commands/keymap";
-import type { CommandId } from "@/commands/types";
-import { getTool, TOOL_LIST } from "@/core/tools";
-import { bindingSignature } from "@/lib/keys";
+import { boundCommand, keysOf, reselectKeys } from "@/commands/keymap";
+import { bindEditorCommands } from "@/editor/modules";
+import { getTool, TOOL_LIST } from "@/tools";
+import { formatBinding } from "@/lib/keys";
+import { moduleContext } from "@test/modules";
+
+const registry = () => bindEditorCommands(moduleContext());
+
+const press = (key: string, init: KeyboardEventInit = {}) => new KeyboardEvent("keydown", { key, ...init });
 
 describe("keymap", () => {
-  it("never binds one chord to two commands", () => {
-    const seen = new Map<string, CommandId>();
-    const clashes: string[] = [];
-
-    for (const [commandId, bindings] of Object.entries(SHORTCUTS)) {
-      for (const binding of bindings ?? []) {
-        const signature = bindingSignature(binding);
-        const existing = seen.get(signature);
-        if (existing) clashes.push(`${signature}: ${existing} and ${commandId}`);
-        seen.set(signature, commandId as CommandId);
-      }
+  it("binds each tool's own shortcut to its activation command", () => {
+    const commands = registry();
+    for (const tool of TOOL_LIST) {
+      if (tool.shortcut) expect(commands[`tool.${tool.id}`]?.keys).toEqual([tool.shortcut]);
     }
-
-    expect(clashes).toEqual([]);
   });
 
-  it("binds each tool's own shortcut to its activation command", () => {
-    for (const tool of TOOL_LIST) {
-      if (tool.shortcut) expect(SHORTCUTS[`tool.${tool.id}`]).toEqual([tool.shortcut]);
-    }
+  it("formats every key of a command, and none for one that is not registered", () => {
+    const commands = registry();
+    expect(keysOf(commands["view.zoomIn"])).toEqual([{ key: "+" }, { key: "=" }].map(formatBinding));
+    expect(keysOf(commands["layer.duplicate"])).toEqual([]);
+    expect(keysOf(undefined)).toEqual([]);
   });
 
   it("labels a tool's press-again key only when it has something to reselect", () => {
-    expect(reselectKeys(getTool("pencil"))).toEqual(commandKeys("tool.pencil").map((key) => `${key} again`));
-    expect(reselectKeys(getTool("eraser"))).toEqual(commandKeys("tool.eraser").map((key) => `${key} again`));
-    expect(reselectKeys(getTool("picker"))).toEqual([]);
+    const commands = registry();
+    expect(reselectKeys(getTool("pencil"), commands)).toEqual(
+      keysOf(commands["tool.pencil"]).map((key) => `${key} again`),
+    );
+    expect(reselectKeys(getTool("eraser"), commands)).toEqual(
+      keysOf(commands["tool.eraser"]).map((key) => `${key} again`),
+    );
+    expect(reselectKeys(getTool("picker"), commands)).toEqual([]);
   });
 
   it("binds V to the mirror toggle, apart from paste", () => {
-    expect(SHORTCUTS["tool.toggleMirror"]).toEqual([{ key: "v" }]);
-    expect(SHORTCUTS["edit.paste"]).toEqual([{ key: "v", mod: true }]);
+    const commands = registry();
+    expect(commands["tool.toggleMirror"]?.keys).toEqual([{ key: "v" }]);
+    expect(commands["edit.paste"]?.keys).toEqual([{ key: "v", mod: true }]);
+  });
+
+  it("finds the command a key press is bound to, and none for an unbound key", () => {
+    const commands = registry();
+    expect(boundCommand(commands, press("n"))?.id).toBe("frame.add");
+    expect(boundCommand(commands, press("N", { shiftKey: true }))?.id).toBe("frame.duplicate");
+    expect(boundCommand(commands, press("PageUp"))?.id).toBe("layer.selectAbove");
+    expect(boundCommand(commands, press("q"))).toBeUndefined();
+    expect(boundCommand({}, press("n"))).toBeUndefined();
   });
 });

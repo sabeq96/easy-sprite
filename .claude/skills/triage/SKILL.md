@@ -34,8 +34,10 @@ available; otherwise `gh issue view` / `gh issue list`. Repo: `sabeq96/easy-spri
    | docs | wrong or missing documentation only |
 3. **Check it isn't already built** — for enhancements and questions, search by *concept*, not
    just the reporter's wording ("eyedropper" may live as a color-picker tool or a modifier key).
-   Look in the tool registry (`src/core/tools/index.ts`), the command registry (`src/commands/`),
-   `docs/shortcuts.md`, the README, and grep `src/`. Record where you looked. Fully built →
+   Look in the tool registry (`src/tools/index.ts`) and the tool folders
+   (`src/tools/<tool>/tool.ts`: a tool's key, its contributed commands and settings), the editor's
+   module commands (`src/editor/<module>/commands.ts`, each with its keys), `docs/shortcuts.md`,
+   the README, and grep `src/`. Record where you looked. Fully built →
    reclassify as `question`, reply with how to use it, close as `completed`. Partly built → say
    what exists and treat the rest as the request.
 4. **Search for duplicates** — `search_issues` with 2–3 keyword variants, open *and* closed. A

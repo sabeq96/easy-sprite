@@ -1,0 +1,113 @@
+import { Plus } from "lucide-react";
+import { isSortable } from "@dnd-kit/react/sortable";
+import { useDocumentSession } from "@/app/DocumentProvider";
+import { DragBoard, type DragEndEvent } from "@/components/common/DragBoard";
+import { CommandButton } from "@/components/common/CommandButton";
+import { Panel } from "@/components/common/Panel";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  duplicateFrameCommand,
+  moveFrameCommand,
+  removeFrameCommand,
+} from "@/core/commands/frames";
+import type { FrameModel } from "@/core/document";
+import { useCommandDispatch } from "@/hooks/useCommandDispatch";
+import { useDropZone } from "@/hooks/useDnd";
+import { useDocumentSnapshot } from "@/hooks/useDocumentSnapshot";
+import { cn } from "@/lib/utils";
+import { FrameCard, FrameDragPreview } from "./FrameCard";
+import { useFramesStore } from "./store";
+
+export function FramesBar() {
+  const { doc } = useDocumentSession();
+  const snapshot = useDocumentSnapshot(doc);
+  const dispatch = useCommandDispatch();
+  const activeFrameId = useFramesStore((state) => state.activeFrameId);
+  const setActiveFrame = useFramesStore((state) => state.setActiveFrame);
+
+  const frameIds = snapshot.frames.map((frame) => frame.id);
+
+  // The strip was already reordered live during the drag (and restored on cancel), so a drop only
+  // has to commit where the card ended up.
+  const handleDragEnd = ({ operation, canceled }: DragEndEvent) => {
+    const { source } = operation;
+    if (canceled || !isSortable(source) || source.initialIndex === source.index) return;
+    dispatch(() => moveFrameCommand(doc, source.initialIndex, source.index));
+  };
+
+  return (
+    <Panel className="flex items-center gap-2 p-2">
+      <DragBoard
+        onDrop={handleDragEnd}
+        renderPreview={(_data, id) => (
+          <FrameDragPreview frameId={id} index={Math.max(frameIds.indexOf(id), 0)} />
+        )}
+      >
+        <ScrollArea className="min-w-0 flex-1">
+          <FrameStrip
+            frames={snapshot.frames}
+            frameIds={frameIds}
+            activeFrameId={activeFrameId}
+            onSelect={setActiveFrame}
+            onDuplicate={(frameId) => dispatch(() => duplicateFrameCommand(doc, frameId))}
+            onDelete={(frameId) => dispatch(() => removeFrameCommand(doc, frameId))}
+          />
+        </ScrollArea>
+      </DragBoard>
+
+      <CommandButton command="frame.add" size="sm" variant="outline">
+        <Plus />
+        Frame
+      </CommandButton>
+    </Panel>
+  );
+}
+
+interface FrameStripProps {
+  frames: FrameModel[];
+  frameIds: string[];
+  activeFrameId: string | null;
+  onSelect: (frameId: string) => void;
+  onDuplicate: (frameId: string) => void;
+  onDelete: (frameId: string) => void;
+}
+
+/**
+ * Its own component, rendered as DragBoard's child, so useDropZone's monitor runs inside the
+ * surrounding provider rather than above it (calling the hook back in FramesBar would sit outside
+ * it, since FramesBar is what renders DragBoard, not what DragBoard renders).
+ *
+ * The strip registers no droppable of its own — its cards are the targets — so the ring is claimed
+ * via `owns` instead.
+ */
+function FrameStrip({
+  frames,
+  frameIds,
+  activeFrameId,
+  onSelect,
+  onDuplicate,
+  onDelete,
+}: FrameStripProps) {
+  const { ref, dropClass } = useDropZone({
+    id: "frames-strip",
+    ringOnly: true,
+    owns: (overId) => frameIds.includes(overId),
+  });
+
+  return (
+    <ol ref={ref} className={cn("flex gap-2 rounded-md", dropClass)}>
+      {frames.map((frame, index) => (
+        <FrameCard
+          key={frame.id}
+          frameId={frame.id}
+          index={index}
+          isActive={frame.id === activeFrameId}
+          canDelete={frames.length > 1}
+          onSelect={() => onSelect(frame.id)}
+          onDuplicate={() => onDuplicate(frame.id)}
+          onDelete={() => onDelete(frame.id)}
+        />
+      ))}
+    </ol>
+  );
+}

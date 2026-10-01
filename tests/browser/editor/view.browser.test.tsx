@@ -2,14 +2,14 @@ import { expect, test } from "vitest";
 import { userEvent } from "vitest/browser";
 import { ZOOM_LEVELS } from "@/constants/canvas";
 import { screenToSprite, spriteToScreen, type Point } from "@/core/viewport";
-import { useEditorStore } from "@/stores/useEditorStore";
+import { useViewStore } from "@/editor/view/api";
 import { KEYS, mod, openEditor, paintedPixels, session, type Editor } from "@test/editor";
 import { dragClientPoints } from "@test/pointer";
 
 /** Big enough to fit mid-ladder in the test viewport, so zoom can step both ways from the fit. */
 const SPRITE = { width: 64, height: 64 };
 
-const viewport = () => useEditorStore.getState().viewport;
+const viewport = () => useViewStore.getState().viewport;
 
 /** Where sprite pixel `point`'s centre sits on screen right now, in client coordinates. */
 function clientOf(editor: Editor, point: Point) {
@@ -166,12 +166,12 @@ test("Ctrl/⌘+G and the grid popover both toggle the pixel grid", async () => {
   await expect.element(gridButton).toHaveAttribute("aria-pressed", "true");
 
   await userEvent.keyboard(mod("g"));
-  expect(useEditorStore.getState().gridEnabled).toBe(false);
+  expect(useViewStore.getState().gridEnabled).toBe(false);
   await expect.element(gridButton).toHaveAttribute("aria-pressed", "false");
 
   await userEvent.click(gridButton);
   await userEvent.click(editor.screen.getByRole("switch"));
-  expect(useEditorStore.getState().gridEnabled).toBe(true);
+  expect(useViewStore.getState().gridEnabled).toBe(true);
 });
 
 test("zooming never changes the document", async () => {
@@ -219,9 +219,9 @@ test("resize canvas works in tiles: a new tile keeps the canvas size, and undo r
   await userEvent.click(editor.screen.getByRole("button", { name: "Resize", exact: true }));
 
   expect([doc.width, doc.height, doc.tileSize]).toEqual([48, 32, 8]);
-  await expect.poll(() => useEditorStore.getState().gridSize).toBe(8);
+  await expect.poll(() => useViewStore.getState().gridSize).toBe(8);
 
   await userEvent.keyboard(KEYS.undo);
   expect([doc.width, doc.height, doc.tileSize]).toEqual([32, 32, 16]);
-  await expect.poll(() => useEditorStore.getState().gridSize).toBe(16);
+  await expect.poll(() => useViewStore.getState().gridSize).toBe(16);
 });
