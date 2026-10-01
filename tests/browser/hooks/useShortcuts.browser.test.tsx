@@ -1,5 +1,5 @@
 import { expect, test, vi } from "vitest";
-import { userEvent } from "@vitest/browser/context";
+import { userEvent } from "vitest/browser";
 import type { CommandRegistry } from "@/commands/types";
 import { useShortcuts } from "@/hooks/useShortcuts";
 import { IS_APPLE } from "@/lib/keys";
@@ -25,7 +25,7 @@ function undoRegistry(run: () => void): CommandRegistry {
 
 test("a bound key fires its command", async () => {
   const undo = vi.fn();
-  const screen = render(<Harness commands={undoRegistry(undo)} />);
+  const screen = await render(<Harness commands={undoRegistry(undo)} />);
   await expect.element(screen.getByLabelText("Sprite name")).toBeVisible();
 
   await userEvent.keyboard(UNDO_CHORD);
@@ -34,7 +34,7 @@ test("a bound key fires its command", async () => {
 
 test("typing in a text input does not trigger the shortcut", async () => {
   const undo = vi.fn();
-  const screen = render(<Harness commands={undoRegistry(undo)} />);
+  const screen = await render(<Harness commands={undoRegistry(undo)} />);
   const input = screen.getByLabelText("Sprite name");
   await userEvent.click(input);
 
@@ -44,7 +44,7 @@ test("typing in a text input does not trigger the shortcut", async () => {
 
 test("typing in a contenteditable region does not trigger the shortcut", async () => {
   const undo = vi.fn();
-  const screen = render(<Harness commands={undoRegistry(undo)} />);
+  const screen = await render(<Harness commands={undoRegistry(undo)} />);
   const notes = screen.getByLabelText("Notes");
   await userEvent.click(notes);
 
@@ -57,7 +57,7 @@ test("a disabled command does not run", async () => {
   const commands: CommandRegistry = {
     "edit.undo": { id: "edit.undo", label: "Undo", group: "Edit", isEnabled: () => false, run: undo },
   };
-  const screen = render(<Harness commands={commands} />);
+  const screen = await render(<Harness commands={commands} />);
   await expect.element(screen.getByLabelText("Sprite name")).toBeVisible();
 
   await userEvent.keyboard(UNDO_CHORD);
@@ -75,7 +75,7 @@ function holdRegistry() {
 
 test("a key bound to a hold command reports its press and release instead of running", async () => {
   const { commands, hold, run } = holdRegistry();
-  const screen = render(<Harness commands={commands} />);
+  const screen = await render(<Harness commands={commands} />);
   await expect.element(screen.getByLabelText("Sprite name")).toBeVisible();
 
   const down = keyDown("e", { code: "KeyE", at: 100 });
@@ -90,7 +90,7 @@ test("a key bound to a hold command reports its press and release instead of run
 
 test("a release is matched by physical key, and a key never pressed releases nothing", async () => {
   const { commands, hold } = holdRegistry();
-  const screen = render(<Harness commands={commands} />);
+  const screen = await render(<Harness commands={commands} />);
   await expect.element(screen.getByLabelText("Sprite name")).toBeVisible();
 
   keyUp("e", { code: "KeyE", at: 50 });
@@ -104,7 +104,7 @@ test("a release is matched by physical key, and a key never pressed releases not
 
 test("losing window focus, or unmounting, mid-press cancels the hold", async () => {
   const { commands, hold } = holdRegistry();
-  const screen = render(<Harness commands={commands} />);
+  const screen = await render(<Harness commands={commands} />);
   await expect.element(screen.getByLabelText("Sprite name")).toBeVisible();
 
   keyDown("e", { code: "KeyE", at: 0 });
@@ -112,6 +112,6 @@ test("losing window focus, or unmounting, mid-press cancels the hold", async () 
   expect(hold.cancel).toHaveBeenCalledTimes(1);
 
   keyDown("e", { code: "KeyE", at: 1000 });
-  screen.unmount();
+  await screen.unmount();
   expect(hold.cancel).toHaveBeenCalledTimes(2);
 });

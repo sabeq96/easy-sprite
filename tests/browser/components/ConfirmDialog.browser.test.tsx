@@ -1,12 +1,12 @@
 import { expect, test, vi } from "vitest";
-import { userEvent } from "@vitest/browser/context";
+import { userEvent } from "vitest/browser";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { render } from "@test/render";
 
 test("cancel closes the dialog without confirming", async () => {
   const onConfirm = vi.fn();
-  const screen = render(
+  const screen = await render(
     <ConfirmDialog title="Delete sprite?" description="This cannot be undone." onConfirm={onConfirm}>
       <Button>Delete</Button>
     </ConfirmDialog>,
@@ -21,7 +21,7 @@ test("cancel closes the dialog without confirming", async () => {
 
 test("confirming runs onConfirm with the given label", async () => {
   const onConfirm = vi.fn();
-  const screen = render(
+  const screen = await render(
     <ConfirmDialog
       title="Delete sprite?"
       description="This cannot be undone."

@@ -25,7 +25,7 @@ afterEach(async () => {
   // vitest-browser-react only unmounts in the next test's beforeEach — after the database below is
   // closed. An editor still mounted then flushes its autosave into a closed database (an unhandled
   // DatabaseClosedError), so unmount now, while it is open, and let that last save finish.
-  cleanup();
+  await cleanup();
   await window.__spriteEditor?.autosave.flush();
   window.__spriteEditor = undefined;
 

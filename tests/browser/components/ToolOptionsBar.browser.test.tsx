@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { userEvent } from "@vitest/browser/context";
+import { userEvent } from "vitest/browser";
 import { ToolOptionsBar } from "@/components/editor/ToolOptionsBar";
 import { CommandsProvider } from "@/commands/CommandsContext";
 import { createToolCommands } from "@/commands/toolCommands";
@@ -19,7 +19,7 @@ function renderBar() {
 
 test("the bucket tool has no options — tolerance was dropped, not hidden", async () => {
   useEditorStore.getState().setTool("bucket");
-  const screen = renderBar();
+  const screen = await renderBar();
 
   await expect.element(screen.getByText("Paint bucket")).toBeVisible();
   expect(screen.getByText(/tolerance/i).elements()).toHaveLength(0);
@@ -28,7 +28,7 @@ test("the bucket tool has no options — tolerance was dropped, not hidden", asy
 
 test("fill similar also has no options", async () => {
   useEditorStore.getState().setTool("fillSimilar");
-  const screen = renderBar();
+  const screen = await renderBar();
 
   await expect.element(screen.getByText("Fill similar")).toBeVisible();
   expect(screen.getByText(/tolerance/i).elements()).toHaveLength(0);
@@ -36,14 +36,14 @@ test("fill similar also has no options", async () => {
 
 test("the picker tool offers only the sample-merged switch", async () => {
   useEditorStore.getState().setTool("picker");
-  const screen = renderBar();
+  const screen = await renderBar();
 
   await expect.element(screen.getByText("Sample merged image")).toBeVisible();
 });
 
 test("the pencil tool keeps brush size and its own mirror option", async () => {
   useEditorStore.getState().setTool("pencil");
-  const screen = renderBar();
+  const screen = await renderBar();
 
   await expect.element(screen.getByRole("group", { name: "Brush size" })).toBeVisible();
   await expect.element(screen.getByRole("button", { name: "Mirror horizontally" })).toBeVisible();
@@ -52,7 +52,7 @@ test("the pencil tool keeps brush size and its own mirror option", async () => {
 
 test.each(TOOL_LIST.map((tool) => tool.id))("the %s bar shows exactly the options that tool declares", async (toolId) => {
   useEditorStore.getState().setTool(toolId);
-  const screen = renderBar();
+  const screen = await renderBar();
   const declared = TOOLS[toolId].options;
 
   // Each control appears only when the tool itself claims to honour it — the guard against a
@@ -68,7 +68,7 @@ test.each(TOOL_LIST.map((tool) => tool.id))("the %s bar shows exactly the option
 
 test("picking another tool turns mirroring off, so it can't linger unapplied", async () => {
   useEditorStore.getState().setTool("pencil");
-  const screen = render(
+  const screen = await render(
     <CommandsProvider value={createToolCommands(useEditorStore)}>
       <ToolSidebar />
       <ToolOptionsBar />

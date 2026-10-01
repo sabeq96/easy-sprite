@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { page, userEvent } from "@vitest/browser/context";
+import { page, userEvent } from "vitest/browser";
 import { AppRoutes } from "@/app/routes";
 import { db } from "@/db/db";
 import { createSprite, updateSprite } from "@/db/repositories/sprites";
@@ -19,7 +19,7 @@ async function sheetWith(names: string[], blocks: (ids: string[]) => Spritesheet
   const sheet = await createSpritesheet({ name: "Composed" });
   await updateSpritesheet(sheet.id, { blocks: blocks(sprites.map((sprite) => sprite.id)) });
 
-  const screen = render(<AppRoutes />, { route: `/spritesheets/${sheet.id}` });
+  const screen = await render(<AppRoutes />, { route: `/spritesheets/${sheet.id}` });
   await expect.element(screen.getByTestId("builder-trailing-row")).toBeVisible();
   await blocksSized(sheet.id);
   return { screen, sheetId: sheet.id, spriteIds: sprites.map((sprite) => sprite.id) };
@@ -283,7 +283,7 @@ test("what the sheet shows is exactly what packSheet exports", async () => {
     ],
   });
 
-  render(<AppRoutes />, { route: `/spritesheets/${sheet.id}` });
+  await render(<AppRoutes />, { route: `/spritesheets/${sheet.id}` });
   await blocksRendered(3);
   await blocksSized(sheet.id);
 

@@ -82,6 +82,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: browser-test-screenshots
-          path: tests/browser/**/__screenshots__/
+          path: .vitest/attachments/
           if-no-files-found: ignore
           retention-days: 14

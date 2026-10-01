@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { userEvent } from "@vitest/browser/context";
+import { userEvent } from "vitest/browser";
 import { BRUSH_SIZES } from "@/constants/tools";
 import { createPalette } from "@/db/repositories/palettes";
 import { brushBounds } from "@/editor/pixels";

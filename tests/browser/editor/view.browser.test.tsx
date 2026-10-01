@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { userEvent } from "@vitest/browser/context";
+import { userEvent } from "vitest/browser";
 import { ZOOM_LEVELS } from "@/constants/canvas";
 import { screenToSprite, spriteToScreen, type Point } from "@/editor/viewport";
 import { useEditorStore } from "@/stores/useEditorStore";

@@ -1,6 +1,6 @@
 import { createElement } from "react";
 import { expect } from "vitest";
-import { page, userEvent } from "@vitest/browser/context";
+import { page, userEvent } from "vitest/browser";
 import { AppRoutes } from "@/app/routes";
 import { createSprite } from "@/db/repositories/sprites";
 import { getPixel } from "@/editor/buffer";
@@ -44,7 +44,7 @@ export const EDITOR_VIEWPORT = { width: 1280, height: 720 };
 export async function openEditor({ width = 16, height = 16 } = {}) {
   await page.viewport(EDITOR_VIEWPORT.width, EDITOR_VIEWPORT.height);
   const sprite = await createSprite({ width, height });
-  const screen = render(createElement(AppRoutes), { route: `/sprites/${sprite.id}` });
+  const screen = await render(createElement(AppRoutes), { route: `/sprites/${sprite.id}` });
 
   const canvasLocator = screen.getByRole("application", { name: "Sprite canvas" });
   await expect.element(canvasLocator).toBeVisible();

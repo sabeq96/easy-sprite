@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { page, userEvent } from "@vitest/browser/context";
+import { page, userEvent } from "vitest/browser";
 import { AppRoutes } from "@/app/routes";
 import { BUILDER_ZOOM_LEVELS } from "@/constants/builder";
 import { createSprite } from "@/db/repositories/sprites";
@@ -25,7 +25,7 @@ async function openSheet(
   const placed = blocks(ids);
   await updateSpritesheet(sheet.id, { blocks: placed });
 
-  const screen = render(<AppRoutes />, { route: `/spritesheets/${sheet.id}` });
+  const screen = await render(<AppRoutes />, { route: `/spritesheets/${sheet.id}` });
   await expect.element(screen.getByTestId("builder-trailing-row")).toBeVisible();
   await expect
     .poll(() => document.querySelectorAll('[data-testid="builder-canvas"] [data-block-id]').length)
@@ -116,7 +116,7 @@ test("the grid switch hides the ruler and the grid size slider changes it", asyn
 
   await userEvent.click(screen.getByRole("button", { name: "Grid options" }));
   // Focused, not clicked: the thumb sits over the range input and takes the pointer.
-  (screen.getByRole("slider", { name: "Grid size" }).element() as HTMLElement).focus();
+  (screen.getByRole("slider", { name: /^Grid size/ }).element() as HTMLElement).focus();
   await userEvent.keyboard("{ArrowLeft}");
   await expect.poll(() => useBuilderViewStore.getState().gridSize).toBe(8);
 

@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { userEvent } from "@vitest/browser/context";
+import { userEvent } from "vitest/browser";
 import { AppRoutes } from "@/app/routes";
 import { createSprite } from "@/db/repositories/sprites";
 import { useEditorStore } from "@/stores/useEditorStore";
@@ -7,7 +7,7 @@ import { render } from "@test/render";
 
 async function openEditor() {
   const sprite = await createSprite({ width: 16, height: 16 });
-  const screen = render(<AppRoutes />, { route: `/sprites/${sprite.id}` });
+  const screen = await render(<AppRoutes />, { route: `/sprites/${sprite.id}` });
 
   const canvas = screen.getByRole("application", { name: "Sprite canvas" });
   await expect.element(canvas).toBeVisible();
