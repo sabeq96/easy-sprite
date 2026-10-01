@@ -8,10 +8,8 @@ import {
   type ShortcutSection,
 } from "@/components/common/ShortcutHelpDialog";
 import type { Tool } from "@/framework/tool";
+import { EDITOR_MODULES } from "@/editor/modules";
 import { TOOL_LIST, type ToolId } from "@/tools";
-import { CANVAS_VIEW_HINTS } from "@/hooks/useCanvasViewControls";
-import { COLOR_HOTKEY_HINTS } from "@/hooks/useColorHotkeys";
-import { POINTER_PAINT_HINTS } from "@/hooks/usePointerPaint";
 
 export interface ShortcutHelpDialogProps {
   commands: CommandRegistry;
@@ -44,10 +42,10 @@ function toolsGroupCommands(commands: CommandRegistry): CommandId[] {
 }
 
 /**
- * Inputs owned by features rather than commands, each declared next to its code. They join the
+ * Inputs owned by host modules rather than commands, each declared by its module. They join the
  * command group they belong to instead of getting sections of their own.
  */
-const FEATURE_HINTS = [COLOR_HOTKEY_HINTS, POINTER_PAINT_HINTS, CANVAS_VIEW_HINTS];
+const MODULE_HINTS = EDITOR_MODULES.flatMap((editorModule) => editorModule.hints ?? []);
 
 /**
  * One row per tool, each followed by what pressing its key again does; then the other Tools
@@ -89,7 +87,7 @@ export function ShortcutHelpDialog({ commands, open, onOpenChange }: ShortcutHel
       open={open}
       onOpenChange={onOpenChange}
       description="Every key and mouse gesture the editor understands."
-      hints={FEATURE_HINTS}
+      hints={MODULE_HINTS}
       leadingSections={[{ title: "Tools", rows: toolsRows(commands) }, ...toolSections()]}
       excludeCommands={new Set([...TOOL_OWNED_COMMANDS, ...toolsGroupCommands(commands)])}
     />

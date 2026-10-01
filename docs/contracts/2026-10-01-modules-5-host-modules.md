@@ -127,7 +127,7 @@ function EditorShell() {
 
 ## Tasks (one PR each, in order)
 
-1. **shell + mechanism.**
+1. ✅ **shell + mechanism.**
    - Add `module.ts` and `modules.ts`.
    - Move the shell files, and move undo, redo, save, help and back into `shell/commands.ts`.
    - `EditorPage` merges `EDITOR_MODULES` commands with what's left of `useEditorCommands`.
@@ -219,3 +219,81 @@ Command per PR: `npm run lint && npm run build && npm run test:coverage`
 None. Decisions 1-5 were settled on 2026-10-01.
 
 ## Drift log
+
+- **2026-10-01, Task 1: `shell/api.ts` does not export `EditorPage`; the router imports `@/editor/shell/EditorPage`.**
+  Exported from `api.ts`, it closed two import cycles that `import/no-cycle` rejects:
+  `modules.ts → shell/api → EditorPage → modules.ts`, and
+  `createToolHost → shell/api → EditorPage → createToolHost`. No other module places the page, so
+  Decision 8 ("exports only what other modules use") already leaves it out. `src/app/` is not a
+  module, and Decision 10's lint does not cover it. Consequence for every later task: nothing
+  `EditorPage` reaches (`modules.ts`, every module's `api.ts`, `canvas/toolHost/`) may import a
+  shell file that imports `EditorPage` or `modules.ts`. `shell/api.ts` exports
+  `createHistoryAdapter` and `module` only.
+- **2026-10-01, Task 1: `ModuleContext.save(): Promise<void>`.** It is not in the Interfaces
+  sketch. `edit.save` flushes the autosave, and the sketched context had no way to reach it.
+  `useModuleContext` binds it to `autosave.flush()`; the "Saved" toast stays in `shell/commands.ts`.
+- **2026-10-01, Task 1: interim hints on the shell module.** The cheat sheet reads
+  `EDITOR_MODULES.flatMap(hints)`, so until palette and canvas exist, `shellModule.hints` holds
+  `COLOR_HOTKEY_HINTS`, `POINTER_PAINT_HINTS` and `CANVAS_VIEW_HINTS` (imported from `hooks/`),
+  in the order `FEATURE_HINTS` had. Palette (task 2) and canvas (task 8) take them. Watch the
+  row order: hint rows in one group follow module order, and `COLOR_HOTKEY_HINTS` and
+  `POINTER_PAINT_HINTS` are both in "Color". If task 2 puts the colour keys on palette (after
+  shell) while the pointer hint stays on shell, "Paint with secondary color" moves above
+  "Pick primary".
+- **2026-10-01, Task 1: shell wiring.** `shell/useModuleContext.ts` builds the context from the
+  document session, `useCommandDispatch` and `useNavigate`. `EditorShell` merges
+  `EDITOR_MODULES` commands, then `useEditorCommands()` (later keys win, but the unit test
+  forbids overlaps), through a local `mergeCommands`. The `withHelp` `useMemo` is gone:
+  `app.shortcutHelp` is a shell command that calls `ctx.showHelp`.
+- **2026-10-01, Task 1: the `history` adapter is `createHistoryAdapter(doc, history): Edits` in
+  `shell/historyAdapter.ts`.** `createToolHost` keeps its `{ doc, history }` signature and
+  imports the adapter through `@/editor/shell/api`, so no test changed. The adapter has its own
+  three-line `activeTarget()` (the tool host keeps one for `crop`). Both read `useEditorStore`
+  until layers and frames (tasks 3–4) expose their selectors. `docs/architecture.md` still says
+  "the adapters live in `src/hooks/toolHost/`" (task 8 rewrites that section).
+- **2026-10-01, Task 1: lint (Decision 10).** Two overrides, because a later override replaces
+  `no-restricted-imports`. `src/editor/*/**` has four groups:
+  - `@/editor/*/**` except `@/editor/*/api`, `@/editor/module` and `@/editor/modules`;
+  - `../**`;
+  - `@/db/db` and `dexie*`;
+  - `@/tools/**` except `@/tools/index`.
+
+  `src/editor/*/**/*.tsx` repeats those four and adds `@/db/**`, `@/services/**` and
+  `@/export/**` with `allowTypeImports`. That is `/**` where Decision 10 wrote `/*`, so nested
+  paths such as `@/db/repositories/sprites` are caught. Probes ran with a throwaway
+  `src/editor/zzprobe/` module and shell files, then were deleted.
+  - Rejected from `shell/*.ts`: `@/editor/zzprobe/store` (deep cross-module), `../zzprobe/api`,
+    `@/db/db`, `dexie`, `dexie-react-hooks`, `@/tools/pencil/tool`.
+  - Passed from `shell/*.ts`: `@/editor/zzprobe/api`, `@/editor/module`, `@/editor/modules`,
+    `./commands`, `@/db/repositories/sprites`, `@/services/autosave`, `@/tools`, `@/tools/index`.
+  - Rejected from `zzprobe/Probe.tsx`: `@/editor/shell/commands`, `../shell/api`,
+    `@/services/autosave`, `@/db/repositories/sprites`, `@/export/spritePng`,
+    `@/tools/pencil/tool`, `dexie`.
+  - Passed from `zzprobe/Probe.tsx`: `import type … from "@/services/autosave"` and
+    `@/editor/shell/api`.
+  - From `zzprobe/sub/Deep.tsx`, both `@/services/autosave` and `@/editor/shell/commands` are
+    rejected.
+  - `src/editor/module.ts` and `modules.ts` are not matched by `src/editor/*/**`; a deep import
+    there passes. This is the same as `src/tools/index.ts` under `src/tools/*/**`.
+- **2026-10-01, Task 1: verification beyond the suites.** A throwaway browser probe, run on this
+  tree and on `ed1e036` in a scratch worktree (then deleted), dumped the editor's buttons
+  (accessible name, `aria-keyshortcuts`, disabled), the tooltips of six buttons, the whole cheat
+  sheet text and the sprite menu text. The results are identical, except that one run caught the
+  previous tooltip still fading out next to the new one; every tooltip's text matches.
+- **2026-10-01, Task 1: tests.** New `tests/unit/editor/modules.test.ts`, covering the three
+  planned cases. The duplicate-chord case repeats the check in `keymap.test.ts`, because modules
+  declare no keys yet. Mutation probe: a `tool.pencil` entry added to `shellCommands` fails "never
+  registers one command id twice" with `["tool.pencil"]`; restored from a copy. No existing test
+  changed.
+
+## Builder notes (from task 1, for tasks 2–8)
+
+- **Plugging in a module.**
+  - `src/editor/<m>/module.ts` exports `const xModule: EditorModule`: `id`, `commands(ctx)` (a plain function that reads stores lazily), `hints` and `attachCanvas`.
+  - `<m>/api.ts` re-exports it `as module`.
+  - Append one line to `EDITOR_MODULES` in `src/editor/modules.ts`, importing `{ module as x } from "@/editor/<m>/api"`.
+- **Commands.** Move them from `useEditorCommands` into `<m>/commands.ts`. `EditorShell` merges module commands first, then what's left of `useEditorCommands()`. `modules.test.ts` catches duplicate ids across modules and tools, but not against `useEditorCommands`.
+- **No cycles.** A module's `api.ts`, and anything it reaches, must never import `EditorPage`, `modules.ts` or `ShortcutHelpDialog`. `EditorPage` is imported by the router directly (`@/editor/shell/EditorPage`), not through `shell/api.ts`; this was accepted by the maintainer's session.
+- **Imports.** Inside a module use `./`; across modules use `@/editor/<m>/api` only. In `.tsx` files, `db`, `services` and `export` are type-only imports.
+- **Hint order.** The cheat sheet's hint rows follow `EDITOR_MODULES` order. Task 2 must keep the "Color" group's row order identical when `COLOR_HOTKEY_HINTS` moves to palette while `POINTER_PAINT_HINTS` stays on shell, until task 8.
+- **Stores.** Task 2 introduces the first module store and `resetEditorStores()` in `tests/support`.

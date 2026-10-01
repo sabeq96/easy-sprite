@@ -1,11 +1,8 @@
-import { useNavigate } from "react-router";
-import { toast } from "sonner";
 import { useDocumentSession } from "@/app/DocumentProvider";
 import { createContributedCommands } from "@/commands/contributed";
 import { createToolCommands } from "@/commands/toolCommands";
 import type { CommandRegistry } from "@/commands/types";
 import { ZOOM_LEVELS } from "@/constants/canvas";
-import { ROUTES } from "@/constants/routes";
 import {
   addFrameCommand,
   duplicateFrameCommand,
@@ -23,13 +20,13 @@ import { useToolHost } from "@/hooks/toolHost/ToolHostContext";
 import { useEditorStore } from "@/stores/useEditorStore";
 
 /**
- * The only place that maps a user action onto a document mutation. Every surface — toolbar,
- * menus, keymap, cheat sheet — reads from here, so they cannot drift apart.
+ * The commands not yet moved into a host module (`EDITOR_MODULES`); the shell merges both.
+ * Every surface — toolbar, menus, keymap, cheat sheet — reads the merged registry, so they
+ * cannot drift apart.
  */
 export function useEditorCommands(): CommandRegistry {
-  const { doc, history, autosave } = useDocumentSession();
+  const { doc } = useDocumentSession();
   const dispatch = useCommandDispatch();
-  const navigate = useNavigate();
   const toolHost = useToolHost();
 
   // Read via getState() inside handlers so the registry does not churn every render.
@@ -56,27 +53,6 @@ export function useEditorCommands(): CommandRegistry {
     ...createToolCommands(store),
     // The selection's copy, cut, paste, … are the select tool's own (see `Tool.commands`).
     ...createContributedCommands(toolHost),
-
-    "edit.undo": {
-      id: "edit.undo",
-      label: "Undo",
-      group: "Edit",
-      isEnabled: () => history.canUndo,
-      run: () => history.undo(),
-    },
-    "edit.redo": {
-      id: "edit.redo",
-      label: "Redo",
-      group: "Edit",
-      isEnabled: () => history.canRedo,
-      run: () => history.redo(),
-    },
-    "edit.save": {
-      id: "edit.save",
-      label: "Save now",
-      group: "Edit",
-      run: () => void autosave.flush().then(() => toast.success("Saved")),
-    },
 
     "color.swap": {
       id: "color.swap",
@@ -238,13 +214,6 @@ export function useEditorCommands(): CommandRegistry {
         const { onion, setOnion } = store.getState();
         setOnion({ enabled: !onion.enabled });
       },
-    },
-
-    "app.backToLibrary": {
-      id: "app.backToLibrary",
-      label: "Back to sprites",
-      group: "App",
-      run: () => navigate(ROUTES.sprites),
     },
   };
 

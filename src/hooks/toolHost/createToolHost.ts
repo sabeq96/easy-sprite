@@ -1,20 +1,19 @@
 import { cropRegion, createBuffer } from "@/core/buffer";
 import { compositeFrame } from "@/core/composite";
 import type { SpriteDocument } from "@/core/document";
-import { StrokeRecorder, type History } from "@/core/history";
+import type { History } from "@/core/history";
 import type { CanvasRenderer } from "@/core/renderer";
+import { createHistoryAdapter } from "@/editor/shell/api";
 import type {
   Canvas,
   Colors,
   DocumentView,
-  Edits,
   OverlayPaint,
   ToolControl,
   ToolHost,
 } from "@/framework/host";
 import { resolveSettings } from "@/framework/settings";
 import { getTool, type ToolId } from "@/tools";
-import { createSurface } from "@/hooks/toolHost/surface";
 import { useEditorStore } from "@/stores/useEditorStore";
 
 export interface ToolHostDeps {
@@ -89,28 +88,6 @@ function createDocumentView(doc: SpriteDocument): DocumentView {
   };
 }
 
-function createEdits(doc: SpriteDocument, history: History): Edits {
-  return {
-    edit(label, change) {
-      const target = activeTarget();
-      const layer = target && doc.getLayer(target.layerId);
-      // Same rule as drawing: a locked or hidden layer is not editable.
-      if (!target || !layer || layer.locked || !layer.visible) return false;
-
-      const recorder = new StrokeRecorder(doc, label);
-      change(createSurface(doc, target.layerId, target.frameId, recorder));
-      const command = recorder.commit();
-      if (command) history.push(command);
-      return true;
-    },
-    onUndoRedo(listener) {
-      return history.events.on("change", (kind) => {
-        if (kind !== "push") listener();
-      });
-    },
-  };
-}
-
 /** The calling tool's own control: its settings are read and written under its id only. */
 function createToolControl(toolId: ToolId): ToolControl {
   const declared = getTool(toolId).settings;
@@ -149,7 +126,7 @@ export function createToolHost({ doc, history }: ToolHostDeps): DocumentToolHost
     colors: createColors(),
     canvas,
     document: createDocumentView(doc),
-    history: createEdits(doc, history),
+    history: createHistoryAdapter(doc, history),
   };
   const views = new Map<ToolId, ToolHost>();
 

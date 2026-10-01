@@ -325,6 +325,67 @@
           }
         ]
       }
+    },
+    {
+      "files": ["src/editor/*/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@/editor/*/**", "!@/editor/*/api", "!@/editor/module", "!@/editor/modules"],
+                "message": "Another editor module is reached only through its api.ts (@/editor/<module>/api); within a module, import with ./."
+              },
+              {
+                "group": ["../**"],
+                "message": "An editor module is self-contained: import within it with ./, and anything else through @/."
+              },
+              {
+                "group": ["@/db/db", "dexie*"],
+                "message": "Editor modules read the database through src/db/repositories/, never the raw Dexie instance."
+              },
+              {
+                "group": ["@/tools/**", "!@/tools/index"],
+                "message": "The host sees tools only through the registry (@/tools): never a file inside a tool's folder."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/editor/*/**/*.tsx"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@/editor/*/**", "!@/editor/*/api", "!@/editor/module", "!@/editor/modules"],
+                "message": "Another editor module is reached only through its api.ts (@/editor/<module>/api); within a module, import with ./."
+              },
+              {
+                "group": ["../**"],
+                "message": "An editor module is self-contained: import within it with ./, and anything else through @/."
+              },
+              {
+                "group": ["@/db/db", "dexie*"],
+                "message": "Editor modules read the database through src/db/repositories/, never the raw Dexie instance."
+              },
+              {
+                "group": ["@/tools/**", "!@/tools/index"],
+                "message": "The host sees tools only through the registry (@/tools): never a file inside a tool's folder."
+              },
+              {
+                "group": ["@/db/**", "@/services/**", "@/export/**"],
+                "allowTypeImports": true,
+                "message": "Components reach data and side effects through a hook (e.g. useSpriteActions). Type-only imports are fine."
+              }
+            ]
+          }
+        ]
+      }
     }
   ]
 }

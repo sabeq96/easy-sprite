@@ -5,8 +5,6 @@ import { CommandButton } from "@/components/common/CommandButton";
 import { Panel } from "@/components/common/Panel";
 import { SaveStatusBadge } from "@/components/common/SaveStatusBadge";
 import { TooltipButton } from "@/components/common/TooltipButton";
-import { EditorMenu } from "@/components/editor/EditorMenu";
-import { SpriteNameField } from "@/components/editor/SpriteNameField";
 import { ViewControls } from "@/components/editor/ViewControls";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -14,6 +12,8 @@ import { ROUTES } from "@/constants/routes";
 import { commandKeys } from "@/commands/keymap";
 import { useHistoryState } from "@/hooks/useHistoryState";
 import { useSpriteExport } from "@/hooks/useSpriteActions";
+import { EditorMenu } from "./EditorMenu";
+import { SpriteNameField } from "./SpriteNameField";
 
 export function EditorTopBar() {
   const { doc, history, autosave, saveStatus } = useDocumentSession();

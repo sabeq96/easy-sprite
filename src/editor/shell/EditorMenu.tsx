@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Crop, Menu, Save } from "lucide-react";
-import { ResizeCanvasDialog } from "@/components/editor/ResizeCanvasDialog";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -12,6 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useCommand } from "@/commands/CommandsContext";
 import { commandKeys } from "@/commands/keymap";
+import { ResizeCanvasDialog } from "./ResizeCanvasDialog";
 
 export function EditorMenu() {
   const save = useCommand("edit.save");
