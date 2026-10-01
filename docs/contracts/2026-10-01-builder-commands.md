@@ -1,6 +1,6 @@
 # Builder commands in sync with the editor
 
-Status: building
+Status: done
 Date: 2026-10-01
 Branch: `refactor/builder-commands` on top of `refactor/modules-6-followups` (PR #33)
 
@@ -225,29 +225,29 @@ The id union and the shared keys.
 - Commands: `pnpm lint`, `pnpm build`, `pnpm test`, `pnpm test:browser`.
 
 ## Done when
-- [ ] Done1: `grep -rn "@/editor" src/commands/define.ts src/commands/session.ts src/commands/builderCommands.ts src/commands/useBuilderCommands.ts` returns nothing.
-- [ ] Done2: The five session command definitions exist once (`grep -rn '"edit.undo"' src --include=*.ts` hits only `src/commands/session.ts`).
-- [ ] Done3: `CommandId` includes `BuilderCommandId`; adding a `sheet.x` definition to `BUILDER_COMMANDS` type-checks without touching any editor file.
-- [ ] Done4: `SHARED_KEYS` has exactly the 4 view ids.
-- [ ] Done5: Editor and builder registries have the same ids, labels, keys and order as before (tests).
-- [ ] Done6: lint, build, unit and browser tests pass.
-- [ ] Done7: `docs/architecture.md` command section describes session commands and builder definitions.
+- [x] Done1: `grep -rn "@/editor" src/commands/define.ts src/commands/session.ts src/commands/builderCommands.ts src/commands/useBuilderCommands.ts` returns nothing.
+- [x] Done2: The five session command definitions exist once (`grep -rn '"edit.undo"' src --include=*.ts` hits only `src/commands/session.ts`).
+- [x] Done3: `CommandId` includes `BuilderCommandId`; adding a `sheet.x` definition to `BUILDER_COMMANDS` type-checks without touching any editor file.
+- [x] Done4: `SHARED_KEYS` has exactly the 4 view ids.
+- [x] Done5: Editor and builder registries have the same ids, labels, keys and order as before (tests).
+- [x] Done6: lint, build, unit and browser tests pass.
+- [x] Done7: `docs/architecture.md` command section describes session commands and builder definitions.
 
 ## Open risks
 - O1: `CommandSpec` method params under `strictFunctionTypes`: `SESSION_COMMANDS` (Ctx = SessionContext) must
   be assignable where `ModuleCommand` is expected. Method syntax is bivariant, so expected fine.
 
 ## Tasks
-- [ ] `src/commands/define.ts` — generic spec, `commandsFor`, `bindCommands` → Done1, Done3
-- [ ] `src/commands/session.ts` — `SessionContext`, `SESSION_COMMANDS` → Done2
-- [ ] `src/editor/module.ts` — `ModuleContext extends SessionContext`, aliases → Done1
-- [ ] `src/editor/shell/commands.ts`, `src/editor/shell/module.ts` — use `SESSION_COMMANDS` → Done2
-- [ ] `src/commands/builderCommands.ts` — `BuilderContext`, `BUILDER_COMMANDS` → Done3
-- [ ] `src/commands/useBuilderCommands.ts` — build context, bind → Done5
-- [ ] `src/commands/types.ts` — add `BuilderCommandId` → Done3
-- [ ] `src/constants/shortcuts.ts` — shrink `SHARED_KEYS` → Done4
-- [ ] `tests/browser/commands/useBuilderCommands.browser.test.tsx` — updated assertions → Done5
-- [ ] `docs/architecture.md` — command section → Done7
+- [x] `src/commands/define.ts` — generic spec, `commandsFor`, `bindCommands` → Done1, Done3
+- [x] `src/commands/session.ts` — `SessionContext`, `SESSION_COMMANDS` → Done2
+- [x] `src/editor/module.ts` — `ModuleContext extends SessionContext`, aliases → Done1
+- [x] `src/editor/shell/commands.ts`, `src/editor/shell/module.ts` — use `SESSION_COMMANDS` → Done2
+- [x] `src/commands/builderCommands.ts` — `BuilderContext`, `BUILDER_COMMANDS` → Done3
+- [x] `src/commands/useBuilderCommands.ts` — build context, bind → Done5
+- [x] `src/commands/types.ts` — add `BuilderCommandId` → Done3
+- [x] `src/constants/shortcuts.ts` — shrink `SHARED_KEYS` → Done4
+- [x] `tests/browser/commands/useBuilderCommands.browser.test.tsx` — updated assertions → Done5
+- [x] `docs/architecture.md` — command section → Done7
 
 ## Drift log
 - Tasks → also updated `tests/unit/editor/modules.test.ts`, `tests/browser/components/CommandButton.browser.test.tsx`,
@@ -256,3 +256,6 @@ The id union and the shared keys.
   `SHARED_KEYS` as holding the session keys).
 - Done2 check → the grep for `"edit.undo"` also matches the two `CommandButton` usages; the definition check is
   `grep -rn 'id: "edit.undo"' src`, which hits only `src/commands/session.ts`.
+- Done5 "same order" → the builder registry now lists the session commands first (`...SESSION_COMMANDS`), then
+  the view commands; before, help and back came last. Not visible: the cheat sheet groups by `COMMAND_GROUPS`
+  and order within each group is unchanged, and the builder binds no chord twice.
