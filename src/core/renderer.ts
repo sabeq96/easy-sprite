@@ -45,7 +45,7 @@ export class CanvasRenderer {
   private overlayPainter: OverlayPainter | null = null;
   private overlayAnimating = false;
   /**
-   * The active tool's persistent overlay (installed via `ToolSession.setOverlay`), drawn under
+   * The active tool's persistent overlay (installed through the tool host's canvas), drawn under
    * the per-gesture preview. It lives for as long as the tool is active, independent of hover.
    */
   private toolPainter: OverlayPainter | null = null;

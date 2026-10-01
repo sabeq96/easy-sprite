@@ -1,11 +1,11 @@
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { useDocumentSession } from "@/app/DocumentProvider";
+import { createContributedCommands } from "@/commands/contributed";
 import { createToolCommands } from "@/commands/toolCommands";
 import type { CommandRegistry } from "@/commands/types";
 import { ZOOM_LEVELS } from "@/constants/canvas";
 import { ROUTES } from "@/constants/routes";
-import { hasClipboard } from "@/core/clipboard";
 import {
   addFrameCommand,
   duplicateFrameCommand,
@@ -18,15 +18,8 @@ import {
   mergeLayerDownCommand,
   removeLayerCommand,
 } from "@/core/commands/layers";
-import {
-  clearSelectionCommand,
-  copySelection,
-  cutSelectionCommand,
-  pasteCommand,
-  type EditTarget,
-} from "@/core/commands/selection";
-import { selection } from "@/tools/select/tool";
 import { useCommandDispatch } from "@/hooks/useCommandDispatch";
+import { useToolHost } from "@/hooks/toolHost/ToolHostContext";
 import { useEditorStore } from "@/stores/useEditorStore";
 
 /**
@@ -37,19 +30,12 @@ export function useEditorCommands(): CommandRegistry {
   const { doc, history, autosave } = useDocumentSession();
   const dispatch = useCommandDispatch();
   const navigate = useNavigate();
+  const toolHost = useToolHost();
 
   // Read via getState() inside handlers so the registry does not churn every render.
   const store = useEditorStore;
 
-  const target = (): EditTarget | null => {
-    const { activeLayerId, activeFrameId } = store.getState();
-    return activeLayerId && activeFrameId
-      ? { doc, layerId: activeLayerId, frameId: activeFrameId }
-      : null;
-  };
-
   const spriteSize = () => ({ width: doc.width, height: doc.height });
-  const hasSelection = () => selection.get() !== null;
 
   const stepFrame = (offset: number) => {
     const { activeFrameId, setActiveFrame } = store.getState();
@@ -68,6 +54,8 @@ export function useEditorCommands(): CommandRegistry {
 
   return {
     ...createToolCommands(store),
+    // The selection's copy, cut, paste, … are the select tool's own (see `Tool.commands`).
+    ...createContributedCommands(toolHost),
 
     "edit.undo": {
       id: "edit.undo",
@@ -82,71 +70,6 @@ export function useEditorCommands(): CommandRegistry {
       group: "Edit",
       isEnabled: () => history.canRedo,
       run: () => history.redo(),
-    },
-    "edit.copy": {
-      id: "edit.copy",
-      label: "Copy",
-      group: "Edit",
-      isEnabled: hasSelection,
-      run: () => {
-        const context = target();
-        const rect = selection.get();
-        if (context && rect) copySelection(context, rect);
-      },
-    },
-    "edit.cut": {
-      id: "edit.cut",
-      label: "Cut",
-      group: "Edit",
-      isEnabled: hasSelection,
-      run: () => {
-        const context = target();
-        const rect = selection.get();
-        if (context && rect) dispatch(() => cutSelectionCommand(context, rect));
-      },
-    },
-    "edit.paste": {
-      id: "edit.paste",
-      label: "Paste",
-      group: "Edit",
-      isEnabled: hasClipboard,
-      run: () => {
-        const context = target();
-        if (!context) return;
-        const pasted = pasteCommand(context);
-        if (!pasted) return;
-        history.push(pasted.command);
-        // Select what was just pasted, so it can be dragged straight away.
-        store.getState().setTool("select");
-        selection.set(pasted.rect);
-      },
-    },
-    "edit.selectAll": {
-      id: "edit.selectAll",
-      label: "Select all",
-      group: "Edit",
-      run: () => {
-        store.getState().setTool("select");
-        selection.set({ x: 0, y: 0, w: doc.width, h: doc.height });
-      },
-    },
-    "edit.deselect": {
-      id: "edit.deselect",
-      label: "Deselect",
-      group: "Edit",
-      isEnabled: hasSelection,
-      run: () => selection.clear(),
-    },
-    "edit.deleteSelection": {
-      id: "edit.deleteSelection",
-      label: "Delete selection",
-      group: "Edit",
-      isEnabled: hasSelection,
-      run: () => {
-        const context = target();
-        const rect = selection.get();
-        if (context && rect) dispatch(() => clearSelectionCommand(context, rect, "Delete"));
-      },
     },
     "edit.save": {
       id: "edit.save",

@@ -12,7 +12,7 @@ Before writing anything, answer one question: *what does it depend on?*
 | is a literal value with no logic | `src/constants/` | `MAX_ZOOM`, `DEFAULT_FPS`, `BRUSH_SIZES` |
 | is a pure function of its arguments | `src/lib/` | `hexToRgba()`, `rectUnion()`, `clamp()` |
 | manipulates pixels/documents, no React, no DB | `src/core/` | `floodFill()`, `SpriteDocument` |
-| is a tool | `src/tools/<folder>/tool.ts` | `pencilTool`, `selectTool` |
+| is a tool (reads the host only through `ToolHost`) | `src/tools/<folder>/tool.ts` | `pencilTool`, `selectTool` |
 | talks to IndexedDB | `src/db/repositories/` | `duplicateSprite()` |
 | wires the DB to the editor core | `src/services/` | `autosave.ts`, `documentService.ts` |
 | is cross-component UI state | `src/stores/` | active tool, primary color, zoom |
@@ -51,14 +51,14 @@ Stores             useXStore.ts             useEditorStore.ts
 Core classes       PascalCase.ts            SpriteDocument (document.ts)
 Utils / modules    camelCase                color.ts, paletteSort.ts
 Constants          SCREAMING_SNAKE          DEFAULT_CANVAS_SIZE
-Types              PascalCase               CelKey, ToolContext
+Types              PascalCase               CelKey, ToolHost
 Booleans           is/has/should/can        isDirty, hasSelection
 Event handlers     handleX (local), onX (prop)
 Async that hits DB verbs: load/save/create/duplicate/remove
 ```
 
 Types over interfaces for unions and aliases; `interface` for object shapes that get extended
-(`Tool`, `ToolContext`). Always `import type { … }` for type-only imports — `verbatimModuleSyntax`
+(`Tool`, `ToolHost`). Always `import type { … }` for type-only imports — `verbatimModuleSyntax`
 is on and will error otherwise.
 
 Two compiler settings shape how classes are written in this repo:
@@ -236,8 +236,11 @@ which would drift. What it enforces, in intent:
   `core/` never imports `framework/` or `tools/`; `framework/` holds types and tiny pure helpers
   (no components, hooks, app or React runtime; type-only imports allowed); a tool folder
   (`tools/<folder>/`, `shared/` included) never imports host state or data (`db/`, `services/`,
-  `export/`, Dexie, `stores/`, `app/`, `hooks/`), imports `commands/` for types only, and never
-  imports another tool, the registry or `../` (code shared between tools goes in `tools/shared/`);
+  `export/`, Dexie, `stores/`, `app/`, `hooks/`) or the concrete core (`core/document`,
+  `core/history`, `core/renderer`: it uses `ToolHost` instead), imports `commands/` for types
+  only, and never imports another tool, the registry or `../` (code shared between tools goes in
+  `tools/shared/`); `commands/`, `hooks/`, `components/`, `stores/` and `app/` import tools only
+  through the registry (`@/tools`), never a file inside a tool's folder;
   `db/` never imports the editor or UI; `lib/` and `constants/` are pure; `services/`, `export/`
   and `stores/` never import React code; `commands/` never reach the database or components; `types/`
   holds types only; `hooks/` never touch the raw Dexie instance or import components; `components/` never import `db/`, `services/`, `export/` or Dexie (type-only

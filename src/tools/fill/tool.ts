@@ -1,7 +1,6 @@
 import { Blend, PaintBucket, type LucideIcon } from "lucide-react";
 import { floodFill } from "@/core/pixels";
-import { commitWrite } from "@/tools/shared/paint";
-import { defineTool, type Tool } from "@/framework/tool";
+import { defineTool } from "@/framework/tool";
 import type { KeyBinding } from "@/lib/keys";
 
 interface FillSpec<Id extends string> {
@@ -18,7 +17,7 @@ function createFill<const Id extends string>({
   icon,
   shortcut,
   contiguous,
-}: FillSpec<Id>): Tool<Id> {
+}: FillSpec<Id>) {
   return defineTool({
     id,
     label,
@@ -29,19 +28,16 @@ function createFill<const Id extends string>({
     continuous: false,
     options: [],
 
-    onPointerDown(ctx, point) {
-      ctx.stroke.touch(ctx.layerId, ctx.frameId);
-      const cel = ctx.doc.ensureCel(ctx.layerId, ctx.frameId);
-
+    onPointerDown(host, { surface, point, slot }) {
       const dirty = floodFill(
-        { buffer: cel.pixels, width: ctx.doc.width, height: ctx.doc.height },
+        { buffer: surface.buffer(), width: surface.width, height: surface.height },
         point.x,
         point.y,
-        ctx.color,
+        host.colors.get(slot),
         { contiguous },
       );
 
-      commitWrite(ctx, dirty);
+      surface.commit(dirty);
     },
   });
 }

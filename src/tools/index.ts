@@ -3,6 +3,7 @@ import { eraserTool } from "@/tools/eraser/tool";
 import { pencilTool } from "@/tools/pencil/tool";
 import { pickerTool } from "@/tools/picker/tool";
 import { selectTool } from "@/tools/select/tool";
+import type { ContributedCommand } from "@/framework/command";
 import type { Tool } from "@/framework/tool";
 
 /**
@@ -19,6 +20,13 @@ export const TOOL_LIST = [
 ] as const;
 
 export type ToolId = (typeof TOOL_LIST)[number]["id"];
+
+/** Every command id a tool contributes (`edit.copy`, …), kept literal by `defineTool`. */
+export type ContributedCommandId = (typeof TOOL_LIST)[number] extends infer T
+  ? T extends Tool<string, infer C extends readonly ContributedCommand[]>
+    ? C[number]["id"]
+    : never
+  : never;
 
 export const TOOLS = Object.fromEntries(TOOL_LIST.map((tool) => [tool.id, tool])) as Record<
   ToolId,

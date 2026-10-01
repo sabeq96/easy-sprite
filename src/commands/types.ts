@@ -1,8 +1,9 @@
 import type { AppCommandId, CommandGroup } from "@/constants/commands";
-import type { ToolId } from "@/tools";
+import type { ContributedCommandId, ToolId } from "@/tools";
 
 export type ToolCommandId = `tool.${ToolId}`;
-export type CommandId = AppCommandId | ToolCommandId;
+/** App commands, one activation command per tool, and the commands tools contribute. */
+export type CommandId = AppCommandId | ToolCommandId | ContributedCommandId;
 
 export interface CommandDefinition {
   id: CommandId;

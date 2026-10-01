@@ -1,10 +1,15 @@
 import { Eraser } from "lucide-react";
+import type { ToolHost } from "@/framework/host";
 import { TRANSPARENT } from "@/lib/color";
-import { commitWrite, stamp, stampLine } from "@/tools/shared/paint";
+import { stamp, stampLine } from "@/tools/shared/paint";
 import { defineTool } from "@/framework/tool";
 
 // `replace: true` — erasing must zero the pixel, not blend transparency over it.
-const eraseOptions = (size: number) => ({ color: TRANSPARENT, size, replace: true });
+const eraseOptions = (host: ToolHost) => ({
+  color: TRANSPARENT,
+  size: host.tool.options().brushSize,
+  replace: true,
+});
 
 export const eraserTool = defineTool({
   id: "eraser",
@@ -16,12 +21,11 @@ export const eraserTool = defineTool({
   continuous: true,
   options: ["brushSize"],
 
-  onPointerDown(ctx, point) {
-    ctx.stroke.touch(ctx.layerId, ctx.frameId);
-    commitWrite(ctx, stamp(ctx, point, eraseOptions(ctx.options.brushSize)));
+  onPointerDown(host, { surface, point }) {
+    surface.commit(stamp(surface, point, eraseOptions(host)));
   },
 
-  onPointerMove(ctx, point, previous) {
-    commitWrite(ctx, stampLine(ctx, previous, point, eraseOptions(ctx.options.brushSize)));
+  onPointerMove(host, { surface, previous, point }) {
+    surface.commit(stampLine(surface, previous, point, eraseOptions(host)));
   },
 });

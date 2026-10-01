@@ -1,4 +1,7 @@
-/** Every command that is not "activate tool X" — those are derived from the tool registry. */
+/**
+ * Every command the app itself owns. "Activate tool X" and the commands a tool contributes
+ * (the selection's copy, cut, …) are derived from the tool registry instead.
+ */
 const APP_COMMAND_IDS = [
   // tools
   "tool.cycleBrushSize",
@@ -6,12 +9,6 @@ const APP_COMMAND_IDS = [
   // edit
   "edit.undo",
   "edit.redo",
-  "edit.copy",
-  "edit.cut",
-  "edit.paste",
-  "edit.selectAll",
-  "edit.deselect",
-  "edit.deleteSelection",
   "edit.save",
   // color
   "color.swap",
@@ -44,7 +41,7 @@ const APP_COMMAND_IDS = [
 
 /**
  * Commands that exist independently of the tool registry. The full `CommandId` (in
- * `@/commands/types`) adds one `tool.<id>` per registered tool.
+ * `@/commands/types`) adds one `tool.<id>` per registered tool, and the tools' own commands.
  */
 export type AppCommandId = (typeof APP_COMMAND_IDS)[number];
 

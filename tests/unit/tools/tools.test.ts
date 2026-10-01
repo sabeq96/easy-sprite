@@ -1,29 +1,47 @@
 import { describe, expect, it } from "vitest";
 import { getPixel, setPixel } from "@/core/buffer";
+import { StrokeRecorder } from "@/core/history";
+import { TRANSPARENT } from "@/lib/color";
 import { eraserTool } from "@/tools/eraser/tool";
 import { bucketTool, fillSimilarTool } from "@/tools/fill/tool";
 import { pencilTool } from "@/tools/pencil/tool";
 import { pickerTool } from "@/tools/picker/tool";
-import { BLUE, makeDocument, makeToolContext, RED } from "@test/factories";
-
-const NO_MODIFIERS = { button: 0, shift: false, alt: false, ctrl: false };
+import {
+  BLUE,
+  DEFAULT_TOOL_OPTIONS,
+  fakeHost,
+  makeDocument,
+  makeGesture,
+  RED,
+} from "@test/factories";
 
 describe("pencil", () => {
   it("paints a single pixel on pointer down", () => {
     const doc = makeDocument();
-    const { ctx } = makeToolContext(doc);
 
-    pencilTool.onPointerDown(ctx, { x: 1, y: 1 }, NO_MODIFIERS);
+    pencilTool.onPointerDown(fakeHost(), makeGesture(doc, { x: 1, y: 1 }));
 
     expect(getPixel(doc.getCel("l1", "f1")!.pixels, 1, 1, 4)).toEqual(RED);
   });
 
+  it("paints with the secondary colour on a right-button gesture", () => {
+    const doc = makeDocument();
+
+    pencilTool.onPointerDown(fakeHost(), makeGesture(doc, { x: 1, y: 1 }, { slot: "secondary" }));
+
+    expect(getPixel(doc.getCel("l1", "f1")!.pixels, 1, 1, 4)).toEqual(BLUE);
+  });
+
   it("joins sampled positions with no gaps", () => {
     const doc = makeDocument();
-    const { ctx } = makeToolContext(doc);
+    const host = fakeHost();
+    const first = makeGesture(doc, { x: 0, y: 0 });
 
-    pencilTool.onPointerDown(ctx, { x: 0, y: 0 }, NO_MODIFIERS);
-    pencilTool.onPointerMove!(ctx, { x: 3, y: 0 }, { x: 0, y: 0 }, NO_MODIFIERS);
+    pencilTool.onPointerDown(host, first);
+    pencilTool.onPointerMove!(
+      host,
+      makeGesture(doc, { x: 3, y: 0 }, { previous: { x: 0, y: 0 }, surface: first.surface }),
+    );
 
     const pixels = doc.getCel("l1", "f1")!.pixels;
     for (let x = 0; x <= 3; x++) expect(getPixel(pixels, x, 0, 4)).toEqual(RED);
@@ -31,16 +49,9 @@ describe("pencil", () => {
 
   it("stamps a square brush for larger sizes", () => {
     const doc = makeDocument();
-    const { ctx } = makeToolContext(doc, {
-      options: {
-        brushSize: 2,
-        mirrorHorizontal: false,
-        mirrorVertical: false,
-        pickFromComposite: false,
-      },
-    });
+    const host = fakeHost({ tool: { options: () => ({ ...DEFAULT_TOOL_OPTIONS, brushSize: 2 }) } });
 
-    pencilTool.onPointerDown(ctx, { x: 0, y: 0 }, NO_MODIFIERS);
+    pencilTool.onPointerDown(host, makeGesture(doc, { x: 0, y: 0 }));
 
     const pixels = doc.getCel("l1", "f1")!.pixels;
     expect(getPixel(pixels, 1, 1, 4)).toEqual(RED);
@@ -49,31 +60,24 @@ describe("pencil", () => {
 
   it("clips writes at the canvas edge", () => {
     const doc = makeDocument();
-    const { ctx } = makeToolContext(doc);
 
     // Must not throw, and must not wrap around to the opposite edge.
-    pencilTool.onPointerDown(ctx, { x: -1, y: 0 }, NO_MODIFIERS);
+    pencilTool.onPointerDown(fakeHost(), makeGesture(doc, { x: -1, y: 0 }));
     expect(getPixel(doc.ensureCel("l1", "f1").pixels, 3, 0, 4).a).toBe(0);
   });
 
   it("mirrors across the vertical axis when the mirror option is on", () => {
     const doc = makeDocument();
-    const { ctx } = makeToolContext(doc, {
-      options: {
-        brushSize: 1,
-        mirrorHorizontal: true,
-        mirrorVertical: false,
-        pickFromComposite: false,
-      },
+    const host = fakeHost({
+      tool: { options: () => ({ ...DEFAULT_TOOL_OPTIONS, mirrorHorizontal: true }) },
     });
 
-    pencilTool.onPointerDown(ctx, { x: 0, y: 2 }, NO_MODIFIERS);
+    pencilTool.onPointerDown(host, makeGesture(doc, { x: 0, y: 2 }));
 
     const pixels = doc.getCel("l1", "f1")!.pixels;
     expect(getPixel(pixels, 0, 2, 4)).toEqual(RED);
     expect(getPixel(pixels, 3, 2, 4)).toEqual(RED);
   });
-
 });
 
 describe("eraser", () => {
@@ -82,8 +86,7 @@ describe("eraser", () => {
     const cel = doc.ensureCel("l1", "f1");
     setPixel(cel.pixels, 2, 2, 4, RED);
 
-    const { ctx } = makeToolContext(doc);
-    eraserTool.onPointerDown(ctx, { x: 2, y: 2 }, NO_MODIFIERS);
+    eraserTool.onPointerDown(fakeHost(), makeGesture(doc, { x: 2, y: 2 }));
 
     expect(getPixel(cel.pixels, 2, 2, 4)).toEqual({ r: 0, g: 0, b: 0, a: 0 });
   });
@@ -95,8 +98,7 @@ describe("fill", () => {
     const cel = doc.ensureCel("l1", "f1");
     for (let y = 0; y < 4; y++) setPixel(cel.pixels, 2, y, 4, BLUE);
 
-    const { ctx } = makeToolContext(doc);
-    bucketTool.onPointerDown(ctx, { x: 0, y: 0 }, NO_MODIFIERS);
+    bucketTool.onPointerDown(fakeHost(), makeGesture(doc, { x: 0, y: 0 }));
 
     expect(getPixel(cel.pixels, 1, 3, 4)).toEqual(RED);
     expect(getPixel(cel.pixels, 3, 0, 4).a).toBe(0);
@@ -107,8 +109,7 @@ describe("fill", () => {
     const cel = doc.ensureCel("l1", "f1");
     setPixel(cel.pixels, 2, 2, 4, BLUE);
 
-    const { ctx } = makeToolContext(doc);
-    fillSimilarTool.onPointerDown(ctx, { x: 0, y: 0 }, NO_MODIFIERS);
+    fillSimilarTool.onPointerDown(fakeHost(), makeGesture(doc, { x: 0, y: 0 }));
 
     expect(getPixel(cel.pixels, 3, 3, 4)).toEqual(RED);
     expect(getPixel(cel.pixels, 2, 2, 4)).toEqual(BLUE);
@@ -116,11 +117,12 @@ describe("fill", () => {
 
   it("records nothing when filling with the existing colour", () => {
     const doc = makeDocument();
-    const { ctx, stroke } = makeToolContext(doc, { color: { r: 0, g: 0, b: 0, a: 0 } });
+    const recorder = new StrokeRecorder(doc, "Test");
+    const host = fakeHost({ colors: { get: () => TRANSPARENT } });
 
-    bucketTool.onPointerDown(ctx, { x: 0, y: 0 }, NO_MODIFIERS);
+    bucketTool.onPointerDown(host, makeGesture(doc, { x: 0, y: 0 }, { recorder }));
 
-    expect(stroke.commit()).toBeNull();
+    expect(recorder.commit()).toBeNull();
   });
 });
 
@@ -128,19 +130,29 @@ describe("picker", () => {
   it("samples the active layer when not sampling the merged image", () => {
     const doc = makeDocument();
     setPixel(doc.ensureCel("l1", "f1").pixels, 1, 1, 4, BLUE);
+    const host = fakeHost();
 
-    const { ctx, picked } = makeToolContext(doc);
-    pickerTool.onPointerDown(ctx, { x: 1, y: 1 }, NO_MODIFIERS);
+    pickerTool.onPointerDown(host, makeGesture(doc, { x: 1, y: 1 }));
 
-    expect(picked.color).toEqual(BLUE);
+    expect(host.colors.set).toHaveBeenCalledWith("primary", BLUE);
+  });
+
+  it("writes the colour to the gesture's slot", () => {
+    const doc = makeDocument();
+    setPixel(doc.ensureCel("l1", "f1").pixels, 1, 1, 4, BLUE);
+    const host = fakeHost();
+
+    pickerTool.onPointerDown(host, makeGesture(doc, { x: 1, y: 1 }, { slot: "secondary" }));
+
+    expect(host.colors.set).toHaveBeenCalledWith("secondary", BLUE);
   });
 
   it("ignores samples outside the canvas", () => {
     const doc = makeDocument();
-    const { ctx, picked } = makeToolContext(doc);
+    const host = fakeHost();
 
-    pickerTool.onPointerDown(ctx, { x: 9, y: 9 }, NO_MODIFIERS);
+    pickerTool.onPointerDown(host, makeGesture(doc, { x: 9, y: 9 }));
 
-    expect(picked.color).toBeNull();
+    expect(host.colors.set).not.toHaveBeenCalled();
   });
 });

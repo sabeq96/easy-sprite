@@ -82,6 +82,10 @@
                 "message": "A tool reaches the editor only through src/framework/: no host state, data or side effects."
               },
               {
+                "group": ["@/core/document", "@/core/history", "@/core/renderer"],
+                "message": "A tool reaches the document, undo history and renderer only through ToolHost (src/framework/host.ts)."
+              },
+              {
                 "group": ["@/commands/**"],
                 "allowTypeImports": true,
                 "message": "A tool may name commands by type only; it never runs host commands directly."
@@ -150,6 +154,10 @@
                 ],
                 "allowTypeImports": true,
                 "message": "Components reach data and side effects through a hook in src/hooks/ (e.g. useSpriteActions). Type-only imports are fine."
+              },
+              {
+                "group": ["@/tools/**", "!@/tools/index"],
+                "message": "The host sees tools only through the registry (@/tools): never a file inside a tool's folder."
               }
             ]
           }
@@ -177,6 +185,10 @@
                   "@/components/*"
                 ],
                 "message": "Hooks sit below components: move the shared piece into hooks/ or lib/."
+              },
+              {
+                "group": ["@/tools/**", "!@/tools/index"],
+                "message": "The host sees tools only through the registry (@/tools): never a file inside a tool's folder."
               }
             ]
           }
@@ -186,7 +198,30 @@
     {
       "files": [
         "src/services/**",
-        "src/export/**",
+        "src/export/**"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "@/components/*",
+                  "@/hooks/*",
+                  "@/app/*",
+                  "react",
+                  "react-dom"
+                ],
+                "message": "services/, export/ and stores/ sit below React: no components, hooks or app imports."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
         "src/stores/**"
       ],
       "rules": {
@@ -203,6 +238,10 @@
                   "react-dom"
                 ],
                 "message": "services/, export/ and stores/ sit below React: no components, hooks or app imports."
+              },
+              {
+                "group": ["@/tools/**", "!@/tools/index"],
+                "message": "The host sees tools only through the registry (@/tools): never a file inside a tool's folder."
               }
             ]
           }
@@ -227,6 +266,10 @@
                   "dexie"
                 ],
                 "message": "commands/ wires editor actions to keys and UI state; data goes through hooks."
+              },
+              {
+                "group": ["@/tools/**", "!@/tools/index"],
+                "message": "The host sees tools only through the registry (@/tools): never a file inside a tool's folder."
               }
             ]
           }
@@ -259,6 +302,24 @@
                 ],
                 "allowTypeImports": true,
                 "message": "src/types/** holds types only: it may import other types, never runtime code."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "src/app/**"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@/tools/**", "!@/tools/index"],
+                "message": "The host sees tools only through the registry (@/tools): never a file inside a tool's folder."
               }
             ]
           }

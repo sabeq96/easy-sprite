@@ -1,14 +1,16 @@
 import { Brush } from "lucide-react";
 import type { StampOptions } from "@/tools/shared/paint";
-import { commitWrite, stamp, stampLine } from "@/tools/shared/paint";
-import { defineTool, type ToolContext } from "@/framework/tool";
+import { stamp, stampLine } from "@/tools/shared/paint";
+import type { Gesture, ToolHost } from "@/framework/host";
+import { defineTool } from "@/framework/tool";
 
-function stampOptions(ctx: ToolContext): StampOptions {
+function brush(host: ToolHost, gesture: Gesture): StampOptions {
+  const options = host.tool.options();
   return {
-    color: ctx.color,
-    size: ctx.options.brushSize,
-    mirrorHorizontal: ctx.options.mirrorHorizontal,
-    mirrorVertical: ctx.options.mirrorVertical,
+    color: host.colors.get(gesture.slot),
+    size: options.brushSize,
+    mirrorHorizontal: options.mirrorHorizontal,
+    mirrorVertical: options.mirrorVertical,
   };
 }
 
@@ -22,12 +24,12 @@ export const pencilTool = defineTool({
   continuous: true,
   options: ["brushSize", "mirror"],
 
-  onPointerDown(ctx, point) {
-    ctx.stroke.touch(ctx.layerId, ctx.frameId);
-    commitWrite(ctx, stamp(ctx, point, stampOptions(ctx)));
+  onPointerDown(host, gesture) {
+    gesture.surface.commit(stamp(gesture.surface, gesture.point, brush(host, gesture)));
   },
 
-  onPointerMove(ctx, point, previous) {
-    commitWrite(ctx, stampLine(ctx, previous, point, stampOptions(ctx)));
+  onPointerMove(host, gesture) {
+    const { surface, previous, point } = gesture;
+    surface.commit(stampLine(surface, previous, point, brush(host, gesture)));
   },
 });

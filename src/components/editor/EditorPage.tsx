@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { useParams } from "react-router";
-import { DocumentProvider } from "@/app/DocumentProvider";
+import { DocumentProvider, useDocumentSession } from "@/app/DocumentProvider";
 import { NotFoundPage } from "@/components/common/NotFoundPage";
 import { EditorCanvas } from "@/components/editor/EditorCanvas";
 import { EditorLoadError } from "@/components/editor/EditorLoadError";
@@ -18,6 +18,8 @@ import { useActiveTargets } from "@/hooks/useActiveTargets";
 import { useColorHotkeys } from "@/hooks/useColorHotkeys";
 import { useGridDefaults } from "@/hooks/useGridDefaults";
 import { useShortcuts } from "@/hooks/useShortcuts";
+import { createToolHost } from "@/hooks/toolHost/createToolHost";
+import { ToolHostProvider } from "@/hooks/toolHost/ToolHostContext";
 
 export function EditorPage() {
   const { spriteId } = useParams<{ spriteId: string }>();
@@ -29,9 +31,19 @@ export function EditorPage() {
       fallback={<EditorSkeleton />}
       renderError={(message) => <EditorLoadError message={message} />}
     >
-      <EditorShell />
+      <EditorToolHost>
+        <EditorShell />
+      </EditorToolHost>
     </DocumentProvider>
   );
+}
+
+/** One tool host per open document, shared by the shell's commands and the canvas's gestures. */
+function EditorToolHost({ children }: { children: ReactNode }) {
+  const { doc, history } = useDocumentSession();
+  // Identity is load-bearing: tools and the renderer binding hold on to this host.
+  const host = useMemo(() => createToolHost({ doc, history }), [doc, history]);
+  return <ToolHostProvider value={host}>{children}</ToolHostProvider>;
 }
 
 /** Layout and wiring only — every panel owns its own state and subscriptions. */

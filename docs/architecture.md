@@ -47,15 +47,18 @@ src/
                 (the spritesheet composer), settings/, plus common/ (shared app components) and
                 ui/ (generated shadcn primitives — add variants, never fork)
   hooks/        bridges React to everything below it: document revisions, DnD, pointer input,
-                and the domain action hooks (useSpriteActions, usePaletteActions, …) that are the
-                only way components reach the database, services and export
-  commands/     the editor command registry: ids → run/enabled/active/label, the keymap merged
-                from tool and app keys, and the gesture hints shown in tooltips
+                the tool host adapters (toolHost/), and the domain action hooks (useSpriteActions,
+                usePaletteActions, …) that are the only way components reach the database,
+                services and export
+  commands/     the editor command registry: ids → run/enabled/active/label (app commands plus
+                the ones tools contribute), the keymap merged from tool and app keys, and the
+                gesture hints shown in tooltips
   stores/       zustand UI state: the editor store (built from slices/) and the builder's view store
   core/         the imperative core, zero React: SpriteDocument, cels, pixels, history, renderer,
                 viewport, overlays, command factories (commands/). Knows nothing about tools
-  framework/    the host↔tool contract: types and tiny pure helpers (tool.ts: Tool, ToolContext,
-                ToolSession, defineTool) that both tools and the host depend on
+  framework/    the host↔tool contract: types and tiny pure helpers that both tools and the host
+                depend on (host.ts: ToolHost, Gesture, Surface; tool.ts: Tool, defineTool;
+                command.ts: ContributedCommand)
   tools/        one folder per tool (<tool>/tool.ts, plus anything else it needs: icon, overlay,
                 JSX), shared/ for code several tools use, and index.ts, the one registry every
                 tool list derives from. Adding a tool is a folder plus one line in TOOL_LIST
@@ -205,9 +208,11 @@ core/       ──►  lib, constants, types                                    
                                                                             no framework/tools)
 framework/  ──►  core, lib, constants, types; types from commands/hints
                  and lucide-react                                           lint (no React runtime/UI)
-tools/<t>/  ──►  framework, tools/shared, own folder (./), core, lib,
-                 constants, lucide-react; types from commands               lint (no host state/data,
-                                                                            no other tool)
+tools/<t>/  ──►  framework, tools/shared, own folder (./), core (not document,
+                 history or renderer), lib, constants, lucide-react;
+                 types from commands                                        lint (no host state/data,
+                                                                            no other tool, no
+                                                                            concrete core)
 db/         ──►  lib, constants, types                                      lint (no core/UI)
 export/     ──►  core, lib, constants, types; types from db/schema          lint (no React/UI)
 services/   ──►  db, core, export, lib, constants, types                    lint (no React/UI)
@@ -222,6 +227,9 @@ components/ ──►  hooks, stores, commands, core, framework, tools,
 app/        ──►  everything
 ```
 
+Wherever `tools` appears on the host side (stores, commands, hooks, components, app), it means
+the registry, `@/tools`: lint rejects any file inside a tool's folder.
+
 Reading it out loud: **pure things never import impure things, nothing below React imports React,
 and components reach data only through hooks.** `core/` staying React-free is what makes the
 core testable with no DOM; hooks being the only door to `db/`, `services/` and `export/` is what
@@ -230,6 +238,25 @@ keeps loading, error reporting and toasts in one place per domain (§10).
 Two edges are known compromises: hooks and commands read the open document through
 `app/DocumentProvider`, and `framework/` borrows the hint *type* from `commands/`. Both are
 type- or context-only; moving the document context below `app/` would remove the first.
+
+### Tool host
+
+A tool receives two things, both interfaces in `src/framework/host.ts`: a long-lived
+**`ToolHost`** (what it may use) and, per pointer event, a **`Gesture`** (what is happening:
+point, previous point, modifiers, colour slot, and a `Surface` pinned to the stroke's layer and
+frame). The host groups its capabilities by domain, all as methods so every read is live:
+
+| Capability | Members | Backed by |
+| --- | --- | --- |
+| `colors` | `get(slot)`, `set(slot, c)` | the editor store's primary and secondary colours |
+| `canvas` | `setOverlay(paint)`, `requestRender()` | the renderer's tool overlay, once `EditorCanvas` attaches it |
+| `document` | `width`, `height`, `sampleComposite`, `crop`, `onResize` | the open `SpriteDocument` and the active frame |
+| `history` | `edit(label, change)`, `onUndoRedo` | a `StrokeRecorder` over the active layer and frame, pushed as one undo entry |
+| `tool` | `activate()`, `options()` | `setTool` (synchronous) and, until stage 3, the store's tool options |
+
+The adapters live in `src/hooks/toolHost/`; `ToolHostProvider` builds one host per open
+document in the editor shell, so the shell's commands and the canvas's gestures share it. A tool
+never sees the document, the undo stack, the store, or layer and frame ids.
 
 ## 10. Data access
 

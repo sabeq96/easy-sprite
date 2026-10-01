@@ -6,8 +6,11 @@ import { StrokeRecorder } from "@/core/history";
 import { brushCursorPainter } from "@/core/overlays/brushCursor";
 import type { CanvasRenderer } from "@/core/renderer";
 import { getTool } from "@/tools";
-import type { PointerModifiers, Tool, ToolContext, ToolPoint } from "@/framework/tool";
+import type { ColorSlot, Gesture, PointerModifiers, Surface, ToolHost } from "@/framework/host";
+import type { Tool, ToolPoint } from "@/framework/tool";
 import { screenToSprite } from "@/core/viewport";
+import { createSurface } from "@/hooks/toolHost/surface";
+import { useToolHost } from "@/hooks/toolHost/ToolHostContext";
 import { useCursorStore } from "@/stores/useCursorStore";
 import { useEditorStore } from "@/stores/useEditorStore";
 
@@ -22,21 +25,26 @@ export const POINTER_PAINT_HINTS: HintSection = {
 interface ActiveStroke {
   /** Pinned at pointerdown, so a tool switch mid-drag cannot hand the gesture to another tool. */
   tool: Tool;
+  host: ToolHost;
   pointerId: number;
-  button: number;
+  /** The right button paints and picks with the secondary colour. */
+  slot: ColorSlot;
   last: ToolPoint;
   recorder: StrokeRecorder;
+  /** Pinned to the layer and frame at pointerdown: the whole stroke lands on one cel. */
+  surface: Surface;
 }
 
 /**
- * Turns DOM pointer events into tool calls. The only place a ToolContext is built, and the
- * owner of the stroke lifecycle.
+ * Turns DOM pointer events into tool calls. The only place a Gesture is built, and the owner of
+ * the stroke lifecycle.
  */
 export function usePointerPaint(
   containerRef: RefObject<HTMLElement | null>,
   renderer: CanvasRenderer | null,
 ): void {
   const { doc, history } = useDocumentSession();
+  const toolHost = useToolHost();
 
   useEffect(() => {
     const element = containerRef.current;
@@ -53,8 +61,8 @@ export function usePointerPaint(
       });
     };
 
-    /** Rebuilt per event so tools always see current store state — it is a cheap object. */
-    const buildContext = (recorder: StrokeRecorder, button: number): ToolContext | null => {
+    /** The layer and frame a stroke lands on; null when drawing there is a no-op. */
+    const resolveTarget = () => {
       const state = useEditorStore.getState();
       const layerId = state.activeLayerId ?? doc.layers.at(-1)?.id;
       const frameId = state.activeFrameId ?? doc.frames[0]?.id;
@@ -63,19 +71,15 @@ export function usePointerPaint(
       const layer = doc.getLayer(layerId);
       // Drawing on a locked or hidden layer is a no-op; the layer row shows why.
       if (!layer || layer.locked || !layer.visible) return null;
-
-      return {
-        doc,
-        layerId,
-        frameId,
-        color: button === 2 ? state.secondaryColor : state.primaryColor,
-        options: state.toolOptions,
-        stroke: recorder,
-        setColor: (color) =>
-          button === 2 ? state.setSecondaryColor(color) : state.setPrimaryColor(color),
-        setOverlay: (painter, animate) => renderer.setOverlayPainter(painter, animate),
-      };
+      return { layerId, frameId };
     };
+
+    const gestureAt = (
+      stroke: ActiveStroke,
+      point: ToolPoint,
+      previous: ToolPoint,
+      modifiers: PointerModifiers,
+    ): Gesture => ({ point, previous, modifiers, slot: stroke.slot, surface: stroke.surface });
 
     const showBrushPreview = () => {
       const state = useEditorStore.getState();
@@ -100,7 +104,7 @@ export function usePointerPaint(
 
     const updateHover = (point: ToolPoint | null) => {
       const tool = getTool(useEditorStore.getState().toolId);
-      element.style.cursor = tool.onHover?.(point) ?? "";
+      element.style.cursor = tool.onHover?.(toolHost.forTool(tool.id), point) ?? "";
     };
 
     const reportCursor = (point: ToolPoint | null) => {
@@ -128,16 +132,24 @@ export function usePointerPaint(
       if (event.defaultPrevented) return;
 
       const tool = getTool(useEditorStore.getState().toolId);
-      const recorder = new StrokeRecorder(doc, tool.label);
-      const ctx = buildContext(recorder, event.button);
-      if (!ctx) return;
+      const target = resolveTarget();
+      if (!target) return;
 
       const point = toSprite(event);
-      active = { tool, pointerId: event.pointerId, button: event.button, last: point, recorder };
+      const recorder = new StrokeRecorder(doc, tool.label);
+      active = {
+        tool,
+        host: toolHost.forTool(tool.id),
+        pointerId: event.pointerId,
+        slot: event.button === 2 ? "secondary" : "primary",
+        last: point,
+        recorder,
+        surface: createSurface(doc, target.layerId, target.frameId, recorder),
+      };
 
       // Capture so a stroke that leaves the canvas keeps painting until pointerup.
       element.setPointerCapture(event.pointerId);
-      tool.onPointerDown(ctx, point, modifiersOf(event));
+      tool.onPointerDown(active.host, gestureAt(active, point, point, modifiersOf(event)));
     };
 
     const onPointerMove = (event: PointerEvent) => {
@@ -150,15 +162,14 @@ export function usePointerPaint(
       }
 
       const { tool } = active;
-      const ctx = buildContext(active.recorder, active.button);
-      if (!ctx || !tool.onPointerMove) return;
+      if (!tool.onPointerMove) return;
 
       // Coalesced events prevent gaps in fast strokes on high-refresh displays.
       const coalesced = event.getCoalescedEvents?.() ?? [];
       for (const sample of coalesced.length ? coalesced : [event]) {
         const point = toSprite(sample);
         if (point.x === active.last.x && point.y === active.last.y) continue;
-        tool.onPointerMove(ctx, point, active.last, modifiersOf(sample));
+        tool.onPointerMove(active.host, gestureAt(active, point, active.last, modifiersOf(sample)));
         active.last = point;
       }
 
@@ -170,8 +181,10 @@ export function usePointerPaint(
       if (!active) return;
 
       const { tool } = active;
-      const ctx = buildContext(active.recorder, active.button);
-      if (ctx) tool.onPointerUp?.(ctx, toSprite(event), modifiersOf(event));
+      tool.onPointerUp?.(
+        active.host,
+        gestureAt(active, toSprite(event), active.last, modifiersOf(event)),
+      );
 
       // One stroke → at most one undo entry.
       const command = active.recorder.commit();
@@ -209,7 +222,7 @@ export function usePointerPaint(
       element.removeEventListener("pointerleave", onPointerLeave);
       element.removeEventListener("contextmenu", preventDefault);
     };
-  }, [containerRef, renderer, doc, history]);
+  }, [containerRef, renderer, doc, history, toolHost]);
 }
 
 const preventDefault = (event: Event) => event.preventDefault();

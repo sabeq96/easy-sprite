@@ -1,22 +1,16 @@
 import { Pipette } from "lucide-react";
-import { getPixel } from "@/core/buffer";
-import { compositeFrame } from "@/core/composite";
-import { defineTool, type ToolContext, type ToolPoint } from "@/framework/tool";
+import type { Gesture, ToolHost } from "@/framework/host";
+import { defineTool } from "@/framework/tool";
 
-function sample(ctx: ToolContext, point: ToolPoint): void {
-  const { doc } = ctx;
-  if (point.x < 0 || point.y < 0 || point.x >= doc.width || point.y >= doc.height) return;
-
-  if (!ctx.options.pickFromComposite) {
-    const cel = doc.getCel(ctx.layerId, ctx.frameId);
-    if (cel) ctx.setColor(getPixel(cel.pixels, point.x, point.y, doc.width));
-    return;
-  }
+function sample(host: ToolHost, { point, surface, slot }: Gesture): void {
+  const { x, y } = point;
+  if (x < 0 || y < 0 || x >= surface.width || y >= surface.height) return;
 
   // Sampling the merged image is what users expect by default.
-  const canvas = compositeFrame(doc, ctx.frameId);
-  const data = canvas.getContext("2d")?.getImageData(point.x, point.y, 1, 1).data;
-  if (data) ctx.setColor({ r: data[0], g: data[1], b: data[2], a: data[3] });
+  const color = host.tool.options().pickFromComposite
+    ? host.document.sampleComposite(x, y)
+    : surface.read(x, y);
+  if (color) host.colors.set(slot, color);
 }
 
 export const pickerTool = defineTool({
@@ -29,11 +23,6 @@ export const pickerTool = defineTool({
   // Dragging keeps sampling, like Piskel.
   continuous: true,
 
-  onPointerDown(ctx, point) {
-    sample(ctx, point);
-  },
-
-  onPointerMove(ctx, point) {
-    sample(ctx, point);
-  },
+  onPointerDown: sample,
+  onPointerMove: sample,
 });

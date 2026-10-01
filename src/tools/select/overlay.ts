@@ -1,7 +1,7 @@
-import type { OverlayPainter } from "@/core/renderer";
-import type { LiftedRegion } from "@/core/selection";
+import type { OverlayPaint } from "@/framework/host";
 import type { ToolPoint } from "@/framework/tool";
 import type { Rect } from "@/lib/rect";
+import type { LiftedRegion } from "./region";
 
 // Same flat-fill language as the brush preview (brushCursor.ts), in blue.
 const SELECTION_FILL = "rgba(59,130,246,0.35)";
@@ -17,7 +17,7 @@ export interface SelectionView {
 }
 
 /** Draws whatever the select tool resolved — the painter itself holds no logic. */
-export function selectionPainter(getView: () => SelectionView | null): OverlayPainter {
+export function selectionPainter(getView: () => SelectionView | null): OverlayPaint {
   return (ctx, viewport) => {
     const view = getView();
     if (!view) return;

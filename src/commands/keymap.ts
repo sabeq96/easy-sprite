@@ -1,3 +1,4 @@
+import { CONTRIBUTED_SHORTCUTS } from "@/commands/contributed";
 import type { CommandId, ToolCommandId } from "@/commands/types";
 import { APP_SHORTCUTS } from "@/constants/shortcuts";
 import { TOOL_LIST, type ToolId } from "@/tools";
@@ -9,11 +10,13 @@ const TOOL_SHORTCUTS = Object.fromEntries(
 ) as Partial<Record<ToolCommandId, KeyBinding[]>>;
 
 /**
- * The merged keymap: app keys plus each tool's own. The handler, tooltips and the shortcut
- * sheet all read this one table. No two entries may share a chord; a unit test enforces it.
+ * The merged keymap: app keys, each tool's own key, and the keys of the commands tools
+ * contribute. The handler, tooltips and the shortcut sheet all read this one table. No two
+ * entries may share a chord; a unit test enforces it.
  */
 export const SHORTCUTS: Partial<Record<CommandId, KeyBinding[]>> = {
   ...TOOL_SHORTCUTS,
+  ...CONTRIBUTED_SHORTCUTS,
   ...APP_SHORTCUTS,
 };
 

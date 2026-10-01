@@ -1,8 +1,7 @@
 import { SquareDashed } from "lucide-react";
-import type { SpriteDocument } from "@/core/document";
-import { selectionPainter, type SelectionView } from "./overlay";
-import { liftRegion, stampRegion, type LiftedRegion } from "@/core/selection";
-import { defineTool, type ToolPoint, type ToolSession } from "@/framework/tool";
+import { clearRegion, cropRegion, pasteRegion } from "@/core/buffer";
+import type { Surface, ToolHost } from "@/framework/host";
+import { defineTool, type ToolPoint } from "@/framework/tool";
 import {
   rectClamp,
   rectContains,
@@ -11,6 +10,9 @@ import {
   rectUnion,
   type Rect,
 } from "@/lib/rect";
+import { getClipboard, hasClipboard, pasteRect, setClipboard } from "./clipboard";
+import { selectionPainter, type SelectionView } from "./overlay";
+import { liftRegion, stampRegion, type LiftedRegion, type PixelGrid } from "./region";
 
 interface MarqueeDrag {
   kind: "marquee";
@@ -23,27 +25,27 @@ interface MoveDrag {
   origin: ToolPoint;
   /** Ctrl/⌘ held at press: duplicate instead of cutting. */
   copy: boolean;
-  layerId: string;
-  frameId: string;
+  /** The gesture's surface, pinned at press so the drop lands where the lift came from. */
+  surface: Surface;
   /** Lifted on the first pixel of movement, so a click inside the selection is a no-op. */
   lifted: LiftedRegion | null;
   offset: { x: number; y: number };
 }
 
 /**
- * Everything the tool knows. `session` is non-null exactly between onActivate and its cleanup,
+ * Everything the tool knows. `host` is non-null exactly between onActivate and its cleanup,
  * and the cleanup resets the rest: a selection cannot outlive the tool. Pointer capture means
  * only one gesture runs at a time, so module scope is safe.
  */
 const state = {
-  session: null as ToolSession | null,
+  host: null as ToolHost | null,
   rect: null as Rect | null,
   drag: null as MarqueeDrag | MoveDrag | null,
   hover: null as ToolPoint | null,
 };
 
-function clampTo(doc: SpriteDocument, rect: Rect): Rect | null {
-  const clamped = rectClamp(rect, doc.width, doc.height);
+function clampTo(host: ToolHost, rect: Rect): Rect | null {
+  const clamped = rectClamp(rect, host.document.width, host.document.height);
   return rectIsEmpty(clamped) ? null : clamped;
 }
 
@@ -51,43 +53,47 @@ function isOverSelection(point: ToolPoint | null): boolean {
   return !!point && !!state.rect && rectContains(state.rect, point.x, point.y);
 }
 
-function changed(): void {
-  state.session?.requestRender();
+function hasSelection(): boolean {
+  return state.rect !== null;
 }
 
-/**
- * The tool's public face — the only way commands (copy, cut, delete, select all, paste) reach
- * the selection. Writes are ignored while the tool is inactive, so callers switch tools first.
- */
-export const selection = {
-  get: (): Rect | null => state.rect,
-  set(rect: Rect | null): void {
-    if (!state.session) return;
-    state.rect = rect && clampTo(state.session.doc, rect);
-    changed();
-  },
-  clear(): void {
-    selection.set(null);
-  },
-};
+function changed(): void {
+  state.host?.canvas.requestRender();
+}
+
+/** Ignored while the tool is inactive, so commands activate the tool first. */
+function setSelection(rect: Rect | null): void {
+  if (!state.host) return;
+  state.rect = rect && clampTo(state.host, rect);
+  changed();
+}
+
+/** Read-only, for tests: the host reaches the selection only through this tool's commands. */
+export function selectedRect(): Rect | null {
+  return state.rect;
+}
+
+function gridOf(surface: Surface): PixelGrid {
+  return { pixels: surface.buffer(), width: surface.width, height: surface.height };
+}
 
 function view(): SelectionView | null {
-  const { session, drag, hover } = state;
-  if (!session) return null;
-  const { doc } = session;
+  const { host, drag, hover } = state;
+  if (!host) return null;
 
   if (drag?.kind === "marquee") {
-    return { rect: clampTo(doc, drag.rect), floating: null, hover: null };
+    return { rect: clampTo(host, drag.rect), floating: null, hover: null };
   }
 
   if (drag?.kind === "move" && drag.lifted) {
     const { lifted, offset } = drag;
     const moved = { ...lifted.rect, x: lifted.rect.x + offset.x, y: lifted.rect.y + offset.y };
-    return { rect: clampTo(doc, moved), floating: { region: lifted, offset }, hover: null };
+    return { rect: clampTo(host, moved), floating: { region: lifted, offset }, hover: null };
   }
 
+  const { width, height } = host.document;
   const inSprite =
-    hover !== null && hover.x >= 0 && hover.y >= 0 && hover.x < doc.width && hover.y < doc.height;
+    hover !== null && hover.x >= 0 && hover.y >= 0 && hover.x < width && hover.y < height;
   return {
     rect: state.rect,
     floating: null,
@@ -95,14 +101,22 @@ function view(): SelectionView | null {
   };
 }
 
-/** A tool switch mid-drag must not lose the cut pixels: put them back where they came from. */
-function abandonDrag(doc: SpriteDocument): void {
-  const drag = state.drag;
-  // The cut left the rect transparent, so stamping only opaque pixels restores it exactly.
-  if (drag?.kind === "move" && drag.lifted && !drag.copy) {
-    stampRegion(doc, drag.layerId, drag.frameId, drag.lifted, drag.lifted.rect);
-  }
+/** A tool switch mid-drag must not lose the cut pixels: put back everything the drag changed. */
+function abandonDrag(): void {
+  if (state.drag?.kind === "move") state.drag.surface.revert();
   state.drag = null;
+}
+
+/** Clears the selected pixels as one undo step; `cut` copies them to the clipboard first. */
+function clearSelection(host: ToolHost, label: string, cut: boolean): void {
+  const rect = state.rect;
+  if (!rect) return;
+  host.history.edit(label, (surface) => {
+    const { pixels, width } = gridOf(surface);
+    if (cut) setClipboard({ rect, pixels: cropRegion(pixels, width, rect) });
+    clearRegion(pixels, width, rect);
+    surface.commit(rect);
+  });
 }
 
 export const selectTool = defineTool({
@@ -120,57 +134,113 @@ export const selectTool = defineTool({
     },
   ],
   commands: [
-    "edit.selectAll",
-    "edit.deselect",
-    "edit.copy",
-    "edit.cut",
-    "edit.paste",
-    "edit.deleteSelection",
+    {
+      id: "edit.selectAll",
+      label: "Select all",
+      group: "Edit",
+      keys: [{ key: "a", mod: true }],
+      run(host: ToolHost) {
+        host.tool.activate();
+        setSelection({ x: 0, y: 0, w: host.document.width, h: host.document.height });
+      },
+    },
+    {
+      id: "edit.deselect",
+      label: "Deselect",
+      group: "Edit",
+      keys: [{ key: "escape" }],
+      isEnabled: hasSelection,
+      run: () => setSelection(null),
+    },
+    {
+      id: "edit.copy",
+      label: "Copy",
+      group: "Edit",
+      keys: [{ key: "c", mod: true }],
+      isEnabled: hasSelection,
+      run(host: ToolHost) {
+        const rect = state.rect;
+        const pixels = rect && host.document.crop(rect);
+        if (rect && pixels) setClipboard({ rect, pixels });
+      },
+    },
+    {
+      id: "edit.cut",
+      label: "Cut",
+      group: "Edit",
+      keys: [{ key: "x", mod: true }],
+      isEnabled: hasSelection,
+      run: (host: ToolHost) => clearSelection(host, "Cut", true),
+    },
+    {
+      id: "edit.paste",
+      label: "Paste",
+      group: "Edit",
+      keys: [{ key: "v", mod: true }],
+      isEnabled: hasClipboard,
+      run(host: ToolHost) {
+        const clip = getClipboard();
+        if (!clip) return;
+
+        const pasted = { rect: null as Rect | null };
+        const editable = host.history.edit("Paste", (surface) => {
+          pasted.rect = pasteRect(clip, surface.width, surface.height);
+          if (!pasted.rect) return;
+          pasteRegion(surface.buffer(), surface.width, pasted.rect, clip.pixels);
+          surface.commit(pasted.rect);
+        });
+        if (!editable || !pasted.rect) return;
+
+        // Select what was just pasted, so it can be dragged straight away.
+        host.tool.activate();
+        setSelection(pasted.rect);
+      },
+    },
+    {
+      id: "edit.deleteSelection",
+      label: "Delete selection",
+      group: "Edit",
+      keys: [{ key: "delete" }, { key: "backspace" }],
+      isEnabled: hasSelection,
+      run: (host: ToolHost) => clearSelection(host, "Delete", false),
+    },
   ],
   continuous: true,
   options: [],
 
-  onActivate(session) {
-    state.session = session;
-    session.setOverlay(selectionPainter(view));
+  onActivate(host) {
+    state.host = host;
+    host.canvas.setOverlay(selectionPainter(view));
 
-    let { width, height } = session.doc;
     // The rect is geometry over the old canvas — meaningless after a resize.
-    const offMeta = session.doc.events.on("meta", () => {
-      if (session.doc.width === width && session.doc.height === height) return;
-      ({ width, height } = session.doc);
-      selection.clear();
-    });
-    // Undo/redo moves pixels out from under the rect. Our own moves arrive as "push".
-    const offHistory = session.history.events.on("change", (kind) => {
-      if (kind !== "push") selection.clear();
-    });
+    const offResize = host.document.onResize(() => setSelection(null));
+    // Undo/redo moves pixels out from under the rect; the tool's own edits don't count.
+    const offUndoRedo = host.history.onUndoRedo(() => setSelection(null));
 
     return () => {
-      offMeta();
-      offHistory();
-      abandonDrag(session.doc);
-      state.session = null;
+      offResize();
+      offUndoRedo();
+      abandonDrag();
+      state.host = null;
       state.rect = null;
       state.hover = null;
     };
   },
 
-  onHover(point) {
+  onHover(_host, point) {
     state.hover = point;
     changed();
     return isOverSelection(point) ? "grab" : null;
   },
 
-  onPointerDown(ctx, point, modifiers) {
+  onPointerDown(_host, { point, modifiers, surface }) {
     state.hover = null;
     if (isOverSelection(point)) {
       state.drag = {
         kind: "move",
         origin: point,
         copy: modifiers.ctrl,
-        layerId: ctx.layerId,
-        frameId: ctx.frameId,
+        surface,
         lifted: null,
         offset: { x: 0, y: 0 },
       };
@@ -181,7 +251,7 @@ export const selectTool = defineTool({
     changed();
   },
 
-  onPointerMove(ctx, point) {
+  onPointerMove(_host, { point }) {
     const drag = state.drag;
     if (!drag) return;
 
@@ -189,30 +259,31 @@ export const selectTool = defineTool({
       drag.rect = rectFromPoints(drag.origin.x, drag.origin.y, point.x, point.y);
     } else if (state.rect) {
       if (!drag.lifted) {
-        ctx.stroke.touch(ctx.layerId, ctx.frameId);
-        drag.lifted = liftRegion(ctx.doc, ctx.layerId, ctx.frameId, state.rect, !drag.copy);
+        // An empty layer still lifts (transparent) so the selection can move.
+        drag.lifted = liftRegion(gridOf(drag.surface), state.rect, !drag.copy);
+        if (!drag.copy) drag.surface.commit(state.rect);
       }
       drag.offset = { x: point.x - drag.origin.x, y: point.y - drag.origin.y };
     }
     changed();
   },
 
-  onPointerUp(ctx) {
+  onPointerUp(host) {
     const drag = state.drag;
     state.drag = null;
     if (!drag) return;
 
     if (drag.kind === "marquee") {
       // A click is a 1×1 marquee: one pixel. Entirely off-canvas selects nothing.
-      state.rect = clampTo(ctx.doc, drag.rect);
+      state.rect = clampTo(host, drag.rect);
     } else if (drag.lifted) {
-      const { lifted, offset } = drag;
+      const { lifted, offset, surface } = drag;
       const target = { x: lifted.rect.x + offset.x, y: lifted.rect.y + offset.y };
-      const written = stampRegion(ctx.doc, ctx.layerId, ctx.frameId, lifted, target);
-      // Lift + drop share the stroke: one drag, one undo step (even when dropped off-canvas).
-      ctx.stroke.extend(ctx.layerId, ctx.frameId, rectUnion(written, lifted.rect));
+      const written = stampRegion(gridOf(surface), lifted, target);
+      // Lift + drop share the gesture: one drag, one undo step (even when dropped off-canvas).
+      surface.commit(rectUnion(written, lifted.rect));
       // The selection follows the pixels.
-      state.rect = clampTo(ctx.doc, { ...lifted.rect, ...target });
+      state.rect = clampTo(host, { ...lifted.rect, ...target });
     }
     changed();
   },
