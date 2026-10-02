@@ -137,7 +137,7 @@ classDef idle fill:#fff,stroke:#8a94a3</pre>
 ~ T1  @types/react        ^19.2.18 to ^19.3.0   minor    floor only, lock already 19.3.0; no installed change
 ~ T1  @types/react-dom    ^19.2.7 to ^19.3.0    minor    floor only, lock already 19.3.0; no installed change
 ~ T2  @types/node         ^24.13.3 to ^26.6.4   MAJOR    types drop removed Node 25/26 APIs; only vite.config.ts uses node types, D2
-~ T3  @babel/core         ^7.29.7 to ^8.0.6     MAJOR    ESM-only, Node ^22.18||>=24.11, AST and plugin API changes; RISK: react-compiler 1.0.0 is built on @babel/types 7, D3 D4
+  T3  @babel/core         ^7.29.7 stays         REVERTED (D5)    ESM-only, Node ^22.18||>=24.11, AST and plugin API changes; RISK: react-compiler 1.0.0 is built on @babel/types 7, D3 D4
 ~ T4  typescript          ~6.0.2  to ~7.0.2     MAJOR    native compiler, no JS API; removed tsconfig options unused by us, D3</pre>
   </figure>
 
@@ -186,6 +186,7 @@ classDef idle fill:#fff,stroke:#8a94a3</pre>
     <tr id="D1"><td>D1</td><td>Q1</td><td>New branch off <code>main</code>, one PR; Dependabot PRs closed after merge</td><td>Branch off refactor branch; update this branch only</td><td>Facts checked equal on main <a class="id" href="#F9">F9</a>; PR has no refactor code; closing PRs needs your OK</td></tr>
     <tr id="D2"><td>D2</td><td>Q2</td><td>@types/node 26 and CI + Pages on Node 24</td><td>Keep CI on Node 22; keep @types/node 24</td><td>3 <code>node-version</code> edits; Babel 8 Node floor met <a class="id" href="#F5">F5</a></td></tr>
     <tr id="D3"><td>D3</td><td>Q3</td><td>Small = config edits or about 10 call-site fixes in one concern; else revert that package and list a followup</td><td>Any size in one concern; zero code changes only</td><td>Some package may stay old; each bump verified alone so a revert is clean</td></tr>
+    <tr id="D5"><td>D5</td><td>Q5</td><td>Revert @babel/core to ^7.29.7; followup until the React Compiler supports Babel 8</td><td>Keep Babel 8; drop React Compiler</td><td>Supersedes <a class="id" href="#D4">D4</a>; @babel/core is the one package left behind <a class="id" href="#F17">F17</a></td></tr>
     <tr id="D4"><td>D4</td><td>Q4</td><td>Babel 8 verified by build and tests only</td><td>Check built output for compiler runtime; skip Babel 8</td><td>No extra check; React Compiler could silently stop optimizing <a class="id" href="#F13">F13</a>; PR flags this risk</td></tr>
   </table>
 </section>
@@ -196,7 +197,7 @@ classDef idle fill:#fff,stroke:#8a94a3</pre>
     <tr><th>Task</th><th>Files</th><th>Serves</th></tr>
     <tr id="T1" class="done"><td>T1 Create branch off main; cn, @shadcn/lint, shadcn, vite, lucide-react, oxlint, react, react-dom, @types/react, @types/react-dom</td><td><code>package.json</code> <code>package-lock.json</code> <code>.oxlintrc.json</code></td><td><a class="id" href="#D1">D1</a> <a class="id" href="#D3">D3</a> <a class="id" href="#Done1">Done1</a> <a class="id" href="#Done2">Done2</a></td></tr>
     <tr id="T2" class="done"><td>T2 @types/node 26</td><td><code>package.json</code> <code>package-lock.json</code></td><td><a class="id" href="#D2">D2</a> <a class="id" href="#D3">D3</a> <a class="id" href="#Done1">Done1</a> <a class="id" href="#Done2">Done2</a></td></tr>
-    <tr id="T3" class="done"><td>T3 @babel/core 8 (build + tests only)</td><td><code>package.json</code> <code>package-lock.json</code> <code>vite.config.ts</code></td><td><a class="id" href="#D3">D3</a> <a class="id" href="#D4">D4</a> <a class="id" href="#Done1">Done1</a> <a class="id" href="#Done2">Done2</a></td></tr>
+    <tr id="T3" class="done"><td>T3 @babel/core 8, reverted to 7.x after the compiler regression (D5)</td><td><code>package.json</code> <code>package-lock.json</code> <code>vite.config.ts</code></td><td><a class="id" href="#D3">D3</a> <a class="id" href="#D4">D4</a> <a class="id" href="#Done1">Done1</a> <a class="id" href="#Done2">Done2</a></td></tr>
     <tr id="T4" class="done"><td>T4 typescript 7</td><td><code>package.json</code> <code>package-lock.json</code> <code>tsconfig.app.json</code> <code>tsconfig.node.json</code> <code>tsconfig.test.json</code> <code>tsconfig.json</code></td><td><a class="id" href="#D3">D3</a> <a class="id" href="#Done1">Done1</a> <a class="id" href="#Done2">Done2</a></td></tr>
     <tr id="T5" class="done"><td>T5 Node 24 and six Actions to latest major</td><td><code>.github/workflows/ci.yml</code> <code>.github/workflows/deploy-pages.yml</code></td><td><a class="id" href="#D2">D2</a> <a class="id" href="#Done3">Done3</a></td></tr>
     <tr id="T6" class="done"><td>T6 Push branch, open PR with breaking-changes table and followups</td><td>none (git and GitHub)</td><td><a class="id" href="#D1">D1</a> <a class="id" href="#D3">D3</a> <a class="id" href="#Done3">Done3</a> <a class="id" href="#Done4">Done4</a> <a class="id" href="#Done5">Done5</a></td></tr>
@@ -220,7 +221,7 @@ classDef idle fill:#fff,stroke:#8a94a3</pre>
 <section class="part">
   <h2>Done when</h2>
   <ol class="list-decimal pl-5 space-y-1">
-    <li id="Done1"><code>npm outdated</code> lists nothing, except packages listed as followups with the reason in the PR.</li>
+    <li id="Done1"><code>npm outdated</code> lists nothing, except @babel/core, which stays on 7.x with the reason in the PR <a class="id" href="#D5">D5</a>.</li>
     <li id="Done2"><code>npm run lint</code>, <code>npm run build</code> and <code>npm test</code> pass on the branch; <code>npm run test:browser</code> also passes if Chromium is available locally.</li>
     <li id="Done3">All six Actions in <code>ci.yml</code> and <code>deploy-pages.yml</code> are at the latest major, CI and Pages use Node 24, and GitHub CI on the PR is green.</li>
     <li id="Done4">The PR description has a breaking-changes table per package (impact: none, config fix, or followup) and a followups list.</li>
@@ -250,11 +251,12 @@ classDef idle fill:#fff,stroke:#8a94a3</pre>
   <li id="F13"><b>F13</b> babel-plugin-react-compiler 1.0.0 is latest and depends on @babel/types ^7.26, with no Babel 8 peer or release; compatibility with Babel 8 is untested <code>npm view babel-plugin-react-compiler</code></li>
   <li id="F14"><b>F14</b> Babel 8 package declares no <code>types</code>, so @types/babel__core 7.20.5 stays <code>npm view @babel/core@8.0.6</code></li>
   <li id="F15"><b>F15</b> Node 26 removes legacy <code>_stream_*</code> modules, <code>writeHeader</code>, <code>--experimental-transform-types</code>; none used by our code <code>nodejs.org release v26.0.0</code></li>
+  <li id="F17"><b>F17</b> Under Babel 8 the React Compiler skips 32 of 208 compiled functions (<code>Expected object property value to be an LVal, got: AssignmentPattern</code>); build and tests still pass; the experimental compiler build also fails on Babel 8 <code>build output comparison of main vs branch</code></li>
   <li id="F16"><b>F16</b> TypeScript 7 ships natively with a <code>tsc</code> bin and no JS API until 7.1; no installed package peers on typescript <code>npm view</code></li>
 </ul></details>
 
 <details class="more"><summary>Drift log</summary><ul>
-  <li>none</li>
+  <li>Q5 → <a class="id" href="#D5">D5</a>: T3 reverted. Followup check of D4 showed Babel 8 makes the compiler skip 32 components. Found: build output comparison, 208 vs 176 compiled functions.</li>
 </ul></details>
 </div>
 
