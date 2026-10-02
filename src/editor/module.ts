@@ -1,23 +1,17 @@
 import type { HintSection } from "@/commands/hints";
-import type { CommandHold, CommandId, CommandRegistry } from "@/commands/types";
-import type { CommandGroup } from "@/constants/commands";
+import { commandsFor, type CommandSpec } from "@/commands/define";
+import type { SessionContext } from "@/commands/session";
 import type { SpriteDocument } from "@/core/document";
-import type { Command, History } from "@/core/history";
+import type { Command } from "@/core/history";
 import type { CanvasRenderer } from "@/core/renderer";
 import type { ToolHost } from "@/framework/host";
-import type { KeyBinding } from "@/lib/keys";
 import type { ToolId } from "@/tools";
 
-/** What the shell hands every module command: the open document and app-level actions. */
-export interface ModuleContext {
+/** What the shell hands every module command: the session, plus the open sprite and its tools. */
+export interface ModuleContext extends SessionContext {
   readonly doc: SpriteDocument;
-  readonly history: History;
   /** Runs a command factory and records the command for undo; false when it was a no-op. */
   dispatch(factory: () => Command | null): boolean;
-  navigate(to: string): void;
-  showHelp(): void;
-  /** Writes every pending change to the database now. */
-  save(): Promise<void>;
   /** The open document's tool host as `toolId` sees it; tool-contributed commands run through it. */
   forTool(toolId: ToolId): ToolHost;
 }
@@ -26,18 +20,7 @@ export interface ModuleContext {
  * One command a module declares, with its keys, the same shape as `Tool.commands`. The shell binds
  * it to the open document's `ModuleContext`; handlers read the module's store when they run.
  */
-export interface ModuleCommand<Id extends string = string> {
-  readonly id: Id;
-  readonly label: string;
-  readonly group: CommandGroup;
-  /** The chords that run this command; the active registry is the keymap. */
-  readonly keys?: readonly KeyBinding[];
-  isEnabled?(ctx: ModuleContext): boolean;
-  isActive?(ctx: ModuleContext): boolean;
-  run(ctx: ModuleContext): void;
-  /** A key bound to this command reports its press and release here instead of calling `run`. */
-  hold?(ctx: ModuleContext): CommandHold;
-}
+export type ModuleCommand<Id extends string = string> = CommandSpec<Id, ModuleContext>;
 
 /**
  * One host domain's contributions to the editor; the shell and canvas read them from
@@ -56,11 +39,7 @@ export interface EditorModule<Id extends string = string> {
 }
 
 /** Keeps each definition's literal id, so `CommandId` can be derived from the module list. */
-export function defineCommands<const Id extends string>(
-  commands: readonly ModuleCommand<Id>[],
-): readonly ModuleCommand<Id>[] {
-  return commands;
-}
+export const defineCommands = commandsFor<ModuleContext>();
 
 /** Keeps the module's command ids literal, so `ModuleCommandId` can be derived from the list. */
 export function defineModule<Id extends string = never>(
@@ -69,25 +48,4 @@ export function defineModule<Id extends string = never>(
   return editorModule;
 }
 
-/** The registry entries for `commands`, each bound to the open document's context, in order. */
-export function bindCommands(
-  commands: readonly ModuleCommand[],
-  ctx: ModuleContext,
-): CommandRegistry {
-  const registry: CommandRegistry = {};
-  for (const command of commands) {
-    // Every module command id is part of `CommandId`, which is derived from these definitions.
-    const id = command.id as CommandId;
-    registry[id] = {
-      id,
-      label: command.label,
-      group: command.group,
-      keys: command.keys,
-      isEnabled: command.isEnabled && (() => command.isEnabled?.(ctx) ?? true),
-      isActive: command.isActive && (() => command.isActive?.(ctx) ?? false),
-      run: () => command.run(ctx),
-      hold: command.hold?.(ctx),
-    };
-  }
-  return registry;
-}
+export { bindCommands } from "@/commands/define";

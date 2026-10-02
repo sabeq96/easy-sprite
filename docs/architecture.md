@@ -67,9 +67,11 @@ src/
                 domain action hooks (useSpriteActions, useSpritesheetActions, useBackupActions)
                 that are the only way components reach the database, services and export
   commands/     the command contract shared by both editors: types, CommandsProvider (a registry
-                plus a subscribe for live button state), the keymap helpers that read a
-                registry's keys, the gesture hint types; and the builder's commands. The pixel
-                editor's commands, with their keys, live in its modules
+                plus a subscribe for live button state), the definition and binding helpers
+                (define.ts), the keymap helpers that read a registry's keys, the gesture hint
+                types; the session commands both editors bind (session.ts) and the builder's
+                commands (builderCommands.ts). The pixel editor's other commands, with their
+                keys, live in its modules
   stores/       zustand stores outside the pixel editor: the builder's view store and the theme
   db/           Dexie schema and instance, repositories/ (the only code that queries tables),
                 typed errors, seed data, whole-database backup
@@ -402,12 +404,22 @@ Adding to the editor:
 
 - **A command, key or panel in an existing domain** touches only that module: a command and its
   keys are one definition in its `commands.ts`, and a panel is its components. The id joins
-  `CommandId` by derivation. Keys the spritesheet composer shares (undo, redo, save, zoom, fit,
-  grid, help, back) come from `SHARED_KEYS` (`src/constants/shortcuts.ts`).
+  `CommandId` by derivation.
+- **A command both editors offer** is either a session command (undo, redo, save, help, back),
+  defined once in `SESSION_COMMANDS` (`src/commands/session.ts`) against `SessionContext`, which
+  `ModuleContext` extends; the `shell` module lists them. Or it is a view command (zoom, fit,
+  grid), declared by each surface over its own view store with the keys in `SHARED_KEYS`
+  (`src/constants/shortcuts.ts`).
 - **A new domain** is a folder with `api.ts`, `module.ts` and whatever it owns, plus one line in
   `EDITOR_MODULES`. The shell places its panel in plain JSX: there is no slot system.
 - **A new tool** never touches a module: it is a folder in `src/tools/` plus one line in
   `TOOL_LIST`, and it reaches the host only through `ToolHost`.
+
+The spritesheet composer declares its commands the same way, without modules:
+`BUILDER_COMMANDS` (`src/commands/builderCommands.ts`) is the session commands plus its view
+commands, typed against `BuilderContext`, and `useBuilderCommands` binds them with `bindCommands`
+(`src/commands/define.ts`, which `src/editor/module.ts` re-exports). `BuilderCommandId` joins
+`CommandId` by derivation, so a builder-only command is one definition there.
 
 Two dependency rules keep the module graph acyclic, and `import/no-cycle` checks both. Nothing
 that a module's `api.ts` reaches may import `EditorPage` or `modules.ts` at runtime (the type

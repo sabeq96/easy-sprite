@@ -2,13 +2,15 @@ import { expect, test, vi } from "vitest";
 import { userEvent } from "vitest/browser";
 import { CommandsProvider } from "@/commands/CommandsContext";
 import type { CommandRegistry } from "@/commands/types";
-import { SHARED_KEYS } from "@/constants/shortcuts";
+import { SESSION_COMMANDS } from "@/commands/session";
 import { CommandButton } from "@/components/common/CommandButton";
 import { subscribeToModules } from "@/editor/modules";
 import { useToolboxStore } from "@/editor/toolbox/api";
 import { useViewStore } from "@/editor/view/api";
 import { formatBinding } from "@/lib/keys";
 import { render } from "@test/render";
+
+const REDO_KEYS = SESSION_COMMANDS.find(({ id }) => id === "edit.redo")?.keys ?? [];
 
 function renderWith(registry: CommandRegistry, ui: React.ReactNode) {
   return render(
@@ -23,7 +25,7 @@ test("the tooltip shows the command's label and every one of its keys", async ()
         id: "edit.redo",
         label: "Redo",
         group: "Edit",
-        keys: SHARED_KEYS["edit.redo"],
+        keys: REDO_KEYS,
         run: () => {},
       },
     },
@@ -32,7 +34,7 @@ test("the tooltip shows the command's label and every one of its keys", async ()
 
   await userEvent.hover(screen.getByRole("button", { name: "Redo" }));
 
-  for (const keys of SHARED_KEYS["edit.redo"].map(formatBinding)) {
+  for (const keys of REDO_KEYS.map(formatBinding)) {
     await expect.element(screen.getByText(keys, { exact: true })).toBeVisible();
   }
 });

@@ -96,9 +96,11 @@ the active command registry *is* the keymap. There is no separate key table.
   `isEnabled`/`isActive` and `run`, all taking the `ModuleContext` — and the shell binds them to
   the open document. `ModuleCommandId` is derived from `EDITOR_MODULES`, so a command id typo is a
   type error. Adding a key-bound command to a module touches only that module's `commands.ts`.
-- **Keys both editors share** (undo, redo, save, zoom in/out, fit, grid, the cheat sheet and back
-  to the library) come from one constant, `SHARED_KEYS` in `src/constants/shortcuts.ts`: the
-  `shell` and `view` modules and the spritesheet composer's `useBuilderCommands` all read it.
+- **Commands both editors share**: undo, redo, save, the cheat sheet and back to the library are
+  defined once, keys included, in `SESSION_COMMANDS` (`src/commands/session.ts`), which the
+  `shell` module and the spritesheet composer's `BUILDER_COMMANDS` both list. Zoom in/out, fit and
+  grid are declared by each surface over its own view store, with keys from `SHARED_KEYS` in
+  `src/constants/shortcuts.ts`.
 - **Reading keys**: `useShortcuts` matches a key press against the `keys` of the registry it is
   given (`boundCommand` in `src/commands/keymap.ts`); a control reads a command's formatted chords
   with `useCommandKeys(id)` from the active `CommandsProvider`; the cheat sheet reads them from the
