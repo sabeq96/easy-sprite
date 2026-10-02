@@ -89,7 +89,7 @@ import 'https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3'
 
 <header class="space-y-3">
   <h1 class="text-3xl font-semibold">Update all packages to newest</h1>
-  <div class="meta"><span class="status-agreed">agreed</span><span>2026-10-02</span><code>docs/contracts/2026-10-02-dependency-updates.html</code></div>
+  <div class="meta"><span class="status-building">building</span><span>2026-10-02</span><code>docs/contracts/2026-10-02-dependency-updates.html</code></div>
   <dl class="brief">
     <dt>Problem</dt><dd>Seven npm packages and six GitHub Actions are behind latest, and four Dependabot PRs sit open against <code>main</code>. <a class="id" href="#F1">F1</a> <a class="id" href="#F2">F2</a> <a class="id" href="#F3">F3</a></dd>
     <dt>Goal</dt><dd>Every npm package and GitHub Action is on its newest version, breaking changes are flagged in one PR, and anything needing a bigger redesign is listed as a followup.</dd>
@@ -194,7 +194,7 @@ classDef idle fill:#fff,stroke:#8a94a3</pre>
   <h2>Tasks</h2>
   <table class="rows tasks">
     <tr><th>Task</th><th>Files</th><th>Serves</th></tr>
-    <tr id="T1"><td>T1 Create branch off main; cn, @shadcn/lint, shadcn, vite, lucide-react, oxlint, react, react-dom, @types/react, @types/react-dom</td><td><code>package.json</code> <code>package-lock.json</code> <code>.oxlintrc.json</code></td><td><a class="id" href="#D1">D1</a> <a class="id" href="#D3">D3</a> <a class="id" href="#Done1">Done1</a> <a class="id" href="#Done2">Done2</a></td></tr>
+    <tr id="T1" class="done"><td>T1 Create branch off main; cn, @shadcn/lint, shadcn, vite, lucide-react, oxlint, react, react-dom, @types/react, @types/react-dom</td><td><code>package.json</code> <code>package-lock.json</code> <code>.oxlintrc.json</code></td><td><a class="id" href="#D1">D1</a> <a class="id" href="#D3">D3</a> <a class="id" href="#Done1">Done1</a> <a class="id" href="#Done2">Done2</a></td></tr>
     <tr id="T2"><td>T2 @types/node 26</td><td><code>package.json</code> <code>package-lock.json</code></td><td><a class="id" href="#D2">D2</a> <a class="id" href="#D3">D3</a> <a class="id" href="#Done1">Done1</a> <a class="id" href="#Done2">Done2</a></td></tr>
     <tr id="T3"><td>T3 @babel/core 8 (build + tests only)</td><td><code>package.json</code> <code>package-lock.json</code> <code>vite.config.ts</code></td><td><a class="id" href="#D3">D3</a> <a class="id" href="#D4">D4</a> <a class="id" href="#Done1">Done1</a> <a class="id" href="#Done2">Done2</a></td></tr>
     <tr id="T4"><td>T4 typescript 7</td><td><code>package.json</code> <code>package-lock.json</code> <code>tsconfig.app.json</code> <code>tsconfig.node.json</code> <code>tsconfig.test.json</code> <code>tsconfig.json</code></td><td><a class="id" href="#D3">D3</a> <a class="id" href="#Done1">Done1</a> <a class="id" href="#Done2">Done2</a></td></tr>
