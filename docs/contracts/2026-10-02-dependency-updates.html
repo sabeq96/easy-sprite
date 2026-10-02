@@ -1,0 +1,288 @@
+<!doctype html>
+<!--
+  Contract template. Copy to docs/contracts/YYYY-MM-DD-<slug>.html, then replace the example.
+  - Keep every section, in order. An empty one says "none".
+  - One item per source line, so amendments diff cleanly.
+  - IDs: give the item id="D2", link to it with <a class="id" href="#D2">D2</a>. Q# are plain <span class="id">Q4</span>:
+    questions live in the chat, not on this page. Finished task: <tr id="T2" class="done">.
+  - New classes: don't reuse Tailwind utility names (table, block, hidden...), and @apply only utilities.
+  - Inside <pre>, write < as &lt;. pre.diff lines start with + new, ~ changed, - removed, space untouched;
+    IDs like D2 inside them become links on their own.
+  - Views in "What gets built": pre.view, pre.diff, pre.code, pre.mermaid, div.fragment.
+    Mermaid nodes take :::new / :::chg / :::del; never redefine them.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contract: Update all packages</title>
+<script type="module">
+import 'https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3'
+</script>
+<style type="text/tailwindcss">
+@theme {
+  --color-ink: #1c2433;  --color-muted: #5b6577; --color-paper: #fbfcfd;
+  --color-grid: #e4e9f1; --color-link: #2459a8;
+  --color-new: #2e7d4f;  --color-chg: #a96a12;  --color-del: #b23a3a; --color-idle: #8a94a3;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+}
+@layer base {
+  body { @apply bg-paper text-ink font-sans leading-relaxed antialiased; }
+  a { @apply text-link; }
+  code { @apply font-mono text-[0.9em]; }
+  *:target { @apply bg-amber-50 outline-2 outline-amber-300; }
+}
+@layer components {
+  .page    { @apply max-w-5xl mx-auto px-5 py-10 space-y-10; }
+  .meta    { @apply flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted; }
+  .brief   { @apply grid grid-cols-[5rem_1fr] gap-x-4 gap-y-1 max-w-[75ch]; }
+  .brief dt{ @apply text-muted; }
+  .part    { @apply space-y-3; }
+  .part h2 { @apply text-lg font-semibold; }
+  .id      { @apply font-mono text-xs px-1.5 py-0.5 rounded bg-grid no-underline whitespace-nowrap; }
+  .rows    { @apply block w-full overflow-x-auto text-sm border-collapse; }
+  .rows th{ @apply text-left font-medium text-muted pb-1 pr-4; }
+  .rows td{ @apply border-t border-grid py-1.5 pr-4 align-top; }
+  .op-new, .op-edit, .op-del { @apply font-mono text-xs px-1.5 py-0.5 rounded; }
+  .op-new  { @apply text-new bg-new/10; }
+  .op-edit { @apply text-chg bg-chg/10; }
+  .op-del  { @apply text-del bg-del/10; }
+  .status-draft, .status-agreed, .status-building, .status-done { @apply text-xs font-medium px-2 py-0.5 rounded-full border; }
+  .status-draft    { @apply text-chg border-chg/40; }
+  .status-agreed   { @apply text-link border-link/40; }
+  .status-building { @apply text-ink border-ink/40; }
+  .status-done     { @apply text-new border-new/40; }
+
+  /* The one bold element: the drafting sheet */
+  .built   { @apply border-2 border-ink rounded-md p-5 sm:p-7 space-y-6;
+             background: linear-gradient(var(--color-grid) 1px, transparent 1px) 0 0 / 24px 24px,
+                         linear-gradient(90deg, var(--color-grid) 1px, transparent 1px) 0 0 / 24px 24px, white; }
+  .built h2{ @apply text-2xl font-semibold; }
+  .legend  { @apply flex gap-3 text-xs text-muted; }
+  .legend span::before { content: "■ "; }
+  .short   { @apply text-base max-w-[70ch] bg-white/90; }
+  .built figure     { @apply space-y-1.5; }
+  .built figcaption { @apply text-sm text-muted; }
+  .view, .diff, .code, .mermaid, .fragment {
+             @apply bg-white border border-grid rounded p-4 overflow-x-auto font-mono text-[13px] leading-6; }
+  .mermaid { @apply font-sans; }
+  .fragment{ @apply font-sans text-sm; }
+  .diff .add { @apply text-new bg-new/10 block; }
+  .diff .rm  { @apply text-del bg-del/10 block; }
+  .diff .chg { @apply text-chg bg-chg/10 block; }
+  .diff .ctx { @apply text-idle block; }
+
+  .scope   { @apply grid sm:grid-cols-2 gap-6; }
+  .scope h3{ @apply font-medium mb-1; }
+  .scope li{ @apply py-0.5; }
+  .out     { @apply text-muted; }
+  .tasks td:first-child::before    { content: "☐ "; }
+  .tasks tr.done td:first-child::before { content: "☑ "; @apply text-new; }
+  .more    { @apply border-t border-grid pt-2; }
+  .more summary { @apply cursor-pointer font-medium; }
+  .more ul { @apply text-sm mt-2 space-y-1; }
+}
+</style>
+</head>
+<body>
+<main class="page">
+
+<header class="space-y-3">
+  <h1 class="text-3xl font-semibold">Update all packages to newest</h1>
+  <div class="meta"><span class="status-done">done</span><span>2026-10-02</span><code>docs/contracts/2026-10-02-dependency-updates.html</code></div>
+  <dl class="brief">
+    <dt>Problem</dt><dd>Seven npm packages and six GitHub Actions are behind latest, and four Dependabot PRs sit open against <code>main</code>. <a class="id" href="#F1">F1</a> <a class="id" href="#F2">F2</a> <a class="id" href="#F3">F3</a></dd>
+    <dt>Goal</dt><dd>Every npm package and GitHub Action is on its newest version, breaking changes are flagged in one PR, and anything needing a bigger redesign is listed as a followup.</dd>
+  </dl>
+</header>
+
+<section class="built">
+  <div class="flex flex-wrap items-baseline justify-between gap-2">
+    <h2>What gets built</h2>
+    <div class="legend"><span class="text-new">new</span><span class="text-chg">changed</span><span class="text-del">removed</span><span class="text-idle">untouched</span></div>
+  </div>
+  <p class="short">One branch off <code>main</code> bumps every package, one task at a time, each checked with lint, build and unit tests. A package whose upgrade needs more than a small fix stays on its old version and goes into the PR's followup list. CI and Pages move to Node 24 and all six Actions to their latest major.</p>
+
+  <figure>
+    <figcaption>Each bump is verified before the next; a too-big break reverts that package (D3)</figcaption>
+<pre class="mermaid">flowchart LR
+  Main[main]:::idle --> Branch["BRANCH chore/update-dependencies"]
+  Branch --> T1["T1 minor, patch, cn, shadcn/lint"]:::chg
+  T1 --> T2["T2 types/node 26"]:::chg
+  T2 --> T3["T3 babel/core 8"]:::chg
+  T3 --> T4["T4 typescript 7"]:::chg
+  T4 --> T5["T5 Node 24 + Actions"]:::chg
+  T5 --> PR["PR to main"]
+  T1 -.->|"big break: revert pkg, followup (D3)"| FU["PR followup list"]:::new
+  T2 -.->|"big break: revert pkg, followup (D3)"| FU
+  T3 -.->|"big break: revert pkg, followup (D3)"| FU
+  T4 -.->|"big break: revert pkg, followup (D3)"| FU
+  FU --> PR
+  click Branch href "#D1"
+  click T5 href "#D2"
+  click FU href "#D3"
+classDef idle fill:#fff,stroke:#8a94a3</pre>
+  </figure>
+
+  <figure>
+    <figcaption><code>package.json</code>: current spec to latest, grouped by task; 33 other packages already at latest, untouched</figcaption>
+<pre class="diff">~ T1  cn                  ^0.3.0  to ^0.4.0     minor    no break: build tool now registers theme scales
+~ T1  @shadcn/lint        ^0.1.5  to ^0.2.0     minor    no break: adds Vue/Svelte support
+~ T1  shadcn              ^4.21.0 to ^4.21.1    patch    no break: no changelog entry
+~ T1  vite                ^8.3.0  to ^8.3.2     patch    no break: bug fixes only
+~ T1  lucide-react        ^1.46.0 to ^1.49.0    minor    floor only, lock already 1.49.0; icons only
+~ T1  oxlint              ^1.81.0 to ^1.86.0    minor    floor only, lock already 1.86.0
+~ T1  react               ^19.2.8 to ^19.3.0    minor    floor only, lock already 19.3.0; no installed change
+~ T1  react-dom           ^19.2.8 to ^19.3.0    minor    floor only, lock already 19.3.0; no installed change
+~ T1  @types/react        ^19.2.18 to ^19.3.0   minor    floor only, lock already 19.3.0; no installed change
+~ T1  @types/react-dom    ^19.2.7 to ^19.3.0    minor    floor only, lock already 19.3.0; no installed change
+~ T2  @types/node         ^24.13.3 to ^26.6.4   MAJOR    types drop removed Node 25/26 APIs; only vite.config.ts uses node types, D2
+  T3  @babel/core         ^7.29.7 stays         REVERTED (D5)    ESM-only, Node ^22.18||>=24.11, AST and plugin API changes; RISK: react-compiler 1.0.0 is built on @babel/types 7, D3 D4
+~ T4  typescript          ~6.0.2  to ~7.0.2     MAJOR    native compiler, no JS API; removed tsconfig options unused by us, D3</pre>
+  </figure>
+
+  <figure>
+    <figcaption>Workflows (both files): current to latest</figcaption>
+<pre class="diff">~ T5  node-version        22 to 24                           D2  ci.yml x2, deploy-pages.yml
+~ T5  actions/checkout             v4 to v7          MAJOR
+~ T5  actions/setup-node           v4 to v7          MAJOR
+~ T5  actions/cache                v4 to v6          MAJOR
+~ T5  actions/upload-artifact      v4 to v7          MAJOR
+~ T5  actions/upload-pages-artifact v3 to v5         MAJOR
+~ T5  actions/deploy-pages         v4 to v5          MAJOR</pre>
+  </figure>
+
+  <figure>
+    <figcaption>Other files, edited only if a bump needs it (D3)</figcaption>
+<pre class="diff"> package-lock.json         regenerated by npm                T1 T2 T3 T4
+ tsconfig*.json            only if TS 7 needs it             T4
+ vite.config.ts            only if Babel 8 needs it          T3
+ .oxlintrc.json            only if shadcn/lint 0.2 needs it  T1</pre>
+  </figure>
+</section>
+
+<section class="part">
+  <h2>Scope</h2>
+  <div class="scope">
+    <div><h3>In</h3><ul>
+      <li>Work on a new branch off <code>main</code>, one PR <a class="id" href="#D1">D1</a></li>
+      <li>Bump every npm dependency to latest, including majors (TypeScript 7, Babel 8, @types/node 26) and spec floors that lag the lockfile (lucide-react, oxlint, react, react-dom, @types/react, @types/react-dom)</li>
+      <li>Bump all six GitHub Actions to latest major and CI and Pages to Node 24 <a class="id" href="#D2">D2</a></li>
+      <li>Small fixes a bump needs: config edits or about 10 call-site fixes <a class="id" href="#D3">D3</a></li>
+      <li>Breaking-changes table and followup list in the PR description, flagging the unchecked React Compiler risk <a class="id" href="#D4">D4</a> <a class="id" href="#D3">D3</a></li>
+    </ul></div>
+    <div class="out"><h3>Out</h3><ul>
+      <li>Redesigns or large migrations a bump would need; package stays old, listed as followup <span class="id">Q3</span></li>
+      <li>Closing Dependabot PRs #7, #9, #12, #15 before merge; done only after you confirm <span class="id">Q1</span></li>
+      <li>Changing <code>.github/dependabot.yml</code> <span class="id">Q1</span></li>
+    </ul></div>
+  </div>
+</section>
+
+<section class="part">
+  <h2>Decisions</h2>
+  <table class="rows">
+    <tr><th>#</th><th>Q</th><th>Decision</th><th>Rejected</th><th>Implies</th></tr>
+    <tr id="D1"><td>D1</td><td>Q1</td><td>New branch off <code>main</code>, one PR; Dependabot PRs closed after merge</td><td>Branch off refactor branch; update this branch only</td><td>Facts checked equal on main <a class="id" href="#F9">F9</a>; PR has no refactor code; closing PRs needs your OK</td></tr>
+    <tr id="D2"><td>D2</td><td>Q2</td><td>@types/node 26 and CI + Pages on Node 24</td><td>Keep CI on Node 22; keep @types/node 24</td><td>3 <code>node-version</code> edits; Babel 8 Node floor met <a class="id" href="#F5">F5</a></td></tr>
+    <tr id="D3"><td>D3</td><td>Q3</td><td>Small = config edits or about 10 call-site fixes in one concern; else revert that package and list a followup</td><td>Any size in one concern; zero code changes only</td><td>Some package may stay old; each bump verified alone so a revert is clean</td></tr>
+    <tr id="D5"><td>D5</td><td>Q5</td><td>Revert @babel/core to ^7.29.7; followup until the React Compiler supports Babel 8</td><td>Keep Babel 8; drop React Compiler</td><td>Supersedes <a class="id" href="#D4">D4</a>; @babel/core is the one package left behind <a class="id" href="#F17">F17</a></td></tr>
+    <tr id="D4"><td>D4</td><td>Q4</td><td>Babel 8 verified by build and tests only</td><td>Check built output for compiler runtime; skip Babel 8</td><td>No extra check; React Compiler could silently stop optimizing <a class="id" href="#F13">F13</a>; PR flags this risk</td></tr>
+  </table>
+</section>
+
+<section class="part">
+  <h2>Tasks</h2>
+  <table class="rows tasks">
+    <tr><th>Task</th><th>Files</th><th>Serves</th></tr>
+    <tr id="T1" class="done"><td>T1 Create branch off main; cn, @shadcn/lint, shadcn, vite, lucide-react, oxlint, react, react-dom, @types/react, @types/react-dom</td><td><code>package.json</code> <code>package-lock.json</code> <code>.oxlintrc.json</code></td><td><a class="id" href="#D1">D1</a> <a class="id" href="#D3">D3</a> <a class="id" href="#Done1">Done1</a> <a class="id" href="#Done2">Done2</a></td></tr>
+    <tr id="T2" class="done"><td>T2 @types/node 26</td><td><code>package.json</code> <code>package-lock.json</code></td><td><a class="id" href="#D2">D2</a> <a class="id" href="#D3">D3</a> <a class="id" href="#Done1">Done1</a> <a class="id" href="#Done2">Done2</a></td></tr>
+    <tr id="T3" class="done"><td>T3 @babel/core 8, reverted to 7.x after the compiler regression (D5)</td><td><code>package.json</code> <code>package-lock.json</code> <code>vite.config.ts</code></td><td><a class="id" href="#D3">D3</a> <a class="id" href="#D4">D4</a> <a class="id" href="#Done1">Done1</a> <a class="id" href="#Done2">Done2</a></td></tr>
+    <tr id="T4" class="done"><td>T4 typescript 7</td><td><code>package.json</code> <code>package-lock.json</code> <code>tsconfig.app.json</code> <code>tsconfig.node.json</code> <code>tsconfig.test.json</code> <code>tsconfig.json</code></td><td><a class="id" href="#D3">D3</a> <a class="id" href="#Done1">Done1</a> <a class="id" href="#Done2">Done2</a></td></tr>
+    <tr id="T5" class="done"><td>T5 Node 24 and six Actions to latest major</td><td><code>.github/workflows/ci.yml</code> <code>.github/workflows/deploy-pages.yml</code></td><td><a class="id" href="#D2">D2</a> <a class="id" href="#Done3">Done3</a></td></tr>
+    <tr id="T6" class="done"><td>T6 Push branch, open PR with breaking-changes table and followups</td><td>none (git and GitHub)</td><td><a class="id" href="#D1">D1</a> <a class="id" href="#D3">D3</a> <a class="id" href="#Done3">Done3</a> <a class="id" href="#Done4">Done4</a> <a class="id" href="#Done5">Done5</a></td></tr>
+  </table>
+</section>
+
+<section class="part">
+  <h2>Files</h2>
+  <table class="rows">
+    <tr><th>Path</th><th>Op</th><th>Intent</th><th>Task</th></tr>
+    <tr><td><code>package.json</code></td><td><span class="op-edit">edit</span></td><td>Version ranges raised to latest</td><td><a class="id" href="#T1">T1</a> <a class="id" href="#T2">T2</a> <a class="id" href="#T3">T3</a> <a class="id" href="#T4">T4</a></td></tr>
+    <tr><td><code>package-lock.json</code></td><td><span class="op-edit">edit</span></td><td>Regenerated by npm</td><td><a class="id" href="#T1">T1</a> <a class="id" href="#T2">T2</a> <a class="id" href="#T3">T3</a> <a class="id" href="#T4">T4</a></td></tr>
+    <tr><td><code>.oxlintrc.json</code></td><td><span class="op-edit">edit</span></td><td>Only if @shadcn/lint 0.2 needs a rule or config change</td><td><a class="id" href="#T1">T1</a></td></tr>
+    <tr><td><code>vite.config.ts</code></td><td><span class="op-edit">edit</span></td><td>Only if Babel 8 needs a plugin option change</td><td><a class="id" href="#T3">T3</a></td></tr>
+    <tr><td><code>tsconfig.app.json</code> <code>tsconfig.node.json</code> <code>tsconfig.test.json</code> <code>tsconfig.json</code></td><td><span class="op-edit">edit</span></td><td>Only if TypeScript 7 needs an option change</td><td><a class="id" href="#T4">T4</a></td></tr>
+    <tr><td><code>.github/workflows/ci.yml</code></td><td><span class="op-edit">edit</span></td><td><code>node-version: 24</code>; checkout 7, setup-node 7, cache 6, upload-artifact 7</td><td><a class="id" href="#T5">T5</a></td></tr>
+    <tr><td><code>.github/workflows/deploy-pages.yml</code></td><td><span class="op-edit">edit</span></td><td><code>node-version: 24</code>; checkout 7, setup-node 7, upload-pages-artifact 5, deploy-pages 5</td><td><a class="id" href="#T5">T5</a></td></tr>
+  </table>
+</section>
+
+<section class="part">
+  <h2>Done when</h2>
+  <ol class="list-decimal pl-5 space-y-1">
+    <li id="Done1"><code>npm outdated</code> lists nothing, except @babel/core, which stays on 7.x with the reason in the PR <a class="id" href="#D5">D5</a>.</li>
+    <li id="Done2"><code>npm run lint</code>, <code>npm run build</code> and <code>npm test</code> pass on the branch; <code>npm run test:browser</code> also passes if Chromium is available locally.</li>
+    <li id="Done3">All six Actions in <code>ci.yml</code> and <code>deploy-pages.yml</code> are at the latest major, CI and Pages use Node 24, and GitHub CI on the PR is green.</li>
+    <li id="Done4">The PR description has a breaking-changes table per package (impact: none, config fix, or followup) and a followups list.</li>
+    <li id="Done5">Dependabot PRs #7, #9, #12 and #15 are still open until you say to close them after merge.</li>
+  </ol>
+  <p class="text-sm">Test command: <code>npm run lint &amp;&amp; npm run build &amp;&amp; npm test</code></p>
+</section>
+
+<div class="space-y-2">
+<details class="more"><summary>Open</summary><ul>
+  <li>none</li>
+</ul></details>
+
+<details class="more"><summary>Facts</summary><ul>
+  <li id="F1"><b>F1</b> Baseline green: build, lint, unit tests pass <code>package.json:6-14</code></li>
+  <li id="F2"><b>F2</b> Spec floors also lag installed versions for lucide-react, oxlint, react, react-dom, @types/react, @types/react-dom. Behind latest: @babel/core 7.29.7 to 8.0.6, @shadcn/lint 0.1.5 to 0.2.0, @types/node 24 to 26.6.4, cn 0.3.3 to 0.4.0, typescript 6.0.3 to 7.0.2, shadcn and vite patch <code>package.json</code></li>
+  <li id="F3"><b>F3</b> Open Dependabot PRs: #15 minor group, #12 typescript, #9 babel, #7 six Actions <code>.github/dependabot.yml</code></li>
+  <li id="F4"><b>F4</b> Babel is used only via <code>reactCompilerPreset</code> in <code>vite.config.ts:13</code></li>
+  <li id="F5"><b>F5</b> CI and deploy use Node 22; Babel 8 needs ^22.18 or &gt;=24.11 <code>.github/workflows/ci.yml:26</code></li>
+  <li id="F6"><b>F6</b> TS 7 removes baseUrl, node10 resolution, es5 target; none are used <code>tsconfig.app.json</code></li>
+  <li id="F7"><b>F7</b> @shadcn/lint runs as an oxlint JS plugin, not via typescript-eslint <code>.oxlintrc.json:4</code></li>
+  <li id="F8"><b>F8</b> Action breaking changes affect none of our usage: Node 24 runtime, setup-node explicit <code>cache: npm</code>, no dotfiles in <code>dist</code> <code>.github/workflows/ci.yml:24-26</code></li>
+  <li id="F9"><b>F9</b> <code>package.json</code>, lockfile and workflows are identical on main and this branch <code>git diff main</code></li>
+  <li id="F10"><b>F10</b> No breaking changes in cn 0.4.0, @shadcn/lint 0.2.0, shadcn 4.21.1, vite 8.3.1 and 8.3.2, lucide-react 1.47 to 1.49, oxlint 1.82 to 1.86 <code>release notes of each</code></li>
+  <li id="F11"><b>F11</b> Lockfile already resolves react and react-dom 19.3.0 (transitions now render independently, Strict Mode hydration double-invokes effects; no code change required) and @types/react 19.3.0 <code>node_modules</code></li>
+  <li id="F12"><b>F12</b> Babel 8: ESM-only; sync-callback APIs removed; <code>pass.getModuleName</code> and <code>pass.addImport</code> removed; ImportExpression AST default; Node ^22.18 or &gt;=24.11 <code>babeljs.io/docs/v8-migration-api</code></li>
+  <li id="F13"><b>F13</b> babel-plugin-react-compiler 1.0.0 is latest and depends on @babel/types ^7.26, with no Babel 8 peer or release; compatibility with Babel 8 is untested <code>npm view babel-plugin-react-compiler</code></li>
+  <li id="F14"><b>F14</b> Babel 8 package declares no <code>types</code>, so @types/babel__core 7.20.5 stays <code>npm view @babel/core@8.0.6</code></li>
+  <li id="F15"><b>F15</b> Node 26 removes legacy <code>_stream_*</code> modules, <code>writeHeader</code>, <code>--experimental-transform-types</code>; none used by our code <code>nodejs.org release v26.0.0</code></li>
+  <li id="F17"><b>F17</b> Under Babel 8 the React Compiler skips 32 of 208 compiled functions (<code>Expected object property value to be an LVal, got: AssignmentPattern</code>); build and tests still pass; the experimental compiler build also fails on Babel 8 <code>build output comparison of main vs branch</code></li>
+  <li id="F16"><b>F16</b> TypeScript 7 ships natively with a <code>tsc</code> bin and no JS API until 7.1; no installed package peers on typescript <code>npm view</code></li>
+</ul></details>
+
+<details class="more"><summary>Drift log</summary><ul>
+  <li>Q5 → <a class="id" href="#D5">D5</a>: T3 reverted. Followup check of D4 showed Babel 8 makes the compiler skip 32 components. Found: build output comparison, 208 vs 176 compiled functions.</li>
+</ul></details>
+</div>
+
+</main>
+
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@12.0.0/+esm'
+
+// Diff lines: color by first character, link IDs.
+const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;')
+const ids = s => s.replace(/\b((?:Done|[DFOT])\d+)\b/g, '<a class="id" href="#$1">$1</a>')
+for (const pre of document.querySelectorAll('pre.diff')) {
+  pre.innerHTML = pre.textContent.split('\n').map(l =>
+    `<span class="${{'+': 'add', '~': 'chg', '-': 'rm'}[l[0]] ?? 'ctx'}">${ids(esc(l)) || ' '}</span>`).join('')
+}
+
+// Mermaid: one shared look; :::new / :::chg / :::del are defined here only.
+const fill = (cls, color) => `.node.${cls} :is(rect,polygon,circle,path){fill:color-mix(in srgb,${color} 12%,white)!important;stroke:${color}!important}`
+mermaid.initialize({
+  startOnLoad: false, securityLevel: 'loose', theme: 'base',
+  flowchart: { useMaxWidth: false }, sequence: { useMaxWidth: false },
+  themeVariables: { primaryColor: '#ffffff', primaryBorderColor: '#8a94a3', lineColor: '#1c2433',
+                    fontFamily: 'ui-sans-serif, system-ui, sans-serif', fontSize: '14px' },
+  themeCSS: fill('new', '#2e7d4f') + fill('chg', '#a96a12') + fill('del', '#b23a3a'),
+})
+await mermaid.run({ querySelector: 'pre.mermaid' })
+</script>
+</body>
+</html>
