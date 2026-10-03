@@ -1,4 +1,4 @@
-import { ZOOM_LEVELS } from "@/constants/canvas";
+import { VIEW_PADDING, WHEEL_ZOOM_BASE, WHEEL_ZOOM_DELTA, ZOOM_LEVELS } from "@/constants/canvas";
 import { clamp, stepLadder } from "@/lib/math";
 
 export interface Viewport {
@@ -52,8 +52,13 @@ export function zoomStep(viewport: Viewport, cursor: Point, direction: 1 | -1): 
   return zoomAt(viewport, cursor, stepLadder(viewport.scale, ZOOM_LEVELS, direction));
 }
 
+/** How much a wheel or pinch event multiplies the scale: continuous, so zoom glides. */
+export function wheelZoomFactor(deltaY: number): number {
+  return WHEEL_ZOOM_BASE ** (-deltaY / WHEEL_ZOOM_DELTA);
+}
+
 /** Largest ladder scale that fits, centred, with padding. */
-export function fitViewport(container: Size, sprite: Size, padding = 24): Viewport {
+export function fitViewport(container: Size, sprite: Size, padding = VIEW_PADDING): Viewport {
   const available = {
     width: Math.max(1, container.width - padding * 2),
     height: Math.max(1, container.height - padding * 2),
@@ -68,24 +73,25 @@ export function fitViewport(container: Size, sprite: Size, padding = 24): Viewpo
   };
 }
 
-/** Keeps part of the sprite on screen so it cannot be panned into the void. */
-export function clampViewport(viewport: Viewport, container: Size, sprite: Size): Viewport {
-  const margin = Math.min(
-    Math.min(sprite.width, sprite.height) * viewport.scale * 0.25,
-    Math.min(container.width, container.height) * 0.4,
-  );
+/**
+ * Per axis: a sprite that fits (with `padding` either side) sits centred and cannot be moved; one that
+ * overflows can be scrolled until `padding` px show past either edge, and no further.
+ */
+export function constrainViewport(
+  viewport: Viewport,
+  container: Size,
+  sprite: Size,
+  padding = VIEW_PADDING,
+): Viewport {
+  const axis = (origin: number, available: number, length: number) => {
+    const size = length * viewport.scale;
+    if (size + padding * 2 <= available) return Math.round((available - size) / 2);
+    return clamp(origin, available - size - padding, padding);
+  };
 
   return {
-    ...viewport,
-    originX: clamp(
-      viewport.originX,
-      -sprite.width * viewport.scale + margin,
-      container.width - margin,
-    ),
-    originY: clamp(
-      viewport.originY,
-      -sprite.height * viewport.scale + margin,
-      container.height - margin,
-    ),
+    scale: viewport.scale,
+    originX: axis(viewport.originX, container.width, sprite.width),
+    originY: axis(viewport.originY, container.height, sprite.height),
   };
 }

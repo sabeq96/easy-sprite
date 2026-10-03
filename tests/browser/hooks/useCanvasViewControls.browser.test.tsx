@@ -6,7 +6,8 @@ import { useViewStore } from "@/editor/view/api";
 import { render } from "@test/render";
 
 async function openEditor() {
-  const sprite = await createSprite({ width: 16, height: 16 });
+  // 64px, so zooming in can make it overflow the view (a sprite that fits stays centred and won't pan).
+  const sprite = await createSprite({ width: 64, height: 64 });
   const screen = await render(<AppRoutes />, { route: `/sprites/${sprite.id}` });
 
   const canvas = screen.getByRole("application", { name: "Sprite canvas" });
@@ -31,6 +32,12 @@ function fireMiddleDrag(element: HTMLElement, from: { x: number; y: number }, to
 
 test("middle-drag pans the viewport without ever setting a custom cursor", async () => {
   const { canvas } = await openEditor();
+  // A sprite that fits stays centred; zoom in until it overflows so there is something to pan.
+  const { width, height } = useViewStore.getState().containerSize;
+  const scale = () => useViewStore.getState().viewport.scale;
+  while (64 * scale() < 2 * Math.max(width, height) && scale() < 48) {
+    await userEvent.keyboard("+");
+  }
   const before = useViewStore.getState().viewport;
   expect(canvas.style.cursor).toBe("");
 

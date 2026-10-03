@@ -35,14 +35,47 @@ describe("view store", () => {
     expect(after).toEqual({ ...before, originX: before.originX + 10, originY: before.originY - 5 });
   });
 
-  it("panBy stops once only a margin of the sprite is left on screen", () => {
+  it("panBy leaves a sprite that fits centred", () => {
     const sprite = { width: 32, height: 32 };
     useViewStore.getState().fitToContainer({ width: 500, height: 500 }, sprite);
 
+    useViewStore.getState().panBy(100, -100, sprite);
+
+    expect(useViewStore.getState().viewport).toEqual({ scale: 12, originX: 58, originY: 58 });
+  });
+
+  it("panBy stops 24px past the edge once the sprite overflows", () => {
+    const sprite = { width: 32, height: 32 };
+    useViewStore.getState().fitToContainer({ width: 500, height: 500 }, sprite);
+    useViewStore.getState().zoomByFactor({ x: 250, y: 250 }, 2, sprite);
+
     useViewStore.getState().panBy(10_000, -10_000, sprite);
 
-    // scale 12: margin = min(32 * 12 * 0.25, 500 * 0.4) = 96 px of sprite kept in view.
-    expect(useViewStore.getState().viewport).toEqual({ scale: 12, originX: 500 - 96, originY: -32 * 12 + 96 });
+    // scale 24: 32 × 24 = 768 px, so the origin ranges over [500 − 768 − 24, 24] = [−292, 24].
+    expect(useViewStore.getState().viewport).toEqual({ scale: 24, originX: 24, originY: -292 });
+  });
+
+  it("zoomByFactor multiplies the scale and stops at the ladder's ends", () => {
+    const sprite = { width: 32, height: 32 };
+    useViewStore.getState().fitToContainer({ width: 500, height: 500 }, sprite);
+
+    useViewStore.getState().zoomByFactor({ x: 250, y: 250 }, 1.1, sprite);
+    expect(useViewStore.getState().viewport.scale).toBeCloseTo(13.2);
+
+    useViewStore.getState().zoomByFactor({ x: 250, y: 250 }, 100, sprite);
+    expect(useViewStore.getState().viewport.scale).toBe(48);
+    useViewStore.getState().zoomByFactor({ x: 250, y: 250 }, 0.0001, sprite);
+    expect(useViewStore.getState().viewport.scale).toBe(0.5);
+  });
+
+  it("a resized container re-centres a sprite that fits", () => {
+    const sprite = { width: 32, height: 32 };
+    useViewStore.getState().fitToContainer({ width: 500, height: 500 }, sprite);
+
+    useViewStore.getState().setContainerSize({ width: 700, height: 600 }, sprite);
+
+    // 32 × 12 = 384 px: (700 − 384) / 2 = 158, (600 − 384) / 2 = 108.
+    expect(useViewStore.getState().viewport).toEqual({ scale: 12, originX: 158, originY: 108 });
   });
 
   it("resetGrid sets the grid to the given tile and the chessboard back to 1px", () => {

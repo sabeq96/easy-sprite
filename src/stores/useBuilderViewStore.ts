@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { BUILDER_ZOOM_LEVELS, DEFAULT_BUILDER_ZOOM } from "@/constants/builder";
 import { DEFAULT_CHECKER_SIZE, DEFAULT_TILE_SIZE } from "@/constants/canvas";
 import type { Size } from "@/core/viewport";
-import { stepLadder } from "@/lib/math";
+import { clamp, stepLadder } from "@/lib/math";
 
 export interface BuilderViewState {
   zoom: number;
@@ -13,7 +13,10 @@ export interface BuilderViewState {
   /** Last known size of the scrolling sheet panel, so `fit` needs no DOM read at click time. */
   containerSize: Size;
 
+  /** One ladder step, for the zoom commands. */
   zoomBy: (direction: 1 | -1) => void;
+  /** Continuous zoom for wheel and pinch, kept within the ladder's ends. */
+  zoomByFactor: (factor: number) => void;
   /** Largest ladder step at which `sheet` (in sprite px) still fits the panel. */
   fit: (sheet: Size) => void;
   toggleGrid: () => void;
@@ -40,6 +43,11 @@ export const useBuilderViewStore = create<BuilderViewState>()((set) => ({
 
   zoomBy: (direction) =>
     set(({ zoom }) => ({ zoom: stepLadder(zoom, BUILDER_ZOOM_LEVELS, direction) })),
+
+  zoomByFactor: (factor) =>
+    set(({ zoom }) => ({
+      zoom: clamp(zoom * factor, BUILDER_ZOOM_LEVELS[0], BUILDER_ZOOM_LEVELS[BUILDER_ZOOM_LEVELS.length - 1]),
+    })),
 
   fit: (sheet) =>
     set(({ containerSize }) => {

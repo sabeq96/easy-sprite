@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
-  clampViewport,
+  constrainViewport,
   fitViewport,
   isInsideSprite,
   screenToSprite,
   spriteToScreen,
+  wheelZoomFactor,
   zoomAt,
   zoomStep,
 } from "@/core/viewport";
@@ -52,16 +53,45 @@ describe("viewport", () => {
     expect(sprite.width * viewport.scale).toBeLessThanOrEqual(container.width);
   });
 
-  it("clamps panning so the sprite stays reachable", () => {
+  it("zooms by 16/15 per 120 px of wheel delta, continuously", () => {
+    expect(wheelZoomFactor(-120)).toBeCloseTo(16 / 15);
+    expect(wheelZoomFactor(120)).toBeCloseTo(15 / 16);
+    expect(wheelZoomFactor(0)).toBe(1);
+    expect(wheelZoomFactor(-10)).toBeGreaterThan(1);
+  });
+
+  it("centres an axis that fits, wherever its origin was", () => {
     const container = { width: 400, height: 400 };
     const sprite = { width: 32, height: 32 };
-    const panned = clampViewport(
-      { scale: 8, originX: 99999, originY: -99999 },
-      container,
-      sprite,
+    // 32 × 8 = 256, + 2 × 24 padding = 304 ≤ 400 → centred at (400 − 256) / 2 = 72.
+    expect(constrainViewport({ scale: 8, originX: 5, originY: 300 }, container, sprite)).toEqual({
+      scale: 8,
+      originX: 72,
+      originY: 72,
+    });
+  });
+
+  it("lets an overflowing axis scroll only until the padding shows past either edge", () => {
+    const container = { width: 400, height: 400 };
+    const sprite = { width: 32, height: 32 };
+    // 32 × 16 = 512 > 400: origin ranges over [400 − 512 − 24, 24] = [−136, 24].
+    expect(constrainViewport({ scale: 16, originX: 999, originY: -999 }, container, sprite)).toEqual({
+      scale: 16,
+      originX: 24,
+      originY: -136,
+    });
+    expect(constrainViewport({ scale: 16, originX: -50, originY: 0 }, container, sprite).originX).toBe(-50);
+  });
+
+  it("constrains each axis on its own", () => {
+    // A wide strip: overflows horizontally, fits vertically.
+    const viewport = constrainViewport(
+      { scale: 8, originX: 100, originY: 0 },
+      { width: 400, height: 400 },
+      { width: 64, height: 8 },
     );
-    expect(panned.originX).toBeLessThan(container.width);
-    expect(panned.originY).toBeGreaterThan(-sprite.height * 8);
+    expect(viewport.originX).toBe(24);
+    expect(viewport.originY).toBe(168);
   });
 
   it("tests sprite bounds exclusively at the far edge", () => {

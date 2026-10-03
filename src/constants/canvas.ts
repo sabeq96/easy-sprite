@@ -1,5 +1,10 @@
 export const ZOOM_LEVELS = [0.5, 1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48] as const;
 export const DEFAULT_ZOOM = 8;
+/** Space kept around the sprite when fitting it, and how far past its edges an overflowing sprite scrolls. */
+export const VIEW_PADDING = 24;
+/** Wheel and pinch zoom multiply the scale by WHEEL_ZOOM_BASE per WHEEL_ZOOM_DELTA px of deltaY (Piskel's). */
+export const WHEEL_ZOOM_BASE = 16 / 15;
+export const WHEEL_ZOOM_DELTA = 120;
 
 export const MIN_CANVAS_SIZE = 1;
 export const MAX_CANVAS_SIZE = 512;

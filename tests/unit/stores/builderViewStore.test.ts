@@ -25,6 +25,26 @@ describe("builder view store", () => {
     expect(store().zoom).toBe(BUILDER_ZOOM_LEVELS.at(-1));
   });
 
+  it("zoomByFactor multiplies the zoom and stops at the ladder's ends", () => {
+    store().zoomByFactor(1.5);
+    expect(store().zoom).toBeCloseTo(6);
+
+    store().zoomByFactor(100);
+    expect(store().zoom).toBe(BUILDER_ZOOM_LEVELS.at(-1));
+    store().zoomByFactor(0.0001);
+    expect(store().zoom).toBe(BUILDER_ZOOM_LEVELS[0]);
+  });
+
+  it("from a zoom between ladder steps, zoomBy goes to the next step up or down", () => {
+    useBuilderViewStore.setState({ zoom: 7.3 });
+    store().zoomBy(1);
+    expect(store().zoom).toBe(8);
+
+    useBuilderViewStore.setState({ zoom: 7.3 });
+    store().zoomBy(-1);
+    expect(store().zoom).toBe(6);
+  });
+
   it("fits to the largest ladder step at which the sheet still fits the panel", () => {
     store().setContainerSize({ width: 500, height: 300 });
     // 500/96 ≈ 5.2 and 300/48 = 6.25 → the tighter axis allows 5.2 → the ladder floors to 4.

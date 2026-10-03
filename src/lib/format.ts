@@ -8,7 +8,11 @@ export function nameOrDefault(name: string | undefined, fallback: string): strin
   return name?.trim() || fallback;
 }
 
-/** A zoom scale as the multiplier shown between the zoom buttons: `0.5` → `"0.5×"`, `8` → `"8×"`. */
+/**
+ * A zoom scale as the multiplier shown between the zoom buttons: one decimal below 10×, whole numbers
+ * from there (`0.5` → `"0.5×"`, `7.34` → `"7.3×"`, `8` → `"8×"`, `13.4` → `"13×"`).
+ */
 export function formatZoom(scale: number): string {
-  return `${scale}×`;
+  const rounded = scale < 10 ? Math.round(scale * 10) / 10 : Math.round(scale);
+  return `${rounded}×`;
 }

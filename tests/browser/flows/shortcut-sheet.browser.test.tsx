@@ -70,6 +70,8 @@ test("the editor's sheet lists its groups and rows in a fixed order", async () =
       "Fit to window",
       "Toggle pixel grid",
       "Toggle onion skin",
+      "Zoom",
+      "Pan",
       "Pan",
       "Pan",
     ],
