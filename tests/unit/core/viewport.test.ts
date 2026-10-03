@@ -53,9 +53,9 @@ describe("viewport", () => {
     expect(sprite.width * viewport.scale).toBeLessThanOrEqual(container.width);
   });
 
-  it("zooms by 16/15 per 120 px of wheel delta, continuously", () => {
-    expect(wheelZoomFactor(-120)).toBeCloseTo(16 / 15);
-    expect(wheelZoomFactor(120)).toBeCloseTo(15 / 16);
+  it("zooms by 4/3 per 120 px of wheel delta, continuously", () => {
+    expect(wheelZoomFactor(-120)).toBeCloseTo(4 / 3);
+    expect(wheelZoomFactor(120)).toBeCloseTo(3 / 4);
     expect(wheelZoomFactor(0)).toBe(1);
     expect(wheelZoomFactor(-10)).toBeGreaterThan(1);
   });

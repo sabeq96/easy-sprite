@@ -91,9 +91,10 @@ test("Ctrl/⌘+wheel zooms the sheet smoothly, while a plain wheel is left to sc
 });
 
 test("Ctrl/⌘+wheel zoom keeps the sheet point under the cursor where the panel can scroll", async () => {
-  // Eight 64px sprites in one row: wider than the panel once zoomed, so the panel can scroll.
-  const names = ["A", "B", "C", "D", "E", "F", "G", "H"];
-  await openSheet(names, (ids) => ids.map((id, index) => ({ id: `b${index}`, spriteId: id, row: 0 })), 64);
+  // Ten 32px sprites in one row: wider than the panel, but at most 12 × 32 px tall, so the panel
+  // scrolls horizontally and never vertically, whatever the zoom speed.
+  const names = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
+  await openSheet(names, (ids) => ids.map((id, index) => ({ id: `b${index}`, spriteId: id, row: 0 })), 32);
   const canvas = await settled(() => document.querySelector('[data-testid="builder-canvas"]'));
   const panel = canvas.parentElement!;
   const panelRect = panel.getBoundingClientRect();

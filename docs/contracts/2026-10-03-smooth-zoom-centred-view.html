@@ -546,6 +546,7 @@ useLayoutEffect([zoom]):
 </details>
 
 <details class="more"><summary>Drift log</summary><ul>
+  <li>After the PR was opened: <a class="id" href="#D13">D13</a>'s rate raised from ×16/15 to ×4/3 per 120&nbsp;px (Piskel's ⌘/Ctrl rate, <a class="id" href="#F14">F14</a>) because pinch at Piskel's pinch rate felt too slow. One constant, <code>WHEEL_ZOOM_BASE</code>; text elsewhere in this page that says 16/15 or ×1.067 describes the first value. <b>surface</b> (tuning only)</li>
   <li><a class="id" href="#Done4">Done4</a> wording made precise: anchoring holds on scrollable axes; a fitting axis can't scroll (browser clamp, already in the anchor view). Found: builder anchor test, y axis with one row. Not surface.</li>
   <li>Builder anchor keeps the sheet point of a not-yet-applied anchor across a burst of wheel events (store updates re-render after the event). Internal to <code>useBuilderViewport</code>. Not surface.</li>
 </ul></details>
