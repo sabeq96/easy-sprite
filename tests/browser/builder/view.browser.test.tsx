@@ -1,7 +1,7 @@
 import { expect, test } from "vitest";
 import { page, userEvent } from "vitest/browser";
 import { AppRoutes } from "@/app/routes";
-import { BUILDER_ZOOM_LEVELS } from "@/constants/builder";
+import { BUILDER_ZOOM_LEVELS, DEFAULT_BUILDER_ZOOM } from "@/constants/builder";
 import { createSprite } from "@/db/repositories/sprites";
 import { createSpritesheet, updateSpritesheet } from "@/db/repositories/spritesheets";
 import type { SpritesheetBlockRecord } from "@/db/schema";
@@ -39,14 +39,14 @@ const blockWidth = (id: string) => document.querySelector(`[data-block-id="${id}
 const blockIds = async (sheetId: string) => (await savedSheet(sheetId)).blocks.map((block) => block.id);
 const SETTLE = { settleMoves: 2 };
 
-function wheel(target: Element, deltaY: number, ctrlKey: boolean) {
+function wheel(target: Element, deltaY: number, ctrlKey: boolean, at = { x: 10, y: 10 }) {
   const rect = target.getBoundingClientRect();
   target.dispatchEvent(
     new WheelEvent("wheel", {
       deltaY,
       ctrlKey,
-      clientX: rect.left + 10,
-      clientY: rect.top + 10,
+      clientX: rect.left + at.x,
+      clientY: rect.top + at.y,
       bubbles: true,
       cancelable: true,
     }),
@@ -73,18 +73,51 @@ test("zoom in/out walk the whole ladder, disable at its ends, and resize the blo
   await expect.element(zoomOut).toBeDisabled();
 });
 
-test("Ctrl/⌘+wheel zooms the sheet, while a plain wheel is left to scroll it", async () => {
+test("Ctrl/⌘+wheel zooms the sheet smoothly, while a plain wheel is left to scroll it", async () => {
   await openSheet(["Hero"], ([hero]) => [{ id: "a", spriteId: hero, row: 0 }]);
   const canvas = await settled(() => document.querySelector('[data-testid="builder-canvas"]'));
 
   wheel(canvas, -100, false);
   expect(zoom()).toBe(4);
 
-  wheel(canvas, -100, true);
-  expect(zoom()).toBe(6);
-  wheel(canvas, 100, true);
-  wheel(canvas, 100, true);
-  expect(zoom()).toBe(3);
+  wheel(canvas, -10, true);
+  const zoomed = zoom();
+  expect(zoomed).toBeGreaterThan(4);
+  expect(BUILDER_ZOOM_LEVELS).not.toContain(zoomed);
+
+  wheel(canvas, 10, true);
+  wheel(canvas, 10, true);
+  expect(zoom()).toBeLessThan(4);
+});
+
+test("Ctrl/⌘+wheel zoom keeps the sheet point under the cursor where the panel can scroll", async () => {
+  // Ten 32px sprites in one row: wider than the panel, but at most 12 × 32 px tall, so the panel
+  // scrolls horizontally and never vertically, whatever the zoom speed.
+  const names = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
+  await openSheet(names, (ids) => ids.map((id, index) => ({ id: `b${index}`, spriteId: id, row: 0 })), 32);
+  const canvas = await settled(() => document.querySelector('[data-testid="builder-canvas"]'));
+  const panel = canvas.parentElement!;
+  const panelRect = panel.getBoundingClientRect();
+  const cursor = { x: panelRect.left + panelRect.width / 2, y: panelRect.top + 40 };
+  const sheetPointUnder = () => {
+    const rect = canvas.getBoundingClientRect();
+    return { x: (cursor.x - rect.left) / zoom(), y: (cursor.y - rect.top) / zoom() };
+  };
+  const at = () => {
+    const rect = canvas.getBoundingClientRect();
+    return { x: cursor.x - rect.left, y: cursor.y - rect.top };
+  };
+
+  const before = sheetPointUnder();
+  for (let i = 0; i < 5; i++) wheel(canvas, -40, true, at());
+  expect(zoom()).toBeGreaterThan(DEFAULT_BUILDER_ZOOM);
+
+  await expect.poll(() => panel.scrollLeft).toBeGreaterThan(0);
+  // Anchored on the axis that scrolls; the one row still fits vertically, where the browser clamps
+  // the scroll at 0 and the sheet simply grows downward.
+  const after = sheetPointUnder();
+  expect(Math.abs(after.x - before.x) * zoom()).toBeLessThanOrEqual(1);
+  expect(panel.scrollTop).toBe(0);
 });
 
 test("fit picks the largest zoom at which the whole sheet still fits the panel", async () => {

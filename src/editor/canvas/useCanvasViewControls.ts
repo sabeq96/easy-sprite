@@ -1,17 +1,24 @@
 import { useEffect, type RefObject } from "react";
 import { useDocumentSession } from "@/app/DocumentProvider";
 import type { HintSection } from "@/commands/hints";
+import { wheelZoomFactor } from "@/core/viewport";
 import { useViewStore } from "@/editor/view/api";
 
 export const CANVAS_VIEW_HINTS: HintSection = {
   group: "View",
   hints: [
+    { action: "Zoom", inputs: [{ hold: "mod" }, { text: "Wheel" }] },
+    { action: "Pan", inputs: [{ text: "Wheel" }] },
     { action: "Pan", inputs: [{ hold: "space" }, { pointer: "drag" }] },
     { action: "Pan", inputs: [{ pointer: "middle-drag" }] },
   ],
 };
 
-/** Wheel zoom, space-drag and middle-drag panning. Pointer painting lives elsewhere. */
+/**
+ * ⌘/ctrl+wheel and trackpad pinch (which arrives as a ctrl+wheel) zoom smoothly at the cursor; a plain
+ * wheel or two-finger scroll pans, as do space-drag and middle-drag. The view store keeps a sprite
+ * that fits centred, so panning only moves one that overflows. Pointer painting lives elsewhere.
+ */
 export function useCanvasViewControls(containerRef: RefObject<HTMLElement | null>): void {
   const { doc } = useDocumentSession();
 
@@ -25,16 +32,20 @@ export function useCanvasViewControls(containerRef: RefObject<HTMLElement | null
     let last = { x: 0, y: 0 };
 
     const onWheel = (event: WheelEvent) => {
-      // passive:false — the browser's page zoom must be prevented over the canvas.
+      // passive:false — the browser's own page zoom and scroll must be prevented over the canvas.
       event.preventDefault();
+      const view = useViewStore.getState();
+      if (!event.ctrlKey && !event.metaKey) {
+        view.panBy(-event.deltaX, -event.deltaY, sprite);
+        return;
+      }
+
       const rect = element.getBoundingClientRect();
-      useViewStore
-        .getState()
-        .zoom(
-          { x: event.clientX - rect.left, y: event.clientY - rect.top },
-          event.deltaY < 0 ? 1 : -1,
-          sprite,
-        );
+      view.zoomByFactor(
+        { x: event.clientX - rect.left, y: event.clientY - rect.top },
+        wheelZoomFactor(event.deltaY),
+        sprite,
+      );
     };
 
     const onKeyDown = (event: KeyboardEvent) => {

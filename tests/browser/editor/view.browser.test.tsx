@@ -1,8 +1,9 @@
 import { expect, test } from "vitest";
-import { userEvent } from "vitest/browser";
+import { page, userEvent } from "vitest/browser";
 import { ZOOM_LEVELS } from "@/constants/canvas";
 import { screenToSprite, spriteToScreen, type Point } from "@/core/viewport";
 import { useViewStore } from "@/editor/view/api";
+import { formatModifier } from "@/lib/keys";
 import { KEYS, mod, openEditor, paintedPixels, session, type Editor } from "@test/editor";
 import { dragClientPoints } from "@test/pointer";
 
@@ -24,49 +25,83 @@ function pixelUnder(editor: Editor, client: { x: number; y: number }) {
   return screenToSprite(viewport(), { x: client.x - box.left, y: client.y - box.top });
 }
 
+/** A Ctrl+wheel — how both a ⌘/Ctrl mouse wheel and a trackpad pinch arrive. */
 function wheel(editor: Editor, client: { x: number; y: number }, deltaY: number) {
   editor.canvas.dispatchEvent(
-    new WheelEvent("wheel", { deltaY, clientX: client.x, clientY: client.y, bubbles: true, cancelable: true }),
+    new WheelEvent("wheel", {
+      deltaY,
+      ctrlKey: true,
+      clientX: client.x,
+      clientY: client.y,
+      bubbles: true,
+      cancelable: true,
+    }),
+  );
+}
+
+/** A plain wheel or two-finger scroll. */
+function scroll(editor: Editor, client: { x: number; y: number }, deltaX: number, deltaY: number) {
+  editor.canvas.dispatchEvent(
+    new WheelEvent("wheel", {
+      deltaX,
+      deltaY,
+      clientX: client.x,
+      clientY: client.y,
+      bubbles: true,
+      cancelable: true,
+    }),
   );
 }
 
 const ladderIndex = (scale: number) => ZOOM_LEVELS.indexOf(scale as (typeof ZOOM_LEVELS)[number]);
 
-test("the wheel zooms one ladder step at a time, in and back out", async () => {
+/** Zooms in with the + key until the sprite is at least twice the view on both axes, so it can pan freely. */
+async function zoomUntilOverflowing() {
+  const { width, height } = useViewStore.getState().containerSize;
+  const target = 2 * Math.max(width, height);
+  while (SPRITE.width * viewport().scale < target && viewport().scale < ZOOM_LEVELS.at(-1)!) {
+    await userEvent.keyboard("+");
+  }
+}
+
+test("Ctrl/⌘+wheel and pinch zoom smoothly, between ladder steps", async () => {
   const editor = await openEditor(SPRITE);
   const start = viewport().scale;
   const centre = clientOf(editor, { x: 8, y: 8 });
 
-  wheel(editor, centre, -100);
-  expect(ladderIndex(viewport().scale)).toBe(ladderIndex(start) + 1);
+  wheel(editor, centre, -10);
+  const zoomedIn = viewport().scale;
+  expect(zoomedIn).toBeGreaterThan(start);
+  expect(ladderIndex(zoomedIn)).toBe(-1);
 
-  wheel(editor, centre, 100);
-  wheel(editor, centre, 100);
-  expect(ladderIndex(viewport().scale)).toBe(ladderIndex(start) - 1);
+  wheel(editor, centre, 10);
+  wheel(editor, centre, 10);
+  expect(viewport().scale).toBeLessThan(start);
 });
 
-test("wheel zoom keeps the pixel under the cursor under the cursor", async () => {
+test("Ctrl/⌘+wheel zoom keeps the pixel under the cursor under the cursor", async () => {
   const editor = await openEditor(SPRITE);
-  const cursor = clientOf(editor, { x: 3, y: 12 });
+  await zoomUntilOverflowing();
+  const cursor = clientOf(editor, { x: 30, y: 33 });
 
-  wheel(editor, cursor, -100);
-  expect(pixelUnder(editor, cursor)).toEqual({ x: 3, y: 12 });
+  for (let i = 0; i < 5; i++) wheel(editor, cursor, -10);
+  expect(pixelUnder(editor, cursor)).toEqual({ x: 30, y: 33 });
 
-  wheel(editor, cursor, 100);
-  wheel(editor, cursor, 100);
-  expect(pixelUnder(editor, cursor)).toEqual({ x: 3, y: 12 });
+  for (let i = 0; i < 5; i++) wheel(editor, cursor, 10);
+  expect(pixelUnder(editor, cursor)).toEqual({ x: 30, y: 33 });
 });
 
 test("after zooming in on a pixel, a click at that same screen spot paints that pixel", async () => {
   const editor = await openEditor(SPRITE);
-  const cursor = clientOf(editor, { x: 5, y: 5 });
+  await zoomUntilOverflowing();
+  const cursor = clientOf(editor, { x: 30, y: 30 });
 
   wheel(editor, cursor, -100);
   wheel(editor, cursor, -100);
   // Press at the very screen point the zoom was anchored on — not a recomputed one.
   dragClientPoints(editor.canvas, [cursor]);
 
-  expect(paintedPixels()).toEqual(["5,5"]);
+  expect(paintedPixels()).toEqual(["30,30"]);
 });
 
 test("zoom buttons and the +, - and 0 keys all step the zoom, and 0 fits again", async () => {
@@ -92,21 +127,70 @@ test("zoom buttons and the +, - and 0 keys all step the zoom, and 0 fits again",
   expect(viewport().scale).toBe(fitted);
 });
 
+test("from a zoom between ladder steps, + and - go to the next step up or down", async () => {
+  const editor = await openEditor(SPRITE);
+  const fitted = viewport().scale;
+  const centre = clientOf(editor, { x: 8, y: 8 });
+
+  wheel(editor, centre, -10);
+  await userEvent.keyboard("+");
+  expect(viewport().scale).toBe(ZOOM_LEVELS[ladderIndex(fitted) + 1]);
+
+  wheel(editor, centre, -10);
+  await userEvent.keyboard("-");
+  expect(viewport().scale).toBe(ZOOM_LEVELS[ladderIndex(fitted) + 1]);
+
+  wheel(editor, centre, -10);
+  await userEvent.keyboard("0");
+  expect(viewport().scale).toBe(fitted);
+});
+
 test("zoom stops at the ends of the ladder", async () => {
   const editor = await openEditor(SPRITE);
   const centre = clientOf(editor, { x: 8, y: 8 });
 
-  for (let i = 0; i < ZOOM_LEVELS.length + 2; i++) wheel(editor, centre, -100);
+  for (let i = 0; i < 40; i++) wheel(editor, centre, -1000);
   expect(viewport().scale).toBe(ZOOM_LEVELS.at(-1));
 
-  for (let i = 0; i < ZOOM_LEVELS.length + 2; i++) wheel(editor, centre, 100);
+  for (let i = 0; i < 40; i++) wheel(editor, centre, 1000);
   expect(viewport().scale).toBe(ZOOM_LEVELS[0]);
 });
 
-test("a middle-drag pans by exactly the distance dragged and paints nothing", async () => {
+test("a sprite that fits stays centred: scrolling and dragging don't move it", async () => {
   const editor = await openEditor(SPRITE);
-  const before = viewport();
+  const fitted = viewport();
   const from = clientOf(editor, { x: 8, y: 8 });
+
+  scroll(editor, from, 40, -60);
+  dragClientPoints(editor.canvas, [from, { x: from.x + 30, y: from.y - 20 }], { button: 1 });
+  window.dispatchEvent(new KeyboardEvent("keydown", { code: "Space", key: " " }));
+  dragClientPoints(editor.canvas, [from, { x: from.x - 40, y: from.y + 10 }]);
+  window.dispatchEvent(new KeyboardEvent("keyup", { code: "Space", key: " " }));
+
+  expect(viewport()).toEqual(fitted);
+  expect(paintedPixels()).toEqual([]);
+});
+
+test("a plain wheel pans an overflowing sprite and leaves the zoom alone", async () => {
+  const editor = await openEditor(SPRITE);
+  await zoomUntilOverflowing();
+  const before = viewport();
+
+  scroll(editor, clientOf(editor, { x: 30, y: 30 }), 30, -20);
+
+  expect(viewport()).toEqual({
+    scale: before.scale,
+    originX: before.originX - 30,
+    originY: before.originY + 20,
+  });
+  expect(paintedPixels()).toEqual([]);
+});
+
+test("a middle-drag pans an overflowing sprite by exactly the distance dragged, painting nothing", async () => {
+  const editor = await openEditor(SPRITE);
+  await zoomUntilOverflowing();
+  const before = viewport();
+  const from = clientOf(editor, { x: 30, y: 30 });
 
   dragClientPoints(editor.canvas, [from, { x: from.x + 30, y: from.y - 20 }], { button: 1 });
 
@@ -117,8 +201,9 @@ test("a middle-drag pans by exactly the distance dragged and paints nothing", as
 
 test("holding Space turns a left-drag into a pan", async () => {
   const editor = await openEditor(SPRITE);
+  await zoomUntilOverflowing();
   const before = viewport();
-  const from = clientOf(editor, { x: 8, y: 8 });
+  const from = clientOf(editor, { x: 30, y: 30 });
 
   window.dispatchEvent(new KeyboardEvent("keydown", { code: "Space", key: " " }));
   dragClientPoints(editor.canvas, [from, { x: from.x - 40, y: from.y + 10 }]);
@@ -131,33 +216,49 @@ test("holding Space turns a left-drag into a pan", async () => {
 
 test("after panning, a click still paints the pixel under the pointer", async () => {
   const editor = await openEditor(SPRITE);
-  const from = clientOf(editor, { x: 8, y: 8 });
+  await zoomUntilOverflowing();
+  const from = clientOf(editor, { x: 30, y: 30 });
   dragClientPoints(editor.canvas, [from, { x: from.x + 25, y: from.y + 35 }], { button: 1 });
 
-  // The pixel that is now at the old centre is a different one — the pan moved the sprite.
+  // The pixel that is now at the old spot is a different one — the pan moved the sprite.
   const target = pixelUnder(editor, from);
-  expect(target).not.toEqual({ x: 8, y: 8 });
+  expect(target).not.toEqual({ x: 30, y: 30 });
   dragClientPoints(editor.canvas, [from]);
 
   expect(paintedPixels()).toEqual([`${target.x},${target.y}`]);
 });
 
-test("the view cannot be panned so far that the sprite leaves the screen", async () => {
+test("an overflowing sprite pans only until 24px show past its edge", async () => {
   const editor = await openEditor(SPRITE);
-  const from = clientOf(editor, { x: 8, y: 8 });
+  await zoomUntilOverflowing();
+  const from = clientOf(editor, { x: 30, y: 30 });
+  const { width, height } = useViewStore.getState().containerSize;
 
-  dragClientPoints(editor.canvas, [from, { x: from.x + 5000, y: from.y + 5000 }], { button: 1 });
+  dragClientPoints(editor.canvas, [from, { x: from.x + 9000, y: from.y + 9000 }], { button: 1 });
+  expect(viewport().originX).toBe(24);
+  expect(viewport().originY).toBe(24);
 
-  const { originX, originY, scale } = viewport();
-  const { width, height } = editor.canvas.getBoundingClientRect();
-  expect(originX).toBeLessThan(width);
-  expect(originY).toBeLessThan(height);
-  expect(originX + SPRITE.width * scale).toBeGreaterThan(0);
+  scroll(editor, from, 90_000, 90_000);
+  const size = SPRITE.width * viewport().scale;
+  expect(viewport().originX).toBe(width - size - 24);
+  expect(viewport().originY).toBe(height - size - 24);
+});
 
-  // …and the same holds dragging the other way.
-  dragClientPoints(editor.canvas, [from, { x: from.x - 9000, y: from.y - 9000 }], { button: 1 });
-  expect(viewport().originX + SPRITE.width * viewport().scale).toBeGreaterThan(0);
-  expect(viewport().originY + SPRITE.height * viewport().scale).toBeGreaterThan(0);
+test("the shortcut sheet teaches ⌘/Ctrl+Wheel to zoom and Wheel to pan", async () => {
+  await openEditor(SPRITE);
+  await userEvent.keyboard("?");
+  const dialog = page.getByRole("dialog", { name: "Keyboard shortcuts" });
+  await expect.element(dialog).toBeVisible();
+
+  const view = [...dialog.element().querySelectorAll("section")].find(
+    (section) => section.querySelector("h3")?.textContent === "View",
+  )!;
+  const rows = [...view.querySelectorAll("li")].map((row) => [
+    row.querySelector("span")?.textContent,
+    row.querySelector("kbd")?.textContent,
+  ]);
+  expect(rows).toContainEqual(["Zoom", `${formatModifier("mod")} + Wheel`]);
+  expect(rows).toContainEqual(["Pan", "Wheel"]);
 });
 
 test("Ctrl/⌘+G and the grid popover both toggle the pixel grid", async () => {

@@ -21,4 +21,12 @@ describe("math helpers", () => {
     expect(stepLadder(48, ZOOM_LEVELS, 1)).toBe(48);
     expect(stepLadder(0.5, ZOOM_LEVELS, -1)).toBe(0.5);
   });
+
+  it("steps from between two entries to the next one strictly above or below", () => {
+    expect(stepLadder(7.3, ZOOM_LEVELS, 1)).toBe(8);
+    expect(stepLadder(7.3, ZOOM_LEVELS, -1)).toBe(6);
+    expect(stepLadder(9.9, ZOOM_LEVELS, -1)).toBe(8);
+    expect(stepLadder(47, ZOOM_LEVELS, 1)).toBe(48);
+    expect(stepLadder(0.7, ZOOM_LEVELS, -1)).toBe(0.5);
+  });
 });

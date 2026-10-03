@@ -10,11 +10,14 @@ export function snapToLadder(value: number, ladder: readonly number[]): number {
   );
 }
 
+/** The next ladder entry strictly above (1) or below (-1) `value`, which may sit between entries. */
 export function stepLadder(
   value: number,
   ladder: readonly number[],
   direction: 1 | -1,
 ): number {
-  const index = ladder.indexOf(snapToLadder(value, ladder));
-  return ladder[clamp(index + direction, 0, ladder.length - 1)];
+  const epsilon = 1e-9;
+  return direction > 0
+    ? (ladder.find((entry) => entry > value + epsilon) ?? ladder[ladder.length - 1])
+    : ([...ladder].reverse().find((entry) => entry < value - epsilon) ?? ladder[0]);
 }

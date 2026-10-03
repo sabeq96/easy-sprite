@@ -32,4 +32,11 @@ describe("formatZoom", () => {
     expect(formatZoom(8)).toBe("8×");
     expect(formatZoom(48)).toBe("48×");
   });
+
+  it("rounds a zoom between ladder steps: one decimal below 10×, whole numbers from there", () => {
+    expect(formatZoom(7.34)).toBe("7.3×");
+    expect(formatZoom(8.04)).toBe("8×");
+    expect(formatZoom(9.96)).toBe("10×");
+    expect(formatZoom(13.4)).toBe("13×");
+  });
 });

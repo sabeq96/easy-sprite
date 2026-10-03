@@ -74,7 +74,7 @@ export function useCanvasRenderer(modules: readonly EditorModule[]): CanvasRefs 
 
       renderer.resize(width, height);
       if (fitted) {
-        useViewStore.getState().setContainerSize({ width, height });
+        useViewStore.getState().setContainerSize({ width, height }, { width: doc.width, height: doc.height });
         return;
       }
       fitted = true;

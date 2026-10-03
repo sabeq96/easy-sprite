@@ -1,0 +1,441 @@
+<!doctype html>
+<!--
+  Contract template. Copy to docs/contracts/YYYY-MM-DD-<slug>.html, then replace the example.
+  - Keep every section, in order. An empty one says "none".
+  - Exhaustive: every change gets a Changes row; add as many views to "What gets built" as the reader needs.
+  - One item per source line, so amendments diff cleanly.
+  - IDs: give the item id="D2", link to it with <a class="id" href="#D2">D2</a>. Q# are plain <span class="id">Q4</span>.
+    Finished task: <tr id="T2" class="done">. IDs D# F# O# R# T# Done# inside pre.diff and pre.code become links on their own.
+  - New classes: don't reuse Tailwind utility names (table, block, hidden...), and @apply only utilities.
+  - Inside <pre>, write < as &lt;. pre.diff lines start with + new, ~ changed, - removed, space untouched.
+  - Views in "What gets built": pre.view, pre.diff, pre.code, pre.mermaid, div.fragment.
+    Every pre.mermaid is followed by <details class="hops"> with its text version.
+    Mermaid nodes take :::new / :::chg / :::del; never redefine them.
+  - Status classes: status-draft, status-agreed, status-building, status-done, status-abandoned, status-superseded.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contract: Slower zoom and editor wheel-pan</title>
+<script type="module">
+import 'https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3'
+</script>
+<style type="text/tailwindcss">
+@theme {
+  --color-ink: #1c2433;  --color-muted: #5b6577; --color-paper: #fbfcfd;
+  --color-grid: #e4e9f1; --color-link: #2459a8;
+  --color-new: #2e7d4f;  --color-chg: #a96a12;  --color-del: #b23a3a; --color-idle: #8a94a3;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+}
+@layer base {
+  body { @apply bg-paper text-ink font-sans leading-relaxed antialiased; }
+  a { @apply text-link; }
+  code { @apply font-mono text-[0.9em]; }
+  *:target { @apply bg-amber-50 outline-2 outline-amber-300; }
+}
+@layer components {
+  .page    { @apply max-w-5xl mx-auto px-5 py-10 space-y-10; }
+  .meta    { @apply flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted; }
+  .brief   { @apply grid grid-cols-[5rem_1fr] gap-x-4 gap-y-1 max-w-[75ch]; }
+  .brief dt{ @apply text-muted; }
+  .part    { @apply space-y-3; }
+  .part h2 { @apply text-lg font-semibold; }
+  .part h3 { @apply font-medium pt-2; }
+  .lead    { @apply text-sm text-muted max-w-[75ch]; }
+  .id      { @apply font-mono text-xs px-1.5 py-0.5 rounded bg-grid no-underline whitespace-nowrap; }
+  .rows    { @apply block w-full overflow-x-auto text-sm border-collapse; }
+  .rows th{ @apply text-left font-medium text-muted pb-1 pr-4; }
+  .rows td{ @apply border-t border-grid py-1.5 pr-4 align-top; }
+  .op-new, .op-edit, .op-del { @apply font-mono text-xs px-1.5 py-0.5 rounded whitespace-nowrap; }
+  .op-new  { @apply text-new bg-new/10; }
+  .op-edit { @apply text-chg bg-chg/10; }
+  .op-del  { @apply text-del bg-del/10; }
+  .status-draft, .status-agreed, .status-building, .status-done, .status-abandoned, .status-superseded { @apply text-xs font-medium px-2 py-0.5 rounded-full border; }
+  .status-draft      { @apply text-chg border-chg/40; }
+  .status-agreed     { @apply text-link border-link/40; }
+  .status-building   { @apply text-ink border-ink/40; }
+  .status-done       { @apply text-new border-new/40; }
+  .status-abandoned, .status-superseded { @apply text-idle border-idle/40; }
+
+  /* The one bold element: the drafting sheet */
+  .built   { @apply border-2 border-ink rounded-md p-5 sm:p-7 space-y-6;
+             background: linear-gradient(var(--color-grid) 1px, transparent 1px) 0 0 / 24px 24px,
+                         linear-gradient(90deg, var(--color-grid) 1px, transparent 1px) 0 0 / 24px 24px, white; }
+  .built h2{ @apply text-2xl font-semibold; }
+  .legend  { @apply flex gap-3 text-xs text-muted; }
+  .legend span::before { content: "■ "; }
+  .short   { @apply text-base max-w-[70ch] bg-white/90; }
+  .size    { @apply grid sm:grid-cols-[11rem_1fr] gap-x-4 gap-y-0.5 text-sm bg-white border border-grid rounded p-3; }
+  .size dt { @apply text-muted; }
+  .built figure     { @apply space-y-1.5; }
+  .built figcaption { @apply text-sm text-muted; }
+  .view, .diff, .code, .mermaid, .fragment {
+             @apply bg-white border border-grid rounded p-4 overflow-x-auto font-mono text-[13px] leading-6; }
+  .mermaid { @apply font-sans; }
+  .fragment{ @apply font-sans text-sm; }
+  .hops    { @apply text-xs text-muted; }
+  .hops summary { @apply cursor-pointer; }
+  .hops pre{ @apply bg-white border border-grid rounded p-3 mt-1 overflow-x-auto font-mono leading-5; }
+  .diff .add { @apply text-new bg-new/10 block; }
+  .diff .rm  { @apply text-del bg-del/10 block; }
+  .diff .chg { @apply text-chg bg-chg/10 block; }
+  .diff .ctx { @apply text-idle block; }
+
+  .scope   { @apply grid sm:grid-cols-2 gap-6; }
+  .scope h3{ @apply font-medium mb-1; }
+  .scope li{ @apply py-0.5; }
+  .out     { @apply text-muted; }
+  .tasks td:first-child::before    { content: "☐ "; }
+  .tasks tr.done td:first-child::before { content: "☑ "; @apply text-new; }
+  .more    { @apply border-t border-grid pt-2; }
+  .more summary { @apply cursor-pointer font-medium; }
+  .more ul { @apply text-sm mt-2 space-y-1; }
+  .more h4 { @apply text-xs uppercase tracking-wide text-muted mt-3; }
+}
+</style>
+<body>
+<main class="page">
+
+<header class="space-y-3">
+  <h1 class="text-3xl font-semibold">Slower zoom and editor wheel-pan (#16, first iteration)</h1>
+  <div class="meta"><span class="status-superseded">superseded</span><a href="2026-10-03-smooth-zoom-centred-view.html">→ 2026-10-03-smooth-zoom-centred-view</a><span>2026-10-02</span><span>approved 2026-10-02 @ ddaf7c9</span><code>docs/contracts/2026-10-02-slower-zoom-wheel-pan.html</code></div>
+  <dl class="brief">
+    <dt>Problem</dt><dd>Every wheel event moves a whole zoom-ladder step, so one trackpad pinch flies through the whole range <a class="id" href="#F1">F1</a> <a class="id" href="#F2">F2</a>; the pixel editor has no wheel/two-finger scrolling at all <a class="id" href="#F1">F1</a>.</dd>
+    <dt>Goal</dt><dd>Pinch and ⌘/ctrl+wheel zoom one ladder step per 100&nbsp;px of accumulated delta in both editors, and a plain wheel / two-finger scroll pans the pixel editor.</dd>
+  </dl>
+</header>
+
+<!-- ============ WHAT GETS BUILT ============ -->
+<section class="built">
+  <div class="flex flex-wrap items-baseline justify-between gap-2">
+    <h2>What gets built</h2>
+    <div class="legend"><span class="text-new">new</span><span class="text-chg">changed</span><span class="text-del">removed</span><span class="text-idle">untouched</span></div>
+  </div>
+  <p class="short">Zoom gestures no longer jump a ladder rung per event: their scroll amount is added up, and every 100&nbsp;px of it moves one rung (same rungs as the + and − buttons), anchored at the cursor in the pixel editor as today. In the pixel editor a plain mouse wheel or two-finger scroll now moves the sprite around instead of zooming; ⌘/ctrl+wheel and pinch zoom. The sheet builder keeps its native scrolling and layout; only its ⌘/pinch zoom slows down.</p>
+
+  <dl class="size">
+    <dt>Files</dt><dd>0 new · 8 edited · 0 deleted</dd>
+    <dt>Dependencies</dt><dd>none — browser <code>WheelEvent</code> only (<a class="id" href="#F9">F9</a> <a class="id" href="#F10">F10</a>)</dd>
+    <dt>Surface</dt><dd>1 new exported function (<code>wheelZoomSteps</code>) · 1 new constant (<code>ZOOM_WHEEL_STEP_PX</code>) · changed editor wheel behaviour and <code>CANVAS_VIEW_HINTS</code></dd>
+    <dt>Counts</dt><dd>8 decisions · 1 risk · 0 open · 7 done criteria · 3 tasks</dd>
+    <dt>Hard to roll back</dt><dd>none — view state is session-only, nothing persisted</dd>
+    <dt>Manual checks</dt><dd><a class="id" href="#Done6">Done6</a> (trackpad pinch feel)</dd>
+  </dl>
+
+  <figure>
+    <figcaption>Input flow: the wheel event is routed by modifier; zoom goes through the shared accumulator, pan straight to the store</figcaption>
+<pre class="mermaid">flowchart LR
+  USER -->|WheelEvent| ECV["useCanvasViewControls onWheel"]:::chg
+  USER -->|WheelEvent| BVP["useBuilderViewport onWheel"]:::chg
+  ECV -->|"ctrl/meta: acc, deltaY"| WZS["wheelZoomSteps()"]:::new
+  BVP -->|"ctrl/meta: acc, deltaY"| WZS
+  WZS -->|"{ acc, steps }"| ECV
+  WZS -->|"{ acc, steps }"| BVP
+  ECV -->|"|steps| × zoom(cursor, sign)"| VS["useViewStore"]
+  ECV -->|"plain: panBy(−deltaX, −deltaY)"| VS
+  BVP -->|"|steps| × zoomBy(sign)"| BVS["useBuilderViewStore"]
+  BVP -.->|"plain: ignored, native scroll (D2)"| NATIVE["browser overflow scroll"]
+  click WZS href "#D8"
+  click ECV href "#D4"
+  click BVP href "#D3"</pre>
+<details class="hops"><summary>Text version</summary><pre>1 USER                --WheelEvent----------------> useCanvasViewControls / useBuilderViewport
+2 hook (ctrl||meta)   --acc, deltaY---------------> wheelZoomSteps()                        D1 D7 D8
+3 wheelZoomSteps      --{acc, steps}--------------> hook                                    D5
+4 editor hook         --|steps| × zoom(cursor,±1)-> useViewStore                           F1
+5 builder hook        --|steps| × zoomBy(±1)------> useBuilderViewStore                     F2
+6 editor hook (plain) --panBy(−dx, −dy)-----------> useViewStore  (clampViewport applies)   D4 D6 F4
+7 builder hook (plain)-- not handled -------------> browser native scroll                   D2 F2
+No step can fail: pure arithmetic and existing synchronous store calls.</pre></details>
+  </figure>
+
+  <figure>
+    <figcaption>File map: two source files gain the helper and constant, two hooks change wheel handling, three test files follow</figcaption>
+<pre class="diff"> src/
+~├── constants/canvas.ts                 + ZOOM_WHEEL_STEP_PX = 100          D5
+~├── core/viewport.ts                    + wheelZoomSteps()                  D1 D7 D8
+~├── editor/canvas/useCanvasViewControls.ts  plain wheel pans, ⌘/pinch accumulates; hints   D1 D4 D6
+~└── hooks/useBuilderViewport.ts         ⌘/pinch accumulates                 D1 D2 D3
+ tests/
+~├── unit/core/viewport.test.ts          wheelZoomSteps cases                Done1
+~├── browser/editor/view.browser.test.tsx   wheel helper → ctrl; accumulate + pan tests   Done2 Done4
+~├── browser/builder/view.browser.test.tsx  accumulate test                  Done3 Done4
+~└── browser/flows/shortcut-sheet.browser.test.tsx  editor View rows + Zoom, Pan   Done5</pre>
+  </figure>
+
+  <figure>
+    <figcaption>New and changed signatures</figcaption>
+<pre class="code">// src/constants/canvas.ts
+export const ZOOM_WHEEL_STEP_PX = 100;                                   // D5
+
+// src/core/viewport.ts
+/** Adds deltaY to acc; each whole ZOOM_WHEEL_STEP_PX is one ladder step.
+ *  steps > 0 zooms in (negative deltaY), steps &lt; 0 zooms out; acc keeps the remainder. */
+export function wheelZoomSteps(acc: number, deltaY: number): { acc: number; steps: number };   // D1 D7 D8 F9
+
+// src/editor/canvas/useCanvasViewControls.ts — signature unchanged
+export const CANVAS_VIEW_HINTS: HintSection;   // + Zoom ⌘/Ctrl+Wheel, + Pan Wheel  D4 Done5
+export function useCanvasViewControls(containerRef): void;              // D4 D6
+
+// src/hooks/useBuilderViewport.ts — signature unchanged
+export const BUILDER_VIEW_HINTS: HintSection;  // unchanged (already ⌘/Ctrl+Wheel)  F2
+export function useBuilderViewport(panelRef): void;                     // D1 D3</pre>
+  </figure>
+
+  <figure>
+    <figcaption>Wheel handling, both hooks — the accumulator is a closure variable per effect run (resets when the doc / panel changes)</figcaption>
+<pre class="view">effect:
+  let acc = 0                                                      D7 D8
+  onWheel(event):
+    if event.ctrlKey or event.metaKey:                             F9 (pinch = ctrlKey)
+      preventDefault                                               F9 passive:false (already)
+      { acc, steps } = wheelZoomSteps(acc, event.deltaY)           D1 D6 (raw px)
+      repeat |steps| times:
+        editor  → useViewStore.zoom(cursor, sign(steps), sprite)   F1 anchored at cursor
+        builder → useBuilderViewStore.zoomBy(sign(steps))          F2 D3 no anchoring
+    else:
+      editor  → preventDefault; panBy(−deltaX, −deltaY, sprite)    D4 D6 F4 clamped
+      builder → return (native scroll)                             D2 F2</pre>
+  </figure>
+
+  <figure>
+    <figcaption>Example: editor at 8×, pinching in — the zoom only ever lands on existing rungs</figcaption>
+  <div class="fragment">
+    <table class="rows">
+      <tr><th>Accumulated deltaY</th><th>Result</th><th>Zoom</th></tr>
+      <tr><td>−15 … −90</td><td>collecting</td><td>8×</td></tr>
+      <tr><td>−105</td><td>1 step in, acc −5</td><td>12×</td></tr>
+      <tr><td>−205 (cumulative)</td><td>1 more step</td><td>16×</td></tr>
+      <tr><td>single event −250</td><td>2 steps, acc −50</td><td>+2 rungs</td></tr>
+      <tr><td>at 48× and still pinching</td><td>steps clamp in <code>stepLadder</code> (<a class="id" href="#F7">F7</a>); acc stays &lt; 100</td><td>48×</td></tr>
+    </table>
+  </div>
+  </figure>
+</section>
+
+<!-- ============ OUTCOME ============ -->
+<section class="part">
+  <h2>Outcome</h2>
+  <p class="lead">What is observably different afterwards.</p>
+  <table class="rows">
+    <tr><th>Situation</th><th>Before</th><th>After</th><th>Source</th></tr>
+    <tr><td>Trackpad pinch, editor</td><td>One rung per event — a gesture sweeps the whole ladder</td><td>One rung per 100&nbsp;px of accumulated delta, at the cursor</td><td><a class="id" href="#F1">F1</a> <a class="id" href="#D1">D1</a> <a class="id" href="#D5">D5</a></td></tr>
+    <tr><td>Trackpad pinch / ⌘+wheel, builder</td><td>One rung per event</td><td>One rung per 100&nbsp;px; sheet still grows from top-left</td><td><a class="id" href="#F2">F2</a> <a class="id" href="#D1">D1</a> <a class="id" href="#D3">D3</a></td></tr>
+    <tr><td>Plain mouse wheel, editor</td><td>Zooms one rung per notch</td><td><b>Pans</b> vertically (shift-wheel / two-finger horizontally per browser deltaX); zooming now needs ⌘/ctrl</td><td><a class="id" href="#D4">D4</a></td></tr>
+    <tr><td>Two-finger scroll, editor</td><td>Zooms</td><td>Pans in x and y, limited by the existing clamp (sprite can drift but never leave the screen)</td><td><a class="id" href="#D4">D4</a> <a class="id" href="#F4">F4</a></td></tr>
+    <tr><td>⌘/ctrl + mouse wheel notch (~100&nbsp;px)</td><td>1 rung</td><td>1 rung</td><td><a class="id" href="#D5">D5</a></td></tr>
+    <tr><td>Line-mode wheel (deltaMode 1)</td><td>1 rung per notch</td><td>Pans ~3&nbsp;px per notch; ⌘-zoom needs many notches per rung</td><td><a class="id" href="#R1">R1</a> <a class="id" href="#D6">D6</a></td></tr>
+    <tr><td>Plain wheel / scroll, builder</td><td>Native scroll</td><td>Unchanged</td><td><a class="id" href="#D2">D2</a></td></tr>
+    <tr><td>± buttons, + − 0 keys, fit</td><td>One rung per press</td><td>Unchanged</td><td><a class="id" href="#F7">F7</a> <a class="id" href="#Done4">Done4</a></td></tr>
+    <tr><td>Space-drag, middle-drag</td><td>Pan</td><td>Unchanged</td><td><a class="id" href="#Done4">Done4</a></td></tr>
+    <tr><td>Shortcut sheet, editor</td><td>Pan: Space+Drag, Middle-drag</td><td>+ Pan: Wheel; + Zoom: ⌘/Ctrl+Wheel</td><td><a class="id" href="#D4">D4</a> <a class="id" href="#Done5">Done5</a></td></tr>
+    <tr><td>Existing data</td><td>—</td><td>Nothing persisted, nothing to migrate</td><td><a class="id" href="#F11">F11</a></td></tr>
+  </table>
+</section>
+
+<!-- ============ CHANGES ============ -->
+<section class="part">
+  <h2>Changes</h2>
+  <p class="lead">Every element added, changed or removed that other code, data or users can observe — per file, in task order.</p>
+
+  <h3><code>src/constants/canvas.ts</code> <span class="op-edit">edit</span> <a class="id" href="#T1">T1</a></h3>
+  <table class="rows">
+    <tr><th>Element</th><th>Op</th><th>What changes</th><th>Why</th><th>Effect</th></tr>
+    <tr><td><code>ZOOM_WHEEL_STEP_PX</code></td><td><span class="op-new">new</span></td><td><code>100</code>, with a one-line doc comment</td><td><a class="id" href="#D5">D5</a></td><td>Shared by both editors via <code>wheelZoomSteps</code></td></tr>
+  </table>
+
+  <h3><code>src/core/viewport.ts</code> <span class="op-edit">edit</span> <a class="id" href="#T1">T1</a></h3>
+  <table class="rows">
+    <tr><th>Element</th><th>Op</th><th>What changes</th><th>Why</th><th>Effect</th></tr>
+    <tr><td><code>wheelZoomSteps(acc, deltaY)</code></td><td><span class="op-new">new</span></td><td>Pure: <code>acc + deltaY</code> → whole multiples of <code>ZOOM_WHEEL_STEP_PX</code> become <code>steps</code> (negated: negative delta = zoom in), remainder returned as <code>acc</code>; no timer, no deltaMode handling</td><td><a class="id" href="#D1">D1</a> <a class="id" href="#D6">D6</a> <a class="id" href="#D7">D7</a> <a class="id" href="#D8">D8</a></td><td>New export; no existing function changes</td></tr>
+  </table>
+
+  <h3><code>tests/unit/core/viewport.test.ts</code> <span class="op-edit">edit</span> <a class="id" href="#T1">T1</a></h3>
+  <table class="rows">
+    <tr><th>Element</th><th>Op</th><th>What changes</th><th>Why</th><th>Effect</th></tr>
+    <tr><td>test: wheel deltas add up to whole zoom steps</td><td><span class="op-new">new</span></td><td>−100 → 1 step, acc 0; 3 × −40 → 1 step, acc −20; +250 → −2 steps, acc 50</td><td><a class="id" href="#Done1">Done1</a></td><td>None outside tests</td></tr>
+  </table>
+
+  <h3><code>src/editor/canvas/useCanvasViewControls.ts</code> <span class="op-edit">edit</span> <a class="id" href="#T2">T2</a></h3>
+  <table class="rows">
+    <tr><th>Element</th><th>Op</th><th>What changes</th><th>Why</th><th>Effect</th></tr>
+    <tr><td><code>onWheel</code></td><td><span class="op-edit">edit</span></td><td>Always <code>preventDefault</code>. ctrl/meta → <code>wheelZoomSteps</code>, then <code>zoom(cursor, ±1, sprite)</code> once per step. Otherwise → <code>panBy(−deltaX, −deltaY, sprite)</code>. Raw deltas.</td><td><a class="id" href="#D1">D1</a> <a class="id" href="#D4">D4</a> <a class="id" href="#D6">D6</a> <a class="id" href="#F1">F1</a> <a class="id" href="#F9">F9</a></td><td>Plain wheel stops zooming and pans; mouse users need ⌘/ctrl to zoom</td></tr>
+    <tr><td>accumulator <code>let acc = 0</code></td><td><span class="op-new">new</span></td><td>Inside the existing effect, beside <code>spacePressed</code>/<code>panning</code></td><td><a class="id" href="#D7">D7</a> <a class="id" href="#D8">D8</a></td><td>Resets when a different doc opens (effect deps <code>[containerRef, doc]</code>)</td></tr>
+    <tr><td><code>CANVAS_VIEW_HINTS</code></td><td><span class="op-edit">edit</span></td><td>+ <code>{ action: "Zoom", inputs: [{ hold: "mod" }, { text: "Wheel" }] }</code>, + <code>{ action: "Pan", inputs: [{ text: "Wheel" }] }</code>; existing two Pan hints kept</td><td><a class="id" href="#D4">D4</a> <a class="id" href="#Done5">Done5</a></td><td>Shortcut sheet lists the new inputs</td></tr>
+    <tr><td>hook doc comment</td><td><span class="op-edit">edit</span></td><td>“Wheel zoom, …” → describes ⌘/pinch zoom and wheel pan</td><td><a class="id" href="#D4">D4</a></td><td>None outside this file</td></tr>
+  </table>
+
+  <h3><code>tests/browser/editor/view.browser.test.tsx</code> <span class="op-edit">edit</span> <a class="id" href="#T2">T2</a></h3>
+  <table class="rows">
+    <tr><th>Element</th><th>Op</th><th>What changes</th><th>Why</th><th>Effect</th></tr>
+    <tr><td><code>wheel()</code> helper</td><td><span class="op-edit">edit</span></td><td>Dispatches with <code>ctrlKey: true</code>, so existing zoom tests (±100 per event = 1 rung) keep their meaning; “the wheel zooms…” titles say Ctrl/⌘+wheel</td><td><a class="id" href="#D4">D4</a> <a class="id" href="#Done4">Done4</a></td><td>Existing zoom tests still assert ladder behaviour</td></tr>
+    <tr><td>test: small zoom deltas accumulate into one step at the cursor</td><td><span class="op-new">new</span></td><td>ctrl −40, −40 → scale unchanged; third −40 → one rung up, pixel under cursor unchanged</td><td><a class="id" href="#Done2">Done2</a></td><td>None outside tests</td></tr>
+    <tr><td>test: the shortcut sheet teaches ⌘/Ctrl+Wheel to zoom and Wheel to pan</td><td><span class="op-new">new</span></td><td>Opens <code>?</code>; View section has rows [Zoom, <code>mod + Wheel</code>] and [Pan, <code>Wheel</code>]</td><td><a class="id" href="#Done5">Done5</a></td><td>None outside tests</td></tr>
+    <tr><td>test: a plain wheel pans and doesn't zoom</td><td><span class="op-new">new</span></td><td>plain wheel deltaX 30, deltaY −20 → originX −30, originY +20, scale unchanged</td><td><a class="id" href="#Done2">Done2</a></td><td>None outside tests</td></tr>
+  </table>
+
+  <h3><code>tests/browser/flows/shortcut-sheet.browser.test.tsx</code> <span class="op-edit">edit</span> <a class="id" href="#T2">T2</a></h3>
+  <table class="rows">
+    <tr><th>Element</th><th>Op</th><th>What changes</th><th>Why</th><th>Effect</th></tr>
+    <tr><td>test: the editor's sheet lists its groups and rows in a fixed order</td><td><span class="op-edit">edit</span></td><td>View rows end <code>… Toggle onion skin, Zoom, Pan, Pan, Pan</code> (was <code>…, Pan, Pan</code>)</td><td><a class="id" href="#D4">D4</a> <a class="id" href="#Done5">Done5</a></td><td>Done5 verified automatically</td></tr>
+  </table>
+
+  <h3><code>src/hooks/useBuilderViewport.ts</code> <span class="op-edit">edit</span> <a class="id" href="#T3">T3</a></h3>
+  <table class="rows">
+    <tr><th>Element</th><th>Op</th><th>What changes</th><th>Why</th><th>Effect</th></tr>
+    <tr><td><code>onWheel</code></td><td><span class="op-edit">edit</span></td><td>ctrl/meta branch: <code>wheelZoomSteps</code>, then <code>zoomBy(±1)</code> once per step; plain wheel still returns early</td><td><a class="id" href="#D1">D1</a> <a class="id" href="#D2">D2</a> <a class="id" href="#D3">D3</a> <a class="id" href="#F2">F2</a></td><td>Builder pinch slows down; no layout / scroll change</td></tr>
+    <tr><td>accumulator <code>let acc = 0</code></td><td><span class="op-new">new</span></td><td>Inside the existing effect</td><td><a class="id" href="#D7">D7</a> <a class="id" href="#D8">D8</a></td><td>None outside this file</td></tr>
+  </table>
+
+  <h3><code>tests/browser/builder/view.browser.test.tsx</code> <span class="op-edit">edit</span> <a class="id" href="#T3">T3</a></h3>
+  <table class="rows">
+    <tr><th>Element</th><th>Op</th><th>What changes</th><th>Why</th><th>Effect</th></tr>
+    <tr><td>test: small Ctrl/⌘+wheel deltas accumulate into one zoom step</td><td><span class="op-new">new</span></td><td>ctrl −40, −40 → zoom 4; third −40 → 6; plain wheel → still 6</td><td><a class="id" href="#Done3">Done3</a></td><td>None outside tests</td></tr>
+    <tr><td>existing “Ctrl/⌘+wheel zooms the sheet…” test</td><td><span class="op-edit">edit</span></td><td>none expected — ±100 per event still = 1 rung; touched only if it fails</td><td><a class="id" href="#Done4">Done4</a></td><td>—</td></tr>
+  </table>
+</section>
+
+<!-- ============ INTERACTIONS & RISKS ============ -->
+<section class="part">
+  <h2>Interactions &amp; risks</h2>
+  <table class="rows">
+    <tr><th>#</th><th>What combines</th><th>Consequence</th><th>Resolution</th></tr>
+    <tr id="R1"><td>R1</td><td><a class="id" href="#D1">D1</a> + <a class="id" href="#D4">D4</a> + <a class="id" href="#F10">F10</a></td><td>Wheels reporting lines or pages (deltaMode 1/2) pan only a few px per notch and need many notches per zoom rung</td><td>accepted <span class="id">Q6</span> (<a class="id" href="#D6">D6</a>)</td></tr>
+  </table>
+</section>
+
+<section class="part">
+  <h2>Scope</h2>
+  <div class="scope">
+    <div><h3>In</h3><ul>
+      <li>Accumulated, ladder-stepping ⌘/ctrl-wheel and pinch zoom in both editors <a class="id" href="#D1">D1</a> <a class="id" href="#D5">D5</a></li>
+      <li>Plain wheel / two-finger scroll pans the pixel editor <a class="id" href="#D4">D4</a></li>
+      <li>Shared pure helper with unit tests <a class="id" href="#D8">D8</a></li>
+      <li>Editor shortcut-sheet hints for the new inputs <a class="id" href="#D4">D4</a></li>
+    </ul></div>
+    <div class="out"><h3>Out</h3><ul>
+      <li>Continuous (off-ladder) zoom <span class="id">Q1</span></li>
+      <li>Centring the builder sheet when it fits <span class="id">Q2</span></li>
+      <li>Cursor-anchored zoom in the builder <span class="id">Q3</span></li>
+      <li>Centring the editor sprite when it fits / replacing <code>clampViewport</code> <span class="id">Q3</span> (scope reset)</li>
+      <li>Editor scrollbars <span class="id">Q4</span></li>
+      <li>deltaMode normalisation <span class="id">Q6</span></li>
+      <li>Resetting leftover delta between gestures <span class="id">Q7</span></li>
+      <li>Changing the zoom ladders, ± buttons or keys</li>
+    </ul></div>
+  </div>
+</section>
+
+<section class="part">
+  <h2>Decisions</h2>
+  <table class="rows">
+    <tr><th>#</th><th>Question</th><th>Decision</th><th>Rejected</th><th>Implies</th></tr>
+    <tr id="D1"><td>D1</td><td><span class="id">Q1</span> Zoom model for pinch / ⌘-wheel?</td><td>Accumulate deltaY; step the existing ladder at a threshold</td><td>Continuous scale</td><td>Scales stay on rungs; no store, label or <code>stepLadder</code> change</td></tr>
+    <tr id="D2"><td>D2</td><td><span class="id">Q2</span> Centre builder sheet when it fits?</td><td>No — top-left, native scroll</td><td>Centre blocks; centre only when empty</td><td>No builder layout change (no code)</td></tr>
+    <tr id="D3"><td>D3</td><td><span class="id">Q3</span> Anchor builder zoom at cursor?</td><td>No (first iteration, scope reset)</td><td>Anchor via scroll fix-up</td><td>Builder keeps calling <code>zoomBy</code></td></tr>
+    <tr id="D4"><td>D4</td><td><span class="id">Q4</span> Editor x/y scrolling?</td><td>Plain wheel pans; ⌘/ctrl/pinch zooms</td><td>Plus scrollbars; no scrolling</td><td><code>panBy(−dx, −dy)</code> with existing clamp; hints; tests' wheel helper gains ctrlKey</td></tr>
+    <tr id="D5"><td>D5</td><td><span class="id">Q5</span> Delta per zoom step?</td><td>100&nbsp;px</td><td>50&nbsp;px; 200&nbsp;px</td><td><code>ZOOM_WHEEL_STEP_PX = 100</code>; a mouse notch still ≈ 1 rung</td></tr>
+    <tr id="D6"><td>D6</td><td><span class="id">Q6</span> deltaMode handling?</td><td>Treat all deltas as px</td><td>Lines ×16, pages × view</td><td>No helper; <a class="id" href="#R1">R1</a> accepted</td></tr>
+    <tr id="D7"><td>D7</td><td><span class="id">Q7</span> Leftover delta between gestures?</td><td>Always carries over (simplest)</td><td>Reset after idle</td><td>Plain signed accumulator, no timestamps</td></tr>
+    <tr id="D8"><td>D8</td><td><span class="id">Q8</span> Where does the accumulator live?</td><td>Pure <code>wheelZoomSteps</code> in <code>core/viewport.ts</code>; <code>let acc</code> per hook effect</td><td>Inline in each hook</td><td>Unit-testable; 2 call sites</td></tr>
+  </table>
+</section>
+
+<section class="part">
+  <h2>Tasks</h2>
+  <table class="rows tasks">
+    <tr><th>Task</th><th>Files</th><th>Serves</th><th>Verify</th></tr>
+    <tr id="T1" class="done"><td>T1 Constant + <code>wheelZoomSteps</code> + unit test</td><td><code>src/constants/canvas.ts</code> <code>src/core/viewport.ts</code> <code>tests/unit/core/viewport.test.ts</code></td><td><a class="id" href="#D1">D1</a> <a class="id" href="#D5">D5</a> <a class="id" href="#D7">D7</a> <a class="id" href="#D8">D8</a> <a class="id" href="#Done1">Done1</a></td><td><code>npx vitest run --project=unit tests/unit/core/viewport.test.ts</code>: new test passes</td></tr>
+    <tr id="T2" class="done"><td>T2 Editor: accumulated zoom, wheel pan, hints, tests</td><td><code>src/editor/canvas/useCanvasViewControls.ts</code> <code>tests/browser/editor/view.browser.test.tsx</code> <code>tests/browser/flows/shortcut-sheet.browser.test.tsx</code></td><td><a class="id" href="#D4">D4</a> <a class="id" href="#D6">D6</a> <a class="id" href="#Done2">Done2</a> <a class="id" href="#Done4">Done4</a> <a class="id" href="#Done5">Done5</a></td><td><code>npx vitest run --project=browser tests/browser/editor/view.browser.test.tsx tests/browser/flows/shortcut-sheet.browser.test.tsx</code>: 3 new tests + existing pass, sheet order test passes</td></tr>
+    <tr id="T3" class="done"><td>T3 Builder: accumulated zoom + test</td><td><code>src/hooks/useBuilderViewport.ts</code> <code>tests/browser/builder/view.browser.test.tsx</code></td><td><a class="id" href="#D2">D2</a> <a class="id" href="#D3">D3</a> <a class="id" href="#Done3">Done3</a> <a class="id" href="#Done4">Done4</a></td><td><code>npx vitest run --project=browser tests/browser/builder/view.browser.test.tsx</code>: new test + existing pass</td></tr>
+  </table>
+</section>
+
+<section class="part">
+  <h2>Files</h2>
+  <table class="rows">
+    <tr><th>Path</th><th>Op</th><th>Intent</th><th>Task</th></tr>
+    <tr><td><code>src/constants/canvas.ts</code></td><td><span class="op-edit">edit</span></td><td><code>ZOOM_WHEEL_STEP_PX</code></td><td><a class="id" href="#T1">T1</a></td></tr>
+    <tr><td><code>src/core/viewport.ts</code></td><td><span class="op-edit">edit</span></td><td><code>wheelZoomSteps</code></td><td><a class="id" href="#T1">T1</a></td></tr>
+    <tr><td><code>tests/unit/core/viewport.test.ts</code></td><td><span class="op-edit">edit</span></td><td>Accumulator unit test</td><td><a class="id" href="#T1">T1</a></td></tr>
+    <tr><td><code>src/editor/canvas/useCanvasViewControls.ts</code></td><td><span class="op-edit">edit</span></td><td>⌘/pinch accumulates, plain wheel pans, hints</td><td><a class="id" href="#T2">T2</a></td></tr>
+    <tr><td><code>tests/browser/editor/view.browser.test.tsx</code></td><td><span class="op-edit">edit</span></td><td>ctrl wheel helper; accumulate + pan tests</td><td><a class="id" href="#T2">T2</a></td></tr>
+    <tr><td><code>tests/browser/flows/shortcut-sheet.browser.test.tsx</code></td><td><span class="op-edit">edit</span></td><td>Editor View rows include the new Zoom and Pan hints</td><td><a class="id" href="#T2">T2</a></td></tr>
+    <tr><td><code>src/hooks/useBuilderViewport.ts</code></td><td><span class="op-edit">edit</span></td><td>⌘/pinch accumulates</td><td><a class="id" href="#T3">T3</a></td></tr>
+    <tr><td><code>tests/browser/builder/view.browser.test.tsx</code></td><td><span class="op-edit">edit</span></td><td>Accumulate test</td><td><a class="id" href="#T3">T3</a></td></tr>
+  </table>
+</section>
+
+<section class="part">
+  <h2>Done when</h2>
+  <table class="rows">
+    <tr><th>#</th><th>Criterion</th><th>Verified by</th><th>Task</th></tr>
+    <tr id="Done1"><td>Done1</td><td><code>wheelZoomSteps</code>: (0, −100) → 1 step, acc 0; three × −40 from 0 → total 1 step, acc −20; (0, +250) → −2 steps, acc 50.</td><td><code>viewport.test.ts</code> “wheel deltas add up to whole zoom steps”</td><td><a class="id" href="#T1">T1</a></td></tr>
+    <tr id="Done2"><td>Done2</td><td>Editor: ctrl-wheel −40 twice leaves the scale; a third moves one rung with the pixel under the cursor unchanged. Plain wheel (dx 30, dy −20) moves origin by (−30, +20) and leaves the scale.</td><td>editor <code>view.browser.test.tsx</code>, 2 new tests</td><td><a class="id" href="#T2">T2</a></td></tr>
+    <tr id="Done3"><td>Done3</td><td>Builder: ctrl-wheel −40 twice leaves zoom at 4; a third → 6; a plain wheel leaves it at 6.</td><td>builder <code>view.browser.test.tsx</code>, new test</td><td><a class="id" href="#T3">T3</a></td></tr>
+    <tr id="Done4"><td>Done4</td><td>± buttons, + − 0 keys, fit, ladder ends, space-drag, middle-drag and pan clamp behave as before.</td><td>existing tests in both <code>view.browser.test.tsx</code> files pass</td><td><a class="id" href="#T2">T2</a> <a class="id" href="#T3">T3</a></td></tr>
+    <tr id="Done5"><td>Done5</td><td>The editor shortcut sheet lists “Zoom · ⌘/Ctrl+Wheel” and “Pan · Wheel” in View.</td><td><code>shortcut-sheet.browser.test.tsx</code> “the editor's sheet lists its groups and rows in a fixed order” (labels and order) + editor <code>view.browser.test.tsx</code> “the shortcut sheet teaches ⌘/Ctrl+Wheel to zoom and Wheel to pan” (inputs)</td><td><a class="id" href="#T2">T2</a></td></tr>
+    <tr id="Done6"><td>Done6</td><td>One ordinary trackpad pinch covers about 1–2 ladder rungs in both editors.</td><td>manual (user, Mac trackpad): <code>npm run dev</code>, pinch once in the editor and once in the builder, watch the zoom label</td><td><a class="id" href="#T2">T2</a> <a class="id" href="#T3">T3</a></td></tr>
+    <tr id="Done7"><td>Done7</td><td>Build, lint and the whole suite are clean.</td><td><code>npm run build</code>, <code>npm run lint</code>, <code>npm run test:all</code> exit 0</td><td><a class="id" href="#T3">T3</a></td></tr>
+  </table>
+  <p class="text-sm">Test command: <code>npm run test:all</code> (unit: <code>npx vitest run --project=unit</code>, browser: <code>npx vitest run --project=browser</code>) <a class="id" href="#F11">F11</a> — baseline run 2026-10-02: unit viewport + builder store 15/15, view browser tests 29/29.</p>
+</section>
+
+<div class="space-y-2">
+<details class="more"><summary>Open</summary><ul>
+  <li>none</li>
+</ul></details>
+
+<details class="more"><summary>Facts</summary>
+  <h4>Code</h4><ul>
+  <li id="F1"><b>F1</b> Editor wheel: every event → one <code>zoom(cursor, ±1)</code> ladder step, ctrl or not <code>src/editor/canvas/useCanvasViewControls.ts:27-38</code></li>
+  <li id="F2"><b>F2</b> Builder: ctrl/meta+wheel → <code>zoomBy(±1)</code>; plain wheel left to native scroll; hints already list ⌘/Ctrl+Wheel <code>src/hooks/useBuilderViewport.ts:5-25</code></li>
+  <li id="F3"><b>F3</b> Ladders: editor 0.5–48, builder 1–12 <code>src/constants/canvas.ts:1</code> <code>src/constants/builder.ts:2</code></li>
+  <li id="F4"><b>F4</b> <code>panBy</code> applies <code>clampViewport</code> (keeps a margin of sprite on screen, no centring) <code>src/core/viewport.ts:72-91</code> <code>src/editor/view/store.ts:38-42</code></li>
+  <li id="F5"><b>F5</b> Builder sheet is DOM in an <code>overflow-auto</code> panel; blocks are spritePx × zoom; empty area fills the panel as a drop target <code>src/components/builder/BuilderCanvas.tsx:52-75</code></li>
+  <li id="F7"><b>F7</b> <code>stepLadder</code> snaps to nearest rung then steps, clamped at both ends <code>src/lib/math.ts:13-20</code></li>
+  <li id="F11"><b>F11</b> Tests: vitest projects <code>unit</code> and <code>browser</code>; scripts <code>test</code>, <code>test:browser</code>, <code>test:all</code>, <code>build</code>, <code>lint</code> <code>package.json:6-16</code>; view state is session-only <code>src/stores/useBuilderViewStore.ts:31</code></li>
+  </ul>
+  <h4>Docs (MDN, current)</h4><ul>
+  <li id="F9"><b>F9</b> Trackpad/wheel zoom gestures fire <code>wheel</code> with <code>ctrlKey</code> true; listener must be <code>passive: false</code> to cancel <code>developer.mozilla.org/en-US/docs/Web/API/Element/wheel_event</code></li>
+  <li id="F10"><b>F10</b> <code>deltaMode</code> may be pixel, line or page; MDN says always check it <code>developer.mozilla.org/en-US/docs/Web/API/WheelEvent/deltaMode</code></li>
+  </ul>
+  <h4>Probes</h4><ul>
+  <li>none</li>
+  </ul>
+</details>
+
+<details class="more"><summary>Drift log</summary><ul>
+  <li>Q9 → <code>tests/browser/flows/shortcut-sheet.browser.test.tsx</code> added to Files/T2: it pins the editor sheet's View rows, which <a class="id" href="#D4">D4</a>'s hints change; <a class="id" href="#Done5">Done5</a> now verified by it instead of manually. Found: <code>npm run test:all</code> after T3. Not surface (outcome unchanged).</li>
+  <li>Review → editor <code>view.browser.test.tsx</code> gains a test asserting the hint inputs, because the sheet-order test reads labels only (independent review, WORTH FIXING; user chose to add it). Not surface.</li>
+</ul></details>
+</div>
+
+</main>
+</main>
+
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@12.0.0/+esm'
+
+// Diff and code blocks: link IDs; diff lines also colored by first character.
+const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;')
+const ids = s => s.replace(/\b((?:Done|[DFORT])\d+)\b/g, '<a class="id" href="#$1">$1</a>')
+for (const pre of document.querySelectorAll('pre.diff')) {
+  pre.innerHTML = pre.textContent.split('\n').map(l =>
+    `<span class="${{'+': 'add', '~': 'chg', '-': 'rm'}[l[0]] ?? 'ctx'}">${ids(esc(l)) || ' '}</span>`).join('')
+}
+for (const pre of document.querySelectorAll('pre.code')) pre.innerHTML = ids(esc(pre.textContent))
+
+// Mermaid: one shared look; :::new / :::chg / :::del are defined here only.
+const fill = (cls, color) => `.node.${cls} :is(rect,polygon,circle,path){fill:color-mix(in srgb,${color} 12%,white)!important;stroke:${color}!important}`
+mermaid.initialize({
+  startOnLoad: false, securityLevel: 'loose', theme: 'base',
+  flowchart: { useMaxWidth: false }, sequence: { useMaxWidth: false },
+  themeVariables: { primaryColor: '#ffffff', primaryBorderColor: '#8a94a3', lineColor: '#1c2433',
+                    fontFamily: 'ui-sans-serif, system-ui, sans-serif', fontSize: '14px' },
+  themeCSS: fill('new', '#2e7d4f') + fill('chg', '#a96a12') + fill('del', '#b23a3a'),
+})
+await mermaid.run({ querySelector: 'pre.mermaid' })
+</script>
+</body>
+</html>
