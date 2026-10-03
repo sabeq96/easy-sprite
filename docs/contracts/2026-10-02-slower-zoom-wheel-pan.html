@@ -99,7 +99,7 @@ import 'https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3'
 
 <header class="space-y-3">
   <h1 class="text-3xl font-semibold">Slower zoom and editor wheel-pan (#16, first iteration)</h1>
-  <div class="meta"><span class="status-agreed">agreed</span><span>2026-10-02</span><span>approved 2026-10-02</span><code>docs/contracts/2026-10-02-slower-zoom-wheel-pan.html</code></div>
+  <div class="meta"><span class="status-superseded">superseded</span><a href="2026-10-03-smooth-zoom-centred-view.html">→ 2026-10-03-smooth-zoom-centred-view</a><span>2026-10-02</span><span>approved 2026-10-02 @ ddaf7c9</span><code>docs/contracts/2026-10-02-slower-zoom-wheel-pan.html</code></div>
   <dl class="brief">
     <dt>Problem</dt><dd>Every wheel event moves a whole zoom-ladder step, so one trackpad pinch flies through the whole range <a class="id" href="#F1">F1</a> <a class="id" href="#F2">F2</a>; the pixel editor has no wheel/two-finger scrolling at all <a class="id" href="#F1">F1</a>.</dd>
     <dt>Goal</dt><dd>Pinch and ⌘/ctrl+wheel zoom one ladder step per 100&nbsp;px of accumulated delta in both editors, and a plain wheel / two-finger scroll pans the pixel editor.</dd>
@@ -115,12 +115,12 @@ import 'https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3'
   <p class="short">Zoom gestures no longer jump a ladder rung per event: their scroll amount is added up, and every 100&nbsp;px of it moves one rung (same rungs as the + and − buttons), anchored at the cursor in the pixel editor as today. In the pixel editor a plain mouse wheel or two-finger scroll now moves the sprite around instead of zooming; ⌘/ctrl+wheel and pinch zoom. The sheet builder keeps its native scrolling and layout; only its ⌘/pinch zoom slows down.</p>
 
   <dl class="size">
-    <dt>Files</dt><dd>0 new · 7 edited · 0 deleted</dd>
+    <dt>Files</dt><dd>0 new · 8 edited · 0 deleted</dd>
     <dt>Dependencies</dt><dd>none — browser <code>WheelEvent</code> only (<a class="id" href="#F9">F9</a> <a class="id" href="#F10">F10</a>)</dd>
     <dt>Surface</dt><dd>1 new exported function (<code>wheelZoomSteps</code>) · 1 new constant (<code>ZOOM_WHEEL_STEP_PX</code>) · changed editor wheel behaviour and <code>CANVAS_VIEW_HINTS</code></dd>
     <dt>Counts</dt><dd>8 decisions · 1 risk · 0 open · 7 done criteria · 3 tasks</dd>
     <dt>Hard to roll back</dt><dd>none — view state is session-only, nothing persisted</dd>
-    <dt>Manual checks</dt><dd><a class="id" href="#Done5">Done5</a> (shortcut sheet), <a class="id" href="#Done6">Done6</a> (trackpad pinch feel)</dd>
+    <dt>Manual checks</dt><dd><a class="id" href="#Done6">Done6</a> (trackpad pinch feel)</dd>
   </dl>
 
   <figure>
@@ -159,7 +159,8 @@ No step can fail: pure arithmetic and existing synchronous store calls.</pre></d
  tests/
 ~├── unit/core/viewport.test.ts          wheelZoomSteps cases                Done1
 ~├── browser/editor/view.browser.test.tsx   wheel helper → ctrl; accumulate + pan tests   Done2 Done4
-~└── browser/builder/view.browser.test.tsx  accumulate test                  Done3 Done4</pre>
+~├── browser/builder/view.browser.test.tsx  accumulate test                  Done3 Done4
+~└── browser/flows/shortcut-sheet.browser.test.tsx  editor View rows + Zoom, Pan   Done5</pre>
   </figure>
 
   <figure>
@@ -269,7 +270,14 @@ export function useBuilderViewport(panelRef): void;                     // D1 D3
     <tr><th>Element</th><th>Op</th><th>What changes</th><th>Why</th><th>Effect</th></tr>
     <tr><td><code>wheel()</code> helper</td><td><span class="op-edit">edit</span></td><td>Dispatches with <code>ctrlKey: true</code>, so existing zoom tests (±100 per event = 1 rung) keep their meaning; “the wheel zooms…” titles say Ctrl/⌘+wheel</td><td><a class="id" href="#D4">D4</a> <a class="id" href="#Done4">Done4</a></td><td>Existing zoom tests still assert ladder behaviour</td></tr>
     <tr><td>test: small zoom deltas accumulate into one step at the cursor</td><td><span class="op-new">new</span></td><td>ctrl −40, −40 → scale unchanged; third −40 → one rung up, pixel under cursor unchanged</td><td><a class="id" href="#Done2">Done2</a></td><td>None outside tests</td></tr>
+    <tr><td>test: the shortcut sheet teaches ⌘/Ctrl+Wheel to zoom and Wheel to pan</td><td><span class="op-new">new</span></td><td>Opens <code>?</code>; View section has rows [Zoom, <code>mod + Wheel</code>] and [Pan, <code>Wheel</code>]</td><td><a class="id" href="#Done5">Done5</a></td><td>None outside tests</td></tr>
     <tr><td>test: a plain wheel pans and doesn't zoom</td><td><span class="op-new">new</span></td><td>plain wheel deltaX 30, deltaY −20 → originX −30, originY +20, scale unchanged</td><td><a class="id" href="#Done2">Done2</a></td><td>None outside tests</td></tr>
+  </table>
+
+  <h3><code>tests/browser/flows/shortcut-sheet.browser.test.tsx</code> <span class="op-edit">edit</span> <a class="id" href="#T2">T2</a></h3>
+  <table class="rows">
+    <tr><th>Element</th><th>Op</th><th>What changes</th><th>Why</th><th>Effect</th></tr>
+    <tr><td>test: the editor's sheet lists its groups and rows in a fixed order</td><td><span class="op-edit">edit</span></td><td>View rows end <code>… Toggle onion skin, Zoom, Pan, Pan, Pan</code> (was <code>…, Pan, Pan</code>)</td><td><a class="id" href="#D4">D4</a> <a class="id" href="#Done5">Done5</a></td><td>Done5 verified automatically</td></tr>
   </table>
 
   <h3><code>src/hooks/useBuilderViewport.ts</code> <span class="op-edit">edit</span> <a class="id" href="#T3">T3</a></h3>
@@ -337,9 +345,9 @@ export function useBuilderViewport(panelRef): void;                     // D1 D3
   <h2>Tasks</h2>
   <table class="rows tasks">
     <tr><th>Task</th><th>Files</th><th>Serves</th><th>Verify</th></tr>
-    <tr id="T1"><td>T1 Constant + <code>wheelZoomSteps</code> + unit test</td><td><code>src/constants/canvas.ts</code> <code>src/core/viewport.ts</code> <code>tests/unit/core/viewport.test.ts</code></td><td><a class="id" href="#D1">D1</a> <a class="id" href="#D5">D5</a> <a class="id" href="#D7">D7</a> <a class="id" href="#D8">D8</a> <a class="id" href="#Done1">Done1</a></td><td><code>npx vitest run --project=unit tests/unit/core/viewport.test.ts</code>: new test passes</td></tr>
-    <tr id="T2"><td>T2 Editor: accumulated zoom, wheel pan, hints, tests</td><td><code>src/editor/canvas/useCanvasViewControls.ts</code> <code>tests/browser/editor/view.browser.test.tsx</code></td><td><a class="id" href="#D4">D4</a> <a class="id" href="#D6">D6</a> <a class="id" href="#Done2">Done2</a> <a class="id" href="#Done4">Done4</a> <a class="id" href="#Done5">Done5</a></td><td><code>npx vitest run --project=browser tests/browser/editor/view.browser.test.tsx</code>: 2 new tests + existing pass</td></tr>
-    <tr id="T3"><td>T3 Builder: accumulated zoom + test</td><td><code>src/hooks/useBuilderViewport.ts</code> <code>tests/browser/builder/view.browser.test.tsx</code></td><td><a class="id" href="#D2">D2</a> <a class="id" href="#D3">D3</a> <a class="id" href="#Done3">Done3</a> <a class="id" href="#Done4">Done4</a></td><td><code>npx vitest run --project=browser tests/browser/builder/view.browser.test.tsx</code>: new test + existing pass</td></tr>
+    <tr id="T1" class="done"><td>T1 Constant + <code>wheelZoomSteps</code> + unit test</td><td><code>src/constants/canvas.ts</code> <code>src/core/viewport.ts</code> <code>tests/unit/core/viewport.test.ts</code></td><td><a class="id" href="#D1">D1</a> <a class="id" href="#D5">D5</a> <a class="id" href="#D7">D7</a> <a class="id" href="#D8">D8</a> <a class="id" href="#Done1">Done1</a></td><td><code>npx vitest run --project=unit tests/unit/core/viewport.test.ts</code>: new test passes</td></tr>
+    <tr id="T2" class="done"><td>T2 Editor: accumulated zoom, wheel pan, hints, tests</td><td><code>src/editor/canvas/useCanvasViewControls.ts</code> <code>tests/browser/editor/view.browser.test.tsx</code> <code>tests/browser/flows/shortcut-sheet.browser.test.tsx</code></td><td><a class="id" href="#D4">D4</a> <a class="id" href="#D6">D6</a> <a class="id" href="#Done2">Done2</a> <a class="id" href="#Done4">Done4</a> <a class="id" href="#Done5">Done5</a></td><td><code>npx vitest run --project=browser tests/browser/editor/view.browser.test.tsx tests/browser/flows/shortcut-sheet.browser.test.tsx</code>: 3 new tests + existing pass, sheet order test passes</td></tr>
+    <tr id="T3" class="done"><td>T3 Builder: accumulated zoom + test</td><td><code>src/hooks/useBuilderViewport.ts</code> <code>tests/browser/builder/view.browser.test.tsx</code></td><td><a class="id" href="#D2">D2</a> <a class="id" href="#D3">D3</a> <a class="id" href="#Done3">Done3</a> <a class="id" href="#Done4">Done4</a></td><td><code>npx vitest run --project=browser tests/browser/builder/view.browser.test.tsx</code>: new test + existing pass</td></tr>
   </table>
 </section>
 
@@ -352,6 +360,7 @@ export function useBuilderViewport(panelRef): void;                     // D1 D3
     <tr><td><code>tests/unit/core/viewport.test.ts</code></td><td><span class="op-edit">edit</span></td><td>Accumulator unit test</td><td><a class="id" href="#T1">T1</a></td></tr>
     <tr><td><code>src/editor/canvas/useCanvasViewControls.ts</code></td><td><span class="op-edit">edit</span></td><td>⌘/pinch accumulates, plain wheel pans, hints</td><td><a class="id" href="#T2">T2</a></td></tr>
     <tr><td><code>tests/browser/editor/view.browser.test.tsx</code></td><td><span class="op-edit">edit</span></td><td>ctrl wheel helper; accumulate + pan tests</td><td><a class="id" href="#T2">T2</a></td></tr>
+    <tr><td><code>tests/browser/flows/shortcut-sheet.browser.test.tsx</code></td><td><span class="op-edit">edit</span></td><td>Editor View rows include the new Zoom and Pan hints</td><td><a class="id" href="#T2">T2</a></td></tr>
     <tr><td><code>src/hooks/useBuilderViewport.ts</code></td><td><span class="op-edit">edit</span></td><td>⌘/pinch accumulates</td><td><a class="id" href="#T3">T3</a></td></tr>
     <tr><td><code>tests/browser/builder/view.browser.test.tsx</code></td><td><span class="op-edit">edit</span></td><td>Accumulate test</td><td><a class="id" href="#T3">T3</a></td></tr>
   </table>
@@ -365,7 +374,7 @@ export function useBuilderViewport(panelRef): void;                     // D1 D3
     <tr id="Done2"><td>Done2</td><td>Editor: ctrl-wheel −40 twice leaves the scale; a third moves one rung with the pixel under the cursor unchanged. Plain wheel (dx 30, dy −20) moves origin by (−30, +20) and leaves the scale.</td><td>editor <code>view.browser.test.tsx</code>, 2 new tests</td><td><a class="id" href="#T2">T2</a></td></tr>
     <tr id="Done3"><td>Done3</td><td>Builder: ctrl-wheel −40 twice leaves zoom at 4; a third → 6; a plain wheel leaves it at 6.</td><td>builder <code>view.browser.test.tsx</code>, new test</td><td><a class="id" href="#T3">T3</a></td></tr>
     <tr id="Done4"><td>Done4</td><td>± buttons, + − 0 keys, fit, ladder ends, space-drag, middle-drag and pan clamp behave as before.</td><td>existing tests in both <code>view.browser.test.tsx</code> files pass</td><td><a class="id" href="#T2">T2</a> <a class="id" href="#T3">T3</a></td></tr>
-    <tr id="Done5"><td>Done5</td><td>The editor shortcut sheet lists “Zoom · ⌘/Ctrl+Wheel” and “Pan · Wheel” in View.</td><td>manual: open a sprite, press <code>?</code>, read the View section</td><td><a class="id" href="#T2">T2</a></td></tr>
+    <tr id="Done5"><td>Done5</td><td>The editor shortcut sheet lists “Zoom · ⌘/Ctrl+Wheel” and “Pan · Wheel” in View.</td><td><code>shortcut-sheet.browser.test.tsx</code> “the editor's sheet lists its groups and rows in a fixed order” (labels and order) + editor <code>view.browser.test.tsx</code> “the shortcut sheet teaches ⌘/Ctrl+Wheel to zoom and Wheel to pan” (inputs)</td><td><a class="id" href="#T2">T2</a></td></tr>
     <tr id="Done6"><td>Done6</td><td>One ordinary trackpad pinch covers about 1–2 ladder rungs in both editors.</td><td>manual (user, Mac trackpad): <code>npm run dev</code>, pinch once in the editor and once in the builder, watch the zoom label</td><td><a class="id" href="#T2">T2</a> <a class="id" href="#T3">T3</a></td></tr>
     <tr id="Done7"><td>Done7</td><td>Build, lint and the whole suite are clean.</td><td><code>npm run build</code>, <code>npm run lint</code>, <code>npm run test:all</code> exit 0</td><td><a class="id" href="#T3">T3</a></td></tr>
   </table>
@@ -397,7 +406,8 @@ export function useBuilderViewport(panelRef): void;                     // D1 D3
 </details>
 
 <details class="more"><summary>Drift log</summary><ul>
-  <li>none</li>
+  <li>Q9 → <code>tests/browser/flows/shortcut-sheet.browser.test.tsx</code> added to Files/T2: it pins the editor sheet's View rows, which <a class="id" href="#D4">D4</a>'s hints change; <a class="id" href="#Done5">Done5</a> now verified by it instead of manually. Found: <code>npm run test:all</code> after T3. Not surface (outcome unchanged).</li>
+  <li>Review → editor <code>view.browser.test.tsx</code> gains a test asserting the hint inputs, because the sheet-order test reads labels only (independent review, WORTH FIXING; user chose to add it). Not surface.</li>
 </ul></details>
 </div>
 
