@@ -4,6 +4,7 @@ import { BrowserRouter } from "react-router";
 import { AppProviders } from "@/app/providers";
 import { AppRoutes } from "@/app/routes";
 import { seedDatabase } from "@/db/seed";
+import { loadDefaults } from "@/stores/useDefaultsStore";
 import "./index.css";
 
 // Seeding runs in the background: if IndexedDB is unavailable (private mode, blocked site
@@ -12,6 +13,8 @@ import "./index.css";
 void seedDatabase().catch((error: unknown) => {
   console.error("Could not seed built-in palettes", error);
 });
+// Never rejects; sprite and sheet loaders await the same load before they open anything.
+void loadDefaults();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

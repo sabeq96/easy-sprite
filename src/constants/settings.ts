@@ -4,7 +4,7 @@ export const SETTING_KEYS = {
   onion: "view.onion",
   activePaletteId: "palette.active",
   seeded: "app.seeded",
-  defaultCanvasSize: "editor.defaultCanvasSize",
+  defaults: "app.defaults",
 } as const;
 
 export const THEME_STORAGE_KEY = "sprite-editor:theme";

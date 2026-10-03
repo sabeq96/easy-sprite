@@ -4,10 +4,11 @@ import { useDocumentSession } from "@/app/DocumentProvider";
 import { Panel } from "@/components/common/Panel";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { DEFAULT_FPS, MAX_FPS, MIN_FPS } from "@/constants/animation";
+import { MAX_FPS, MIN_FPS } from "@/constants/animation";
 import { compositeFrame } from "@/core/composite";
 import { useFramesStore } from "@/editor/frames/api";
 import { useDocumentSnapshot } from "@/hooks/useDocumentSnapshot";
+import { useDefaultsStore } from "@/stores/useDefaultsStore";
 import { useAnimationStore } from "./store";
 import { useAnimationPlayer } from "./useAnimationPlayer";
 
@@ -16,8 +17,8 @@ export function PreviewPanel() {
   const snapshot = useDocumentSnapshot(doc);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  // Preview-only: not saved with the sprite, so every open starts at the default.
-  const [fps, setFps] = useState(DEFAULT_FPS);
+  // Preview-only: not saved with the sprite, so every open starts at the user's default.
+  const [fps, setFps] = useState(() => useDefaultsStore.getState().defaults.previewFps);
   const activeFrameId = useFramesStore((state) => state.activeFrameId);
   const setPlaying = useAnimationStore((state) => state.setPlaying);
 

@@ -32,6 +32,8 @@ import { useSpritesheetExport } from "@/hooks/useSpritesheetActions";
 import { useSpritesheetSnapshot } from "@/hooks/useSpritesheetSnapshot";
 import { packSheet } from "@/lib/sheetLayout";
 import { useBuilderViewStore } from "@/stores/useBuilderViewStore";
+import { useDefaultsStore } from "@/stores/useDefaultsStore";
+import type { SpritesheetDocument } from "@/core/spritesheetDocument";
 
 export function SpritesheetBuilderPage() {
   const { spritesheetId } = useParams<{ spritesheetId: string }>();
@@ -62,9 +64,7 @@ function SpritesheetBuilderShell() {
   const commands = useBuilderCommands(sheet, () => setShowHelp(true));
   useShortcuts(commands);
 
-  // Grid to one tile, chessboard to one pixel, each time a sheet opens.
-  const resetGrid = useBuilderViewStore((state) => state.resetGrid);
-  useEffect(() => resetGrid(tileSize), [doc, tileSize, resetGrid]);
+  useBuilderViewDefaults(doc, tileSize);
   const placedSpriteIds = new Set(dnd.blocks.map((block) => block.spriteId));
 
   const renderPreview = (data: DragData) => {
@@ -190,4 +190,22 @@ function BuilderSkeleton() {
       <Skeleton className="h-40 w-64" shape="xl" />
     </div>
   );
+}
+
+/**
+ * Grid and chessboard to the user's defaults each time a sheet opens or its tile changes, and the
+ * grid on or off each time a sheet opens.
+ */
+function useBuilderViewDefaults(doc: SpritesheetDocument, tileSize: number): void {
+  const resetGrid = useBuilderViewStore((state) => state.resetGrid);
+  const setGridEnabled = useBuilderViewStore((state) => state.setGridEnabled);
+
+  useEffect(() => {
+    const { gridSize, checkerSize } = useDefaultsStore.getState().defaults;
+    resetGrid(gridSize === "tile" ? tileSize : gridSize, checkerSize);
+  }, [doc, tileSize, resetGrid]);
+
+  useEffect(() => {
+    setGridEnabled(useDefaultsStore.getState().defaults.gridEnabled);
+  }, [doc, setGridEnabled]);
 }

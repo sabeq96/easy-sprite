@@ -32,8 +32,8 @@ export interface ViewState {
   setGridEnabled: (enabled: boolean) => void;
   setGridSize: (size: number) => void;
   setCheckerSize: (size: number) => void;
-  /** Grid to `gridSize` (a sprite's tile), chessboard to its default — done whenever a sprite opens. */
-  resetGrid: (gridSize: number) => void;
+  /** Grid and chessboard to the sizes a sprite opens with (see `useGridReset`). */
+  resetGrid: (gridSize: number, checkerSize: number) => void;
 }
 
 /** Before the first layout there is no container to constrain to; the fit on first layout does it. */
@@ -84,5 +84,5 @@ export const useViewStore = create<ViewState>()((set, get) => ({
   setGridEnabled: (gridEnabled) => set({ gridEnabled }),
   setGridSize: (gridSize) => set({ gridSize }),
   setCheckerSize: (checkerSize) => set({ checkerSize }),
-  resetGrid: (gridSize) => set({ gridSize, checkerSize: DEFAULT_CHECKER_SIZE }),
+  resetGrid: (gridSize, checkerSize) => set({ gridSize, checkerSize }),
 }));

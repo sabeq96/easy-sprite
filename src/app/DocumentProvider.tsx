@@ -4,6 +4,7 @@ import type { SpriteDocument } from "@/core/document";
 import { Autosave, type SaveStatus } from "@/services/autosave";
 import { openDocument } from "@/services/documentService";
 import { spriteSaveSource } from "@/services/spriteSaveSource";
+import { loadDefaults } from "@/stores/useDefaultsStore";
 
 export interface DocumentSession {
   doc: SpriteDocument;
@@ -49,8 +50,9 @@ export function DocumentProvider({
     let disposed = false;
     let controller: Autosave | null = null;
 
-    void openDocument(spriteId)
-      .then((doc) => {
+    // The editor applies the user's defaults as it opens, so they must be loaded first.
+    void Promise.all([openDocument(spriteId), loadDefaults()])
+      .then(([doc]) => {
         if (disposed) return;
         controller = new Autosave(spriteSaveSource(doc), setSaveStatus);
         const history = new History();
