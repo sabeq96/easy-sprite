@@ -3,6 +3,7 @@ import { clearAllData, exportBackup, importBackup, validateBackup } from "@/db/b
 import { downloadJson } from "@/export/download";
 import { runWithToast, useAsyncAction } from "@/hooks/useAsyncAction";
 import { plural } from "@/lib/format";
+import { reloadDefaults } from "@/stores/useDefaultsStore";
 import type { BackupFile, ImportMode } from "@/types/backup";
 
 /** Whole-database backup, restore and wipe, with their user-facing feedback built in. */
@@ -41,6 +42,7 @@ export function useBackupActions() {
       toast.error(result.error);
       return;
     }
+    await reloadDefaults();
     const { sprites, spritesheets, skipped } = result.value;
     const parts = [plural(sprites, "sprite")];
     if (spritesheets > 0) parts.push(plural(spritesheets, "spritesheet"));
@@ -49,7 +51,13 @@ export function useBackupActions() {
   };
 
   const clearAll = () =>
-    runWithToast(clearAllData, { success: () => "All data deleted", error: "Could not delete data." });
+    runWithToast(
+      async () => {
+        await clearAllData();
+        await reloadDefaults();
+      },
+      { success: () => "All data deleted", error: "Could not delete data." },
+    );
 
   return { exportAll, readFile, restore, clearAll };
 }

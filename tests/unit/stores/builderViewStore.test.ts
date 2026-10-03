@@ -66,11 +66,16 @@ describe("builder view store", () => {
     expect(store().gridSize).toBe(8);
   });
 
-  it("resetGrid sets the grid to the sheet's tile and the chessboard back to 1px", () => {
+  it("resetGrid sets the grid and the chessboard to the given sizes", () => {
     store().setCheckerSize(8);
-    store().resetGrid(24);
+    store().resetGrid(24, 4);
     expect(store().gridSize).toBe(24);
-    expect(store().checkerSize).toBe(1);
+    expect(store().checkerSize).toBe(4);
+  });
+
+  it("setGridEnabled turns the grid on or off", () => {
+    store().setGridEnabled(false);
+    expect(store().gridEnabled).toBe(false);
   });
 
   it("zooms up to 12×", () => {

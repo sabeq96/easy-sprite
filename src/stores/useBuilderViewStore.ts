@@ -20,10 +20,11 @@ export interface BuilderViewState {
   /** Largest ladder step at which `sheet` (in sprite px) still fits the panel. */
   fit: (sheet: Size) => void;
   toggleGrid: () => void;
+  setGridEnabled: (enabled: boolean) => void;
   setGridSize: (size: number) => void;
   setCheckerSize: (size: number) => void;
-  /** Grid to `gridSize` (the sheet's tile), chessboard to its default — done whenever a sheet opens. */
-  resetGrid: (gridSize: number) => void;
+  /** Grid and chessboard to the sizes a sheet opens with. */
+  resetGrid: (gridSize: number, checkerSize: number) => void;
   setContainerSize: (size: Size) => void;
 }
 
@@ -60,8 +61,9 @@ export const useBuilderViewStore = create<BuilderViewState>()((set) => ({
     }),
 
   toggleGrid: () => set(({ gridEnabled }) => ({ gridEnabled: !gridEnabled })),
+  setGridEnabled: (gridEnabled) => set({ gridEnabled }),
   setGridSize: (gridSize) => set({ gridSize }),
   setCheckerSize: (checkerSize) => set({ checkerSize }),
-  resetGrid: (gridSize) => set({ gridSize, checkerSize: DEFAULT_CHECKER_SIZE }),
+  resetGrid: (gridSize, checkerSize) => set({ gridSize, checkerSize }),
   setContainerSize: (containerSize) => set({ containerSize }),
 }));

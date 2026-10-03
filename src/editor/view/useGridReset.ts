@@ -1,19 +1,26 @@
 import { useEffect } from "react";
 import { useDocumentSession } from "@/app/DocumentProvider";
-import { defaultGridSize } from "@/core/grid";
+import { openGridSize } from "@/core/grid";
 import { useDocumentSnapshot } from "@/hooks/useDocumentSnapshot";
+import { useDefaultsStore } from "@/stores/useDefaultsStore";
 import { useViewStore } from "./store";
 
 /**
- * Grid to one tile, chessboard to one pixel — whenever a sprite opens or its tile size changes.
- * Anything the user sets in between is session-only.
+ * Grid and chessboard to the user's defaults whenever a sprite opens or its tile size changes, and
+ * the grid on or off whenever a sprite opens. Anything the user sets in between is session-only.
  */
 export function useGridReset(): void {
   const { doc } = useDocumentSession();
   const { tileSize } = useDocumentSnapshot(doc);
   const resetGrid = useViewStore((state) => state.resetGrid);
+  const setGridEnabled = useViewStore((state) => state.setGridEnabled);
 
   useEffect(() => {
-    resetGrid(defaultGridSize(tileSize, doc.width, doc.height));
+    const { gridSize, checkerSize } = useDefaultsStore.getState().defaults;
+    resetGrid(openGridSize(gridSize, tileSize, doc.width, doc.height), checkerSize);
   }, [doc, tileSize, resetGrid]);
+
+  useEffect(() => {
+    setGridEnabled(useDefaultsStore.getState().defaults.gridEnabled);
+  }, [doc, setGridEnabled]);
 }

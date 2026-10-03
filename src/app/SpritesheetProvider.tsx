@@ -5,6 +5,7 @@ import { History } from "@/core/history";
 import { SpritesheetDocument } from "@/core/spritesheetDocument";
 import { Autosave, type SaveStatus } from "@/services/autosave";
 import { spritesheetSaveSource } from "@/services/spritesheetSaveSource";
+import { loadDefaults } from "@/stores/useDefaultsStore";
 
 export interface SpritesheetSession {
   doc: SpritesheetDocument;
@@ -54,9 +55,9 @@ export function SpritesheetProvider({
     let autosave: Autosave | null = null;
 
     // A read that fails is treated like a missing sheet: there is nothing to edit either way.
-    void findSpritesheet(spritesheetId)
-      .catch(() => undefined)
-      .then((record) => {
+    // The builder applies the user's defaults as it opens, so they load alongside the sheet.
+    void Promise.all([findSpritesheet(spritesheetId).catch(() => undefined), loadDefaults()])
+      .then(([record]) => {
         if (disposed) return;
         if (!record) {
           setState({ status: "missing", spritesheetId });

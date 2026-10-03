@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { STARTER_PALETTES } from "@/constants/palettes";
+import { SETTING_KEYS } from "@/constants/settings";
 import { db } from "@/db/db";
 import { clearAllData, exportBackup, importBackup, validateBackup } from "@/db/backup";
 import { flushCels } from "@/db/repositories/cels";
@@ -53,6 +54,18 @@ describe("backup", () => {
       "#00ff00",
     ]);
     expect((await db.settings.get("view.grid"))?.value).toBe(false);
+  });
+
+  it("round-trips the defaults row", async () => {
+    const defaults = { gridEnabled: false, previewFps: 12, tileSize: 32 };
+    await writeSetting(SETTING_KEYS.defaults, defaults);
+    const backup = await exportBackup();
+
+    await clearAllData();
+    expect(await db.settings.get(SETTING_KEYS.defaults)).toBeUndefined();
+
+    await importBackup(backup, "replace");
+    expect((await db.settings.get(SETTING_KEYS.defaults))?.value).toEqual(defaults);
   });
 
   it("compresses cel data rather than storing raw arrays", async () => {

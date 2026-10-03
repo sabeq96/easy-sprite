@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { defaultGridSize, snapTileSize, tileSizeOptions } from "@/core/grid";
+import { defaultGridSize, openGridSize, snapTileSize, tileSizeOptions } from "@/core/grid";
 
 describe("tileSizeOptions", () => {
   it("only includes sizes that evenly divide both dimensions", () => {
@@ -38,5 +38,16 @@ describe("defaultGridSize", () => {
   it("falls back to the even divisor closest to 16 when no preset fits", () => {
     expect(defaultGridSize(undefined, 20, 30)).toBe(10);
     expect(defaultGridSize(undefined, 17, 20)).toBe(1);
+  });
+});
+
+describe("openGridSize", () => {
+  it('"tile" opens with the same grid as defaultGridSize', () => {
+    expect(openGridSize("tile", 16, 32, 32)).toBe(16);
+    expect(openGridSize("tile", undefined, 24, 24)).toBe(defaultGridSize(undefined, 24, 24));
+  });
+
+  it("a fixed size passes through", () => {
+    expect(openGridSize(8, 16, 32, 32)).toBe(8);
   });
 });
