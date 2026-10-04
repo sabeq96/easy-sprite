@@ -12,10 +12,13 @@ import type { PointerModifiers } from "@/framework/host";
 import type { ToolPoint } from "@/framework/tool";
 import { createToolHost, type DocumentToolHost } from "@/editor/canvas/toolHost/createToolHost";
 import { startToolLifecycle } from "@/editor/canvas/useToolLifecycle";
-import { selectedRect, selectTool } from "@/tools/select/tool";
+import { maskHas } from "@/tools/select/mask";
+import { selectedMask, selectedRect, selectTool } from "@/tools/select/tool";
 import { makeDocument, makeGesture, NO_MODIFIERS, RED } from "@test/factories";
 import { moduleContext } from "@test/modules";
 import { resetEditorStores } from "@test/store";
+
+type SelectHost = Parameters<typeof selectTool.onPointerDown>[0];
 
 const CTRL: PointerModifiers = { ...NO_MODIFIERS, ctrl: true };
 
@@ -52,7 +55,7 @@ interface Stroke {
 
 /** A gesture through the same calls usePointerPaint makes, on one pinned surface. */
 function stroke(modifiers = NO_MODIFIERS): Stroke {
-  const toolHost = host.forTool("select");
+  const toolHost = host.forTool("select") as SelectHost;
   const recorder = new StrokeRecorder(doc, "Select & move");
   let first: ReturnType<typeof makeGesture> | null = null;
   let previous: ToolPoint = { x: 0, y: 0 };
@@ -118,7 +121,7 @@ describe("select tool: selecting", () => {
 
   it("hovering the selection asks for a grab cursor", () => {
     gesture([{ x: 1, y: 1 }, { x: 2, y: 2 }]);
-    const toolHost = host.forTool("select");
+    const toolHost = host.forTool("select") as SelectHost;
     expect(selectTool.onHover!(toolHost, { x: 2, y: 1 })).toBe("grab");
     expect(selectTool.onHover!(toolHost, { x: 0, y: 0 })).toBeNull();
     expect(selectTool.onHover!(toolHost, null)).toBeNull();
@@ -252,5 +255,127 @@ describe("select tool: lifecycle", () => {
     run("edit.selectAll");
     doc.resize(8, 8, {}, doc.tileSize);
     expect(selectedRect()).toBeNull();
+  });
+});
+
+describe("select tool: lasso", () => {
+  // A 3-pixel-wide triangle on the 4×4 canvas: (0,0) (2,0) (0,2), closed by the tool.
+  const TRIANGLE = [{ x: 0, y: 0 }, { x: 2, y: 0 }, { x: 0, y: 2 }];
+  const selected = (x: number, y: number) => maskHas(selectedMask()!, x, y);
+
+  beforeEach(() => {
+    useToolboxStore.getState().setSetting("select", "shape", "lasso");
+    const pixels = doc.ensureCel("l1", "f1").pixels;
+    for (const [x, y] of [[0, 0], [1, 0], [2, 0], [0, 1], [1, 1], [0, 2], [2, 2], [3, 3]]) {
+      setPixel(pixels, x, y, 4, RED);
+    }
+  });
+
+  it("selects the traced outline and the interior, joining skipped pixels", () => {
+    gesture(TRIANGLE);
+    expect(selectedRect()).toEqual({ x: 0, y: 0, w: 3, h: 3 });
+    expect([selected(0, 0), selected(1, 0), selected(2, 0), selected(1, 1), selected(0, 2)]).toEqual(
+      [true, true, true, true, true],
+    );
+    expect([selected(2, 1), selected(2, 2), selected(1, 2)]).toEqual([false, false, false]);
+  });
+
+  it("a click selects one pixel, and one drawn off-canvas selects nothing", () => {
+    gesture([{ x: 2, y: 1 }]);
+    expect(selectedRect()).toEqual({ x: 2, y: 1, w: 1, h: 1 });
+
+    gesture([{ x: -3, y: -3 }, { x: -1, y: -1 }]);
+    expect(selectedRect()).toBeNull();
+  });
+
+  it("only the Shape at pointer down counts; changing it keeps the selection", () => {
+    const drag = stroke();
+    drag.down(TRIANGLE[0]);
+    useToolboxStore.getState().setSetting("select", "shape", "rectangle");
+    drag.move(TRIANGLE[1]);
+    drag.move(TRIANGLE[2]);
+    drag.up();
+    expect(selected(2, 2)).toBe(false);
+    expect(selectedRect()).toEqual({ x: 0, y: 0, w: 3, h: 3 });
+  });
+
+  it("the grab cursor shows only over selected pixels", () => {
+    gesture(TRIANGLE);
+    const toolHost = host.forTool("select") as SelectHost;
+    expect(selectTool.onHover!(toolHost, { x: 1, y: 1 })).toBe("grab");
+    expect(selectTool.onHover!(toolHost, { x: 2, y: 2 })).toBeNull();
+  });
+
+  it("moves only the selected pixels, in one undo step, and the selection follows", () => {
+    gesture(TRIANGLE);
+    gesture([{ x: 0, y: 0 }, { x: 1, y: 1 }]);
+
+    // (2,2) was inside the bounding box but not selected: it stays put.
+    expect(pixel(2, 2)).toEqual(RED);
+    expect(pixel(0, 0).a).toBe(0);
+    expect(pixel(1, 1)).toEqual(RED);
+    expect(selectedRect()).toEqual({ x: 1, y: 1, w: 3, h: 3 });
+    expect(selected(1, 1)).toBe(true);
+    expect(selected(3, 3)).toBe(false);
+
+    history.undo();
+    expect(pixel(0, 0)).toEqual(RED);
+    expect(history.canUndo).toBe(false);
+  });
+
+  it("Ctrl+drag duplicates only the selected pixels", () => {
+    gesture(TRIANGLE);
+    gesture([{ x: 0, y: 0 }, { x: 1, y: 1 }], CTRL);
+    expect(pixel(0, 0)).toEqual(RED);
+    expect(pixel(2, 2)).toEqual(RED);
+    expect(pixel(3, 3)).toEqual(RED);
+    expect(pixel(3, 2).a).toBe(0);
+  });
+
+  it("delete and cut clear only the shape", () => {
+    gesture(TRIANGLE);
+    run("edit.deleteSelection");
+    expect(pixel(1, 1).a).toBe(0);
+    expect(pixel(2, 2)).toEqual(RED);
+    expect(history.undoLabel).toBe("Delete");
+    history.undo();
+
+    gesture(TRIANGLE);
+    run("edit.cut");
+    expect(pixel(0, 2).a).toBe(0);
+    expect(pixel(2, 2)).toEqual(RED);
+    expect(history.undoLabel).toBe("Cut");
+  });
+
+  it("paste writes only the shape, overwrites inside it, and selects it", () => {
+    gesture(TRIANGLE);
+    run("edit.copy");
+    // Blank the area, then colour a pixel outside the shape and one transparent inside it.
+    run("edit.deleteSelection");
+    setPixel(doc.ensureCel("l1", "f1").pixels, 2, 1, 4, RED);
+    setPixel(doc.ensureCel("l1", "f1").pixels, 1, 1, 4, RED);
+
+    run("edit.paste");
+
+    expect(pixel(2, 1)).toEqual(RED);
+    expect(pixel(2, 2)).toEqual(RED);
+    expect(pixel(0, 0)).toEqual(RED);
+    expect(selected(1, 1)).toBe(true);
+    expect(selected(2, 2)).toBe(false);
+  });
+
+  it("select all selects the whole canvas and deselect drops it", () => {
+    run("edit.selectAll");
+    expect(selectedRect()).toEqual({ x: 0, y: 0, w: 4, h: 4 });
+    run("edit.deselect");
+    expect(selectedRect()).toBeNull();
+  });
+
+  it("a locked layer is left unchanged by delete", () => {
+    gesture(TRIANGLE);
+    doc.setLayerProps("l1", { locked: true });
+    run("edit.deleteSelection");
+    expect(pixel(1, 1)).toEqual(RED);
+    expect(history.canUndo).toBe(false);
   });
 });

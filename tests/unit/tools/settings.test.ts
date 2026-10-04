@@ -9,7 +9,7 @@ const EXPECTED: Record<string, readonly string[]> = {
   bucket: [],
   fillSimilar: [],
   picker: ["pickFromComposite"],
-  select: [],
+  select: ["shape"],
 };
 
 const declared = (id: (typeof TOOL_IDS)[number]) => Object.keys(TOOLS[id].settings ?? {});
@@ -24,10 +24,11 @@ describe("tool setting declarations", () => {
     expect(mirroring).toEqual(["pencil"]);
   });
 
-  it("the pencil and eraser each step their own brush size when their key is pressed again", () => {
-    expect(TOOL_IDS.filter((id) => TOOLS[id].reselect)).toEqual(["pencil", "eraser"]);
+  it("the pencil and eraser step their brush size, and select steps its shape, when their key is pressed again", () => {
+    expect(TOOL_IDS.filter((id) => TOOLS[id].reselect)).toEqual(["pencil", "eraser", "select"]);
     expect(TOOLS.pencil.reselect).toBe("size");
     expect(TOOLS.eraser.reselect).toBe("size");
+    expect(TOOLS.select.reselect).toBe("shape");
   });
 
   it("mirror horizontally carries the V command; mirror vertically has none", () => {

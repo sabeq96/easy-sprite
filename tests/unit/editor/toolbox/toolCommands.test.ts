@@ -41,6 +41,18 @@ describe("tool commands", () => {
     expect(store.getState().settings.pencil).toEqual({ size: 1 });
   });
 
+  it("pressing the active select tool's key again cycles Rectangle → Lasso → Rectangle without holding", () => {
+    const { store, commands } = setup();
+    store.getState().setTool("select");
+
+    commands["tool.select"]?.hold?.press({ code: "KeyS", at: 0 });
+    expect(store.getState().settings).toEqual({ select: { shape: "lasso" } });
+    expect(store.getState().heldTool).toBeNull();
+
+    commands["tool.select"]?.hold?.press({ code: "KeyS", at: 1 });
+    expect(store.getState().settings.select).toEqual({ shape: "rectangle" });
+  });
+
   it("pressing the active picker's key again does nothing", () => {
     const { store, commands } = setup();
     store.getState().setTool("picker");
@@ -73,6 +85,7 @@ describe("tool commands", () => {
   it("names the press-again row after the setting it cycles", () => {
     expect(reselectLabel(getTool("pencil"))).toBe("Cycle brush size");
     expect(reselectLabel(getTool("eraser"))).toBe("Cycle brush size");
+    expect(reselectLabel(getTool("select"))).toBe("Cycle shape");
     expect(reselectLabel(getTool("picker"))).toBeNull();
   });
 });

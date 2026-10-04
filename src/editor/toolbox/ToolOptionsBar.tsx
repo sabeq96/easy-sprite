@@ -10,6 +10,7 @@ import { Toggle } from "@/components/ui/toggle";
 import { ToggleGroup } from "@/components/ui/toggle-group";
 import type {
   ChoiceSetting,
+  ChoiceValue,
   Setting,
   SwitchSetting,
   ToggleSetting,
@@ -45,27 +46,31 @@ interface ControlProps<S extends Setting, V> {
   onChange: (value: V) => void;
 }
 
-function ChoiceControl({ setting, value, onChange }: ControlProps<ChoiceSetting, number>) {
+function ChoiceControl({ setting, value, onChange }: ControlProps<ChoiceSetting, ChoiceValue>) {
   return (
     <div className="flex items-center gap-1.5">
       <Label size="sm" muted>{setting.label}</Label>
       <ToggleGroup
         value={[String(value)]}
         onValueChange={([next]) => {
-          if (next) onChange(Number(next));
+          const chosen = setting.values.find((option) => String(option) === next);
+          if (chosen !== undefined) onChange(chosen);
         }}
         aria-label={setting.label}
       >
-        {setting.values.map((option) => (
-          <Toggle
-            key={option}
-            value={String(option)}
-            size="sm"
-            aria-label={setting.unit ? `${option} ${setting.unit}` : String(option)}
-          >
-            {option}
-          </Toggle>
-        ))}
+        {setting.values.map((option) => {
+          const text = setting.labels?.[option] ?? String(option);
+          return (
+            <Toggle
+              key={option}
+              value={String(option)}
+              size="sm"
+              aria-label={setting.unit ? `${text} ${setting.unit}` : text}
+            >
+              {text}
+            </Toggle>
+          );
+        })}
       </ToggleGroup>
     </div>
   );
@@ -118,7 +123,7 @@ export function ToolOptionsBar() {
           <ChoiceControl
             key={key}
             setting={setting}
-            value={Number(value)}
+            value={value as ChoiceValue}
             onChange={(next) => set(key, next)}
           />
         );

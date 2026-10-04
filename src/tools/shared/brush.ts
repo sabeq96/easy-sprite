@@ -5,7 +5,7 @@ import { choice, type ChoiceSetting, type Settings } from "@/framework/settings"
 import { brushCursorPainter } from "./brushCursor";
 
 /** A brush size setting. Each tool that declares one remembers its own size. */
-export function brushSize(): ChoiceSetting {
+export function brushSize(): ChoiceSetting<number> {
   return choice({
     label: "Brush size",
     values: BRUSH_SIZES,

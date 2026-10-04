@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { createBuffer, getPixel, setPixel } from "@/core/buffer";
 import { getClipboard, hasClipboard, pasteRect, setClipboard } from "@/tools/select/clipboard";
+import { maskFromRect } from "@/tools/select/mask";
 import { liftRegion, stampRegion, type PixelGrid } from "@/tools/select/region";
 import { BLUE, RED } from "@test/factories";
+
+const rectMask = (rect: { x: number; y: number; w: number; h: number }) =>
+  maskFromRect(rect, 8, 8)!;
 
 /** A blank 4×4 grid. */
 function makeGrid(): PixelGrid {
@@ -14,7 +18,7 @@ describe("lift and stamp", () => {
     const grid = makeGrid();
     setPixel(grid.pixels, 0, 0, 4, RED);
 
-    const floating = liftRegion(grid, { x: 0, y: 0, w: 2, h: 2 }, true);
+    const floating = liftRegion(grid, rectMask({ x: 0, y: 0, w: 2, h: 2 }), true);
     expect(getPixel(grid.pixels, 0, 0, 4).a).toBe(0);
 
     stampRegion(grid, floating, { x: 2, y: 2 });
@@ -25,7 +29,7 @@ describe("lift and stamp", () => {
     const grid = makeGrid();
     setPixel(grid.pixels, 1, 1, 4, RED);
 
-    liftRegion(grid, { x: 1, y: 1, w: 1, h: 1 }, false);
+    liftRegion(grid, rectMask({ x: 1, y: 1, w: 1, h: 1 }), false);
 
     expect(getPixel(grid.pixels, 1, 1, 4)).toEqual(RED);
   });
@@ -35,7 +39,7 @@ describe("lift and stamp", () => {
     setPixel(grid.pixels, 0, 0, 4, RED); // floating selection covers (0,0)-(1,1), only (0,0) painted
     setPixel(grid.pixels, 2, 2, 4, BLUE); // destination pixel that must survive
 
-    const floating = liftRegion(grid, { x: 0, y: 0, w: 2, h: 2 }, false);
+    const floating = liftRegion(grid, rectMask({ x: 0, y: 0, w: 2, h: 2 }), false);
     stampRegion(grid, floating, { x: 2, y: 2 });
 
     expect(getPixel(grid.pixels, 2, 2, 4)).toEqual(RED); // opaque pixel overwrote it
@@ -43,7 +47,7 @@ describe("lift and stamp", () => {
   });
 
   it("lifts transparent pixels from an empty grid", () => {
-    const floating = liftRegion(makeGrid(), { x: 0, y: 0, w: 2, h: 2 }, true);
+    const floating = liftRegion(makeGrid(), rectMask({ x: 0, y: 0, w: 2, h: 2 }), true);
 
     expect(floating.pixels.every((value) => value === 0)).toBe(true);
   });
@@ -52,7 +56,7 @@ describe("lift and stamp", () => {
     const grid = makeGrid();
     setPixel(grid.pixels, 0, 0, 4, RED);
 
-    const floating = liftRegion(grid, { x: 0, y: 0, w: 2, h: 2 }, false);
+    const floating = liftRegion(grid, rectMask({ x: 0, y: 0, w: 2, h: 2 }), false);
 
     expect(stampRegion(grid, floating, { x: 3, y: 3 })).toEqual({ x: 3, y: 3, w: 1, h: 1 });
     expect(stampRegion(grid, floating, { x: 9, y: 9 })).toBeNull();
@@ -62,7 +66,8 @@ describe("lift and stamp", () => {
 describe("clipboard", () => {
   it("keeps its own copy of the pixels", () => {
     const pixels = new Uint8ClampedArray([12, 34, 56, 200]);
-    setClipboard({ rect: { x: 2, y: 2, w: 1, h: 1 }, pixels });
+    const rect = { x: 2, y: 2, w: 1, h: 1 };
+    setClipboard({ rect, mask: rectMask(rect), pixels });
     pixels[0] = 0;
 
     expect(hasClipboard()).toBe(true);
@@ -70,17 +75,20 @@ describe("clipboard", () => {
   });
 
   it("pastes at the original position", () => {
-    const clip = { rect: { x: 1, y: 2, w: 2, h: 2 }, pixels: createBuffer(2, 2) };
+    const rect = { x: 1, y: 2, w: 2, h: 2 };
+    const clip = { rect, mask: rectMask(rect), pixels: createBuffer(2, 2) };
     expect(pasteRect(clip, 4, 4)).toEqual({ x: 1, y: 2, w: 2, h: 2 });
   });
 
   it("nudges a paste in-bounds when it would overflow", () => {
-    const clip = { rect: { x: 3, y: 3, w: 2, h: 2 }, pixels: createBuffer(2, 2) };
+    const rect = { x: 3, y: 3, w: 2, h: 2 };
+    const clip = { rect, mask: rectMask(rect), pixels: createBuffer(2, 2) };
     expect(pasteRect(clip, 4, 4)).toEqual({ x: 2, y: 2, w: 2, h: 2 });
   });
 
   it("refuses a clip bigger than the canvas", () => {
-    const clip = { rect: { x: 0, y: 0, w: 5, h: 1 }, pixels: createBuffer(5, 1) };
+    const rect = { x: 0, y: 0, w: 5, h: 1 };
+    const clip = { rect, mask: rectMask(rect), pixels: createBuffer(5, 1) };
     expect(pasteRect(clip, 4, 4)).toBeNull();
   });
 });

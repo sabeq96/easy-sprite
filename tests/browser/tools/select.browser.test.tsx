@@ -281,3 +281,40 @@ test("the selection fill draws above the grid lines", async () => {
   const { rgb } = overlayAt(onLine);
   expect(distance(rgb, SELECTION_RGB)).toBeLessThan(distance(rgb, GRID_RGB));
 });
+
+test("the select tool offers a Shape group with Rectangle and Lasso", async () => {
+  const editor = await openEditor();
+  await chooseTool(editor, "Select & move");
+
+  const shape = editor.screen.getByRole("group", { name: "Shape" });
+  await expect.element(shape.getByRole("button", { name: "Rectangle" })).toBeVisible();
+  await expect.element(shape.getByRole("button", { name: "Lasso" })).toBeVisible();
+});
+
+test("pressing S while Select & move is active cycles the Shape", async () => {
+  const editor = await openEditor();
+  await chooseTool(editor, "Select & move");
+
+  pressKey("s", "KeyS", 0, 50);
+
+  expect(useToolboxStore.getState().settings.select).toEqual({ shape: "lasso" });
+  expect(useToolboxStore.getState().toolId).toBe("select");
+});
+
+test("a Lasso drag then Delete clears exactly the traced shape, and undo restores it", async () => {
+  const editor = await openEditor();
+  await chooseTool(editor, "Paint bucket");
+  editor.click({ x: 0, y: 0 });
+  await chooseTool(editor, "Select & move");
+  useToolboxStore.getState().setSetting("select", "shape", "lasso");
+
+  // A right triangle: (4,4) (7,4) (4,7), closed by a straight line back to the start.
+  editor.drag([{ x: 4, y: 4 }, { x: 7, y: 4 }, { x: 4, y: 7 }]);
+  await userEvent.keyboard("{Delete}");
+
+  const hole = new Set(keys([[4, 4], [5, 4], [6, 4], [7, 4], [4, 5], [5, 5], [6, 5], [4, 6], [5, 6], [4, 7]].map(([x, y]) => ({ x, y }))));
+  expect(paintedPixels()).toEqual(keys(rectPoints(0, 0, 16, 16)).filter((key) => !hole.has(key)));
+
+  await userEvent.keyboard(KEYS.undo);
+  expect(paintedPixels()).toHaveLength(256);
+});
