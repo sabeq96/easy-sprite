@@ -31,6 +31,7 @@ test("the Editor's Keyboard shortcuts lists its groups and rows in a fixed order
       "Fill similar",
       "Color picker",
       "Select & move",
+      "Cycle shape",
       "Mirror horizontally",
       "Use a tool until you let go",
     ],

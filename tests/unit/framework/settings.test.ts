@@ -48,7 +48,13 @@ describe("nextChoice", () => {
     expect(steps).toEqual([2, 3, 4, 6, 8, 1]);
   });
 
-  it("goes to the next value above one that is not in the list", () => {
-    expect(nextChoice(SETTINGS.size, 5)).toBe(6);
+  it("steps an unknown value to the first value", () => {
+    expect(nextChoice(SETTINGS.size, 5)).toBe(1);
+  });
+
+  it("steps string values by position and wraps", () => {
+    const shape = choice({ label: "Shape", values: ["rectangle", "lasso"], default: "rectangle" });
+    expect(nextChoice(shape, "rectangle")).toBe("lasso");
+    expect(nextChoice(shape, "lasso")).toBe("rectangle");
   });
 });
