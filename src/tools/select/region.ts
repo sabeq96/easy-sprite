@@ -9,7 +9,7 @@ export interface PixelGrid {
   height: number;
 }
 
-export interface LiftedRegion {
+export interface FloatingSelection {
   rect: Rect;
   pixels: PixelBuffer;
   /** Raster of `pixels`, for cheap overlay drawing while dragging. */
@@ -17,7 +17,7 @@ export interface LiftedRegion {
 }
 
 /** Copies — and optionally clears — a region of the grid. */
-export function liftRegion(grid: PixelGrid, rect: Rect, cut: boolean): LiftedRegion {
+export function liftRegion(grid: PixelGrid, rect: Rect, cut: boolean): FloatingSelection {
   const pixels = cropRegion(grid.pixels, grid.width, rect);
   if (cut) clearRegion(grid.pixels, grid.width, rect);
 
@@ -28,12 +28,12 @@ export function liftRegion(grid: PixelGrid, rect: Rect, cut: boolean): LiftedReg
 }
 
 /**
- * Stamps a lifted region back at `at`, skipping transparent pixels so it does not punch holes.
+ * Stamps a floating selection back at `at`, skipping transparent pixels so it does not punch holes.
  * Returns the rect written, clamped to the grid; null when it falls entirely outside.
  */
 export function stampRegion(
   grid: PixelGrid,
-  region: LiftedRegion,
+  region: FloatingSelection,
   at: { x: number; y: number },
 ): Rect | null {
   const target = rectClamp({ ...region.rect, x: at.x, y: at.y }, grid.width, grid.height);

@@ -1,7 +1,7 @@
 import type { OverlayPaint } from "@/framework/host";
 import type { ToolPoint } from "@/framework/tool";
 import type { Rect } from "@/lib/rect";
-import type { LiftedRegion } from "./region";
+import type { FloatingSelection } from "./region";
 
 // Same flat-fill language as the brush preview (brushCursor.ts), in blue.
 const SELECTION_FILL = "rgba(59,130,246,0.35)";
@@ -11,7 +11,7 @@ export interface SelectionView {
   /** Already clamped to the sprite. */
   rect: Rect | null;
   /** Pixels being dragged, drawn at `region.rect + offset`. */
-  floating: { region: LiftedRegion; offset: { x: number; y: number } } | null;
+  floating: { region: FloatingSelection; offset: { x: number; y: number } } | null;
   /** In-sprite pixel under the pointer, only when it is not over the selection. */
   hover: ToolPoint | null;
 }
