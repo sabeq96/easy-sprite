@@ -31,7 +31,7 @@ export function EditorTopBar() {
         variant="ghost"
         nativeButton={false}
         render={
-          <Link to={ROUTES.sprites}>
+          <Link to={ROUTES.library}>
             <ArrowLeft />
           </Link>
         }

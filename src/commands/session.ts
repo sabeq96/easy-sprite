@@ -55,6 +55,6 @@ export const SESSION_COMMANDS = commandsFor<SessionContext>()([
     label: "Back to library",
     group: "App",
     keys: [{ key: "escape", shift: true }],
-    run: ({ navigate }) => navigate(ROUTES.sprites),
+    run: ({ navigate }) => navigate(ROUTES.library),
   },
 ]);

@@ -13,8 +13,10 @@ export function AppRoutes() {
     <Routes>
       <Route element={<RouteErrorBoundary />}>
         <Route element={<AppLayout />}>
-          <Route index element={<Navigate to={ROUTES.sprites} replace />} />
-          <Route path="sprites" element={<LibraryPage />} />
+          <Route index element={<Navigate to={ROUTES.library} replace />} />
+          <Route path="library" element={<LibraryPage />} />
+          {/* The Library's address before it was named; kept so old bookmarks still land. */}
+          <Route path="sprites" element={<Navigate to={ROUTES.library} replace />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>

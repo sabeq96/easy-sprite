@@ -93,7 +93,7 @@ function SpritesheetBuilderShell() {
             className="shrink-0"
             nativeButton={false}
             render={
-              <Link to={ROUTES.sprites}>
+              <Link to={ROUTES.library}>
                 <ArrowLeft />
               </Link>
             }

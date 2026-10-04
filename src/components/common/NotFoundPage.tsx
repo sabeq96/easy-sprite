@@ -25,7 +25,7 @@ export function NotFoundPage() {
         <Button
           variant="outline"
           nativeButton={false}
-          render={<Link to={ROUTES.sprites}>Back to library</Link>}
+          render={<Link to={ROUTES.library}>Back to library</Link>}
         />
       </EmptyContent>
     </Empty>

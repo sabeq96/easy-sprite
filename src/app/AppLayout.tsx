@@ -5,7 +5,7 @@ import { Separator } from "@/components/ui/separator";
 import { ROUTES } from "@/constants/routes";
 
 const NAV_ITEMS = [
-  { to: ROUTES.sprites, label: "Library", icon: Images },
+  { to: ROUTES.library, label: "Library", icon: Images },
   { to: ROUTES.settings, label: "Settings", icon: Settings },
 ];
 

@@ -13,7 +13,7 @@ import { KEYS, mod } from "@test/editor";
 import { render } from "@test/render";
 
 test("creating a spritesheet from the library opens the Builder, and it lists with a sheet badge", async () => {
-  const screen = await render(<AppRoutes />, { route: "/sprites" });
+  const screen = await render(<AppRoutes />, { route: "/library" });
 
   // "New spritesheet" lives behind the create button's chevron, next to the main "New sprite".
   await userEvent.click(screen.getByRole("button", { name: "More ways to create" }));

@@ -25,7 +25,7 @@ const openSprite = async (id: string) => {
 
 test("new sprite and new spritesheet dialogs start from the defaults", async () => {
   setDefaults({ tileSize: 32, spriteColumns: 3, spriteRows: 1 });
-  const screen = await render(<AppRoutes />, { route: "/sprites" });
+  const screen = await render(<AppRoutes />, { route: "/library" });
 
   await userEvent.click(screen.getByRole("button", { name: "New sprite", exact: true }).first());
   await expect.element(screen.getByRole("button", { name: "32×32" })).toHaveAttribute("aria-pressed", "true");
