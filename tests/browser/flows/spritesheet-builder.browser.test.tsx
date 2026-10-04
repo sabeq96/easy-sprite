@@ -47,7 +47,7 @@ test("the Builder header exposes export and a save indicator, like the sprite ed
   await expect.element(screen.getByRole("status", { name: "Saved" })).toBeVisible();
 });
 
-test("the Builder's palette lists sprites to drag onto the canvas", async () => {
+test("the Builder's Sprite tray lists sprites to drag onto the canvas", async () => {
   await createSprite({ name: "Hero", width: 8, height: 8 });
   const sheet = await createSpritesheet({ name: "Composed" });
 
@@ -57,7 +57,7 @@ test("the Builder's palette lists sprites to drag onto the canvas", async () => 
   await expect.element(screen.getByRole("button", { name: "Export" })).toBeVisible();
 });
 
-test("a sprite already on the sheet drops out of the palette until it is removed", async () => {
+test("a sprite already on the sheet drops out of the Sprite tray until it is removed", async () => {
   const placed = await createSprite({ name: "Hero", width: 8, height: 8 });
   await createSprite({ name: "Villain", width: 8, height: 8 });
   const sheet = await createSpritesheet({ name: "Composed" });
@@ -82,7 +82,7 @@ test("a sprite already on the sheet drops out of the palette until it is removed
   (removeHero.element() as HTMLElement).focus();
   await userEvent.keyboard("{Enter}");
 
-  // Removing it from the canvas returns it to the palette.
+  // Removing it from the canvas returns it to the Sprite tray.
   await expect
     .element(screen.getByRole("button", { name: "Drag Hero onto the sheet" }))
     .toBeVisible();

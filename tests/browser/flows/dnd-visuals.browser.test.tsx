@@ -171,7 +171,7 @@ test("holding a sprite from the dock over a row opens a gap for it before the dr
   const tile = await settled(() => document.querySelector('[aria-label="Drag Mage onto the sheet"]'));
   const a = (await settled(() => document.querySelector('[data-block-id="a"]'))).getBoundingClientRect();
   const bBefore = document.querySelector('[data-block-id="b"]')!.getBoundingClientRect();
-  const dockTop = () => document.querySelector('[data-testid="builder-palette"]')!.getBoundingClientRect().top;
+  const dockTop = () => document.querySelector('[data-testid="sprite-tray"]')!.getBoundingClientRect().top;
   const dockBefore = dockTop();
   // The right half of A: the stand-in should open between A and B.
   const to = { x: a.left + a.width * 0.75, y: a.top + a.height / 2 };

@@ -68,7 +68,7 @@ function SpritesheetBuilderShell() {
   const placedSpriteIds = new Set(dnd.blocks.map((block) => block.spriteId));
 
   const renderPreview = (data: DragData) => {
-    if (data.type === "palette") {
+    if (data.type === "tray") {
       return <SpriteTilePreview name={data.name} thumbnail={data.thumbnail} />;
     }
     const block = dnd.blocks.find((entry) => entry.id === data.blockId);

@@ -223,11 +223,11 @@ test("a block alone in its row, dragged down into the next row, lands in that ro
   await builderSaveSettled();
 });
 
-test("a block dragged back onto the dock leaves the sheet and returns to the palette", async () => {
+test("a block dragged back onto the dock leaves the sheet and returns to the Sprite tray", async () => {
   const { sheetId } = await sheetWith(["Hero"], ([hero]) => [{ id: "a", spriteId: hero, row: 0 }]);
   await blocksRendered(1);
 
-  await dragElementOnto(await block("a"), await byTestId("builder-palette"), { x: 300, y: 60 }, SETTLE);
+  await dragElementOnto(await block("a"), await byTestId("sprite-tray"), { x: 300, y: 60 }, SETTLE);
 
   await expect.poll(() => blocksOf(sheetId)).toEqual([]);
   await expect.poll(() => tileEl("Hero")).toBeTruthy();

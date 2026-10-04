@@ -1,5 +1,5 @@
 import { Search } from "lucide-react";
-import { PALETTE_DROP_ID, type DragData } from "@/hooks/useBuilderDnd";
+import { TRAY_DROP_ID, type DragData } from "@/hooks/useBuilderDnd";
 import { Panel } from "@/components/common/Panel";
 import { Input } from "@/components/ui/input";
 import type { SpriteRecord } from "@/db/schema";
@@ -24,11 +24,11 @@ export function SpriteTray({ placedSpriteIds }: SpriteTrayProps) {
   const library = useLibrary("sprite");
   const sprites = library.items.flatMap((item) => (item.kind === "sprite" ? [item.record] : []));
   const available = sprites.filter((sprite) => !placedSpriteIds.has(sprite.id));
-  const { ref, dropClass } = useDropZone({ id: PALETTE_DROP_ID, collision: "pointer" });
+  const { ref, dropClass } = useDropZone({ id: TRAY_DROP_ID, collision: "pointer" });
 
   return (
     <Panel
-      render={<div ref={ref} data-testid="builder-palette" />}
+      render={<div ref={ref} data-testid="sprite-tray" />}
       className={cn("flex h-32 shrink-0 flex-col gap-2 p-2", dropClass)}
     >
       <div className="relative">
@@ -59,9 +59,9 @@ export function SpriteTray({ placedSpriteIds }: SpriteTrayProps) {
 }
 
 function SpriteTrayItem({ sprite }: { sprite: SpriteRecord }) {
-  const { dragProps, dragClass } = useDragSource(`palette:${sprite.id}`, {
+  const { dragProps, dragClass } = useDragSource(`tray:${sprite.id}`, {
     data: {
-      type: "palette",
+      type: "tray",
       spriteId: sprite.id,
       name: sprite.name,
       thumbnail: sprite.thumbnail,

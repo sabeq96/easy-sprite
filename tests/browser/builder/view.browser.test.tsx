@@ -289,7 +289,7 @@ test("the whole sheet area shows the checkerboard at checkerboard size × zoom, 
   expect(block.style.backgroundImage).toBe("");
 });
 
-test("a library too big for one palette row scrolls in the dock instead of pushing the top bar off screen", async () => {
+test("a library too big for one Sprite tray row scrolls in the dock instead of pushing the top bar off screen", async () => {
   const names = Array.from({ length: 40 }, (_, index) => `Sprite ${index}`);
   const { screen } = await openSheet(names);
   // The dock fills in from its own live query after the page renders.

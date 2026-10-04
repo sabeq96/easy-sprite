@@ -26,15 +26,15 @@ import {
 } from "@/lib/sheetRows";
 
 /**
- * A palette drag carries the sprite's name and thumbnail so the drag preview can be the dock tile
+ * A Sprite tray drag carries the sprite's name and thumbnail so the drag preview can be the dock tile
  * itself. Its footprint on the sheet comes from the sprite record, like every other block's.
  */
 export type DragData =
-  | { type: "palette"; spriteId: string; name: string; thumbnail: Blob | null }
+  | { type: "tray"; spriteId: string; name: string; thumbnail: Blob | null }
   | { type: "block"; blockId: string };
 
 /** The dock is a drop target too: a block dragged back onto it leaves the sheet. */
-export const PALETTE_DROP_ID = "builder-palette";
+export const TRAY_DROP_ID = "sprite-tray";
 export const gutterDropId = (index: number) => `gutter-${index}`;
 
 type DropTarget =
@@ -44,7 +44,7 @@ type DropTarget =
   | { kind: "block"; blockId: string };
 
 function parseTarget(id: string, draft: RowDraft): DropTarget {
-  if (id === PALETTE_DROP_ID) return { kind: "dock" };
+  if (id === TRAY_DROP_ID) return { kind: "dock" };
   if (id.startsWith("gutter-")) return { kind: "gutter", index: Number(id.slice("gutter-".length)) };
   if (id in draft) return { kind: "row", key: id };
   return { kind: "block", blockId: id };
@@ -159,7 +159,7 @@ export function useBuilderDnd(
     const data = operation.source?.data as DragData | undefined;
     // Minted here, outside any state updater: StrictMode runs updaters twice.
     const minted =
-      data?.type === "palette" ? { id: createId(), spriteId: data.spriteId, row: 0 } : null;
+      data?.type === "tray" ? { id: createId(), spriteId: data.spriteId, row: 0 } : null;
     ghostRef.current = minted;
     setGhost(minted);
     showDraft(toRowDraft(blocks));
@@ -173,9 +173,9 @@ export function useBuilderDnd(
     const data = source?.data as DragData | undefined;
     if (!current || !data) return;
 
-    const movingId = data.type === "palette" ? ghostRef.current?.id : data.blockId;
+    const movingId = data.type === "tray" ? ghostRef.current?.id : data.blockId;
     if (!movingId) return;
-    const isGhost = data.type === "palette";
+    const isGhost = data.type === "tray";
 
     const over = target ? parseTarget(String(target.id), current) : null;
 
@@ -218,7 +218,7 @@ export function useBuilderDnd(
     if (canceled || !current || !data) return;
 
     const base = blocks;
-    const movingId = data.type === "palette" ? pending?.id : data.blockId;
+    const movingId = data.type === "tray" ? pending?.id : data.blockId;
     if (!movingId) return;
 
     const over = operation.target ? parseTarget(String(operation.target.id), current) : null;
@@ -235,7 +235,7 @@ export function useBuilderDnd(
     // draft didn't already show — a new row, opened on drop.
     const landed = over?.kind === "gutter" ? withNewRow(current, movingId, over.index) : current;
     const next = fromRows(draftToRows(landed, records));
-    commit(next, data.type === "palette" ? "Add sprite" : "Move sprite");
+    commit(next, data.type === "tray" ? "Add sprite" : "Move sprite");
   };
 
   return {
