@@ -7,7 +7,7 @@ import { openEditor } from "@test/editor";
 import { render } from "@test/render";
 
 /** Each section's heading, then its rows' labels, in the order Keyboard shortcuts shows them. */
-async function sheetOutline() {
+async function shortcutsOutline() {
   await userEvent.keyboard("?");
   const dialog = page.getByRole("dialog", { name: "Keyboard shortcuts" });
   await expect.element(dialog).toBeVisible();
@@ -17,10 +17,10 @@ async function sheetOutline() {
   ]);
 }
 
-test("the editor's Keyboard shortcuts lists its groups and rows in a fixed order", async () => {
+test("the Editor's Keyboard shortcuts lists its groups and rows in a fixed order", async () => {
   await openEditor();
 
-  expect(await sheetOutline()).toEqual([
+  expect(await shortcutsOutline()).toEqual([
     [
       "Tools",
       "Pencil",
@@ -86,7 +86,7 @@ test("the Builder's Keyboard shortcuts lists its groups and rows in a fixed orde
   const screen = await render(<AppRoutes />, { route: `/spritesheets/${sheet.id}` });
   await expect.element(screen.getByTestId("builder-trailing-row")).toBeVisible();
 
-  expect(await sheetOutline()).toEqual([
+  expect(await shortcutsOutline()).toEqual([
     ["Edit", "Undo", "Redo", "Save now"],
     ["View", "Zoom in", "Zoom out", "Fit to window", "Toggle grid", "Zoom"],
     ["App", "Keyboard shortcuts", "Back to library"],
@@ -96,10 +96,10 @@ test("the Builder's Keyboard shortcuts lists its groups and rows in a fixed orde
     .toHaveAccessibleDescription("Every key and gesture the builder understands.");
 });
 
-test("the editor and the builder list the same Toggle grid label", async () => {
+test("the Editor and the Builder list the same Toggle grid label", async () => {
   /** The View rows that name the grid. */
   const gridRows = async () =>
-    (await sheetOutline()).find(([heading]) => heading === "View")?.filter((label) => /grid/i.test(label ?? ""));
+    (await shortcutsOutline()).find(([heading]) => heading === "View")?.filter((label) => /grid/i.test(label ?? ""));
 
   const editor = await openEditor();
   const editorRows = await gridRows();

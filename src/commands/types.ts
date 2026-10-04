@@ -24,7 +24,7 @@ export interface CommandDefinition {
   group: CommandGroup;
   /** The chords that run this command; read by useShortcuts, tooltips and Keyboard shortcuts. */
   keys?: readonly KeyBinding[];
-  /** Computed at read time; surfaces dim disabled commands rather than hiding them. */
+  /** Computed at read time; controls dim disabled commands rather than hiding them. */
   isEnabled?: () => boolean;
   isActive?: () => boolean;
   run: () => void;

@@ -20,7 +20,10 @@ export interface GridOptionsPopoverProps {
   onCheckerSizeChange: (size: number) => void;
 }
 
-/** Grid toggle plus grid and checkerboard size, shared by both editors. Sizes are in sprite px. */
+/**
+ * Grid toggle plus grid and checkerboard size, shared by the Editor and the Builder. Sizes are in
+ * sprite px.
+ */
 export function GridOptionsPopover({
   enabled,
   onEnabledChange,

@@ -32,7 +32,7 @@ export function toGpl(name: string, colors: RGBA[]): string {
   return `${header + body}\n`;
 }
 
-/** One hex colour per line, with or without a leading `#`. */
+/** One hex color per line, with or without a leading `#`. */
 export function parseHexList(text: string): Result<string[]> {
   const colors: string[] = [];
   for (const line of text.split(/\r?\n/)) {

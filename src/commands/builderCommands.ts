@@ -14,8 +14,8 @@ export interface BuilderContext extends SessionContext {
 const view = () => useBuilderViewStore.getState();
 
 /**
- * The Builder's commands: the session commands both surfaces share, then its own view
- * commands over its view store, with the pixel editor's view keys (`SHARED_KEYS`).
+ * The Builder's commands: the session commands both pages share, then its own view
+ * commands over its view store, with the Editor's view keys (`SHARED_KEYS`).
  */
 export const BUILDER_COMMANDS = commandsFor<BuilderContext>()([
   ...SESSION_COMMANDS,

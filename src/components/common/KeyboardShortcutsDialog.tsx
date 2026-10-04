@@ -24,7 +24,7 @@ export interface KeyboardShortcutsDialogProps {
   description: string;
   /** Inputs owned by features rather than commands; each joins the command group it names. */
   hints: readonly HintSection[];
-  /** Sections shown before the command groups, e.g. the pixel editor's tools. */
+  /** Sections shown before the command groups, e.g. the Editor's tools. */
   leadingSections?: readonly ShortcutSection[];
   /** Commands listed in a leading section instead of their group. */
   excludeCommands?: ReadonlySet<string>;

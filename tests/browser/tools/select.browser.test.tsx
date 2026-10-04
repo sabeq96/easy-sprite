@@ -253,7 +253,7 @@ type RGB = [number, number, number];
 const SELECTION_RGB: RGB = [59, 130, 246];
 const GRID_RGB: RGB = [128, 128, 128];
 
-/** The un-premultiplied colour and alpha of the overlay canvas at a CSS point. */
+/** The un-premultiplied color and alpha of the overlay canvas at a CSS point. */
 function overlayAt(css: { x: number; y: number }) {
   const canvas = document.querySelector<HTMLCanvasElement>('canvas[data-canvas="overlay"]')!;
   const dpr = canvas.width / canvas.getBoundingClientRect().width;

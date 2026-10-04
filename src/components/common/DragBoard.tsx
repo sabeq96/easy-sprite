@@ -52,7 +52,7 @@ export function DragBoard<TData>({
     >
       {children}
 
-      {/* Promoted to the top layer while dragging, so a preview can leave a scrolling dock or a
+      {/* Promoted to the top layer while dragging, so a preview can leave a scrolling tray or a
           clipped panel. `fixed` keeps its (empty) element out of layout at rest too — it renders
           where the board does, and would otherwise be one more item in the parent's grid or flex
           row, adding a gap that vanishes the moment a drag starts. */}

@@ -3,7 +3,7 @@ import { commandsFor } from "@/commands/define";
 import { ROUTES } from "@/constants/routes";
 import type { History } from "@/core/history";
 
-/** What every editing surface hands its session commands, whatever document it edits. */
+/** What every editing page hands its session commands, whatever document it edits. */
 export interface SessionContext {
   readonly history: History;
   navigate(to: string): void;
@@ -14,7 +14,7 @@ export interface SessionContext {
 
 /**
  * Undo, redo, save, Keyboard shortcuts and leaving for the library: defined once, bound by both the
- * pixel editor and the Builder, so the two cannot drift apart.
+ * Editor and the Builder, so the two cannot drift apart.
  */
 export const SESSION_COMMANDS = commandsFor<SessionContext>()([
   {
@@ -44,7 +44,7 @@ export const SESSION_COMMANDS = commandsFor<SessionContext>()([
     run: ({ save }) => void save().then(() => toast.success("Saved")),
   },
   {
-    id: "app.shortcutHelp",
+    id: "app.keyboardShortcuts",
     label: "Keyboard shortcuts",
     group: "App",
     keys: [{ key: "?" }],

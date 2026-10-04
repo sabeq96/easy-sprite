@@ -1,10 +1,10 @@
 import type { KeyBinding } from "@/lib/keys";
 
-/** The view commands both the pixel editor and the Builder declare, over their own stores. */
+/** The view commands both the Editor and the Builder declare, over their own stores. */
 export type SharedViewCommandId = "view.zoomIn" | "view.zoomOut" | "view.fit" | "view.toggleGrid";
 
 /**
- * The keys of the shared view commands, so the two surfaces cannot drift apart. The session commands
+ * The keys of the shared view commands, so the two pages cannot drift apart. The session commands
  * (undo, redo, save, help, back) are defined once in `@/commands/session`; every other command
  * declares its keys on its own definition.
  */

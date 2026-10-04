@@ -38,7 +38,7 @@ type HostOverrides = { [K in keyof ToolHost]?: Partial<ToolHost[K]> } & {
 };
 
 /**
- * A ToolHost of plain objects, with spies where a test may assert a call. The primary colour is
+ * A ToolHost of plain objects, with spies where a test may assert a call. The primary color is
  * RED and the secondary BLUE; the document is 4×4 with nothing editable. Typed as whichever
  * tool's host the call site expects.
  */

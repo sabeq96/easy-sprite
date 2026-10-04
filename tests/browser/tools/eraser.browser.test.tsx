@@ -47,7 +47,7 @@ test("an erase stroke clears a gap-free path", async () => {
   expect(paintedPixels().some((key) => key.endsWith(",3"))).toBe(false);
 });
 
-test("the right button erases too — the eraser has no secondary colour to paint", async () => {
+test("the right button erases too — the eraser has no secondary color to paint", async () => {
   const editor = await openEditor();
   await filledCanvasWithEraser(editor);
 

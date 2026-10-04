@@ -59,7 +59,7 @@ describe("bindCommands", () => {
       isEnabled: ({ history }) => history.canUndo,
       run: ({ history }) => history.undo(),
     },
-    { id: "app.shortcutHelp", label: "Keyboard shortcuts", group: "App", run: (ctx) => ctx.showHelp() },
+    { id: "app.keyboardShortcuts", label: "Keyboard shortcuts", group: "App", run: (ctx) => ctx.showHelp() },
   ];
 
   it("binds each definition to the context, in order, keeping its wording and keys", () => {
@@ -67,22 +67,22 @@ describe("bindCommands", () => {
     const ctx = moduleContext({ showHelp });
     const registry = bindCommands(sample, ctx);
 
-    expect(Object.keys(registry)).toEqual(["edit.undo", "app.shortcutHelp"]);
+    expect(Object.keys(registry)).toEqual(["edit.undo", "app.keyboardShortcuts"]);
     expect(registry["edit.undo"]).toMatchObject({ id: "edit.undo", label: "Undo", group: "Edit" });
     expect(registry["edit.undo"]?.keys).toEqual([{ key: "z", mod: true }]);
     expect(registry["edit.undo"]?.isEnabled?.()).toBe(false);
 
-    registry["app.shortcutHelp"]?.run();
+    registry["app.keyboardShortcuts"]?.run();
     expect(showHelp).toHaveBeenCalledOnce();
   });
 
   it("leaves out what a definition does not declare, so toggles stay distinguishable", () => {
     const registry = bindCommands(sample, moduleContext());
 
-    expect(registry["app.shortcutHelp"]?.isActive).toBeUndefined();
-    expect(registry["app.shortcutHelp"]?.isEnabled).toBeUndefined();
-    expect(registry["app.shortcutHelp"]?.keys).toBeUndefined();
-    expect(registry["app.shortcutHelp"]?.hold).toBeUndefined();
+    expect(registry["app.keyboardShortcuts"]?.isActive).toBeUndefined();
+    expect(registry["app.keyboardShortcuts"]?.isEnabled).toBeUndefined();
+    expect(registry["app.keyboardShortcuts"]?.keys).toBeUndefined();
+    expect(registry["app.keyboardShortcuts"]?.hold).toBeUndefined();
   });
 
   it("runs the editor's module commands against the context's document and history", () => {

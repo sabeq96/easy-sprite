@@ -186,7 +186,7 @@ function byPosition(a: string, b: string): number {
   return ay - by || ax - bx;
 }
 
-/** The store's primary/secondary colours as `#rrggbbaa`. */
+/** The store's primary/secondary colors as `#rrggbbaa`. */
 export function activeColors() {
   const { primaryColor, secondaryColor } = usePaletteStore.getState();
   const hex = ({ r, g, b, a }: { r: number; g: number; b: number; a: number }) =>

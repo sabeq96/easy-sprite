@@ -30,7 +30,7 @@ test("creating a spritesheet from the library opens the Builder, and it lists wi
   await expect.element(screen.getByText("Sheet", { exact: true })).toBeVisible();
 });
 
-test("the Builder header exposes export and a save indicator, like the sprite editor", async () => {
+test("the Builder header exposes export and a save indicator, like the Editor", async () => {
   const sheet = await createSpritesheet({ name: "Composed" });
   const screen = await render(<AppRoutes />, { route: `/spritesheets/${sheet.id}` });
 
@@ -253,7 +253,7 @@ test("undo and redo step a removal back and forth, from the keys and the top-bar
     .element(screen.getByRole("button", { name: "Remove Hero", exact: true }))
     .not.toBeInTheDocument();
 
-  // Both redo chords, as in the sprite editor.
+  // Both redo chords, as in the Editor.
   await userEvent.click(screen.getByRole("button", { name: "Undo remove sprite" }));
   await userEvent.keyboard(KEYS.redo);
   expect(sheetSession().doc.blocks).toEqual([]);

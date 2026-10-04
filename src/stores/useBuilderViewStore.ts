@@ -7,7 +7,7 @@ import { clamp, stepLadder } from "@/lib/math";
 export interface BuilderViewState {
   zoom: number;
   gridEnabled: boolean;
-  /** In sprite px, like the pixel editor's. */
+  /** In sprite px, like the Editor's. */
   gridSize: number;
   checkerSize: number;
   /** Last known size of the scrolling sheet panel, so `fit` needs no DOM read at click time. */
@@ -29,10 +29,10 @@ export interface BuilderViewState {
 }
 
 /**
- * The Builder's view state. Separate from the pixel editor's view store on purpose: that store's
+ * The Builder's view state. Separate from the Editor's view store on purpose: that store's
  * viewport carries a pan origin and clamps tied to one sprite's dimensions, and the Builder has no
  * document at all.
- * Session-only, like the pixel editor's own zoom.
+ * Session-only, like the Editor's own zoom.
  */
 export const useBuilderViewStore = create<BuilderViewState>()((set) => ({
   zoom: DEFAULT_BUILDER_ZOOM,

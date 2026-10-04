@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
  * chrome is defined here instead of being retyped at each use site — which is how the borders
  * and ring/shadow treatments drifted apart in the first place.
  *
- * Pass layout (flex, gap, padding, sizing) through `className`; colour, radius, elevation and
+ * Pass layout (flex, gap, padding, sizing) through `className`; color, radius, elevation and
  * the hairline belong to the variant and should never be overridden inline.
  */
 const panelVariants = cva("rounded-xl", {

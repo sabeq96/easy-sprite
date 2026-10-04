@@ -60,7 +60,7 @@ export function EditorTopBar() {
       <div className="ml-auto flex items-center gap-2">
         <ViewControls />
 
-        <CommandButton command="app.shortcutHelp">
+        <CommandButton command="app.keyboardShortcuts">
           <Keyboard />
         </CommandButton>
 

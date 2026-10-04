@@ -21,7 +21,7 @@ describe("pencil", () => {
     expect(getPixel(doc.getCel("l1", "f1")!.pixels, 1, 1, 4)).toEqual(RED);
   });
 
-  it("paints with the secondary colour on a right-button gesture", () => {
+  it("paints with the secondary color on a right-button gesture", () => {
     const doc = makeDocument();
 
     pencilTool.onPointerDown(fakeHost(), makeGesture(doc, { x: 1, y: 1 }, { slot: "secondary" }));
@@ -122,7 +122,7 @@ describe("fill", () => {
     expect(getPixel(cel.pixels, 2, 2, 4)).toEqual(BLUE);
   });
 
-  it("records nothing when filling with the existing colour", () => {
+  it("records nothing when filling with the existing color", () => {
     const doc = makeDocument();
     const recorder = new StrokeRecorder(doc, "Test");
     const host = fakeHost({ colors: { get: () => TRANSPARENT } });
@@ -154,7 +154,7 @@ describe("picker", () => {
     expect(host.colors.set).toHaveBeenCalledWith("primary", RED);
   });
 
-  it("writes the colour to the gesture's slot", () => {
+  it("writes the color to the gesture's slot", () => {
     const doc = makeDocument();
     setPixel(doc.ensureCel("l1", "f1").pixels, 1, 1, 4, BLUE);
     const host: PickerHost = fakeHost({ settings: { pickFromComposite: false } });

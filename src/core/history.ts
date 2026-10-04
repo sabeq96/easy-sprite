@@ -124,7 +124,7 @@ export class StrokeRecorder {
     this.rects.set(key, rectUnion(this.rects.get(key) ?? null, rect));
   }
 
-  /** Null when the stroke changed nothing — e.g. filling with the colour already there. */
+  /** Null when the stroke changed nothing — e.g. filling with the color already there. */
   commit(): Command | null {
     const patches: CelPatch[] = [];
     let bytes = 0;

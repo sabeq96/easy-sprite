@@ -83,7 +83,7 @@ function SpriteTrayItem({ sprite }: { sprite: SpriteRecord }) {
 const TILE_CLASS =
   "flex h-20 w-20 flex-col items-center justify-center gap-1 rounded-md bg-checker-a p-1 ring-1 ring-border";
 
-/** The tile's contents, shared by the dock item and its drag preview. */
+/** The tile's contents, shared by the tray item and its drag preview. */
 export function SpriteTile({ name, thumbnail }: { name: string; thumbnail: Blob | null }) {
   const thumbnailUrl = useBlobUrl(thumbnail);
 
@@ -102,7 +102,7 @@ export function SpriteTile({ name, thumbnail }: { name: string; thumbnail: Blob 
   );
 }
 
-/** The dock tile's own visual, for the board's drag overlay. */
+/** The tray tile's own visual, for the board's drag overlay. */
 export function SpriteTilePreview({ name, thumbnail }: { name: string; thumbnail: Blob | null }) {
   return (
     <div className={TILE_CLASS}>

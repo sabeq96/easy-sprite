@@ -81,7 +81,7 @@ function toolSections(commands: CommandRegistry): ShortcutSection[] {
   });
 }
 
-/** The pixel editor's Keyboard shortcuts: its tools first, then the shared command groups. */
+/** The Editor's Keyboard shortcuts: its tools first, then the shared command groups. */
 export function KeyboardShortcutsDialog({
   commands,
   open,

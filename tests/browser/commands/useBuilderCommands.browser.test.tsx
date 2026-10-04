@@ -48,7 +48,7 @@ test("the Builder's registry files each command under its own id and binds no ch
   expect(duplicates(chords)).toEqual([]);
 });
 
-test("the Builder binds BUILDER_COMMANDS in order, sharing the pixel editor's session commands and view keys", async () => {
+test("the Builder binds BUILDER_COMMANDS in order, sharing the Editor's session commands and view keys", async () => {
   const registry = await builderRegistry();
 
   expect(Object.keys(registry)).toEqual(BUILDER_COMMANDS.map(({ id }) => id));

@@ -158,7 +158,7 @@ test("pencil size 4 → eraser shows 1 → back to pencil shows 4", async () => 
   expect(paintedPixels()).toHaveLength(16);
 });
 
-test("left paints the primary colour and right paints the secondary, both picked from the palette", async () => {
+test("left paints the primary color and right paints the secondary, both picked from the palette", async () => {
   const palette = await createPalette("Test", ["#ff0000", "#00ff00"]);
   const editor = await openEditor();
   usePaletteStore.getState().setActivePalette(palette.id);
@@ -175,7 +175,7 @@ test("left paints the primary colour and right paints the secondary, both picked
   expect([3, 4, 5].map((x) => pixelAt(x, 1))).toEqual(["#00ff00ff", "#00ff00ff", "#00ff00ff"]);
 });
 
-test("a translucent colour blends over what is already there", async () => {
+test("a translucent color blends over what is already there", async () => {
   const editor = await openEditor();
   editor.click({ x: 1, y: 1 }); // opaque black
 

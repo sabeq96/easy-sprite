@@ -52,13 +52,13 @@ test("the bucket fills around the room from outside without leaking in", async (
   expect(paintedPixels()).toHaveLength(256 - 25);
 });
 
-test("fill similar recolours every matching pixel, connected or not", async () => {
+test("fill similar recolors every matching pixel, connected or not", async () => {
   const editor = await openEditor();
   editor.click({ x: 1, y: 1 });
   editor.click({ x: 14, y: 2 });
   editor.click({ x: 8, y: 13 });
   usePaletteStore.getState().setPrimaryColor(BLUE);
-  editor.click({ x: 5, y: 5 }); // a different colour that must survive
+  editor.click({ x: 5, y: 5 }); // a different color that must survive
   await chooseTool(editor, "Fill similar");
   usePaletteStore.getState().setPrimaryColor(RED);
 
@@ -86,7 +86,7 @@ test("fill similar on empty space also reaches inside closed rooms — unlike th
   expect(paintedPixels()).toHaveLength(256);
 });
 
-test("the right button fills with the secondary colour", async () => {
+test("the right button fills with the secondary color", async () => {
   const editor = await openEditor();
   await chooseTool(editor, "Paint bucket");
   usePaletteStore.getState().setSecondaryColor(BLUE);
@@ -113,7 +113,7 @@ test("dragging the bucket is still a single fill and a single undo step", async 
   expect(pixelAt(4, 4)).toBe("#000000ff"); // the box, an earlier step, is still there
 });
 
-test("refilling with the colour already there changes nothing and records no undo step", async () => {
+test("refilling with the color already there changes nothing and records no undo step", async () => {
   const editor = await openEditor();
   editor.click({ x: 2, y: 2 });
   await chooseTool(editor, "Paint bucket");

@@ -40,7 +40,7 @@ export function useColorHotkeys(): void {
       event.preventDefault();
       const color = hexToRgba(hex);
       const store = usePaletteStore.getState();
-      // Shift picks the secondary colour, matching the right-click behaviour on swatches.
+      // Shift picks the secondary color, matching the right-click behaviour on swatches.
       if (event.shiftKey) store.setSecondaryColor(color);
       else store.setPrimaryColor(color);
     };

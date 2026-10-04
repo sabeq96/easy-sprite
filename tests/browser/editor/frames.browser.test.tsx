@@ -212,7 +212,7 @@ test("play is disabled for a single frame, and with two it plays and pauses", as
   expect(useAnimationStore.getState().isPlaying).toBe(false);
 });
 
-/** The preview canvas's colour at the centre of sprite pixel `point` (16px sprite, see paint). */
+/** The preview canvas's color at the centre of sprite pixel `point` (16px sprite, see paint). */
 function previewColorAt(point: { x: number; y: number }) {
   const canvas = document.querySelector<HTMLCanvasElement>("[aria-label='Preview'] canvas")!;
   const scale = Math.max(1, Math.floor(Math.min(canvas.width / 16, canvas.height / 16)));

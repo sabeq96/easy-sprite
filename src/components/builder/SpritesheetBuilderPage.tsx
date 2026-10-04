@@ -129,7 +129,7 @@ function SpritesheetBuilderShell() {
           <div className="ml-auto flex shrink-0 items-center gap-1">
             <BuilderViewControls tileSize={tileSize} />
 
-            <CommandButton command="app.shortcutHelp">
+            <CommandButton command="app.keyboardShortcuts">
               <Keyboard />
             </CommandButton>
 

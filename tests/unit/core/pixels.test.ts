@@ -71,12 +71,12 @@ describe("floodFill", () => {
     expect(getPixel(area.buffer, 1, 1, 3)).not.toEqual(RED);
   });
 
-  it("returns null when filling with the colour already there", () => {
+  it("returns null when filling with the color already there", () => {
     const area = target(2, 2);
     expect(floodFill(area, 0, 0, { r: 0, g: 0, b: 0, a: 0 })).toBeNull();
   });
 
-  it("only fills pixels that match the seed colour exactly", () => {
+  it("only fills pixels that match the seed color exactly", () => {
     const area = target(2, 1);
     setPixel(area.buffer, 0, 0, 2, { r: 100, g: 100, b: 100, a: 255 });
     setPixel(area.buffer, 1, 0, 2, { r: 110, g: 100, b: 100, a: 255 });
@@ -107,7 +107,7 @@ describe("floodFill", () => {
   });
 });
 
-describe("colour sampling", () => {
+describe("color sampling", () => {
   it("measures max-channel distance", () => {
     expect(colorDistance(RED, BLUE)).toBe(255);
     expect(colorDistance(RED, RED)).toBe(0);

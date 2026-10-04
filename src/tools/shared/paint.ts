@@ -17,7 +17,7 @@ export function writePixel(
   if (x < 0 || y < 0 || x >= width || y >= height) return false;
 
   const pixels = surface.buffer();
-  // `replace` for the eraser; blending only matters for a semi-transparent colour.
+  // `replace` for the eraser; blending only matters for a semi-transparent color.
   if (replace || color.a === 255) setPixel(pixels, x, y, width, color);
   else blendPixel(pixels, x, y, width, color);
   return true;

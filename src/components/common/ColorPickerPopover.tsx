@@ -23,13 +23,13 @@ export function ColorPickerPopover({ value, onChange, children }: ColorPickerPop
 }
 
 function ColorPickerBody({ value, onChange }: { value: RGBA; onChange: (color: RGBA) => void }) {
-  // HSV is local state: dragging hue through a fully desaturated colour must not lose the hue.
+  // HSV is local state: dragging hue through a fully desaturated color must not lose the hue.
   const [hsv, setHsv] = useState<HSV>(() => rgbToHsv(value));
   const [alpha, setAlpha] = useState(value.a);
   const [hexDraft, setHexDraft] = useState<string | null>(null);
 
   useEffect(() => {
-    // Re-sync only when the incoming colour is genuinely different from what we produce.
+    // Re-sync only when the incoming color is genuinely different from what we produce.
     if (rgbaToHex(hsvToRgb(hsv, alpha), true) === rgbaToHex(value, true)) return;
     setHsv(rgbToHsv(value));
     setAlpha(value.a);

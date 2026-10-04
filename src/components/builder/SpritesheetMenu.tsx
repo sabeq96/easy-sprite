@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useCommand, useCommandKeys } from "@/commands/CommandsContext";
 
-/** The Builder's ☰ menu, mirroring the sprite editor's: its one size setting, and save. */
+/** The Builder's ☰ menu, mirroring the Editor's: its one size setting, and save. */
 export function SpritesheetMenu() {
   const save = useCommand("edit.save");
   const saveKeys = useCommandKeys("edit.save");

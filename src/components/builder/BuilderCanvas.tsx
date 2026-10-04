@@ -102,7 +102,7 @@ export function BuilderCanvas({ rows, sizes, docs, ghostId, onRemoveBlock }: Bui
 
 /**
  * The ruler. Infinite by construction: a repeating gradient over the whole scrollable sheet. Drawn
- * over the blocks, like the pixel editor's grid over its pixels, so a block's edges can be read
+ * over the blocks, like the Editor's grid over its pixels, so a block's edges can be read
  * against it; pointer-events-none keeps it out of every click and drag.
  */
 function BuilderGrid() {
