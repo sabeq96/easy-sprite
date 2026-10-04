@@ -42,7 +42,7 @@ export function setPixel(
   buffer[index + 3] = color.a;
 }
 
-/** Straight-alpha source-over, used when the active colour is semi-transparent. */
+/** Straight-alpha source-over, used when the active color is semi-transparent. */
 export function blendPixel(
   buffer: PixelBuffer,
   x: number,

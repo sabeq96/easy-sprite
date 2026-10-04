@@ -10,7 +10,7 @@ test("defaults to the primary island treatment", async () => {
   await expect.element(panel).toHaveClass(/bg-card/);
 });
 
-test("the secondary variant swaps the surface colour without a raised shadow", async () => {
+test("the secondary variant swaps the surface color without a raised shadow", async () => {
   const screen = await render(<Panel variant="secondary">Contents</Panel>);
 
   const panel = screen.getByText("Contents");

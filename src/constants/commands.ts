@@ -1,5 +1,5 @@
 /**
- * Every command group, in the order the shortcut sheet lists them. Command ids are not listed
+ * Every command group, in the order Keyboard shortcuts lists them. Command ids are not listed
  * here: they are derived from the definitions that declare them (`@/commands/types`).
  */
 export const COMMAND_GROUPS = [

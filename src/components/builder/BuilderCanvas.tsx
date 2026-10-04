@@ -61,7 +61,7 @@ export function BuilderCanvas({ rows, sizes, docs, ghostId, onRemoveBlock }: Bui
         empty area below the sheet a live drop target rather than dead space.
       */}
       {/*
-        The chessboard covers the whole sheet area, one cell per `checkerSize` sprite px. It sits on
+        The checkerboard covers the whole sheet area, one cell per `checkerSize` sprite px. It sits on
         this element, like the grid, so both line up with the blocks' own sprite-px positions; the
         blocks have no background, and their transparent pixels show it through.
       */}
@@ -102,7 +102,7 @@ export function BuilderCanvas({ rows, sizes, docs, ghostId, onRemoveBlock }: Bui
 
 /**
  * The ruler. Infinite by construction: a repeating gradient over the whole scrollable sheet. Drawn
- * over the blocks, like the pixel editor's grid over its pixels, so a block's edges can be read
+ * over the blocks, like the Editor's grid over its pixels, so a block's edges can be read
  * against it; pointer-events-none keeps it out of every click and drag.
  */
 function BuilderGrid() {

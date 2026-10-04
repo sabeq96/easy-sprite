@@ -16,8 +16,8 @@ import { EditorLoadError } from "./EditorLoadError";
 import { EditorSkeleton } from "./EditorSkeleton";
 import { EditorStatusBar } from "./EditorStatusBar";
 import { EditorTopBar } from "./EditorTopBar";
+import { KeyboardShortcutsDialog } from "./KeyboardShortcutsDialog";
 import { RightSidebar } from "./RightSidebar";
-import { ShortcutHelpDialog } from "./ShortcutHelpDialog";
 import { useModuleContext } from "./useModuleContext";
 
 export function EditorPage() {
@@ -73,7 +73,7 @@ function EditorShell() {
         <FramesBar />
         <EditorStatusBar />
 
-        <ShortcutHelpDialog commands={commands} open={showHelp} onOpenChange={setShowHelp} />
+        <KeyboardShortcutsDialog commands={commands} open={showHelp} onOpenChange={setShowHelp} />
       </div>
     </CommandsProvider>
   );

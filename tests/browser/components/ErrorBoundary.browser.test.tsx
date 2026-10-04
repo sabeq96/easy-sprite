@@ -13,7 +13,7 @@ test("a page that throws while rendering shows the crash view, and navigating aw
     <Routes>
       <Route element={<RouteErrorBoundary />}>
         <Route path="broken" element={<Crashing />} />
-        <Route path="sprites" element={<p>Library</p>} />
+        <Route path="library" element={<p>Library</p>} />
       </Route>
     </Routes>,
     { route: "/broken" },
@@ -22,6 +22,6 @@ test("a page that throws while rendering shows the crash view, and navigating aw
   await expect.element(screen.getByRole("alert")).toMatchTextContent("Something went wrong");
   await expect.element(screen.getByText(/Boom/)).toBeVisible();
 
-  await userEvent.click(screen.getByRole("button", { name: "Back to sprites" }));
+  await userEvent.click(screen.getByRole("button", { name: "Back to library" }));
   await expect.element(screen.getByText("Library")).toBeVisible();
 });

@@ -244,7 +244,7 @@ test("an overflowing sprite pans only until 24px show past its edge", async () =
   expect(viewport().originY).toBe(height - size - 24);
 });
 
-test("the shortcut sheet teaches ⌘/Ctrl+Wheel to zoom and Wheel to pan", async () => {
+test("Keyboard shortcuts teaches ⌘/Ctrl+Wheel to zoom and Wheel to pan", async () => {
   await openEditor(SPRITE);
   await userEvent.keyboard("?");
   const dialog = page.getByRole("dialog", { name: "Keyboard shortcuts" });
@@ -261,7 +261,7 @@ test("the shortcut sheet teaches ⌘/Ctrl+Wheel to zoom and Wheel to pan", async
   expect(rows).toContainEqual(["Pan", "Wheel"]);
 });
 
-test("Ctrl/⌘+G and the grid popover both toggle the pixel grid", async () => {
+test("Ctrl/⌘+G and the grid popover both toggle the grid", async () => {
   const editor = await openEditor(SPRITE);
   const gridButton = editor.screen.getByRole("button", { name: "Grid options" });
   await expect.element(gridButton).toHaveAttribute("aria-pressed", "true");

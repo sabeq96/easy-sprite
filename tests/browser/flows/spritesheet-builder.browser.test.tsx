@@ -12,8 +12,8 @@ import { blocksSized, builderSaveSettled, savedSheet, sheetSession } from "@test
 import { KEYS, mod } from "@test/editor";
 import { render } from "@test/render";
 
-test("creating a spritesheet from the library opens the composer, and it lists with a sheet badge", async () => {
-  const screen = await render(<AppRoutes />, { route: "/sprites" });
+test("creating a spritesheet from the library opens the Builder, and it lists with a sheet badge", async () => {
+  const screen = await render(<AppRoutes />, { route: "/library" });
 
   // "New spritesheet" lives behind the create button's chevron, next to the main "New sprite".
   await userEvent.click(screen.getByRole("button", { name: "More ways to create" }));
@@ -25,12 +25,12 @@ test("creating a spritesheet from the library opens the composer, and it lists w
 
   await expect.element(screen.getByLabelText("Spritesheet name")).toHaveValue("Scene sheet");
 
-  await userEvent.click(screen.getByRole("button", { name: "Back to sprites" }));
+  await userEvent.click(screen.getByRole("button", { name: "Back to library" }));
   await expect.element(screen.getByRole("button", { name: "Open Scene sheet" })).toBeVisible();
   await expect.element(screen.getByText("Sheet", { exact: true })).toBeVisible();
 });
 
-test("the composer header exposes export and a save indicator, like the sprite editor", async () => {
+test("the Builder header exposes export and a save indicator, like the Editor", async () => {
   const sheet = await createSpritesheet({ name: "Composed" });
   const screen = await render(<AppRoutes />, { route: `/spritesheets/${sheet.id}` });
 
@@ -47,7 +47,7 @@ test("the composer header exposes export and a save indicator, like the sprite e
   await expect.element(screen.getByRole("status", { name: "Saved" })).toBeVisible();
 });
 
-test("the composer's palette lists project sprites to drag onto the canvas", async () => {
+test("the Builder's Sprite tray lists sprites to drag onto the canvas", async () => {
   await createSprite({ name: "Hero", width: 8, height: 8 });
   const sheet = await createSpritesheet({ name: "Composed" });
 
@@ -57,7 +57,7 @@ test("the composer's palette lists project sprites to drag onto the canvas", asy
   await expect.element(screen.getByRole("button", { name: "Export" })).toBeVisible();
 });
 
-test("a sprite already on the sheet drops out of the palette until it is removed", async () => {
+test("a sprite already on the sheet drops out of the Sprite tray until it is removed", async () => {
   const placed = await createSprite({ name: "Hero", width: 8, height: 8 });
   await createSprite({ name: "Villain", width: 8, height: 8 });
   const sheet = await createSpritesheet({ name: "Composed" });
@@ -82,7 +82,7 @@ test("a sprite already on the sheet drops out of the palette until it is removed
   (removeHero.element() as HTMLElement).focus();
   await userEvent.keyboard("{Enter}");
 
-  // Removing it from the canvas returns it to the palette.
+  // Removing it from the canvas returns it to the Sprite tray.
   await expect
     .element(screen.getByRole("button", { name: "Drag Hero onto the sheet" }))
     .toBeVisible();
@@ -102,6 +102,9 @@ test("a persisted block renders on the canvas and can be removed", async () => {
   // name concatenates the nested remove button's label with the block's visible name.
   const removeButton = screen.getByRole("button", { name: "Remove Hero", exact: true });
   await expect.element(removeButton).toBeInTheDocument();
+  await expect
+    .element(screen.getByText("Every matching sprite is already on this spritesheet."))
+    .toBeVisible();
 
   // 16×16 at 4× is a 64px block, big enough to draw its ✕ — clicked with the pointer, on hover.
   await userEvent.hover(document.querySelector("[data-block-id]")!);
@@ -131,7 +134,7 @@ test("Export downloads the composed sheet as a PNG in one click", async () => {
   createObjectURL.mockRestore();
 });
 
-test("the composer header keeps Export reachable in a narrow window", async () => {
+test("the Builder header keeps Export reachable in a narrow window", async () => {
   await page.viewport(640, 720);
   const sheet = await createSpritesheet({ name: "A spritesheet with a rather long name indeed" });
   const screen = await render(<AppRoutes />, { route: `/spritesheets/${sheet.id}` });
@@ -202,7 +205,7 @@ test("on a block too small to show it, the remove button appears in the corner w
   await expect.poll(() => getComputedStyle(button).opacity).toBe("1");
 });
 
-/** A sheet holding one 16×16 Hero block, opened in the composer. */
+/** A sheet holding one 16×16 Hero block, opened in the Builder. */
 async function openHeroSheet() {
   await page.viewport(1280, 720);
   const sprite = await createSprite({ name: "Hero", width: 16, height: 16 });
@@ -250,7 +253,7 @@ test("undo and redo step a removal back and forth, from the keys and the top-bar
     .element(screen.getByRole("button", { name: "Remove Hero", exact: true }))
     .not.toBeInTheDocument();
 
-  // Both redo chords, as in the sprite editor.
+  // Both redo chords, as in the Editor.
   await userEvent.click(screen.getByRole("button", { name: "Undo remove sprite" }));
   await userEvent.keyboard(KEYS.redo);
   expect(sheetSession().doc.blocks).toEqual([]);
@@ -291,12 +294,12 @@ test("the menu's Save now writes pending edits", async () => {
   await builderSaveSettled();
 });
 
-test("leaving the composer saves what was still pending", async () => {
+test("leaving the Builder saves what was still pending", async () => {
   const { screen, sheetId, removeHero } = await openHeroSheet();
   await removeBlock(removeHero);
   expect((await getSpritesheet(sheetId)).blocks).toHaveLength(1);
 
-  await userEvent.click(screen.getByRole("button", { name: "Back to sprites" }));
+  await userEvent.click(screen.getByRole("button", { name: "Back to library" }));
   await expect.poll(async () => (await getSpritesheet(sheetId)).blocks).toEqual([]);
   // The thumbnail follows the blocks; let it land before teardown closes the database.
   await expect.poll(async () => (await getSpritesheet(sheetId)).thumbnail).not.toBeUndefined();

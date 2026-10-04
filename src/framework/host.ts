@@ -18,7 +18,7 @@ export interface ToolHost<S extends Settings = Settings> {
   readonly tool: ToolControl<S>;
 }
 
-/** Which colour a gesture paints or picks with: the left button is primary, the right secondary. */
+/** Which color a gesture paints or picks with: the left button is primary, the right secondary. */
 export type ColorSlot = "primary" | "secondary";
 
 /** A painter's context as a tool sees it: everything but the document. */

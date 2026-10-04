@@ -17,7 +17,7 @@ export interface BuilderBlockProps {
   rowKey: string;
   size: BlockSize | undefined;
   doc: SpriteDocument | undefined;
-  /** The stand-in for a sprite still being dragged in from the dock. */
+  /** The stand-in for a sprite still being dragged in from the Sprite tray. */
   isGhost: boolean;
   onRemove: () => void;
 }

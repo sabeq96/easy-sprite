@@ -28,7 +28,7 @@ It's made **from developer, for developers**. If something annoys you, it probab
   - **Frames & animation**
   - **Palettes**
 
-- **Sprite library**
+- **Library**
 - **Spritesheet builder**
 - **PNG export**
 - **Local-first storage & backups**
@@ -42,11 +42,11 @@ Draw with a pencil (sizes 1–8, with mirroring), eraser, paint bucket, fill sim
 
 ![Sprite editor](.readme/editor.png)
 
-### Sprite library
+### Library
 
-Every sprite in one gallery with thumbnails. Search, filter by tags, sort, and rename, duplicate, or delete them. It's all stored locally in your browser and autosaved.
+Every sprite and spritesheet in one place, with thumbnails. Search, filter by tags, sort, and rename, duplicate, or delete them. It's all stored locally in your browser and autosaved.
 
-![Sprite library](.readme/library.png)
+![Library](.readme/library.png)
 
 ### Spritesheet builder
 

@@ -26,25 +26,25 @@ import {
 } from "@/lib/sheetRows";
 
 /**
- * A palette drag carries the sprite's name and thumbnail so the drag preview can be the dock tile
+ * A Sprite tray drag carries the sprite's name and thumbnail so the drag preview can be the tray tile
  * itself. Its footprint on the sheet comes from the sprite record, like every other block's.
  */
 export type DragData =
-  | { type: "palette"; spriteId: string; name: string; thumbnail: Blob | null }
+  | { type: "tray"; spriteId: string; name: string; thumbnail: Blob | null }
   | { type: "block"; blockId: string };
 
-/** The dock is a drop target too: a block dragged back onto it leaves the sheet. */
-export const PALETTE_DROP_ID = "builder-palette";
+/** The Sprite tray is a drop target too: a block dragged back onto it leaves the sheet. */
+export const TRAY_DROP_ID = "sprite-tray";
 export const gutterDropId = (index: number) => `gutter-${index}`;
 
 type DropTarget =
-  | { kind: "dock" }
+  | { kind: "tray" }
   | { kind: "gutter"; index: number }
   | { kind: "row"; key: string }
   | { kind: "block"; blockId: string };
 
 function parseTarget(id: string, draft: RowDraft): DropTarget {
-  if (id === PALETTE_DROP_ID) return { kind: "dock" };
+  if (id === TRAY_DROP_ID) return { kind: "tray" };
   if (id.startsWith("gutter-")) return { kind: "gutter", index: Number(id.slice("gutter-".length)) };
   if (id in draft) return { kind: "row", key: id };
   return { kind: "block", blockId: id };
@@ -89,21 +89,21 @@ function maxHeights(a: Record<string, number>, b: Record<string, number>): Recor
 }
 
 /**
- * The composer's drag model. Between drags the sheet renders straight from its document's blocks; for
+ * The Builder's drag model. Between drags the sheet renders straight from its document's blocks; for
  * the length of a drag it renders from a draft (row key → block ids) that follows the pointer, so
  * the rows open up where the block will land.
  *
  * - Every placement is made here, by one rule — before or after the block under the pointer,
  *   by which half of it the pointer is in — whether the block is moving within its row, into
- *   another, or being dragged in from the dock. The library's own optimistic sort is turned off
+ *   another, or being dragged in from the tray. The library's own optimistic sort is turned off
  *   (`preventDefault`): it swaps the moment the pointer enters a neighbour, so a drop just inside a
  *   block's right half would land before it within a row but after it across rows. It also can't
  *   move items between rows, nor open a gap for an item that isn't sortable yet. The library still
  *   animates every block to its new slot.
  * - A dragged-in sprite is a *ghost* block with an id minted at drag start, so its stand-in keeps
  *   one identity for the whole drag.
- * - **Gutters** (the strips between rows) and the **dock** only light up; what they do is decided
- *   on drop — a new row, or removal.
+ * - **Gutters** (the strips between rows) and the **Sprite tray** only light up; what they do is
+ *   decided on drop — a new row, or removal.
  */
 export function useBuilderDnd(
   doc: SpritesheetDocument,
@@ -159,7 +159,7 @@ export function useBuilderDnd(
     const data = operation.source?.data as DragData | undefined;
     // Minted here, outside any state updater: StrictMode runs updaters twice.
     const minted =
-      data?.type === "palette" ? { id: createId(), spriteId: data.spriteId, row: 0 } : null;
+      data?.type === "tray" ? { id: createId(), spriteId: data.spriteId, row: 0 } : null;
     ghostRef.current = minted;
     setGhost(minted);
     showDraft(toRowDraft(blocks));
@@ -173,16 +173,16 @@ export function useBuilderDnd(
     const data = source?.data as DragData | undefined;
     if (!current || !data) return;
 
-    const movingId = data.type === "palette" ? ghostRef.current?.id : data.blockId;
+    const movingId = data.type === "tray" ? ghostRef.current?.id : data.blockId;
     if (!movingId) return;
-    const isGhost = data.type === "palette";
+    const isGhost = data.type === "tray";
 
     const over = target ? parseTarget(String(target.id), current) : null;
 
     // Off the sheet, or over a strip whose meaning is only decided on drop. A block being dragged
     // stays where it last was (unmounting a drag source mid-drag is not safe); the ghost belongs to
     // no one, so it leaves and the row closes up behind it.
-    if (!over || over.kind === "dock" || over.kind === "gutter") {
+    if (!over || over.kind === "tray" || over.kind === "gutter") {
       if (isGhost) showDraft(withoutBlock(current, movingId));
       return;
     }
@@ -218,12 +218,12 @@ export function useBuilderDnd(
     if (canceled || !current || !data) return;
 
     const base = blocks;
-    const movingId = data.type === "palette" ? pending?.id : data.blockId;
+    const movingId = data.type === "tray" ? pending?.id : data.blockId;
     if (!movingId) return;
 
     const over = operation.target ? parseTarget(String(operation.target.id), current) : null;
 
-    if (over?.kind === "dock") {
+    if (over?.kind === "tray") {
       if (data.type === "block") commit(dropBlock(base, data.blockId), "Remove sprite");
       return;
     }
@@ -235,7 +235,7 @@ export function useBuilderDnd(
     // draft didn't already show — a new row, opened on drop.
     const landed = over?.kind === "gutter" ? withNewRow(current, movingId, over.index) : current;
     const next = fromRows(draftToRows(landed, records));
-    commit(next, data.type === "palette" ? "Add sprite" : "Move sprite");
+    commit(next, data.type === "tray" ? "Add sprite" : "Move sprite");
   };
 
   return {

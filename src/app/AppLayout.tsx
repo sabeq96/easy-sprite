@@ -5,7 +5,7 @@ import { Separator } from "@/components/ui/separator";
 import { ROUTES } from "@/constants/routes";
 
 const NAV_ITEMS = [
-  { to: ROUTES.sprites, label: "Sprites", icon: Images },
+  { to: ROUTES.library, label: "Library", icon: Images },
   { to: ROUTES.settings, label: "Settings", icon: Settings },
 ];
 
@@ -15,7 +15,7 @@ export function AppLayout() {
   return (
     <div className="flex min-h-dvh flex-col">
       <header className="flex h-12 shrink-0 items-center gap-2 border-b px-3">
-        <span className="text-sm font-semibold tracking-tight">Sprite Editor</span>
+        <span className="text-sm font-semibold tracking-tight">Easy Sprite</span>
         <Separator orientation="vertical" className="h-5" />
 
         <nav className="flex items-center gap-1">

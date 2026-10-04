@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 /**
- * Object URLs must be revoked or the tab leaks memory as the gallery scrolls — doing it in one
+ * Object URLs must be revoked or the tab leaks memory as the Library scrolls — doing it in one
  * hook makes that impossible to forget.
  *
  * An effect is the right tool despite the set-state-in-effect rule: createObjectURL allocates a

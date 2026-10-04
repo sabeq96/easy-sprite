@@ -127,7 +127,7 @@ _Avoid_: Line, strip, lane
 
 **Sprite tray**:
 The Builder's searchable list of Sprites not yet placed on the Spritesheet. Sprites are dragged out of it to place them and Blocks are dropped back onto it to remove them.
-_Avoid_: Palette, picker, sidebar
+_Avoid_: Palette, picker, sidebar, dock
 
 ### Storage and files
 

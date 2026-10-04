@@ -13,7 +13,7 @@ export type SheetRows<T extends RowBlock> = T[][];
 /**
  * A block's row, read defensively: anything that isn't a non-negative integer is row 0. Blocks
  * stored before rows existed carry `x`/`y` instead, and a backup can bring those back — they
- * collapse into the first row rather than taking the composer down.
+ * collapse into the first row rather than taking the Builder down.
  */
 function rowOf(block: RowBlock): number {
   return Number.isInteger(block.row) && block.row >= 0 ? block.row : 0;

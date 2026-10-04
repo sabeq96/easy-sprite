@@ -12,7 +12,7 @@ export type HintInput =
 
 /**
  * One thing the user can do, and how. Features declare these next to the code that implements
- * them; the shortcut sheet and tooltips only render them.
+ * them; Keyboard shortcuts and tooltips only render them.
  *
  * Only declare what nobody finds by clicking the obvious thing: a key, a modifier, a hidden zone
  * or a non-primary button. "Click to pick a color" or "drag to draw" is noise, not a hint.
@@ -25,7 +25,10 @@ export interface Hint {
   where?: string;
 }
 
-/** Hints owned by a feature rather than a command, listed in the sheet under a command group. */
+/**
+ * Hints owned by a feature rather than a command, listed in Keyboard shortcuts under a command
+ * group.
+ */
 export interface HintSection {
   group: CommandGroup;
   hints: readonly Hint[];

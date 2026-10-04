@@ -71,7 +71,7 @@ type DragPayload = Record<string, unknown>;
  *   it still targets (and rings) the list. For lists where leaving means nothing; the palette keeps
  *   `default`, because dragging a swatch *out* is how you remove it.
  * - `pointer`: only what is directly under the pointer. For boards whose preview has nothing to do
- *   with the target's geometry — an 80px dock tile would otherwise "overlap" whatever strip it
+ *   with the target's geometry — an 80px tray tile would otherwise "overlap" whatever strip it
  *   brushed past on its way to the one the pointer is actually over.
  */
 export type CollisionMode = "default" | "nearest" | "pointer";
@@ -124,7 +124,7 @@ export function useSortableItem(id: string, options: SortableItemOptions): DragI
   };
 }
 
-/** A drag source outside any sortable list: copy-in swatches, the composer's sprite tiles. */
+/** A drag source outside any sortable list: copy-in swatches, the Builder's sprite tiles. */
 export function useDragSource(id: string, options: { type?: string; data?: object } = {}): DragItem {
   const { ref, isDragSource } = useDraggable({
     id,

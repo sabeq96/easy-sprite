@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
 import { BuilderBlockPreview } from "@/components/builder/BuilderBlock";
 import { BuilderCanvas } from "@/components/builder/BuilderCanvas";
-import { BuilderPalette, SpriteTilePreview } from "@/components/builder/BuilderPalette";
+import { SpriteTilePreview, SpriteTray } from "@/components/builder/SpriteTray";
 import { SpritesheetMenu } from "@/components/builder/SpritesheetMenu";
 import { SpritesheetProvider, useSpritesheetSession } from "@/app/SpritesheetProvider";
 import { BuilderStatusBar } from "@/components/builder/BuilderStatusBar";
@@ -11,10 +11,10 @@ import { BuilderViewControls } from "@/components/builder/BuilderViewControls";
 import { CommandButton } from "@/components/common/CommandButton";
 import { DragBoard } from "@/components/common/DragBoard";
 import { InlineNameField } from "@/components/common/InlineNameField";
+import { KeyboardShortcutsDialog } from "@/components/common/KeyboardShortcutsDialog";
 import { NotFoundPage } from "@/components/common/NotFoundPage";
 import { Panel } from "@/components/common/Panel";
 import { SaveStatusBadge } from "@/components/common/SaveStatusBadge";
-import { ShortcutHelpDialog } from "@/components/common/ShortcutHelpDialog";
 import { TooltipButton } from "@/components/common/TooltipButton";
 import { Button } from "@/components/ui/button";
 import { CommandsProvider } from "@/commands/CommandsContext";
@@ -68,7 +68,7 @@ function SpritesheetBuilderShell() {
   const placedSpriteIds = new Set(dnd.blocks.map((block) => block.spriteId));
 
   const renderPreview = (data: DragData) => {
-    if (data.type === "palette") {
+    if (data.type === "tray") {
       return <SpriteTilePreview name={data.name} thumbnail={data.thumbnail} />;
     }
     const block = dnd.blocks.find((entry) => entry.id === data.blockId);
@@ -86,14 +86,14 @@ function SpritesheetBuilderShell() {
         <Panel render={<header />} className="flex min-w-0 items-center gap-2 px-2 py-1.5">
           {/* A link, not a command button: navigation belongs to the <Link>. */}
           <TooltipButton
-            label="Back to sprites"
+            label="Back to library"
             shortcut={keysOf(commands["app.backToLibrary"])}
             size="icon-sm"
             variant="ghost"
             className="shrink-0"
             nativeButton={false}
             render={
-              <Link to={ROUTES.sprites}>
+              <Link to={ROUTES.library}>
                 <ArrowLeft />
               </Link>
             }
@@ -129,7 +129,7 @@ function SpritesheetBuilderShell() {
           <div className="ml-auto flex shrink-0 items-center gap-1">
             <BuilderViewControls tileSize={tileSize} />
 
-            <CommandButton command="app.shortcutHelp">
+            <CommandButton command="app.keyboardShortcuts">
               <Keyboard />
             </CommandButton>
 
@@ -167,16 +167,16 @@ function SpritesheetBuilderShell() {
             ghostId={dnd.ghostId}
             onRemoveBlock={dnd.removeBlock}
           />
-          <BuilderPalette placedSpriteIds={placedSpriteIds} />
+          <SpriteTray placedSpriteIds={placedSpriteIds} />
         </DragBoard>
 
         <BuilderStatusBar sheet={sheet} blockCount={dnd.blocks.length} />
 
-        <ShortcutHelpDialog
+        <KeyboardShortcutsDialog
           commands={commands}
           open={showHelp}
           onOpenChange={setShowHelp}
-          description="Every key and gesture the spritesheet editor understands."
+          description="Every key and gesture the builder understands."
           hints={[BUILDER_VIEW_HINTS]}
         />
       </div>
@@ -193,7 +193,7 @@ function BuilderSkeleton() {
 }
 
 /**
- * Grid and chessboard to the user's defaults each time a sheet opens or its tile changes, and the
+ * Grid and checkerboard to the user's defaults each time a sheet opens or its tile changes, and the
  * grid on or off each time a sheet opens.
  */
 function useBuilderViewDefaults(doc: SpritesheetDocument, tileSize: number): void {

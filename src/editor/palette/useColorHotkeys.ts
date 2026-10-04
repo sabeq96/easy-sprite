@@ -5,7 +5,7 @@ import { isTypingTarget } from "@/lib/keys";
 import { usePalettes } from "./usePalettes";
 import { usePaletteStore } from "./store";
 
-/** Shown in the shortcut sheet and as the palette's hover card. */
+/** Shown in Keyboard shortcuts and as the palette's hover card. */
 export const COLOR_HOTKEY_HINTS: HintSection = {
   group: "Color",
   hints: [
@@ -40,7 +40,7 @@ export function useColorHotkeys(): void {
       event.preventDefault();
       const color = hexToRgba(hex);
       const store = usePaletteStore.getState();
-      // Shift picks the secondary colour, matching the right-click behaviour on swatches.
+      // Shift picks the secondary color, matching the right-click behaviour on swatches.
       if (event.shiftKey) store.setSecondaryColor(color);
       else store.setPrimaryColor(color);
     };

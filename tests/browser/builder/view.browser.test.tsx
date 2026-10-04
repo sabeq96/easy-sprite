@@ -12,7 +12,7 @@ import { dragElementOnto } from "@test/pointer";
 import { mod } from "@test/editor";
 import { render } from "@test/render";
 
-/** Renders the composer at a sheet of 8×8 sprites (placed per `blocks`) and waits for it. */
+/** Renders the Builder at a sheet of 8×8 sprites (placed per `blocks`) and waits for it. */
 async function openSheet(
   names: string[],
   blocks: (ids: string[]) => SpritesheetBlockRecord[] = () => [],
@@ -160,7 +160,7 @@ test("the grid switch hides the ruler and the grid size slider changes it", asyn
     .toHaveAttribute("aria-pressed", "false");
 });
 
-test("searching the dock narrows it to matching sprites", async () => {
+test("searching the Sprite tray narrows it to matching sprites", async () => {
   const { screen } = await openSheet(["Hero", "Villain", "Heroine"]);
   const tile = (name: string) => screen.getByRole("button", { name: `Drag ${name} onto the sheet` });
   await expect.element(tile("Villain")).toBeVisible();
@@ -219,7 +219,7 @@ test("zooming changes only the view, never the saved layout", async () => {
   expect((await savedSheet(sheetId)).blocks).toEqual(before.blocks);
 });
 
-test("the sprite editor's view keys work here too: + / = and - / _ step the zoom, 0 fits, ⌘/Ctrl+G toggles the grid", async () => {
+test("the Editor's view keys work here too: + / = and - / _ step the zoom, 0 fits, ⌘/Ctrl+G toggles the grid", async () => {
   const { screen } = await openSheet(["Hero"], ([hero]) => [{ id: "a", spriteId: hero, row: 0 }]);
   expect(zoom()).toBe(4);
 
@@ -247,7 +247,7 @@ test("view keys stay out of the way while typing the sheet's name", async () => 
   expect(zoom()).toBe(4);
 });
 
-test("? and the keyboard button open a shortcut sheet listing the sheet's keys", async () => {
+test("? and the keyboard button open Keyboard shortcuts listing the sheet's keys", async () => {
   const { screen } = await openSheet(["Hero"]);
 
   await userEvent.keyboard("?");
@@ -261,12 +261,12 @@ test("? and the keyboard button open a shortcut sheet listing the sheet's keys",
     "Zoom out",
     "Fit to window",
     "Toggle grid",
-    "Back to sprites",
+    "Back to library",
     "Zoom",
   ]) {
     await expect.element(dialog.getByText(label, { exact: true })).toBeVisible();
   }
-  // The pixel editor's tools and selection keys are not the composer's.
+  // The Editor's tools and selection keys are not the Builder's.
   expect(dialog.getByText("Pencil").query()).toBeNull();
   expect(dialog.getByText("Copy", { exact: true }).query()).toBeNull();
 
@@ -276,12 +276,12 @@ test("? and the keyboard button open a shortcut sheet listing the sheet's keys",
   await expect.element(screen.getByRole("dialog", { name: "Keyboard shortcuts" })).toBeVisible();
 });
 
-test("the whole sheet area shows the chessboard at chess size × zoom, 1px by default", async () => {
+test("the whole sheet area shows the checkerboard at checkerboard size × zoom, 1px by default", async () => {
   await openSheet(["Hero"], ([hero]) => [{ id: "a", spriteId: hero, row: 0 }]);
   const canvas = () => document.querySelector('[data-testid="builder-canvas"]') as HTMLElement;
   const block = document.querySelector('[data-block-id="a"]') as HTMLElement;
 
-  // One chess cell per sprite px: at 4× a two-cell tile is 8 screen px.
+  // One checkerboard cell per sprite px: at 4× a two-cell tile is 8 screen px.
   await expect.poll(() => canvas().style.backgroundSize).toBe("8px 8px");
   useBuilderViewStore.getState().setCheckerSize(2);
   await expect.poll(() => canvas().style.backgroundSize).toBe("16px 16px");
@@ -289,10 +289,10 @@ test("the whole sheet area shows the chessboard at chess size × zoom, 1px by de
   expect(block.style.backgroundImage).toBe("");
 });
 
-test("a library too big for one palette row scrolls in the dock instead of pushing the top bar off screen", async () => {
+test("a library too big for one Sprite tray row scrolls in the tray instead of pushing the top bar off screen", async () => {
   const names = Array.from({ length: 40 }, (_, index) => `Sprite ${index}`);
   const { screen } = await openSheet(names);
-  // The dock fills in from its own live query after the page renders.
+  // The Sprite tray fills in from its own live query after the page renders.
   await expect.element(screen.getByRole("button", { name: "Drag Sprite 39 onto the sheet" })).toBeInTheDocument();
 
   const header = document.querySelector("header")!;

@@ -142,7 +142,7 @@ test("dragging a frame card rings the strip, even though only its cards are drop
   expect(strip.className).not.toContain("ring-primary");
 });
 
-async function openComposerWithRow() {
+async function openBuilderWithRow() {
   const hero = await createSprite({ name: "Hero", width: 8, height: 8 });
   const villain = await createSprite({ name: "Villain", width: 8, height: 8 });
   await createSprite({ name: "Mage", width: 8, height: 8 });
@@ -166,20 +166,20 @@ const rowBlockIds = () =>
     node.getAttribute("data-block-id"),
   );
 
-test("holding a sprite from the dock over a row opens a gap for it before the drop", async () => {
-  const sheetId = await openComposerWithRow();
+test("holding a sprite from the Sprite tray over a row opens a gap for it before the drop", async () => {
+  const sheetId = await openBuilderWithRow();
   const tile = await settled(() => document.querySelector('[aria-label="Drag Mage onto the sheet"]'));
   const a = (await settled(() => document.querySelector('[data-block-id="a"]'))).getBoundingClientRect();
   const bBefore = document.querySelector('[data-block-id="b"]')!.getBoundingClientRect();
-  const dockTop = () => document.querySelector('[data-testid="builder-palette"]')!.getBoundingClientRect().top;
-  const dockBefore = dockTop();
+  const trayTop = () => document.querySelector('[data-testid="sprite-tray"]')!.getBoundingClientRect().top;
+  const trayBefore = trayTop();
   // The right half of A: the stand-in should open between A and B.
   const to = { x: a.left + a.width * 0.75, y: a.top + a.height / 2 };
 
   await holdDrag(tile, to);
 
   // The page itself doesn't move when a drag starts: the overlay stays out of the layout.
-  expect(dockTop()).toBe(dockBefore);
+  expect(trayTop()).toBe(trayBefore);
 
   const ids = rowBlockIds();
   expect(ids).toHaveLength(3);
@@ -200,7 +200,7 @@ test("holding a sprite from the dock over a row opens a gap for it before the dr
 });
 
 test("dragging a block along its row moves its hollow slot past its neighbour", async () => {
-  const sheetId = await openComposerWithRow();
+  const sheetId = await openBuilderWithRow();
   const source = await settled(() => document.querySelector('[data-block-id="a"]'));
   const b = (await settled(() => document.querySelector('[data-block-id="b"]'))).getBoundingClientRect();
   const to = { x: b.left + b.width * 0.8, y: b.top + b.height / 2 };

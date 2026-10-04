@@ -26,7 +26,7 @@ interface ActiveStroke {
   tool: Tool;
   host: ToolHost;
   pointerId: number;
-  /** The right button paints and picks with the secondary colour. */
+  /** The right button paints and picks with the secondary color. */
   slot: ColorSlot;
   last: ToolPoint;
   recorder: StrokeRecorder;
@@ -182,7 +182,7 @@ export function usePointerPaint(
     element.addEventListener("pointerup", endStroke);
     element.addEventListener("pointercancel", endStroke);
     element.addEventListener("pointerleave", onPointerLeave);
-    // Right-drag paints with the secondary colour, so the context menu must not appear.
+    // Right-drag paints with the secondary color, so the context menu must not appear.
     element.addEventListener("contextmenu", preventDefault);
 
     return () => {

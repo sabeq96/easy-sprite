@@ -7,8 +7,8 @@ function nextFrame(): Promise<void> {
 /**
  * Waits until `find` returns an element whose box has stopped moving, then returns it.
  *
- * A drag aimed at geometry measured too early is the classic flake here: live queries (the sprite
- * dock, the palette) render a beat after the page does, and every row they add shifts the layout
+ * A drag aimed at geometry measured too early is the classic flake here: live queries (the Sprite
+ * tray, the palette) render a beat after the page does, and every row they add shifts the layout
  * under a rect that was already read. A bare `querySelector` either finds nothing yet or finds an
  * element that is about to move — so drag tests take their sources and targets from here.
  */

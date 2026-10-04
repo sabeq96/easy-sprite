@@ -31,13 +31,13 @@ export interface Tool<
    */
   readonly reselect?: string;
   /**
-   * Gestures worth teaching in the shortcut sheet — only the non-obvious ones (a modifier, a
+   * Gestures worth teaching in Keyboard shortcuts — only the non-obvious ones (a modifier, a
    * special zone); "drag to draw" goes without saying. Keep it honest with the handlers.
    */
   readonly hints?: readonly Hint[];
   /**
    * Commands this tool owns, with their keys. The host registers them bound to this tool's host,
-   * and the sheet lists them in the tool's section rather than their group.
+   * and Keyboard shortcuts lists them in the tool's section rather than their group.
    */
   readonly commands?: C;
   /** Whether a drag continues the operation (pencil) or is a one-shot (bucket). */

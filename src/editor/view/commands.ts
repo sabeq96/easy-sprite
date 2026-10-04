@@ -15,7 +15,7 @@ function zoomFromCentre(doc: SpriteDocument, direction: 1 | -1) {
   );
 }
 
-/** Zoom, fit and the pixel grid toggle; handlers read the view store when they run. */
+/** Zoom, fit and the grid toggle; handlers read the view store when they run. */
 export const VIEW_COMMANDS = defineCommands([
   {
     id: "view.zoomIn",
@@ -45,7 +45,7 @@ export const VIEW_COMMANDS = defineCommands([
   },
   {
     id: "view.toggleGrid",
-    label: "Toggle pixel grid",
+    label: "Toggle grid",
     group: "View",
     keys: SHARED_KEYS["view.toggleGrid"],
     isActive: () => useViewStore.getState().gridEnabled,

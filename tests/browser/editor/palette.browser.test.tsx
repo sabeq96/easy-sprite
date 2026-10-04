@@ -10,7 +10,7 @@ import { holdDrag, releaseDrag } from "@test/pointer";
 
 const RED = { r: 255, g: 0, b: 0, a: 255 };
 
-/** Opens the editor with an active palette of the given colours. */
+/** Opens the editor with an active palette of the given colors. */
 async function withPalette(colors: string[]) {
   const palette = await createPalette("Test palette", colors);
   const editor = await openEditor();
@@ -30,7 +30,7 @@ const paletteHexes = () =>
   );
 
 /**
- * A swatch button by colour, in the palette grid (the first match — before "Used in sprite"). By
+ * A swatch button by color, in the palette grid (the first match — before "Used in sprite"). By
  * its own label: its draggable wrapper is also role="button" and takes its name from the swatch.
  */
 const swatch = (editor: Editor, hex: string) =>
@@ -43,7 +43,7 @@ test("clicking a swatch picks it as primary, right-clicking as secondary", async
   await userEvent.click(swatch(editor, "#0000ff"), { button: "right" });
 
   expect(activeColors()).toEqual({ primary: "#00ff00ff", secondary: "#0000ffff" });
-  // The primary colour's swatch is marked as the active one.
+  // The primary color's swatch is marked as the active one.
   await expect.element(swatch(editor, "#00ff00")).toHaveAttribute("aria-pressed", "true");
   await expect.element(swatch(editor, "#ff0000")).toHaveAttribute("aria-pressed", "false");
 });
@@ -61,7 +61,7 @@ test("keys 1–9 pick palette slots as primary, and with Shift as secondary", as
   expect(activeColors().primary).toBe("#00ff00ff");
 });
 
-test("digits typed into a text field never pick colours", async () => {
+test("digits typed into a text field never pick colors", async () => {
   const { editor } = await withPalette(["#ff0000", "#00ff00"]);
   const before = activeColors().primary;
 
@@ -92,7 +92,7 @@ test("the swap button does what X does", async () => {
   expect(activeColors()).toEqual({ primary: "#00000000", secondary: "#ff0000ff" });
 });
 
-test("a colour picked from the palette is the one the pencil paints", async () => {
+test("a color picked from the palette is the one the pencil paints", async () => {
   const { editor } = await withPalette(["#12ab34"]);
 
   await userEvent.click(swatch(editor, "#12ab34"));
@@ -101,7 +101,7 @@ test("a colour picked from the palette is the one the pencil paints", async () =
   expect(pixelAt(2, 2)).toBe("#12ab34ff");
 });
 
-test("colours painted into the sprite are listed under 'Used in sprite' and can be picked", async () => {
+test("colors painted into the sprite are listed under 'Used in sprite' and can be picked", async () => {
   const editor = await openEditor();
   usePaletteStore.getState().setPrimaryColor(RED);
   editor.click({ x: 1, y: 1 });
@@ -114,7 +114,7 @@ test("colours painted into the sprite are listed under 'Used in sprite' and can 
   expect(activeColors().primary).toBe("#ff0000ff");
 });
 
-test("the typed hex in the primary colour's picker sets the colour", async () => {
+test("the typed hex in the primary color's picker sets the color", async () => {
   const editor = await openEditor();
 
   await userEvent.click(editor.screen.getByRole("button", { name: "Primary color #000000ff" }));
@@ -149,7 +149,7 @@ test("dragging a swatch out of the palette removes it", async () => {
   await expect.poll(async () => (await findPalette(paletteId))?.colors).toEqual(["#00ff00", "#0000ff"]);
 });
 
-test("dragging a 'used in sprite' colour into the palette adds it at the drop slot", async () => {
+test("dragging a 'used in sprite' color into the palette adds it at the drop slot", async () => {
   const { editor, paletteId } = await withPalette(["#ff0000", "#00ff00"]);
   usePaletteStore.getState().setPrimaryColor({ r: 0x12, g: 0x34, b: 0x56, a: 255 });
   editor.click({ x: 1, y: 1 });
@@ -168,7 +168,7 @@ test("dragging a 'used in sprite' colour into the palette adds it at the drop sl
     .toEqual(["#123456", "#ff0000", "#00ff00"]);
 });
 
-test("'Add colors from sprite' appends every painted colour the palette lacks", async () => {
+test("'Add colors from sprite' appends every painted color the palette lacks", async () => {
   const { editor, paletteId } = await withPalette(["#ff0000"]);
   editor.click({ x: 0, y: 0 }); // black
   usePaletteStore.getState().setPrimaryColor(RED);

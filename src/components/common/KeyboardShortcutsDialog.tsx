@@ -17,14 +17,14 @@ export interface ShortcutSection {
   rows: ShortcutRow[];
 }
 
-export interface ShortcutHelpDialogProps {
+export interface KeyboardShortcutsDialogProps {
   commands: CommandRegistry;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   description: string;
   /** Inputs owned by features rather than commands; each joins the command group it names. */
   hints: readonly HintSection[];
-  /** Sections shown before the command groups, e.g. the pixel editor's tools. */
+  /** Sections shown before the command groups, e.g. the Editor's tools. */
   leadingSections?: readonly ShortcutSection[];
   /** Commands listed in a leading section instead of their group. */
   excludeCommands?: ReadonlySet<string>;
@@ -35,7 +35,7 @@ export interface ShortcutHelpDialogProps {
  * hints — so nothing here can go stale when a key or gesture changes. Groups follow
  * `COMMAND_GROUPS`; rows follow registry order, then the hints.
  */
-export function ShortcutHelpDialog({
+export function KeyboardShortcutsDialog({
   commands,
   open,
   onOpenChange,
@@ -43,7 +43,7 @@ export function ShortcutHelpDialog({
   hints,
   leadingSections = [],
   excludeCommands,
-}: ShortcutHelpDialogProps) {
+}: KeyboardShortcutsDialogProps) {
   const rowsByGroup = new Map<CommandGroup, ShortcutRow[]>();
 
   for (const command of Object.values(commands)) {

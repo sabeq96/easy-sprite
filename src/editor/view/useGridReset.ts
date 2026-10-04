@@ -6,7 +6,7 @@ import { useDefaultsStore } from "@/stores/useDefaultsStore";
 import { useViewStore } from "./store";
 
 /**
- * Grid and chessboard to the user's defaults whenever a sprite opens or its tile size changes, and
+ * Grid and checkerboard to the user's defaults whenever a sprite opens or its tile size changes, and
  * the grid on or off whenever a sprite opens. Anything the user sets in between is session-only.
  */
 export function useGridReset(): void {

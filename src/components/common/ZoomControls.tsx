@@ -13,8 +13,8 @@ export interface ZoomControlsProps {
 }
 
 /**
- * `− 8× +` and fit, shared by both editors. Bound to `view.zoomOut`, `view.zoomIn` and `view.fit`,
- * so it needs a CommandsProvider that registers them.
+ * `− 8× +` and fit, shared by the Editor and the Builder. Bound to `view.zoomOut`, `view.zoomIn`
+ * and `view.fit`, so it needs a CommandsProvider that registers them.
  */
 export function ZoomControls({ zoom, levels }: ZoomControlsProps) {
   return (

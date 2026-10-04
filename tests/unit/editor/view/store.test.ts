@@ -78,7 +78,7 @@ describe("view store", () => {
     expect(useViewStore.getState().viewport).toEqual({ scale: 12, originX: 158, originY: 108 });
   });
 
-  it("resetGrid sets the grid and the chessboard to the given sizes", () => {
+  it("resetGrid sets the grid and the checkerboard to the given sizes", () => {
     useViewStore.getState().setCheckerSize(8);
     useViewStore.getState().resetGrid(16, 2);
     expect(useViewStore.getState().gridSize).toBe(16);

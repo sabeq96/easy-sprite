@@ -34,8 +34,8 @@ const tileEl = (name: string) => document.querySelector(`[aria-label="Drag ${nam
 const blockEl = (id: string) => document.querySelector(`[data-block-id="${id}"]`)!;
 const testIdEl = (id: string) => document.querySelector(`[data-testid="${id}"]`)!;
 
-// Drag sources and targets wait for their element to exist and stop moving: the dock is a live
-// query that renders a beat after the canvas, shifting everything above it as it arrives.
+// Drag sources and targets wait for their element to exist and stop moving: the Sprite tray is a
+// live query that renders a beat after the canvas, shifting everything above it as it arrives.
 const tile = (name: string) => settled(() => tileEl(name));
 const block = (id: string) => settled(() => blockEl(id));
 const byTestId = (id: string) => settled(() => testIdEl(id));
@@ -223,11 +223,11 @@ test("a block alone in its row, dragged down into the next row, lands in that ro
   await builderSaveSettled();
 });
 
-test("a block dragged back onto the dock leaves the sheet and returns to the palette", async () => {
+test("a block dragged back onto the Sprite tray leaves the sheet and returns to the tray", async () => {
   const { sheetId } = await sheetWith(["Hero"], ([hero]) => [{ id: "a", spriteId: hero, row: 0 }]);
   await blocksRendered(1);
 
-  await dragElementOnto(await block("a"), await byTestId("builder-palette"), { x: 300, y: 60 }, SETTLE);
+  await dragElementOnto(await block("a"), await byTestId("sprite-tray"), { x: 300, y: 60 }, SETTLE);
 
   await expect.poll(() => blocksOf(sheetId)).toEqual([]);
   await expect.poll(() => tileEl("Hero")).toBeTruthy();

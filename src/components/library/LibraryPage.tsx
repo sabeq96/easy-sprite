@@ -10,15 +10,15 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
-import { NewSpriteDialog } from "@/components/manager/NewSpriteDialog";
-import { NewSpritesheetDialog } from "@/components/manager/NewSpritesheetDialog";
-import { SpriteCard } from "@/components/manager/SpriteCard";
-import { SpriteLibraryToolbar } from "@/components/manager/SpriteLibraryToolbar";
-import { SpritesheetCard } from "@/components/manager/SpritesheetCard";
+import { LibraryToolbar } from "@/components/library/LibraryToolbar";
+import { NewSpriteDialog } from "@/components/library/NewSpriteDialog";
+import { NewSpritesheetDialog } from "@/components/library/NewSpritesheetDialog";
+import { SpriteCard } from "@/components/library/SpriteCard";
+import { SpritesheetCard } from "@/components/library/SpritesheetCard";
 import { useLibrary } from "@/hooks/useLibrary";
 import { useSpriteActions } from "@/hooks/useSpriteActions";
 
-export function SpriteManagerPage() {
+export function LibraryPage() {
   const library = useLibrary();
   const [isCreatingSprite, setCreatingSprite] = useState(false);
   const [isCreatingSpritesheet, setCreatingSpritesheet] = useState(false);
@@ -27,7 +27,7 @@ export function SpriteManagerPage() {
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-4">
-      <SpriteLibraryToolbar
+      <LibraryToolbar
         library={library}
         onCreateSprite={() => setCreatingSprite(true)}
         onCreateSpritesheet={() => setCreatingSpritesheet(true)}

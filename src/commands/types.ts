@@ -7,7 +7,7 @@ import type { ContributedCommandId, SettingCommandId, ToolId } from "@/tools";
 export type ToolCommandId = `tool.${ToolId}`;
 /**
  * One activation command per tool, the commands tools contribute, the ones the host generates
- * from their settings, every host module's commands and the spritesheet composer's. All derived
+ * from their settings, every host module's commands and the Builder's. All derived
  * from their definitions.
  */
 export type CommandId =
@@ -19,12 +19,12 @@ export type CommandId =
 
 export interface CommandDefinition {
   id: CommandId;
-  /** Shown in menus, tooltips and the cheat sheet — one source of truth for wording. */
+  /** Shown in menus, tooltips and Keyboard shortcuts — one source of truth for wording. */
   label: string;
   group: CommandGroup;
-  /** The chords that run this command; read by useShortcuts, tooltips and the cheat sheet. */
+  /** The chords that run this command; read by useShortcuts, tooltips and Keyboard shortcuts. */
   keys?: readonly KeyBinding[];
-  /** Computed at read time; surfaces dim disabled commands rather than hiding them. */
+  /** Computed at read time; controls dim disabled commands rather than hiding them. */
   isEnabled?: () => boolean;
   isActive?: () => boolean;
   run: () => void;
@@ -45,5 +45,5 @@ export interface CommandHold {
   cancel: () => void;
 }
 
-/** The active commands by id: the keymap, the cheat sheet and every bound control read it. */
+/** The active commands by id: the keymap, Keyboard shortcuts and every bound control read it. */
 export type CommandRegistry = Partial<Record<CommandId, CommandDefinition>>;

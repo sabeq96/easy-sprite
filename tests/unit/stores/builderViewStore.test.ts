@@ -66,7 +66,7 @@ describe("builder view store", () => {
     expect(store().gridSize).toBe(8);
   });
 
-  it("resetGrid sets the grid and the chessboard to the given sizes", () => {
+  it("resetGrid sets the grid and the checkerboard to the given sizes", () => {
     store().setCheckerSize(8);
     store().resetGrid(24, 4);
     expect(store().gridSize).toBe(24);

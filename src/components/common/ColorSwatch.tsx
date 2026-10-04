@@ -10,8 +10,8 @@ export interface ColorSwatchProps {
 }
 
 /**
- * No shadcn primitive covers a colour chip, so this is one of the few bespoke surfaces:
- * a real <button> with the checkerboard showing through translucent colours.
+ * No shadcn primitive covers a color chip, so this is one of the few bespoke surfaces:
+ * a real <button> with the checkerboard showing through translucent colors.
  */
 export function ColorSwatch({
   color,

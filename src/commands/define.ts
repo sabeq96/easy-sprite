@@ -3,7 +3,7 @@ import type { CommandGroup } from "@/constants/commands";
 import type { KeyBinding } from "@/lib/keys";
 
 /**
- * One command a surface declares, with its keys. Static: the surface binds it to its context, and
+ * One command a page declares, with its keys. Static: the page binds it to its context, and
  * handlers read whatever stores they need when they run.
  */
 export interface CommandSpec<Id extends string, Ctx> {

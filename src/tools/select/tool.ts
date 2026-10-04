@@ -12,7 +12,7 @@ import {
 } from "@/lib/rect";
 import { getClipboard, hasClipboard, pasteRect, setClipboard } from "./clipboard";
 import { selectionPainter, type SelectionView } from "./overlay";
-import { liftRegion, stampRegion, type LiftedRegion, type PixelGrid } from "./region";
+import { liftRegion, stampRegion, type FloatingSelection, type PixelGrid } from "./region";
 
 interface MarqueeDrag {
   kind: "marquee";
@@ -28,7 +28,7 @@ interface MoveDrag {
   /** The gesture's surface, pinned at press so the drop lands where the lift came from. */
   surface: Surface;
   /** Lifted on the first pixel of movement, so a click inside the selection is a no-op. */
-  lifted: LiftedRegion | null;
+  floating: FloatingSelection | null;
   offset: { x: number; y: number };
 }
 
@@ -85,10 +85,10 @@ function view(): SelectionView | null {
     return { rect: clampTo(host, drag.rect), floating: null, hover: null };
   }
 
-  if (drag?.kind === "move" && drag.lifted) {
-    const { lifted, offset } = drag;
-    const moved = { ...lifted.rect, x: lifted.rect.x + offset.x, y: lifted.rect.y + offset.y };
-    return { rect: clampTo(host, moved), floating: { region: lifted, offset }, hover: null };
+  if (drag?.kind === "move" && drag.floating) {
+    const { floating, offset } = drag;
+    const moved = { ...floating.rect, x: floating.rect.x + offset.x, y: floating.rect.y + offset.y };
+    return { rect: clampTo(host, moved), floating: { region: floating, offset }, hover: null };
   }
 
   const { width, height } = host.document;
@@ -240,7 +240,7 @@ export const selectTool = defineTool({
         origin: point,
         copy: modifiers.ctrl,
         surface,
-        lifted: null,
+        floating: null,
         offset: { x: 0, y: 0 },
       };
     } else {
@@ -257,9 +257,9 @@ export const selectTool = defineTool({
     if (drag.kind === "marquee") {
       drag.rect = rectFromPoints(drag.origin.x, drag.origin.y, point.x, point.y);
     } else if (state.rect) {
-      if (!drag.lifted) {
+      if (!drag.floating) {
         // An empty layer still lifts (transparent) so the selection can move.
-        drag.lifted = liftRegion(gridOf(drag.surface), state.rect, !drag.copy);
+        drag.floating = liftRegion(gridOf(drag.surface), state.rect, !drag.copy);
         if (!drag.copy) drag.surface.commit(state.rect);
       }
       drag.offset = { x: point.x - drag.origin.x, y: point.y - drag.origin.y };
@@ -275,14 +275,14 @@ export const selectTool = defineTool({
     if (drag.kind === "marquee") {
       // A click is a 1×1 marquee: one pixel. Entirely off-canvas selects nothing.
       state.rect = clampTo(host, drag.rect);
-    } else if (drag.lifted) {
-      const { lifted, offset, surface } = drag;
-      const target = { x: lifted.rect.x + offset.x, y: lifted.rect.y + offset.y };
-      const written = stampRegion(gridOf(surface), lifted, target);
+    } else if (drag.floating) {
+      const { floating, offset, surface } = drag;
+      const target = { x: floating.rect.x + offset.x, y: floating.rect.y + offset.y };
+      const written = stampRegion(gridOf(surface), floating, target);
       // Lift + drop share the gesture: one drag, one undo step (even when dropped off-canvas).
-      surface.commit(rectUnion(written, lifted.rect));
+      surface.commit(rectUnion(written, floating.rect));
       // The selection follows the pixels.
-      state.rect = clampTo(host, { ...lifted.rect, ...target });
+      state.rect = clampTo(host, { ...floating.rect, ...target });
     }
     changed();
   },

@@ -7,8 +7,23 @@ import { useViewStore } from "@/editor/view/api";
 import { useBuilderViewStore } from "@/stores/useBuilderViewStore";
 import { render } from "@test/render";
 
-test("creating a sprite from the library opens it in the editor, and it lists on the way back", async () => {
+test("the library is headed and listed in the nav as Library", async () => {
+  const screen = await render(<AppRoutes />, { route: "/library" });
+
+  await expect.element(screen.getByRole("heading", { name: "Library" })).toBeVisible();
+  await expect
+    .element(screen.getByRole("navigation").getByRole("button", { name: "Library" }))
+    .toBeVisible();
+});
+
+test("the old /sprites address still opens the Library", async () => {
   const screen = await render(<AppRoutes />, { route: "/sprites" });
+
+  await expect.element(screen.getByRole("heading", { name: "Library" })).toBeVisible();
+});
+
+test("creating a sprite from the library opens it in the editor, and it lists on the way back", async () => {
+  const screen = await render(<AppRoutes />, { route: "/library" });
 
   // The empty state and the toolbar both offer a "New sprite" button. Exact, because the
   // toolbar also has a "New spritesheet" button whose name contains "New sprite" as a substring.
@@ -20,12 +35,12 @@ test("creating a sprite from the library opens it in the editor, and it lists on
 
   await expect.element(screen.getByRole("application", { name: "Sprite canvas" })).toBeVisible();
 
-  await userEvent.click(screen.getByRole("button", { name: "Back to sprites" }));
+  await userEvent.click(screen.getByRole("button", { name: "Back to library" }));
   await expect.element(screen.getByRole("button", { name: "Open Hero walk" })).toBeVisible();
 });
 
-test("a new sprite is sized in tiles, and opens with a one-tile grid and a 1px chessboard", async () => {
-  const screen = await render(<AppRoutes />, { route: "/sprites" });
+test("a new sprite is sized in tiles, and opens with a one-tile grid and a 1px checkerboard", async () => {
+  const screen = await render(<AppRoutes />, { route: "/library" });
 
   await userEvent.click(screen.getByRole("button", { name: "New sprite", exact: true }).first());
   await userEvent.click(screen.getByRole("button", { name: "24×24" }));
@@ -42,7 +57,7 @@ test("a new sprite is sized in tiles, and opens with a one-tile grid and a 1px c
 });
 
 test("a bigger tile pulls the column and row counts back under the canvas limit", async () => {
-  const screen = await render(<AppRoutes />, { route: "/sprites" });
+  const screen = await render(<AppRoutes />, { route: "/library" });
 
   await userEvent.click(screen.getByRole("button", { name: "New sprite", exact: true }).first());
   await userEvent.fill(screen.getByLabelText("Columns"), "20");
@@ -53,7 +68,7 @@ test("a bigger tile pulls the column and row counts back under the canvas limit"
 });
 
 test("a new spritesheet keeps its tile size and opens with a one-tile grid", async () => {
-  const screen = await render(<AppRoutes />, { route: "/sprites" });
+  const screen = await render(<AppRoutes />, { route: "/library" });
 
   await userEvent.click(screen.getByRole("button", { name: "More ways to create" }));
   await userEvent.click(screen.getByRole("menuitem", { name: "New spritesheet" }));
@@ -68,7 +83,7 @@ test("a new spritesheet keeps its tile size and opens with a one-tile grid", asy
 });
 
 test("tags entered when creating a sprite show up in the library", async () => {
-  const screen = await render(<AppRoutes />, { route: "/sprites" });
+  const screen = await render(<AppRoutes />, { route: "/library" });
 
   await userEvent.click(screen.getByRole("button", { name: "New sprite", exact: true }).first());
   await userEvent.fill(screen.getByLabelText("Name"), "Hero walk");
@@ -76,20 +91,20 @@ test("tags entered when creating a sprite show up in the library", async () => {
   await userEvent.click(screen.getByRole("button", { name: "Create" }));
   await expect.element(screen.getByRole("application", { name: "Sprite canvas" })).toBeVisible();
 
-  await userEvent.click(screen.getByRole("button", { name: "Back to sprites" }));
+  await userEvent.click(screen.getByRole("button", { name: "Back to library" }));
   await expect.element(screen.getByRole("button", { name: "hero 1", exact: true })).toBeVisible();
   await expect.element(screen.getByRole("button", { name: "walk 1", exact: true })).toBeVisible();
 });
 
 test("deleting a sprite through its menu removes it from the library", async () => {
-  const screen = await render(<AppRoutes />, { route: "/sprites" });
+  const screen = await render(<AppRoutes />, { route: "/library" });
 
   await userEvent.click(screen.getByRole("button", { name: "New sprite", exact: true }).first());
   await userEvent.fill(screen.getByLabelText("Name"), "Throwaway");
   await userEvent.click(screen.getByRole("button", { name: "Create" }));
   await expect.element(screen.getByRole("application", { name: "Sprite canvas" })).toBeVisible();
 
-  await userEvent.click(screen.getByRole("button", { name: "Back to sprites" }));
+  await userEvent.click(screen.getByRole("button", { name: "Back to library" }));
   await expect.element(screen.getByRole("button", { name: "Open Throwaway" })).toBeVisible();
 
   await userEvent.click(screen.getByRole("button", { name: "Actions for Throwaway" }));
@@ -103,7 +118,7 @@ test("deleting a sprite through its menu removes it from the library", async () 
 
 test("renaming a sprite from its menu updates the card and its tags", async () => {
   await createSprite({ name: "Draft", width: 8, height: 8 });
-  const screen = await render(<AppRoutes />, { route: "/sprites" });
+  const screen = await render(<AppRoutes />, { route: "/library" });
 
   await userEvent.click(screen.getByRole("button", { name: "Actions for Draft" }));
   await userEvent.click(screen.getByRole("menuitem", { name: "Rename" }));
@@ -122,7 +137,7 @@ test("renaming a sprite from its menu updates the card and its tags", async () =
 
 test("splitting a sprite from its menu replaces its frames with a grid", async () => {
   await createSprite({ name: "Sheet", width: 4, height: 2 });
-  const screen = await render(<AppRoutes />, { route: "/sprites" });
+  const screen = await render(<AppRoutes />, { route: "/library" });
 
   await userEvent.click(screen.getByRole("button", { name: "Actions for Sheet" }));
   await userEvent.click(screen.getByRole("menuitem", { name: "Split into frames" }));
@@ -142,7 +157,7 @@ test("splitting a sprite from its menu replaces its frames with a grid", async (
 });
 
 test("the create menu offers a way to import PNGs", async () => {
-  const screen = await render(<AppRoutes />, { route: "/sprites" });
+  const screen = await render(<AppRoutes />, { route: "/library" });
 
   await userEvent.click(screen.getByRole("button", { name: "More ways to create" }));
   await expect.element(screen.getByRole("menuitem", { name: "Import PNG" })).toBeVisible();
@@ -150,7 +165,7 @@ test("the create menu offers a way to import PNGs", async () => {
 
 test("spritesheets rename through the same dialog as sprites", async () => {
   await createSpritesheet({ name: "Sheet draft" });
-  const screen = await render(<AppRoutes />, { route: "/sprites" });
+  const screen = await render(<AppRoutes />, { route: "/library" });
 
   await userEvent.click(screen.getByRole("button", { name: "Actions for Sheet draft" }));
   await userEvent.click(screen.getByRole("menuitem", { name: "Rename" }));
@@ -163,7 +178,7 @@ test("spritesheets rename through the same dialog as sprites", async () => {
 });
 
 test("reopening the new-sprite dialog after Cancel starts from an empty draft", async () => {
-  const screen = await render(<AppRoutes />, { route: "/sprites" });
+  const screen = await render(<AppRoutes />, { route: "/library" });
   const openDialog = () =>
     userEvent.click(screen.getByRole("button", { name: "New sprite", exact: true }).first());
 

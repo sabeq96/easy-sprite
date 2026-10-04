@@ -5,7 +5,7 @@ import { snapTileSize } from "@/core/grid";
 import { sheetTileOptions } from "@/lib/tiles";
 import { useBuilderViewStore } from "@/stores/useBuilderViewStore";
 
-/** The composer's ViewControls: the shared zoom and grid controls over the builder's view store. */
+/** The Builder's ViewControls: the shared zoom and grid controls over the builder's view store. */
 export function BuilderViewControls({ tileSize }: { tileSize: number }) {
   const zoom = useBuilderViewStore((state) => state.zoom);
   const gridEnabled = useBuilderViewStore((state) => state.gridEnabled);

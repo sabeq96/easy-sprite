@@ -14,10 +14,10 @@ describe("lift and stamp", () => {
     const grid = makeGrid();
     setPixel(grid.pixels, 0, 0, 4, RED);
 
-    const lifted = liftRegion(grid, { x: 0, y: 0, w: 2, h: 2 }, true);
+    const floating = liftRegion(grid, { x: 0, y: 0, w: 2, h: 2 }, true);
     expect(getPixel(grid.pixels, 0, 0, 4).a).toBe(0);
 
-    stampRegion(grid, lifted, { x: 2, y: 2 });
+    stampRegion(grid, floating, { x: 2, y: 2 });
     expect(getPixel(grid.pixels, 2, 2, 4)).toEqual(RED);
   });
 
@@ -32,30 +32,30 @@ describe("lift and stamp", () => {
 
   it("does not punch holes with transparent pixels when stamping", () => {
     const grid = makeGrid();
-    setPixel(grid.pixels, 0, 0, 4, RED); // lifted region covers (0,0)-(1,1), only (0,0) painted
+    setPixel(grid.pixels, 0, 0, 4, RED); // floating selection covers (0,0)-(1,1), only (0,0) painted
     setPixel(grid.pixels, 2, 2, 4, BLUE); // destination pixel that must survive
 
-    const lifted = liftRegion(grid, { x: 0, y: 0, w: 2, h: 2 }, false);
-    stampRegion(grid, lifted, { x: 2, y: 2 });
+    const floating = liftRegion(grid, { x: 0, y: 0, w: 2, h: 2 }, false);
+    stampRegion(grid, floating, { x: 2, y: 2 });
 
     expect(getPixel(grid.pixels, 2, 2, 4)).toEqual(RED); // opaque pixel overwrote it
     expect(getPixel(grid.pixels, 3, 3, 4).a).toBe(0); // transparent pixel wrote nothing
   });
 
   it("lifts transparent pixels from an empty grid", () => {
-    const lifted = liftRegion(makeGrid(), { x: 0, y: 0, w: 2, h: 2 }, true);
+    const floating = liftRegion(makeGrid(), { x: 0, y: 0, w: 2, h: 2 }, true);
 
-    expect(lifted.pixels.every((value) => value === 0)).toBe(true);
+    expect(floating.pixels.every((value) => value === 0)).toBe(true);
   });
 
   it("clamps a stamp that runs off the edge", () => {
     const grid = makeGrid();
     setPixel(grid.pixels, 0, 0, 4, RED);
 
-    const lifted = liftRegion(grid, { x: 0, y: 0, w: 2, h: 2 }, false);
+    const floating = liftRegion(grid, { x: 0, y: 0, w: 2, h: 2 }, false);
 
-    expect(stampRegion(grid, lifted, { x: 3, y: 3 })).toEqual({ x: 3, y: 3, w: 1, h: 1 });
-    expect(stampRegion(grid, lifted, { x: 9, y: 9 })).toBeNull();
+    expect(stampRegion(grid, floating, { x: 3, y: 3 })).toEqual({ x: 3, y: 3, w: 1, h: 1 });
+    expect(stampRegion(grid, floating, { x: 9, y: 9 })).toBeNull();
   });
 });
 

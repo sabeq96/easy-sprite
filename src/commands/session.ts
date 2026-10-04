@@ -3,7 +3,7 @@ import { commandsFor } from "@/commands/define";
 import { ROUTES } from "@/constants/routes";
 import type { History } from "@/core/history";
 
-/** What every editing surface hands its session commands, whatever document it edits. */
+/** What every editing page hands its session commands, whatever document it edits. */
 export interface SessionContext {
   readonly history: History;
   navigate(to: string): void;
@@ -13,8 +13,8 @@ export interface SessionContext {
 }
 
 /**
- * Undo, redo, save, the shortcut sheet and leaving for the library: defined once, bound by both the
- * pixel editor and the spritesheet composer, so the two cannot drift apart.
+ * Undo, redo, save, Keyboard shortcuts and leaving for the library: defined once, bound by both the
+ * Editor and the Builder, so the two cannot drift apart.
  */
 export const SESSION_COMMANDS = commandsFor<SessionContext>()([
   {
@@ -44,7 +44,7 @@ export const SESSION_COMMANDS = commandsFor<SessionContext>()([
     run: ({ save }) => void save().then(() => toast.success("Saved")),
   },
   {
-    id: "app.shortcutHelp",
+    id: "app.keyboardShortcuts",
     label: "Keyboard shortcuts",
     group: "App",
     keys: [{ key: "?" }],
@@ -52,9 +52,9 @@ export const SESSION_COMMANDS = commandsFor<SessionContext>()([
   },
   {
     id: "app.backToLibrary",
-    label: "Back to sprites",
+    label: "Back to library",
     group: "App",
     keys: [{ key: "escape", shift: true }],
-    run: ({ navigate }) => navigate(ROUTES.sprites),
+    run: ({ navigate }) => navigate(ROUTES.library),
   },
 ]);

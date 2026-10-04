@@ -21,7 +21,7 @@ async function choosePicker(editor: Editor) {
   await expect.element(button).toHaveAttribute("aria-pressed", "true");
 }
 
-test("clicking picks the pixel's colour as primary, and the swatch shows it", async () => {
+test("clicking picks the pixel's color as primary, and the swatch shows it", async () => {
   const editor = await openEditor();
   paint(editor, { x: 3, y: 3 }, RED);
   usePaletteStore.getState().setPrimaryColor(BLUE);
@@ -35,7 +35,7 @@ test("clicking picks the pixel's colour as primary, and the swatch shows it", as
     .toBeVisible();
 });
 
-test("right-clicking picks into the secondary colour and leaves the primary alone", async () => {
+test("right-clicking picks into the secondary color and leaves the primary alone", async () => {
   const editor = await openEditor();
   paint(editor, { x: 3, y: 3 }, GREEN);
   usePaletteStore.getState().setPrimaryColor(BLUE);
@@ -46,7 +46,7 @@ test("right-clicking picks into the secondary colour and leaves the primary alon
   expect(activeColors()).toEqual({ primary: "#0000ffff", secondary: "#00ff00ff" });
 });
 
-test("dragging keeps sampling, so the colour under the release point wins", async () => {
+test("dragging keeps sampling, so the color under the release point wins", async () => {
   const editor = await openEditor();
   paint(editor, { x: 1, y: 1 }, RED);
   paint(editor, { x: 5, y: 1 }, GREEN);

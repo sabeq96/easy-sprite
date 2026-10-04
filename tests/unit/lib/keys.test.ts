@@ -96,7 +96,7 @@ describe("isTypingTarget", () => {
     }
   });
 
-  it("does not treat a focused slider, checkbox or colour input as typing", () => {
+  it("does not treat a focused slider, checkbox or color input as typing", () => {
     // A slider keeps focus after a drag; shortcuts (undo, tool keys) must still work then.
     for (const type of ["range", "checkbox", "radio", "color"]) {
       const input = document.createElement("input");

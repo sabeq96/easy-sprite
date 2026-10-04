@@ -25,13 +25,13 @@ export function EditorTopBar() {
     <Panel render={<header />} className="flex items-center gap-2 px-2 py-1.5">
       {/* A link, not a command button: navigation belongs to the <Link>. */}
       <TooltipButton
-        label="Back to sprites"
+        label="Back to library"
         shortcut={backKeys}
         size="icon-sm"
         variant="ghost"
         nativeButton={false}
         render={
-          <Link to={ROUTES.sprites}>
+          <Link to={ROUTES.library}>
             <ArrowLeft />
           </Link>
         }
@@ -60,7 +60,7 @@ export function EditorTopBar() {
       <div className="ml-auto flex items-center gap-2">
         <ViewControls />
 
-        <CommandButton command="app.shortcutHelp">
+        <CommandButton command="app.keyboardShortcuts">
           <Keyboard />
         </CommandButton>
 

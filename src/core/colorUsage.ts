@@ -7,7 +7,7 @@ export interface ColorUsage {
 }
 
 /**
- * Every distinct non-transparent colour in the document, most-used first.
+ * Every distinct non-transparent color in the document, most-used first.
  * O(pixels), so callers run it on a debounce — never during a stroke.
  */
 export function collectColorUsage(doc: SpriteDocument, limit = 256): ColorUsage[] {

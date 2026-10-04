@@ -30,7 +30,7 @@ export async function blocksSized(sheetId: string): Promise<void> {
 }
 
 /**
- * Saves the composer's edits now and waits for the whole save — the blocks, then the thumbnail
+ * Saves the Builder's edits now and waits for the whole save — the blocks, then the thumbnail
  * rendered from them — to land, as the save badge reports it. A test that ended as soon as the
  * blocks were written would leave the thumbnail write in flight when teardown closes the database.
  */
@@ -41,7 +41,7 @@ export async function builderSaveSettled(): Promise<void> {
     .toBe("Saved");
 }
 
-/** The open composer's document, history and autosave — see SpritesheetProvider. */
+/** The open Builder's document, history and autosave — see SpritesheetProvider. */
 export function sheetSession() {
   const session = window.__spritesheetEditor;
   if (!session) throw new Error("No spritesheet is open");

@@ -6,8 +6,8 @@ import { openEditor } from "@test/editor";
 // beneath the parked pointer, that button's tooltip opens and covers whatever sits below it.
 test("a test can leave the pointer resting on a top-bar button", async () => {
   const editor = await openEditor();
-  await userEvent.hover(editor.screen.getByRole("button", { name: "Back to sprites" }));
-  await expect.element(editor.screen.getByText(/^Back to sprites/)).toBeVisible();
+  await userEvent.hover(editor.screen.getByRole("button", { name: "Back to library" }));
+  await expect.element(editor.screen.getByText(/^Back to library/)).toBeVisible();
 });
 
 test("the next test can still click what that button's tooltip would cover", async () => {

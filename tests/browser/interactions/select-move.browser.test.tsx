@@ -14,7 +14,7 @@ const COPY = IS_APPLE ? "{Meta>}c{/Meta}" : "{Control>}c{/Control}";
 const PASTE = IS_APPLE ? "{Meta>}v{/Meta}" : "{Control>}v{/Control}";
 
 /**
- * The overlay canvas also carries the pixel grid and the hover cell, either of which would make
+ * The overlay canvas also carries the grid and the hover cell, either of which would make
  * it inky regardless of the selection — so the grid is off and the pointer has left the canvas
  * before checking.
  */

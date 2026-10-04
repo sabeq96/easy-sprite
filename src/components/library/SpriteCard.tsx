@@ -4,7 +4,7 @@ import { useNavigate } from "react-router";
 import { LibraryCard } from "@/components/common/LibraryCard";
 import { LibraryItemMenu } from "@/components/common/LibraryItemMenu";
 import { NameDialog } from "@/components/common/NameDialog";
-import { SplitFramesDialog } from "@/components/manager/SplitFramesDialog";
+import { SplitFramesDialog } from "@/components/library/SplitFramesDialog";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { ROUTES } from "@/constants/routes";
 import type { SpriteRecord } from "@/db/schema";

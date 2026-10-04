@@ -76,13 +76,13 @@ export function colorDistance(a: RGBA, b: RGBA): number {
 }
 
 export interface FillOptions {
-  /** false = replace the matching colour across the whole layer ("fill similar"). */
+  /** false = replace the matching color across the whole layer ("fill similar"). */
   contiguous?: boolean;
 }
 
 /**
  * Scan-line flood fill. Iterative — a recursive fill on a 128×128 canvas blows the stack —
- * and backed by a visited bitmap so no pixel is colour-tested twice.
+ * and backed by a visited bitmap so no pixel is color-tested twice.
  */
 export function floodFill(
   target: PlotTarget,
@@ -97,7 +97,7 @@ export function floodFill(
   const contiguous = options.contiguous ?? true;
   const seed = getPixel(buffer, startX, startY, width);
 
-  // Filling with the colour already there would record an empty undo step.
+  // Filling with the color already there would record an empty undo step.
   if (colorDistance(seed, color) === 0) return null;
 
   const matches = (x: number, y: number) =>

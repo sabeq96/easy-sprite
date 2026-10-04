@@ -36,7 +36,7 @@ export interface SpritesheetProviderProps {
 
 /**
  * Opens a spritesheet once, then owns it for the page's lifetime: the in-memory document, its
- * undo history, and the Autosave writing it back — the composer's DocumentProvider.
+ * undo history, and the Autosave writing it back — the Builder's DocumentProvider.
  */
 export function SpritesheetProvider({
   spritesheetId,

@@ -64,7 +64,7 @@ export function DefaultsSection() {
           />
         </DefaultRow>
 
-        <DefaultRow {...row("Grid and chessboard", GROUPS.grid)}>
+        <DefaultRow {...row("Grid and checkerboard", GROUPS.grid)}>
           <Label size="sm" weight="normal" className="justify-between">
             Show grid
             <Switch checked={defaults.gridEnabled} onCheckedChange={(on) => set("gridEnabled", on)} />
@@ -76,7 +76,7 @@ export function DefaultsSection() {
             onChange={(size) => set("gridSize", size)}
           />
           <SizeChoices
-            label="Chessboard size"
+            label="Checkerboard size"
             value={defaults.checkerSize}
             onChange={(size) => size !== "tile" && set("checkerSize", size)}
           />

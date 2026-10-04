@@ -1,5 +1,5 @@
 import { Search } from "lucide-react";
-import { PALETTE_DROP_ID, type DragData } from "@/hooks/useBuilderDnd";
+import { TRAY_DROP_ID, type DragData } from "@/hooks/useBuilderDnd";
 import { Panel } from "@/components/common/Panel";
 import { Input } from "@/components/ui/input";
 import type { SpriteRecord } from "@/db/schema";
@@ -8,7 +8,7 @@ import { useDragSource, useDropZone } from "@/hooks/useDnd";
 import { useLibrary } from "@/hooks/useLibrary";
 import { cn } from "@/lib/utils";
 
-export interface BuilderPaletteProps {
+export interface SpriteTrayProps {
   /** Sprites already on the sheet, which drop out of the list until they are removed again. */
   placedSpriteIds: ReadonlySet<string>;
 }
@@ -20,15 +20,15 @@ export interface BuilderPaletteProps {
  * A sheet packs each sprite once: placing the same one twice would duplicate its pixels in the
  * exported texture, so a placed sprite leaves the list rather than inviting a second copy.
  */
-export function BuilderPalette({ placedSpriteIds }: BuilderPaletteProps) {
+export function SpriteTray({ placedSpriteIds }: SpriteTrayProps) {
   const library = useLibrary("sprite");
   const sprites = library.items.flatMap((item) => (item.kind === "sprite" ? [item.record] : []));
   const available = sprites.filter((sprite) => !placedSpriteIds.has(sprite.id));
-  const { ref, dropClass } = useDropZone({ id: PALETTE_DROP_ID, collision: "pointer" });
+  const { ref, dropClass } = useDropZone({ id: TRAY_DROP_ID, collision: "pointer" });
 
   return (
     <Panel
-      render={<div ref={ref} data-testid="builder-palette" />}
+      render={<div ref={ref} data-testid="sprite-tray" />}
       className={cn("flex h-32 shrink-0 flex-col gap-2 p-2", dropClass)}
     >
       <div className="relative">
@@ -47,21 +47,21 @@ export function BuilderPalette({ placedSpriteIds }: BuilderPaletteProps) {
         {available.length === 0 ? (
           <p className="text-xs text-muted-foreground">
             {sprites.length > 0
-              ? "Every matching sprite is already on this sheet."
+              ? "Every matching sprite is already on this spritesheet."
               : "No sprites match."}
           </p>
         ) : (
-          available.map((sprite) => <PaletteItem key={sprite.id} sprite={sprite} />)
+          available.map((sprite) => <SpriteTrayItem key={sprite.id} sprite={sprite} />)
         )}
       </div>
     </Panel>
   );
 }
 
-function PaletteItem({ sprite }: { sprite: SpriteRecord }) {
-  const { dragProps, dragClass } = useDragSource(`palette:${sprite.id}`, {
+function SpriteTrayItem({ sprite }: { sprite: SpriteRecord }) {
+  const { dragProps, dragClass } = useDragSource(`tray:${sprite.id}`, {
     data: {
-      type: "palette",
+      type: "tray",
       spriteId: sprite.id,
       name: sprite.name,
       thumbnail: sprite.thumbnail,
@@ -83,7 +83,7 @@ function PaletteItem({ sprite }: { sprite: SpriteRecord }) {
 const TILE_CLASS =
   "flex h-20 w-20 flex-col items-center justify-center gap-1 rounded-md bg-checker-a p-1 ring-1 ring-border";
 
-/** The tile's contents, shared by the dock item and its drag preview. */
+/** The tile's contents, shared by the tray item and its drag preview. */
 export function SpriteTile({ name, thumbnail }: { name: string; thumbnail: Blob | null }) {
   const thumbnailUrl = useBlobUrl(thumbnail);
 
@@ -102,7 +102,7 @@ export function SpriteTile({ name, thumbnail }: { name: string; thumbnail: Blob 
   );
 }
 
-/** The dock tile's own visual, for the board's drag overlay. */
+/** The tray tile's own visual, for the board's drag overlay. */
 export function SpriteTilePreview({ name, thumbnail }: { name: string; thumbnail: Blob | null }) {
   return (
     <div className={TILE_CLASS}>
