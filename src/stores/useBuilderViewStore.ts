@@ -29,8 +29,8 @@ export interface BuilderViewState {
 }
 
 /**
- * The composer's view state. Separate from the pixel editor's view store on purpose: that store's
- * viewport carries a pan origin and clamps tied to one sprite's dimensions, and the composer has no
+ * The Builder's view state. Separate from the pixel editor's view store on purpose: that store's
+ * viewport carries a pan origin and clamps tied to one sprite's dimensions, and the Builder has no
  * document at all.
  * Session-only, like the pixel editor's own zoom.
  */

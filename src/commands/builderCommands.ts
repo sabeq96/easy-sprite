@@ -5,7 +5,7 @@ import { SHARED_KEYS } from "@/constants/shortcuts";
 import type { Size } from "@/core/viewport";
 import { useBuilderViewStore } from "@/stores/useBuilderViewStore";
 
-/** What the spritesheet composer hands its commands. */
+/** What the Builder hands its commands. */
 export interface BuilderContext extends SessionContext {
   /** The packed sheet, in sprite px: what "fit to window" fits. */
   readonly sheet: Size;
@@ -14,7 +14,7 @@ export interface BuilderContext extends SessionContext {
 const view = () => useBuilderViewStore.getState();
 
 /**
- * The spritesheet composer's commands: the session commands both surfaces share, then its own view
+ * The Builder's commands: the session commands both surfaces share, then its own view
  * commands over its view store, with the pixel editor's view keys (`SHARED_KEYS`).
  */
 export const BUILDER_COMMANDS = commandsFor<BuilderContext>()([
@@ -52,5 +52,5 @@ export const BUILDER_COMMANDS = commandsFor<BuilderContext>()([
   },
 ]);
 
-/** Every command id the composer declares, derived from its definitions. */
+/** Every command id the Builder declares, derived from its definitions. */
 export type BuilderCommandId = (typeof BUILDER_COMMANDS)[number]["id"];

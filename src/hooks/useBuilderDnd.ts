@@ -89,7 +89,7 @@ function maxHeights(a: Record<string, number>, b: Record<string, number>): Recor
 }
 
 /**
- * The composer's drag model. Between drags the sheet renders straight from its document's blocks; for
+ * The Builder's drag model. Between drags the sheet renders straight from its document's blocks; for
  * the length of a drag it renders from a draft (row key → block ids) that follows the pointer, so
  * the rows open up where the block will land.
  *

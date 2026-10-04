@@ -18,7 +18,7 @@ export interface SpritesheetDocumentEvents {
 export type SpritesheetRevisionChannel = keyof SpritesheetDocumentEvents;
 
 /**
- * An open spritesheet, in memory — what the composer renders and edits, while Autosave writes it
+ * An open spritesheet, in memory — what the Builder renders and edits, while Autosave writes it
  * back behind a debounce. The blocks array is replaced, never mutated, so its identity is an exact
  * "has the layout changed" (see SpriteDocument for why React needs that).
  */

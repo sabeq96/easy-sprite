@@ -124,7 +124,7 @@ export function useSortableItem(id: string, options: SortableItemOptions): DragI
   };
 }
 
-/** A drag source outside any sortable list: copy-in swatches, the composer's sprite tiles. */
+/** A drag source outside any sortable list: copy-in swatches, the Builder's sprite tiles. */
 export function useDragSource(id: string, options: { type?: string; data?: object } = {}): DragItem {
   const { ref, isDragSource } = useDraggable({
     id,

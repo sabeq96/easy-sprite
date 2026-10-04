@@ -1,6 +1,6 @@
 import type { KeyBinding } from "@/lib/keys";
 
-/** The view commands both the pixel editor and the spritesheet composer declare, over their own stores. */
+/** The view commands both the pixel editor and the Builder declare, over their own stores. */
 export type SharedViewCommandId = "view.zoomIn" | "view.zoomOut" | "view.fit" | "view.toggleGrid";
 
 /**

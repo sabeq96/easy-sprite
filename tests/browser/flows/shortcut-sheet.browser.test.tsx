@@ -79,7 +79,7 @@ test("the editor's sheet lists its groups and rows in a fixed order", async () =
   ]);
 });
 
-test("the composer's sheet lists its groups and rows in a fixed order", async () => {
+test("the Builder's sheet lists its groups and rows in a fixed order", async () => {
   await page.viewport(1280, 720);
   await createSprite({ name: "Hero", width: 8, height: 8 });
   const sheet = await createSpritesheet({ name: "Composed" });
@@ -91,6 +91,9 @@ test("the composer's sheet lists its groups and rows in a fixed order", async ()
     ["View", "Zoom in", "Zoom out", "Fit to window", "Toggle grid", "Zoom"],
     ["App", "Keyboard shortcuts", "Back to library"],
   ]);
+  await expect
+    .element(page.getByRole("dialog", { name: "Keyboard shortcuts" }))
+    .toHaveAccessibleDescription("Every key and gesture the builder understands.");
 });
 
 test("the editor and the builder list the same Toggle grid label", async () => {

@@ -12,7 +12,7 @@ import { blocksSized, builderSaveSettled, savedSheet, sheetSession } from "@test
 import { KEYS, mod } from "@test/editor";
 import { render } from "@test/render";
 
-test("creating a spritesheet from the library opens the composer, and it lists with a sheet badge", async () => {
+test("creating a spritesheet from the library opens the Builder, and it lists with a sheet badge", async () => {
   const screen = await render(<AppRoutes />, { route: "/sprites" });
 
   // "New spritesheet" lives behind the create button's chevron, next to the main "New sprite".
@@ -30,7 +30,7 @@ test("creating a spritesheet from the library opens the composer, and it lists w
   await expect.element(screen.getByText("Sheet", { exact: true })).toBeVisible();
 });
 
-test("the composer header exposes export and a save indicator, like the sprite editor", async () => {
+test("the Builder header exposes export and a save indicator, like the sprite editor", async () => {
   const sheet = await createSpritesheet({ name: "Composed" });
   const screen = await render(<AppRoutes />, { route: `/spritesheets/${sheet.id}` });
 
@@ -47,7 +47,7 @@ test("the composer header exposes export and a save indicator, like the sprite e
   await expect.element(screen.getByRole("status", { name: "Saved" })).toBeVisible();
 });
 
-test("the composer's palette lists project sprites to drag onto the canvas", async () => {
+test("the Builder's palette lists sprites to drag onto the canvas", async () => {
   await createSprite({ name: "Hero", width: 8, height: 8 });
   const sheet = await createSpritesheet({ name: "Composed" });
 
@@ -102,6 +102,9 @@ test("a persisted block renders on the canvas and can be removed", async () => {
   // name concatenates the nested remove button's label with the block's visible name.
   const removeButton = screen.getByRole("button", { name: "Remove Hero", exact: true });
   await expect.element(removeButton).toBeInTheDocument();
+  await expect
+    .element(screen.getByText("Every matching sprite is already on this spritesheet."))
+    .toBeVisible();
 
   // 16×16 at 4× is a 64px block, big enough to draw its ✕ — clicked with the pointer, on hover.
   await userEvent.hover(document.querySelector("[data-block-id]")!);
@@ -131,7 +134,7 @@ test("Export downloads the composed sheet as a PNG in one click", async () => {
   createObjectURL.mockRestore();
 });
 
-test("the composer header keeps Export reachable in a narrow window", async () => {
+test("the Builder header keeps Export reachable in a narrow window", async () => {
   await page.viewport(640, 720);
   const sheet = await createSpritesheet({ name: "A spritesheet with a rather long name indeed" });
   const screen = await render(<AppRoutes />, { route: `/spritesheets/${sheet.id}` });
@@ -202,7 +205,7 @@ test("on a block too small to show it, the remove button appears in the corner w
   await expect.poll(() => getComputedStyle(button).opacity).toBe("1");
 });
 
-/** A sheet holding one 16×16 Hero block, opened in the composer. */
+/** A sheet holding one 16×16 Hero block, opened in the Builder. */
 async function openHeroSheet() {
   await page.viewport(1280, 720);
   const sprite = await createSprite({ name: "Hero", width: 16, height: 16 });
@@ -291,7 +294,7 @@ test("the menu's Save now writes pending edits", async () => {
   await builderSaveSettled();
 });
 
-test("leaving the composer saves what was still pending", async () => {
+test("leaving the Builder saves what was still pending", async () => {
   const { screen, sheetId, removeHero } = await openHeroSheet();
   await removeBlock(removeHero);
   expect((await getSpritesheet(sheetId)).blocks).toHaveLength(1);

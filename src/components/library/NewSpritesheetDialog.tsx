@@ -40,7 +40,7 @@ function NewSpritesheetForm({ onDone }: { onDone: () => void }) {
       tagsPlaceholder="ui, tiles"
       onSubmit={async ({ name, tags }) => {
         const spritesheet = await spritesheets.create({ name, tags, tileSize: tile });
-        // Straight into the composer — creating a spritesheet is never the end goal.
+        // Straight into the Builder — creating a spritesheet is never the end goal.
         if (spritesheet) navigate(ROUTES.spritesheet(spritesheet.id));
       }}
       onDone={onDone}

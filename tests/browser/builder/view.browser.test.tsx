@@ -12,7 +12,7 @@ import { dragElementOnto } from "@test/pointer";
 import { mod } from "@test/editor";
 import { render } from "@test/render";
 
-/** Renders the composer at a sheet of 8×8 sprites (placed per `blocks`) and waits for it. */
+/** Renders the Builder at a sheet of 8×8 sprites (placed per `blocks`) and waits for it. */
 async function openSheet(
   names: string[],
   blocks: (ids: string[]) => SpritesheetBlockRecord[] = () => [],
@@ -266,7 +266,7 @@ test("? and the keyboard button open a shortcut sheet listing the sheet's keys",
   ]) {
     await expect.element(dialog.getByText(label, { exact: true })).toBeVisible();
   }
-  // The pixel editor's tools and selection keys are not the composer's.
+  // The pixel editor's tools and selection keys are not the Builder's.
   expect(dialog.getByText("Pencil").query()).toBeNull();
   expect(dialog.getByText("Copy", { exact: true }).query()).toBeNull();
 

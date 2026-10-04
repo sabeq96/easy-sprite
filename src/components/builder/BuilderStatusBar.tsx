@@ -8,7 +8,7 @@ export interface BuilderStatusBarProps {
   blockCount: number;
 }
 
-/** The composer's footer, mirroring the editor's: sheet size and contents. Zoom lives in the top bar. */
+/** The Builder's footer, mirroring the editor's: sheet size and contents. Zoom lives in the top bar. */
 export function BuilderStatusBar({ sheet, blockCount }: BuilderStatusBarProps) {
   const rowCount = sheet.rows.length;
 

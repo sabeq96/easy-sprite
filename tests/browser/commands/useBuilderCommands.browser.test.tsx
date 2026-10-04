@@ -38,7 +38,7 @@ function duplicates(values: readonly string[]): string[] {
   return values.filter((value, index) => values.indexOf(value) !== index);
 }
 
-test("the composer's registry files each command under its own id and binds no chord twice", async () => {
+test("the Builder's registry files each command under its own id and binds no chord twice", async () => {
   const registry = await builderRegistry();
   const commands = Object.entries(registry);
 
@@ -48,7 +48,7 @@ test("the composer's registry files each command under its own id and binds no c
   expect(duplicates(chords)).toEqual([]);
 });
 
-test("the composer binds BUILDER_COMMANDS in order, sharing the pixel editor's session commands and view keys", async () => {
+test("the Builder binds BUILDER_COMMANDS in order, sharing the pixel editor's session commands and view keys", async () => {
   const registry = await builderRegistry();
 
   expect(Object.keys(registry)).toEqual(BUILDER_COMMANDS.map(({ id }) => id));

@@ -57,7 +57,7 @@ export interface PackedSheet {
  * The sheet's geometry, and the only place it is computed: rows stack top-down with no gap, blocks
  * sit left-to-right inside a row with no gap, and a row is as tall as its tallest block.
  *
- * This mirrors in arithmetic exactly what the composer's flex rows do in CSS — the browser lays
+ * This mirrors in arithmetic exactly what the Builder's flex rows do in CSS — the browser lays
  * out what you see, this lays out what gets exported, and a browser test holds the two together.
  */
 export function packSheet(blocks: SheetBlock[], sizes: BlockSizes): PackedSheet {

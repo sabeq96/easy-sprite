@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
 import { BuilderBlockPreview } from "@/components/builder/BuilderBlock";
 import { BuilderCanvas } from "@/components/builder/BuilderCanvas";
-import { BuilderPalette, SpriteTilePreview } from "@/components/builder/BuilderPalette";
+import { SpriteTilePreview, SpriteTray } from "@/components/builder/SpriteTray";
 import { SpritesheetMenu } from "@/components/builder/SpritesheetMenu";
 import { SpritesheetProvider, useSpritesheetSession } from "@/app/SpritesheetProvider";
 import { BuilderStatusBar } from "@/components/builder/BuilderStatusBar";
@@ -167,7 +167,7 @@ function SpritesheetBuilderShell() {
             ghostId={dnd.ghostId}
             onRemoveBlock={dnd.removeBlock}
           />
-          <BuilderPalette placedSpriteIds={placedSpriteIds} />
+          <SpriteTray placedSpriteIds={placedSpriteIds} />
         </DragBoard>
 
         <BuilderStatusBar sheet={sheet} blockCount={dnd.blocks.length} />
@@ -176,7 +176,7 @@ function SpritesheetBuilderShell() {
           commands={commands}
           open={showHelp}
           onOpenChange={setShowHelp}
-          description="Every key and gesture the spritesheet editor understands."
+          description="Every key and gesture the builder understands."
           hints={[BUILDER_VIEW_HINTS]}
         />
       </div>
