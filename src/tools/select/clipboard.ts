@@ -1,8 +1,11 @@
 import type { Rect } from "@/lib/rect";
 import type { PixelBuffer } from "@/types/pixels";
+import type { Mask } from "./mask";
 
 export interface ClipboardEntry {
   rect: Rect;
+  /** The copied shape, over `rect`; a Rectangle's is fully set. */
+  mask: Mask;
   pixels: PixelBuffer;
 }
 
@@ -14,7 +17,11 @@ let entry: ClipboardEntry | null = null;
 
 export function setClipboard(next: ClipboardEntry | null): void {
   entry = next
-    ? { rect: { ...next.rect }, pixels: new Uint8ClampedArray(next.pixels) }
+    ? {
+        rect: { ...next.rect },
+        mask: { rect: { ...next.mask.rect }, bits: new Uint8Array(next.mask.bits) },
+        pixels: new Uint8ClampedArray(next.pixels),
+      }
     : null;
 }
 

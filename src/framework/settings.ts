@@ -11,12 +11,16 @@ export interface SettingCommand<Id extends string = string> {
   readonly keys?: readonly KeyBinding[];
 }
 
-/** One of a few numbers, rendered as a toggle group. */
-export interface ChoiceSetting {
+export type ChoiceValue = number | string;
+
+/** One of a few numbers or strings, rendered as a toggle group. */
+export interface ChoiceSetting<V extends ChoiceValue = ChoiceValue> {
   readonly kind: "choice";
   readonly label: string;
-  readonly values: readonly number[];
-  readonly default: number;
+  readonly values: readonly V[];
+  readonly default: V;
+  /** Display text per value; the bare value when a value has none. */
+  readonly labels?: Readonly<Partial<Record<V, string>>>;
   /** Read after each value by assistive tech ("3 pixels"); the bare number when omitted. */
   readonly unit?: string;
 }
@@ -46,7 +50,7 @@ export type Settings = Readonly<Record<string, Setting>>;
 export type SettingValues<S extends Settings> = { readonly [K in keyof S]: S[K]["default"] };
 
 /** What the host stores for one tool: only the settings changed from their default. */
-export type StoredValues = Readonly<Record<string, number | boolean>>;
+export type StoredValues = Readonly<Record<string, ChoiceValue | boolean>>;
 
 /** The keys of `S` that are choices, i.e. what `Tool.reselect` may name. */
 export type ChoiceKey<S extends Settings> = string extends keyof S
@@ -58,7 +62,9 @@ export type SettingCommandIdOf<S extends Settings> = {
   [K in keyof S]: S[K] extends ToggleSetting<infer Id> | SwitchSetting<infer Id> ? Id : never;
 }[keyof S];
 
-export function choice(spec: Omit<ChoiceSetting, "kind">): ChoiceSetting {
+export function choice<const V extends ChoiceValue>(
+  spec: Omit<ChoiceSetting<V>, "kind">,
+): ChoiceSetting<V> {
   return { kind: "choice", ...spec };
 }
 
@@ -79,14 +85,15 @@ export function resolveSettings<S extends Settings>(
   settings: S | undefined,
   stored: StoredValues | undefined,
 ): SettingValues<S> {
-  const values: Record<string, number | boolean> = {};
+  const values: Record<string, ChoiceValue | boolean> = {};
   for (const [key, setting] of Object.entries(settings ?? {})) {
     values[key] = stored?.[key] ?? setting.default;
   }
   return values as SettingValues<S>;
 }
 
-/** The next value above `value`, wrapping to the first. */
-export function nextChoice(setting: ChoiceSetting, value: number): number {
-  return setting.values.find((candidate) => candidate > value) ?? setting.values[0];
+/** The next value after `value` by position, wrapping; a value not in the list steps to the first. */
+export function nextChoice<V extends ChoiceValue>(setting: ChoiceSetting<V>, value: ChoiceValue): V {
+  const index = setting.values.indexOf(value as V);
+  return setting.values[(index + 1) % setting.values.length];
 }

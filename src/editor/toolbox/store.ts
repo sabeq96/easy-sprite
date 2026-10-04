@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { TOOL_KEY_HOLD_MS } from "@/constants/shortcuts";
-import type { StoredValues } from "@/framework/settings";
+import type { ChoiceValue, StoredValues } from "@/framework/settings";
 import type { ToolId } from "@/tools";
 
 /** A tool key being held: it has switched tools, and its release decides whether that sticks. */
@@ -29,7 +29,7 @@ export interface ToolboxState {
   releaseToolKey: (code: string, at: number) => void;
   /** The key's release will never arrive (window blur): hand back the tool from before it. */
   dropHeldTool: () => void;
-  setSetting: (toolId: string, key: string, value: number | boolean) => void;
+  setSetting: (toolId: string, key: string, value: ChoiceValue | boolean) => void;
 }
 
 export const useToolboxStore = create<ToolboxState>()((set, get) => ({
