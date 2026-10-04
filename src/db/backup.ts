@@ -86,7 +86,7 @@ export function validateBackup(file: unknown): Result<BackupFile> {
 
   const candidate = file as Partial<BackupFile>;
   if (candidate.format !== "sprite-editor-backup") {
-    return err("That is not a Sprite Editor backup file.");
+    return err("That is not an Easy Sprite backup file.");
   }
   if (typeof candidate.version !== "number") return err("That backup has no version.");
   if (candidate.version > BACKUP_FORMAT_VERSION) {
