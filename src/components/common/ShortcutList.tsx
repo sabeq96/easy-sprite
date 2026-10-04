@@ -1,7 +1,7 @@
 import type { ShortcutRow } from "@/commands/hints";
 import { Kbd, KbdGroup } from "@/components/ui/kbd";
 
-/** Label on the left, its chords on the right — the shortcut sheet and hover cards share it. */
+/** Label on the left, its chords on the right — Keyboard shortcuts and hover cards share it. */
 export function ShortcutList({ rows }: { rows: readonly ShortcutRow[] }) {
   return (
     <ul className="flex flex-col gap-1">

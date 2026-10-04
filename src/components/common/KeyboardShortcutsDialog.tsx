@@ -17,7 +17,7 @@ export interface ShortcutSection {
   rows: ShortcutRow[];
 }
 
-export interface ShortcutHelpDialogProps {
+export interface KeyboardShortcutsDialogProps {
   commands: CommandRegistry;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -35,7 +35,7 @@ export interface ShortcutHelpDialogProps {
  * hints — so nothing here can go stale when a key or gesture changes. Groups follow
  * `COMMAND_GROUPS`; rows follow registry order, then the hints.
  */
-export function ShortcutHelpDialog({
+export function KeyboardShortcutsDialog({
   commands,
   open,
   onOpenChange,
@@ -43,7 +43,7 @@ export function ShortcutHelpDialog({
   hints,
   leadingSections = [],
   excludeCommands,
-}: ShortcutHelpDialogProps) {
+}: KeyboardShortcutsDialogProps) {
   const rowsByGroup = new Map<CommandGroup, ShortcutRow[]>();
 
   for (const command of Object.values(commands)) {

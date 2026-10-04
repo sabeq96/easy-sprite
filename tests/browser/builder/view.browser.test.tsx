@@ -247,7 +247,7 @@ test("view keys stay out of the way while typing the sheet's name", async () => 
   expect(zoom()).toBe(4);
 });
 
-test("? and the keyboard button open a shortcut sheet listing the sheet's keys", async () => {
+test("? and the keyboard button open Keyboard shortcuts listing the sheet's keys", async () => {
   const { screen } = await openSheet(["Hero"]);
 
   await userEvent.keyboard("?");

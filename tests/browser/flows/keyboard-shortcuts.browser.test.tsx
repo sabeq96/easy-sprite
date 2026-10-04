@@ -6,7 +6,7 @@ import { createSpritesheet } from "@/db/repositories/spritesheets";
 import { openEditor } from "@test/editor";
 import { render } from "@test/render";
 
-/** Each section's heading, then its rows' labels, in the order the sheet shows them. */
+/** Each section's heading, then its rows' labels, in the order Keyboard shortcuts shows them. */
 async function sheetOutline() {
   await userEvent.keyboard("?");
   const dialog = page.getByRole("dialog", { name: "Keyboard shortcuts" });
@@ -17,7 +17,7 @@ async function sheetOutline() {
   ]);
 }
 
-test("the editor's sheet lists its groups and rows in a fixed order", async () => {
+test("the editor's Keyboard shortcuts lists its groups and rows in a fixed order", async () => {
   await openEditor();
 
   expect(await sheetOutline()).toEqual([
@@ -79,7 +79,7 @@ test("the editor's sheet lists its groups and rows in a fixed order", async () =
   ]);
 });
 
-test("the Builder's sheet lists its groups and rows in a fixed order", async () => {
+test("the Builder's Keyboard shortcuts lists its groups and rows in a fixed order", async () => {
   await page.viewport(1280, 720);
   await createSprite({ name: "Hero", width: 8, height: 8 });
   const sheet = await createSpritesheet({ name: "Composed" });

@@ -11,10 +11,10 @@ import { BuilderViewControls } from "@/components/builder/BuilderViewControls";
 import { CommandButton } from "@/components/common/CommandButton";
 import { DragBoard } from "@/components/common/DragBoard";
 import { InlineNameField } from "@/components/common/InlineNameField";
+import { KeyboardShortcutsDialog } from "@/components/common/KeyboardShortcutsDialog";
 import { NotFoundPage } from "@/components/common/NotFoundPage";
 import { Panel } from "@/components/common/Panel";
 import { SaveStatusBadge } from "@/components/common/SaveStatusBadge";
-import { ShortcutHelpDialog } from "@/components/common/ShortcutHelpDialog";
 import { TooltipButton } from "@/components/common/TooltipButton";
 import { Button } from "@/components/ui/button";
 import { CommandsProvider } from "@/commands/CommandsContext";
@@ -172,7 +172,7 @@ function SpritesheetBuilderShell() {
 
         <BuilderStatusBar sheet={sheet} blockCount={dnd.blocks.length} />
 
-        <ShortcutHelpDialog
+        <KeyboardShortcutsDialog
           commands={commands}
           open={showHelp}
           onOpenChange={setShowHelp}

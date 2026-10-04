@@ -32,7 +32,7 @@ function reselectSetting(tool: Tool<ToolId>): { key: string; setting: ChoiceSett
   return key !== undefined && setting?.kind === "choice" ? { key, setting } : null;
 }
 
-/** What pressing a tool's key again does, for the cheat sheet; null when it does nothing. */
+/** What pressing a tool's key again does, for Keyboard shortcuts; null when it does nothing. */
 export function reselectLabel(tool: Tool<ToolId>): string | null {
   const reselect = reselectSetting(tool);
   return reselect && `Cycle ${reselect.setting.label.toLowerCase()}`;

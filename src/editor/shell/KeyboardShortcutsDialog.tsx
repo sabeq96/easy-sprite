@@ -3,15 +3,15 @@ import { hintRow } from "@/commands/hints";
 import { keysOf, reselectKeys } from "@/commands/keymap";
 import type { CommandId, CommandRegistry } from "@/commands/types";
 import {
-  ShortcutHelpDialog as CommonShortcutHelpDialog,
+  KeyboardShortcutsDialog as CommonKeyboardShortcutsDialog,
   type ShortcutSection,
-} from "@/components/common/ShortcutHelpDialog";
+} from "@/components/common/KeyboardShortcutsDialog";
 import type { Tool } from "@/framework/tool";
 import { EDITOR_MODULES } from "@/editor/modules";
 import { reselectLabel, TOOL_KEY_HOLD_HINT } from "@/editor/toolbox/api";
 import { TOOL_LIST, type ToolId } from "@/tools";
 
-export interface ShortcutHelpDialogProps {
+export interface KeyboardShortcutsDialogProps {
   commands: CommandRegistry;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -68,7 +68,7 @@ function toolsRows(commands: CommandRegistry): ShortcutRow[] {
 
 /**
  * Only tools with more to say than their key — their commands and hints — get a section, read
- * from the tool's own definitions so the sheet cannot drift from them.
+ * from the tool's own definitions so Keyboard shortcuts cannot drift from them.
  */
 function toolSections(commands: CommandRegistry): ShortcutSection[] {
   return TOOLS_WITH_COMMANDS.flatMap((tool) => {
@@ -81,10 +81,14 @@ function toolSections(commands: CommandRegistry): ShortcutSection[] {
   });
 }
 
-/** The pixel editor's sheet: its tools first, then the shared command groups. */
-export function ShortcutHelpDialog({ commands, open, onOpenChange }: ShortcutHelpDialogProps) {
+/** The pixel editor's Keyboard shortcuts: its tools first, then the shared command groups. */
+export function KeyboardShortcutsDialog({
+  commands,
+  open,
+  onOpenChange,
+}: KeyboardShortcutsDialogProps) {
   return (
-    <CommonShortcutHelpDialog
+    <CommonKeyboardShortcutsDialog
       commands={commands}
       open={open}
       onOpenChange={onOpenChange}

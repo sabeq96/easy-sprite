@@ -5,7 +5,7 @@ import type { ToolId } from "@/tools";
 
 /*
  * There is no key table: every command declares its own `keys`, so the active registry is the
- * keymap. The handler, tooltips and the shortcut sheet all read it. No two commands in one
+ * keymap. The handler, tooltips and Keyboard shortcuts all read it. No two commands in one
  * registry may share a chord; a unit test checks each registry.
  */
 

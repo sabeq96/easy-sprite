@@ -13,7 +13,7 @@ export interface SessionContext {
 }
 
 /**
- * Undo, redo, save, the shortcut sheet and leaving for the library: defined once, bound by both the
+ * Undo, redo, save, Keyboard shortcuts and leaving for the library: defined once, bound by both the
  * pixel editor and the Builder, so the two cannot drift apart.
  */
 export const SESSION_COMMANDS = commandsFor<SessionContext>()([

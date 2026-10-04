@@ -11,9 +11,9 @@ import { module as view } from "@/editor/view/api";
 
 /**
  * Every host module, in the order their commands, hints and painters are applied. Rows in one
- * cheat-sheet group follow this order: view comes before animation, so the View group lists zoom,
- * fit and grid before the onion toggle, and canvas comes after palette, so the Color group lists
- * the 1–9 keys before "Paint with secondary color".
+ * Keyboard shortcuts group follow this order: view comes before animation, so the View group
+ * lists zoom, fit and grid before the onion toggle, and canvas comes after palette, so the Color
+ * group lists the 1–9 keys before "Paint with secondary color".
  */
 const MODULES = [shell, palette, layers, frames, view, animation, toolbox, canvas] as const;
 

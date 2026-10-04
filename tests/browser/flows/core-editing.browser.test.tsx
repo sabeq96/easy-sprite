@@ -105,7 +105,7 @@ test("clicking a tool activates it and updates aria-pressed on both buttons", as
   await expect.element(pencil).toHaveAttribute("aria-pressed", "false");
 });
 
-test("? opens the shortcut cheat sheet listing a bound command", async () => {
+test("? opens Keyboard shortcuts listing a bound command", async () => {
   const { screen } = await openEditor();
 
   await userEvent.keyboard("?");
@@ -114,7 +114,7 @@ test("? opens the shortcut cheat sheet listing a bound command", async () => {
   await expect.element(screen.getByText("Undo")).toBeVisible();
 });
 
-test("the cheat sheet lists tool gestures once, and feature keys inside their command group", async () => {
+test("Keyboard shortcuts lists tool gestures once, and feature keys inside their command group", async () => {
   const { screen } = await openEditor();
 
   await userEvent.keyboard("?");
