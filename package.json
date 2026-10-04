@@ -9,7 +9,7 @@
     "lint": "oxlint",
     "test": "vitest run --project=unit",
     "test:browser": "vitest run --project=browser",
-    "test:open": "vitest --ui --open",
+    "test:open": "vitest --project=browser --browser.headless=false",
     "test:all": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",

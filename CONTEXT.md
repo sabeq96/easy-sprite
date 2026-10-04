@@ -86,8 +86,12 @@ Everything one Tool does between pointer press and release. One Stroke is one un
 _Avoid_: Gesture, drag, action
 
 **Selection**:
-A rectangle of the Active layer's Cel chosen with Select & move, which Copy, Cut, Delete and moving act on.
-_Avoid_: Marquee, region
+An area of the Active layer's Cel chosen with Select & move, drawn as a Rectangle or freehand with the Lasso, which Copy, Cut, Delete and moving act on.
+_Avoid_: Marquee, region, mask
+
+**Lasso**:
+A Selection drawn freehand: the pixels the pointer traces, plus everything they enclose. Select & move's Shape setting picks between Rectangle and Lasso.
+_Avoid_: Freehand selection, polygon
 
 **Floating selection**:
 Selected pixels lifted off the Cel while being moved, stamped back down when dropped.

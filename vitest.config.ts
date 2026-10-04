@@ -34,7 +34,11 @@ export default defineConfig({
         },
       },
       {
-        plugins: [react(), babel({ presets: [reactCompilerPreset()] }), tailwindcss()],
+        plugins: [
+          react(),
+          babel({ presets: [reactCompilerPreset()] }),
+          tailwindcss(),
+        ],
         resolve: { alias },
         test: {
           name: "browser",
