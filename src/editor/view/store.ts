@@ -32,7 +32,7 @@ export interface ViewState {
   setGridEnabled: (enabled: boolean) => void;
   setGridSize: (size: number) => void;
   setCheckerSize: (size: number) => void;
-  /** Grid and chessboard to the sizes a sprite opens with (see `useGridReset`). */
+  /** Grid and checkerboard to the sizes a sprite opens with (see `useGridReset`). */
   resetGrid: (gridSize: number, checkerSize: number) => void;
 }
 
@@ -42,7 +42,7 @@ function constrainTo(container: Size, viewport: Viewport, sprite: Size): Viewpor
 }
 
 /**
- * Where the sprite sits on screen, and the pixel grid and chessboard drawn with it. Every viewport
+ * Where the sprite sits on screen, and the grid and checkerboard drawn with it. Every viewport
  * change goes through `constrainViewport`: centred on an axis the sprite fits, scrollable only on one
  * it overflows.
  */

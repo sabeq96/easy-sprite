@@ -61,7 +61,7 @@ export function BuilderCanvas({ rows, sizes, docs, ghostId, onRemoveBlock }: Bui
         empty area below the sheet a live drop target rather than dead space.
       */}
       {/*
-        The chessboard covers the whole sheet area, one cell per `checkerSize` sprite px. It sits on
+        The checkerboard covers the whole sheet area, one cell per `checkerSize` sprite px. It sits on
         this element, like the grid, so both line up with the blocks' own sprite-px positions; the
         blocks have no background, and their transparent pixels show it through.
       */}

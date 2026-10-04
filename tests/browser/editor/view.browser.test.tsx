@@ -261,7 +261,7 @@ test("the shortcut sheet teaches ⌘/Ctrl+Wheel to zoom and Wheel to pan", async
   expect(rows).toContainEqual(["Pan", "Wheel"]);
 });
 
-test("Ctrl/⌘+G and the grid popover both toggle the pixel grid", async () => {
+test("Ctrl/⌘+G and the grid popover both toggle the grid", async () => {
   const editor = await openEditor(SPRITE);
   const gridButton = editor.screen.getByRole("button", { name: "Grid options" });
   await expect.element(gridButton).toHaveAttribute("aria-pressed", "true");

@@ -23,7 +23,7 @@ export interface BuilderViewState {
   setGridEnabled: (enabled: boolean) => void;
   setGridSize: (size: number) => void;
   setCheckerSize: (size: number) => void;
-  /** Grid and chessboard to the sizes a sheet opens with. */
+  /** Grid and checkerboard to the sizes a sheet opens with. */
   resetGrid: (gridSize: number, checkerSize: number) => void;
   setContainerSize: (size: Size) => void;
 }

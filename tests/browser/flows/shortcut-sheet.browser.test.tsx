@@ -68,7 +68,7 @@ test("the editor's sheet lists its groups and rows in a fixed order", async () =
       "Zoom in",
       "Zoom out",
       "Fit to window",
-      "Toggle pixel grid",
+      "Toggle grid",
       "Toggle onion skin",
       "Zoom",
       "Pan",
@@ -91,4 +91,22 @@ test("the composer's sheet lists its groups and rows in a fixed order", async ()
     ["View", "Zoom in", "Zoom out", "Fit to window", "Toggle grid", "Zoom"],
     ["App", "Keyboard shortcuts", "Back to library"],
   ]);
+});
+
+test("the editor and the builder list the same Toggle grid label", async () => {
+  /** The View rows that name the grid. */
+  const gridRows = async () =>
+    (await sheetOutline()).find(([heading]) => heading === "View")?.filter((label) => /grid/i.test(label ?? ""));
+
+  const editor = await openEditor();
+  const editorRows = await gridRows();
+  await editor.screen.unmount();
+
+  await createSprite({ name: "Hero", width: 8, height: 8 });
+  const sheet = await createSpritesheet({ name: "Composed" });
+  const screen = await render(<AppRoutes />, { route: `/spritesheets/${sheet.id}` });
+  await expect.element(screen.getByTestId("builder-trailing-row")).toBeVisible();
+
+  expect(editorRows).toEqual(["Toggle grid"]);
+  expect(await gridRows()).toEqual(editorRows);
 });

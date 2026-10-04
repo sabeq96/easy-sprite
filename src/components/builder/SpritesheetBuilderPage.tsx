@@ -193,7 +193,7 @@ function BuilderSkeleton() {
 }
 
 /**
- * Grid and chessboard to the user's defaults each time a sheet opens or its tile changes, and the
+ * Grid and checkerboard to the user's defaults each time a sheet opens or its tile changes, and the
  * grid on or off each time a sheet opens.
  */
 function useBuilderViewDefaults(doc: SpritesheetDocument, tileSize: number): void {

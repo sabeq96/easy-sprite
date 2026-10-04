@@ -42,7 +42,7 @@ export const BUILT_IN_DEFAULTS: Defaults = {
   onionOpacity: ONION_DEFAULT.opacity,
 };
 
-/** Fixed grid and chessboard sizes a default may name; the editor snaps them to each sprite. */
+/** Fixed grid and checkerboard sizes a default may name; the editor snaps them to each sprite. */
 export const GRID_DEFAULT_SIZES = SHEET_TILE_OPTIONS;
 
 /** The onion opacity slider's range, as a 0–1 fraction. */

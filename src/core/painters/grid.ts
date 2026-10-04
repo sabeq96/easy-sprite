@@ -2,7 +2,7 @@ import { GRID_LINE_WIDTH, GRID_MIN_SCALE, MAX_GRID_SIZE } from "@/constants/canv
 import { snapTileSize, tileSizeOptions } from "@/core/grid";
 import type { PaintContext } from "@/core/renderer";
 
-/** The pixel grid, one cell per `size` sprite pixels (snapped to a size that tiles evenly). */
+/** The grid, one cell per `size` sprite pixels (snapped to a size that tiles evenly). */
 export function drawGrid(p: PaintContext, size: number): void {
   const { ctx, doc, dpr } = p;
   const { scale, originX, originY } = p.viewport;

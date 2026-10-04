@@ -3,7 +3,7 @@ export const BUILDER_ZOOM_LEVELS = [1, 2, 3, 4, 6, 8, 12] as const;
 export const DEFAULT_BUILDER_ZOOM = 4;
 
 /**
- * Grid and chessboard sizes, in sprite px. A sheet has no fixed size to divide, so these are a fixed
+ * Grid and checkerboard sizes, in sprite px. A sheet has no fixed size to divide, so these are a fixed
  * ladder; the sheet's own tile size is merged in (see `sheetTileOptions`). Blocks pack tight, so a
  * block may straddle a grid line — the grid is for reading row alignment, not a snap target.
  */

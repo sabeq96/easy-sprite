@@ -20,7 +20,7 @@ export function inferTileSize(width: number, height: number): number | undefined
   return [...TILE_SIZE_PRESETS].reverse().find((tile) => width % tile === 0 && height % tile === 0);
 }
 
-/** Grid and chessboard sizes a sheet offers: the fixed ladder plus the sheet's own tile. */
+/** Grid and checkerboard sizes a sheet offers: the fixed ladder plus the sheet's own tile. */
 export function sheetTileOptions(tile: number): number[] {
   return [...new Set([...SHEET_TILE_OPTIONS, tile])].sort((a, b) => a - b);
 }

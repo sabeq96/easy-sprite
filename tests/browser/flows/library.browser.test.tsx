@@ -33,7 +33,7 @@ test("creating a sprite from the library opens it in the editor, and it lists on
   await expect.element(screen.getByRole("button", { name: "Open Hero walk" })).toBeVisible();
 });
 
-test("a new sprite is sized in tiles, and opens with a one-tile grid and a 1px chessboard", async () => {
+test("a new sprite is sized in tiles, and opens with a one-tile grid and a 1px checkerboard", async () => {
   const screen = await render(<AppRoutes />, { route: "/sprites" });
 
   await userEvent.click(screen.getByRole("button", { name: "New sprite", exact: true }).first());

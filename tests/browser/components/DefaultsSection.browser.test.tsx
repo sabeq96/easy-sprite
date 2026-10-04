@@ -10,7 +10,7 @@ const storedRow = () => readSetting<Record<string, unknown>>(SETTING_KEYS.defaul
 
 test("a change persists and enables that group's reset", async () => {
   const screen = await render(<DefaultsSection />);
-  const reset = screen.getByRole("button", { name: "Reset grid and chessboard to default" });
+  const reset = screen.getByRole("button", { name: "Reset grid and checkerboard to default" });
   await expect.element(reset).toBeDisabled();
 
   await userEvent.click(screen.getByRole("switch", { name: "Show grid" }));

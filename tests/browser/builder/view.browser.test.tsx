@@ -276,12 +276,12 @@ test("? and the keyboard button open a shortcut sheet listing the sheet's keys",
   await expect.element(screen.getByRole("dialog", { name: "Keyboard shortcuts" })).toBeVisible();
 });
 
-test("the whole sheet area shows the chessboard at chess size × zoom, 1px by default", async () => {
+test("the whole sheet area shows the checkerboard at checkerboard size × zoom, 1px by default", async () => {
   await openSheet(["Hero"], ([hero]) => [{ id: "a", spriteId: hero, row: 0 }]);
   const canvas = () => document.querySelector('[data-testid="builder-canvas"]') as HTMLElement;
   const block = document.querySelector('[data-block-id="a"]') as HTMLElement;
 
-  // One chess cell per sprite px: at 4× a two-cell tile is 8 screen px.
+  // One checkerboard cell per sprite px: at 4× a two-cell tile is 8 screen px.
   await expect.poll(() => canvas().style.backgroundSize).toBe("8px 8px");
   useBuilderViewStore.getState().setCheckerSize(2);
   await expect.poll(() => canvas().style.backgroundSize).toBe("16px 16px");

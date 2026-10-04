@@ -27,7 +27,7 @@ export const MAX_GRID_SIZE = 64;
 
 export const MIN_CHECKER_SIZE = 1;
 export const MAX_CHECKER_SIZE = 64;
-/** A 2×2-tile chessboard in the theme's checker colours; set `background-size` to twice the tile. */
+/** A 2×2-tile checkerboard in the theme's checker colours; set `background-size` to twice the tile. */
 export const CHECKER_GRADIENT =
   "conic-gradient(var(--checker-a) 25%, var(--checker-b) 0 50%, var(--checker-a) 0 75%, var(--checker-b) 0)";
 export const DEFAULT_CHECKER_SIZE = 1;

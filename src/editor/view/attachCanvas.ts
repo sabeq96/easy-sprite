@@ -3,7 +3,7 @@ import type { CanvasRenderer } from "@/core/renderer";
 import { useViewStore } from "./store";
 
 /**
- * Registers the pixel-grid painter on the overlay channel, and repaints that channel whenever the
+ * Registers the grid painter on the overlay channel, and repaints that channel whenever the
  * grid settings change. Modules attach before any tool, so a tool's overlay draws above the grid.
  */
 export function attachGrid(renderer: CanvasRenderer): () => void {

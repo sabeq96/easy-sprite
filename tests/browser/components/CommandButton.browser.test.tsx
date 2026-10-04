@@ -44,7 +44,7 @@ test("aria-pressed follows the command's active state as the store changes", asy
     {
       "view.toggleGrid": {
         id: "view.toggleGrid",
-        label: "Toggle pixel grid",
+        label: "Toggle grid",
         group: "View",
         isActive: () => useViewStore.getState().gridEnabled,
         run: () => useViewStore.getState().toggleGrid(),
@@ -52,7 +52,7 @@ test("aria-pressed follows the command's active state as the store changes", asy
     },
     <CommandButton command="view.toggleGrid">G</CommandButton>,
   );
-  const button = screen.getByRole("button", { name: "Toggle pixel grid" });
+  const button = screen.getByRole("button", { name: "Toggle grid" });
   const initial = useViewStore.getState().gridEnabled;
 
   await expect.element(button).toHaveAttribute("aria-pressed", String(initial));
