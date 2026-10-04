@@ -118,12 +118,16 @@ A named arrangement of Blocks in Rows, exported as one PNG.
 _Avoid_: Sheet (in user-facing text), atlas, tileset
 
 **Block**:
-One placement of a Sprite on a Spritesheet, drawn as that Sprite's Strip. The same Sprite can be placed as several Blocks.
+One placement of a Sprite on a Spritesheet, drawn as that Sprite's Strip. A Sprite is placed at most once per Spritesheet.
 _Avoid_: Tile, cell, slot
 
 **Row**:
 A horizontal line of Blocks on a Spritesheet. Blocks sit edge to edge, a Row is as tall as its tallest Block, and an emptied Row closes up.
 _Avoid_: Line, strip, lane
+
+**Sprite tray**:
+The Builder's searchable list of Sprites not yet placed on the Spritesheet. Sprites are dragged out of it to place them and Blocks are dropped back onto it to remove them.
+_Avoid_: Palette, picker, sidebar
 
 ### Storage and files
 
@@ -169,9 +173,9 @@ _Avoid_: Action, handler
 A Command both the Editor and the Builder offer: undo, redo, save, help, back.
 
 **Hint**:
-An input listed on the Cheat sheet that is not a Command, such as 1–9 for Palette colors or right-drag for the Secondary color.
+An input listed in Keyboard shortcuts that is not a Command, such as 1–9 for Palette colors or right-drag for the Secondary color.
 _Avoid_: Gesture, binding
 
-**Cheat sheet**:
-The "Keyboard shortcuts" dialog, listing every Command's keys and every Hint.
-_Avoid_: Shortcut help, keymap (the keymap is the bindings, not the dialog)
+**Keyboard shortcuts**:
+The dialog listing every Command's keys and every Hint, in both the Editor and the Builder.
+_Avoid_: Cheat sheet, shortcut help, keymap (the keymap is the bindings, not the dialog)
