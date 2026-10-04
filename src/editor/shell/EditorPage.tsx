@@ -7,7 +7,8 @@ import { createToolHost, EditorCanvas, ToolHostProvider } from "@/editor/canvas/
 import { FramesBar, useActiveFrameGuard } from "@/editor/frames/api";
 import { useActiveLayerGuard } from "@/editor/layers/api";
 import { bindEditorCommands, EDITOR_MODULES, subscribeToModules } from "@/editor/modules";
-import { useColorHotkeys } from "@/editor/palette/api";
+import { useOnionReset } from "@/editor/animation/api";
+import { useColorHotkeys, usePaletteReset } from "@/editor/palette/api";
 import { ToolOptionsBar, ToolSidebar } from "@/editor/toolbox/api";
 import { useGridReset } from "@/editor/view/api";
 import { useShortcuts } from "@/hooks/useShortcuts";
@@ -52,6 +53,8 @@ function EditorShell() {
   useActiveFrameGuard();
   useColorHotkeys();
   useGridReset();
+  useOnionReset();
+  usePaletteReset();
 
   const ctx = useModuleContext(() => setShowHelp(true));
   const commands = bindEditorCommands(ctx);

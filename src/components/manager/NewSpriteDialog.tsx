@@ -4,10 +4,10 @@ import { FormDialog } from "@/components/common/FormDialog";
 import { NameForm } from "@/components/common/NameForm";
 import { TileCountFields, type TileCount } from "@/components/common/TileCountFields";
 import { TileSizePicker } from "@/components/common/TileSizePicker";
-import { DEFAULT_TILE_COUNT, DEFAULT_TILE_SIZE } from "@/constants/canvas";
 import { DEFAULT_ITEM_NAME } from "@/constants/names";
 import { ROUTES } from "@/constants/routes";
 import { useSpriteActions } from "@/hooks/useSpriteActions";
+import { useDefaultsStore } from "@/stores/useDefaultsStore";
 import { clamp } from "@/lib/math";
 import { maxTileCount } from "@/lib/tiles";
 import { isSpriteOversized } from "@/lib/validation";
@@ -33,10 +33,12 @@ export function NewSpriteDialog({ open, onOpenChange }: NewSpriteDialogProps) {
 function NewSpriteForm({ onDone }: { onDone: () => void }) {
   const navigate = useNavigate();
   const sprites = useSpriteActions();
-  const [tile, setTile] = useState(DEFAULT_TILE_SIZE);
+  // The form remounts each time the dialog opens, so it always starts from the current defaults.
+  const [defaults] = useState(() => useDefaultsStore.getState().defaults);
+  const [tile, setTile] = useState(defaults.tileSize);
   const [count, setCount] = useState<TileCount>({
-    columns: DEFAULT_TILE_COUNT,
-    rows: DEFAULT_TILE_COUNT,
+    columns: defaults.spriteColumns,
+    rows: defaults.spriteRows,
   });
 
   // A bigger tile lowers the cap, so the count is pulled back under it rather than overflowing.

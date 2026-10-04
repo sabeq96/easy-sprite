@@ -37,3 +37,13 @@ export function defaultGridSize(tile: number | undefined, width: number, height:
     snapTileSize(DEFAULT_TILE_SIZE, tileSizeOptions(width, height, MAX_GRID_SIZE))
   );
 }
+
+/** The grid a sprite opens with, given the user's default: "tile" is `defaultGridSize`. */
+export function openGridSize(
+  preference: "tile" | number,
+  tile: number | undefined,
+  width: number,
+  height: number,
+): number {
+  return preference === "tile" ? defaultGridSize(tile, width, height) : preference;
+}

@@ -3,10 +3,10 @@ import { useNavigate } from "react-router";
 import { FormDialog } from "@/components/common/FormDialog";
 import { NameForm } from "@/components/common/NameForm";
 import { TileSizePicker } from "@/components/common/TileSizePicker";
-import { DEFAULT_TILE_SIZE } from "@/constants/canvas";
 import { DEFAULT_ITEM_NAME } from "@/constants/names";
 import { ROUTES } from "@/constants/routes";
 import { useSpritesheetActions } from "@/hooks/useSpritesheetActions";
+import { useDefaultsStore } from "@/stores/useDefaultsStore";
 
 export interface NewSpritesheetDialogProps {
   open: boolean;
@@ -29,7 +29,8 @@ export function NewSpritesheetDialog({ open, onOpenChange }: NewSpritesheetDialo
 function NewSpritesheetForm({ onDone }: { onDone: () => void }) {
   const navigate = useNavigate();
   const spritesheets = useSpritesheetActions();
-  const [tile, setTile] = useState(DEFAULT_TILE_SIZE);
+  // The form remounts each time the dialog opens, so it always starts from the current default.
+  const [tile, setTile] = useState(() => useDefaultsStore.getState().defaults.tileSize);
 
   return (
     <NameForm

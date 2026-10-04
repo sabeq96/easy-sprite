@@ -1,0 +1,702 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contract: User-configurable defaults (#19)</title>
+<script type="module">
+import 'https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3'
+</script>
+<style type="text/tailwindcss">
+@theme {
+  --color-ink: #1c2433;  --color-muted: #5b6577; --color-paper: #fbfcfd;
+  --color-grid: #e4e9f1; --color-link: #2459a8;
+  --color-new: #2e7d4f;  --color-chg: #a96a12;  --color-del: #b23a3a; --color-idle: #8a94a3;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+}
+@layer base {
+  body { @apply bg-paper text-ink font-sans leading-relaxed antialiased; }
+  a { @apply text-link; }
+  code { @apply font-mono text-[0.9em]; }
+  *:target { @apply bg-amber-50 outline-2 outline-amber-300; }
+}
+@layer components {
+  .page    { @apply max-w-5xl mx-auto px-5 py-10 space-y-10; }
+  .meta    { @apply flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted; }
+  .brief   { @apply grid grid-cols-[5rem_1fr] gap-x-4 gap-y-1 max-w-[75ch]; }
+  .brief dt{ @apply text-muted; }
+  .part    { @apply space-y-3; }
+  .part h2 { @apply text-lg font-semibold; }
+  .part h3 { @apply font-medium pt-2; }
+  .lead    { @apply text-sm text-muted max-w-[75ch]; }
+  .id      { @apply font-mono text-xs px-1.5 py-0.5 rounded bg-grid no-underline whitespace-nowrap; }
+  .rows    { @apply block w-full overflow-x-auto text-sm border-collapse; }
+  .rows th{ @apply text-left font-medium text-muted pb-1 pr-4; }
+  .rows td{ @apply border-t border-grid py-1.5 pr-4 align-top; }
+  .op-new, .op-edit, .op-del { @apply font-mono text-xs px-1.5 py-0.5 rounded whitespace-nowrap; }
+  .op-new  { @apply text-new bg-new/10; }
+  .op-edit { @apply text-chg bg-chg/10; }
+  .op-del  { @apply text-del bg-del/10; }
+  .status-draft, .status-agreed, .status-building, .status-done, .status-abandoned, .status-superseded { @apply text-xs font-medium px-2 py-0.5 rounded-full border; }
+  .status-draft      { @apply text-chg border-chg/40; }
+  .status-agreed     { @apply text-link border-link/40; }
+  .status-building   { @apply text-ink border-ink/40; }
+  .status-done       { @apply text-new border-new/40; }
+  .status-abandoned, .status-superseded { @apply text-idle border-idle/40; }
+  .built   { @apply border-2 border-ink rounded-md p-5 sm:p-7 space-y-6;
+             background: linear-gradient(var(--color-grid) 1px, transparent 1px) 0 0 / 24px 24px,
+                         linear-gradient(90deg, var(--color-grid) 1px, transparent 1px) 0 0 / 24px 24px, white; }
+  .built h2{ @apply text-2xl font-semibold; }
+  .legend  { @apply flex gap-3 text-xs text-muted; }
+  .legend span::before { content: "■ "; }
+  .short   { @apply text-base max-w-[70ch] bg-white/90; }
+  .size    { @apply grid sm:grid-cols-[11rem_1fr] gap-x-4 gap-y-0.5 text-sm bg-white border border-grid rounded p-3; }
+  .size dt { @apply text-muted; }
+  .built figure     { @apply space-y-1.5; }
+  .built figcaption { @apply text-sm text-muted; }
+  .view, .diff, .code, .mermaid, .fragment {
+             @apply bg-white border border-grid rounded p-4 overflow-x-auto font-mono text-[13px] leading-6; }
+  .mermaid { @apply font-sans; }
+  .fragment{ @apply font-sans text-sm; }
+  .hops    { @apply text-xs text-muted; }
+  .hops summary { @apply cursor-pointer; }
+  .hops pre{ @apply bg-white border border-grid rounded p-3 mt-1 overflow-x-auto font-mono leading-5; }
+  .diff .add { @apply text-new bg-new/10 block; }
+  .diff .rm  { @apply text-del bg-del/10 block; }
+  .diff .chg { @apply text-chg bg-chg/10 block; }
+  .diff .ctx { @apply text-idle block; }
+  .scope   { @apply grid sm:grid-cols-2 gap-6; }
+  .scope h3{ @apply font-medium mb-1; }
+  .scope li{ @apply py-0.5; }
+  .out     { @apply text-muted; }
+  .tasks td:first-child::before    { content: "☐ "; }
+  .tasks tr.done td:first-child::before { content: "☑ "; @apply text-new; }
+  .more    { @apply border-t border-grid pt-2; }
+  .more summary { @apply cursor-pointer font-medium; }
+  .more ul { @apply text-sm mt-2 space-y-1; }
+  .more h4 { @apply text-xs uppercase tracking-wide text-muted mt-3; }
+}
+</style>
+</head>
+<body>
+<main class="page">
+
+<header class="space-y-3">
+  <h1 class="text-3xl font-semibold">User-configurable defaults (#19)</h1>
+  <div class="meta"><span class="status-done">done</span><span>2026-10-03</span><span>approved 2026-10-03 (with amendment A1)</span><code>docs/contracts/2026-10-03-user-defaults.html</code></div>
+  <dl class="brief">
+    <dt>Problem</dt><dd>Every starting value is a hardcoded constant: the new-sprite and new-sheet tile size and count, grid and chessboard size, grid on/off, preview FPS, palette and onion skin. The <code>editor.defaultCanvasSize</code> setting key exists, but nothing reads it. <a class="id" href="#F1">F1</a> <a class="id" href="#F4">F4</a> <a class="id" href="#F5">F5</a> <a class="id" href="#F6">F6</a> <a class="id" href="#F7">F7</a> <a class="id" href="#F8">F8</a> <a class="id" href="#F9">F9</a> <a class="id" href="#F10">F10</a></dd>
+    <dt>Goal</dt><dd>A Defaults section on the Settings page sets each of those values. Each one can be reset to its built-in value, is saved in IndexedDB and is included in backups. New Sprite/Sheet dialogs and every freshly opened sprite or sheet start from them.</dd>
+  </dl>
+  <p class="lead"><b>How this contract was decided:</b> you asked me to make the design decisions myself. Every <code>D#</code> below is marked <i>(delegated)</i> and gives my reasoning and the alternatives I rejected. Approving the contract approves those decisions; change any row before approval.</p>
+</header>
+
+<section class="built">
+  <div class="flex flex-wrap items-baseline justify-between gap-2">
+    <h2>What gets built</h2>
+    <div class="legend"><span class="text-new">new</span><span class="text-chg">changed</span><span class="text-del">removed</span><span class="text-idle">untouched</span></div>
+  </div>
+  <p class="short">Settings gets a <b>Defaults</b> card with 11 values in 4 groups. Each group has a reset button that is enabled only when one of its values differs from the built-in. Changes save at once into a single <code>app.defaults</code> row in the existing settings table, which is why backup and restore already carry them. A small store holds the resolved values. The sprite and sheet loaders wait for that store before opening, so a document never opens with the built-in values first. Each editor module applies its own values whenever a sprite opens.</p>
+
+  <dl class="size">
+    <dt>Files</dt><dd>11 new · 21 edited · 0 deleted (tests: 5 new, 4 edited)</dd>
+    <dt>Dependencies</dt><dd>none added. Uses the installed <code>zustand 5.0.15</code>, <code>dexie 4.4.6</code> and <code>@base-ui/react 1.8.0</code> <a class="id" href="#F20">F20</a></dd>
+    <dt>Surface</dt><dd>1 new persisted record (<code>settings["app.defaults"]</code>) · 1 removed key (<code>editor.defaultCanvasSize</code>) · new <code>Defaults</code> type and store · changed <code>resetGrid</code> in 2 stores · 3 new/changed module hooks · 1 new Settings card</dd>
+    <dt>Counts</dt><dd>14 decisions (D7 withdrawn) · 5 risks · 0 open · 10 done criteria · 6 tasks</dd>
+    <dt>Hard to roll back</dt><dd>The <code>app.defaults</code> record format. It reaches backup files, so later versions must still read it. Unknown or invalid fields are ignored, not fatal (<a class="id" href="#D3">D3</a>).</dd>
+    <dt>Manual checks</dt><dd><a class="id" href="#Done10">Done10</a> (look and feel of the Defaults card)</dd>
+  </dl>
+
+  <figure>
+    <figcaption>Data flow: one row in IndexedDB, one store, each consumer reads it once when something is created or opened</figcaption>
+<pre class="mermaid">flowchart LR
+  USER --> DS[DefaultsSection]:::new
+  DS -->|"set / reset"| Store[useDefaultsStore]:::new
+  Store -->|"writeSetting(app.defaults, stored)"| DB["DB settings"]
+  Store -.->|"write fails: value kept in memory, toast (D9)"| DS
+  Boot["main.tsx"]:::chg -->|"loadDefaults()"| Store
+  DB -->|"readSetting → resolveDefaults"| Store
+  DB -.->|"read fails or invalid fields: built-ins (D3, D9)"| Store
+  Prov["DocumentProvider / SpritesheetProvider"]:::chg -->|"await loadDefaults()"| Store
+  Store -->|"getState().defaults"| Dialogs["NewSpriteDialog / NewSpritesheetDialog"]:::chg
+  Store -->|"on open"| Editor["useGridReset · useOnionReset · usePaletteReset · PreviewPanel"]:::chg
+  Store -->|"on open"| Builder[SpritesheetBuilderPage]:::chg
+  Backup["useBackupActions restore / clearAll"]:::chg -->|"reload"| Store
+  click Store href "#D2"
+  click DB href "#D1"
+  click Editor href "#D5"
+  click Builder href "#D5"
+  click Dialogs href "#D4"</pre>
+<details class="hops"><summary>Text version</summary><pre>1 DefaultsSection  --set(key, value) / reset(keys)--> useDefaultsStore        (D2 D8)
+2 useDefaultsStore --writeSetting("app.defaults")---> DB settings             fails: kept in memory + toast "Could not save defaults." (D9)
+3 main.tsx         --loadDefaults()-----------------> useDefaultsStore        (D2)
+4 DB settings      --readSetting → resolveDefaults--> useDefaultsStore        fails/invalid: built-ins, console.error on failure (D3 D9)
+5 Providers        --await loadDefaults()-----------> useDefaultsStore        before "ready", so opens never see built-ins first (D2 R1)
+6 useDefaultsStore --getState().defaults------------> New Sprite / Sheet dialogs (initial state) (D4)
+7 useDefaultsStore --getState().defaults------------> editor modules on doc open; builder on sheet open (D5 D6)
+8 useBackupActions --reloadDefaults() after restore / clear--> useDefaultsStore (D10)</pre></details>
+  </figure>
+
+  <figure>
+    <figcaption>File map: a model, a store, a Settings card, and a small reset hook in each module that owns the state</figcaption>
+<pre class="diff"> src/
+  ├── constants/
++ │   ├── defaults.ts                 Defaults type, BUILT_IN_DEFAULTS, option lists      D1 D3 D11
+~ │   └── settings.ts                 + defaults key, − defaultCanvasSize                 D1 D12
+  ├── lib/
++ │   └── defaults.ts                 resolveDefaults(stored): Defaults                   D3
+  ├── stores/
++ │   ├── useDefaultsStore.ts         load / set / reset, persists, loadDefaults()        D2 D9
+~ │   └── useBuilderViewStore.ts      resetGrid(gridSize, checkerSize), setGridEnabled    D5 D11
+  ├── main.tsx                        ~ loadDefaults() at start-up                        D2
+  ├── app/
+~ │   ├── DocumentProvider.tsx        await loadDefaults() before ready                   D2
+~ │   └── SpritesheetProvider.tsx     await loadDefaults() before ready                   D2
+  ├── hooks/
+~ │   └── useBackupActions.ts         reload defaults after restore / clear               D10
+  ├── core/
+~ │   └── grid.ts                     + openGridSize(pref, tile, w, h)                    D11
+  ├── framework/
+  ├── tools/shared/
+  ├── editor/
+~ │   ├── view/store.ts               resetGrid(gridSize, checkerSize)                    D5 D11
+~ │   ├── view/useGridReset.ts        grid size, chessboard, grid on/off from defaults    D5 D6
++ │   ├── animation/useOnionReset.ts  onion from defaults on open                         D5 D6
+~ │   ├── animation/PreviewPanel.tsx  fps starts at defaults.previewFps                   D5
+~ │   ├── animation/api.ts            + useOnionReset                                     D6
++ │   ├── palette/usePaletteReset.ts  active palette from defaults on open                D5 D6
+~ │   ├── palette/api.ts              + usePaletteReset                                   D6
+~ │   └── shell/EditorPage.tsx        calls the three new hooks                           D6
+  ├── components/
+~ │   ├── manager/NewSpriteDialog.tsx       initial tile + count from defaults            D4
+~ │   ├── manager/NewSpritesheetDialog.tsx  initial tile from defaults                    D4
+~ │   ├── builder/SpritesheetBuilderPage.tsx grid, chessboard, on/off from defaults       D5
++ │   ├── settings/DefaultsSection.tsx      the card, 5 groups                            D8
++ │   ├── settings/DefaultRow.tsx           label + control + reset button                D8
+~ │   └── settings/SettingsPage.tsx         renders DefaultsSection                       D8
+ tests/
++ ├── unit/lib/defaults.test.ts                                                           Done1
++ ├── unit/stores/defaultsStore.test.ts                                                   Done2 Done3
+~ ├── unit/db/backup.test.ts                                                              Done4
+~ ├── unit/core/grid.test.ts                                                              Done6
+~ ├── unit/editor/view/store.test.ts + unit/stores/builderViewStore.test.ts               (resetGrid signature)
++ ├── browser/flows/defaults.browser.test.tsx                                             Done5 Done7 Done8 Done9
++ └── browser/components/DefaultsSection.browser.test.tsx                                 Done2 Done3</pre>
+  </figure>
+
+  <figure>
+    <figcaption>New and changed signatures. Each line names the decisions and facts behind it</figcaption>
+<pre class="code">// src/constants/defaults.ts
+export interface Defaults {                                       // D1 D11
+  tileSize: number;            // TILE_SIZE_PRESETS, built-in 16 — new sprites AND new sheets  // A1 F4 F5
+  spriteColumns: number;       // 1..maxTileCount(tileSize), built-in 2  // F4 F13
+  spriteRows: number;          // 1..maxTileCount(tileSize), built-in 2  // F4 F13
+  gridEnabled: boolean;        // built-in true                   // F6
+  gridSize: "tile" | number;   // "tile" or GRID_DEFAULT_SIZES, built-in "tile"  // D11 F6 F14
+  checkerSize: number;         // GRID_DEFAULT_SIZES, built-in 1  // D11 F6
+  previewFps: number;          // MIN_FPS..MAX_FPS integer, built-in 5  // F7
+  paletteId: string | null;    // null = first palette, built-in null  // D13 F8
+  onionEnabled: boolean;       // built-in false                  // F10
+  onionDirection: OnionDirection; // "before" | "after", built-in "before"  // F10
+  onionOpacity: number;        // 0.1..0.8, built-in 0.35         // F10 F11
+}
+export const BUILT_IN_DEFAULTS: Defaults;                         // D1, values from the existing constants F4–F11
+export const GRID_DEFAULT_SIZES: typeof SHEET_TILE_OPTIONS;       // D11 F14 — [1,2,4,8,16,32,64]
+
+// src/constants/settings.ts
+SETTING_KEYS.defaults = "app.defaults"                            // D1
+- SETTING_KEYS.defaultCanvasSize                                  // D12 F1
+
+// src/lib/defaults.ts
+export function resolveDefaults(stored: unknown): Defaults;       // D3 — invalid/unknown fields → built-in
+/** The fields of `stored` that resolveDefaults keeps; what the store writes back. */
+export function validDefaults(stored: unknown): Partial&lt;Defaults>;  // D3
+
+// src/stores/useDefaultsStore.ts
+export interface DefaultsState {                                  // D2
+  defaults: Defaults;                // resolved, always complete
+  stored: Partial&lt;Defaults>;         // only fields the user changed
+  load(): Promise&lt;void>;
+  set&lt;K extends keyof Defaults>(key: K, value: Defaults[K]): void;   // D8 D9
+  reset(keys: readonly (keyof Defaults)[]): void;                  // D8
+}
+export const useDefaultsStore: UseBoundStore&lt;StoreApi&lt;DefaultsState>>;  // F20
+/** First call loads; later calls return the same promise. Never rejects. */
+export function loadDefaults(): Promise&lt;void>;                    // D2 D9
+/** Re-reads the row (after restore / clear) and replaces the cached promise. */
+export function reloadDefaults(): Promise&lt;void>;                  // D10
+
+// src/core/grid.ts
+export function openGridSize(pref: "tile" | number, tile: number | undefined, width: number, height: number): number;  // D11 F12
+
+// src/framework/settings.ts
+
+// src/editor/view/store.ts and src/stores/useBuilderViewStore.ts
+~ resetGrid: (gridSize: number, checkerSize: number) => void;     // D5 F6 F16
++ setGridEnabled: (enabled: boolean) => void;                     // builder only; editor has it F6
+
+// module hooks, each exported through its api.ts
+export function useGridReset(): void;      // editor/view, changed    D5 D6
+export function useOnionReset(): void;     // editor/animation, new   D5 D6
+export function usePaletteReset(): void;   // editor/palette, new     D5 D6
+
+// src/components/settings
+export function DefaultsSection(): JSX.Element;                   // D8
+export function DefaultRow(props: { label: string; changed: boolean; onReset(): void; children: ReactNode }): JSX.Element;  // D8</pre>
+  </figure>
+
+  <figure>
+    <figcaption>What lands in IndexedDB: one row, containing only the values that were changed</figcaption>
+<pre class="view">db.settings  { key: "app.defaults",
+               value: { gridEnabled: false, previewFps: 12, tileSize: 32 } }   D1
+             ─ absent field  → built-in (BUILT_IN_DEFAULTS)                     D1
+             ─ invalid field → built-in, ignored on read and dropped on next write   D3
+backup.json  settings: [ …, { key: "app.defaults", value: {…} } ]               F2 D10</pre>
+  </figure>
+
+  <figure>
+    <figcaption>What happens when a sprite opens. Each module resets its own state; the store's values are read once, not subscribed to</figcaption>
+<pre class="view">DocumentProvider: await openDocument(id) and loadDefaults() → ready          D2
+EditorShell mounts (remounts per sprite, F17)
+  useGridReset      [doc, tileSize]  resetGrid(openGridSize(d.gridSize, tile, w, h), d.checkerSize)   D11
+                    [doc]            setGridEnabled(d.gridEnabled)                                  D5
+  useOnionReset     [doc]            setOnion({ enabled, direction, opacity })                      D5
+  usePaletteReset   [doc]            setActivePalette(d.paletteId)                                  D13
+  PreviewPanel      useState(d.previewFps)                                                          D5 F17
+SpritesheetBuilderPage
+                    [doc, tileSize]  resetGrid(d.gridSize === "tile" ? tileSize : d.gridSize, d.checkerSize)  D11
+                    [doc]            setGridEnabled(d.gridEnabled)                                  D5
+(d = useDefaultsStore.getState().defaults)                                                          D2 R3</pre>
+  </figure>
+
+
+  <figure>
+    <figcaption>UI structure: one new card on the Settings page, built from existing controls</figcaption>
+<pre class="view">SettingsPage                                   src/components/settings/SettingsPage.tsx
+├── ThemeSection
+├── DefaultsSection  (new)                     src/components/settings/DefaultsSection.tsx   D8
+│   ├── DefaultRow "New sprite"                TileSizePicker + TileCountFields   (resets 3 fields)
+│   ├── DefaultRow "New spritesheet"           TileSizePicker
+│   ├── DefaultRow "Grid & chessboard"         Switch "Show grid" · ToggleGroup grid size (Tile, 1…64) · ToggleGroup chessboard (1…64)
+│   ├── DefaultRow "Animation"                 Slider fps · Switch onion · Switch before/after · Slider opacity
+│   └── DefaultRow "Drawing"                   Select palette ("First palette" + list)
+├── StorageSection
+└── BackupSection</pre>
+  </figure>
+
+  <figure>
+    <figcaption>Layout mock: each group has a reset button, enabled only when a value in the group differs from the built-in</figcaption>
+  <div class="fragment">
+    <div class="max-w-xl mx-auto space-y-3 rounded-lg border border-grid bg-slate-50 p-4">
+      <div><div class="font-semibold">Defaults</div><div class="text-xs text-muted">Used when you create or open a sprite or sheet. Existing sprites never change.</div></div>
+      <div class="flex items-start justify-between gap-3 border-t border-grid pt-2"><div><div class="text-sm font-medium">New sprite</div><div class="flex gap-1 mt-1"><span class="px-1.5 rounded bg-white border">8×8</span><span class="px-1.5 rounded bg-ink text-white">16×16</span><span class="px-1.5 rounded bg-white border">24×24</span><span class="text-muted">…</span></div><div class="mt-1 text-xs">Columns [2] × Rows [2]</div></div><span class="text-idle" title="Reset to default">↺</span></div>
+      <div class="flex items-start justify-between gap-3 border-t border-grid pt-2"><div><div class="text-sm font-medium">Grid &amp; chessboard</div><div class="text-xs mt-1">Show grid ● · Grid <b>Tile</b> 1 2 4 8 16 32 64 · Chessboard <b>1</b> 2 4 …</div></div><span class="text-ink font-bold" title="Reset to default">↺</span></div>
+      <div class="flex items-start justify-between gap-3 border-t border-grid pt-2"><div><div class="text-sm font-medium">Animation</div><div class="text-xs mt-1">Preview 12 fps ━━●──── · Onion skin ○ · Before/After · Opacity ━●───</div></div><span class="text-ink font-bold">↺</span></div>
+      <div class="flex items-start justify-between gap-3 border-t border-grid pt-2"><div><div class="text-sm font-medium">Drawing</div><div class="text-xs mt-1">Palette [First palette ▾]</div></div><span class="text-idle">↺</span></div>
+    </div>
+  </div>
+  </figure>
+
+  <figure>
+    <figcaption>Which module now owns which default: each module resets only its own store</figcaption>
+<pre class="mermaid">flowchart TB
+  Store[useDefaultsStore]:::new
+  Store --> View["editor/view · useGridReset"]:::chg
+  Store --> Anim["editor/animation · useOnionReset + PreviewPanel"]:::chg
+  Store --> Pal["editor/palette · usePaletteReset"]:::new
+  Store --> Bld["SpritesheetBuilderPage"]:::chg
+  Store --> Dlg["NewSpriteDialog / NewSpritesheetDialog"]:::chg
+  click Store href "#D2"
+<details class="hops"><summary>Text version</summary><pre>useDefaultsStore → editor/view (grid size, chessboard, grid on/off)
+useDefaultsStore → editor/animation (onion ×3, preview fps)
+useDefaultsStore → editor/palette (active palette)
+useDefaultsStore → builder page (grid size, chessboard, grid on/off)
+useDefaultsStore → New Sprite / New Spritesheet dialogs (tile size, columns, rows)</pre></details>
+  </figure>
+</section>
+
+<section class="part">
+  <h2>Outcome</h2>
+  <p class="lead">What is observably different afterwards, including what changes for existing sessions and data.</p>
+  <table class="rows">
+    <tr><th>Situation</th><th>Before</th><th>After</th><th>Source</th></tr>
+    <tr><td>Settings page</td><td>Appearance, Storage, Backup</td><td>A Defaults card (13 values in 5 groups) sits between Appearance and Storage</td><td><a class="id" href="#D8">D8</a></td></tr>
+    <tr><td>Changing a default</td><td>&mdash;</td><td>Saved at once, with no Save button. The group's reset button becomes enabled</td><td><a class="id" href="#D8">D8</a> <a class="id" href="#Done2">Done2</a></td></tr>
+    <tr><td>Reset a group</td><td>&mdash;</td><td>Its fields are removed from the stored row and the controls show the built-in values</td><td><a class="id" href="#D8">D8</a> <a class="id" href="#Done3">Done3</a></td></tr>
+    <tr><td>New Sprite dialog</td><td>16×16 tiles, 2×2</td><td>Starts at the default tile size, columns and rows. The values can still be changed in the dialog</td><td><a class="id" href="#F4">F4</a> <a class="id" href="#D4">D4</a> <a class="id" href="#Done5">Done5</a></td></tr>
+    <tr><td>New Spritesheet dialog</td><td>16×16</td><td>Starts at the default sheet tile size</td><td><a class="id" href="#F5">F5</a> <a class="id" href="#D4">D4</a> <a class="id" href="#Done5">Done5</a></td></tr>
+    <tr><td>Opening a sprite</td><td>Grid = sprite tile and chessboard = 1, reset on every open. Grid on/off, onion and palette carry over from the last sprite in the session. Tool settings carry over. FPS is 5</td><td>Grid size, chessboard, grid on/off, onion (on, direction, opacity), palette, brush size (pencil and eraser) and FPS all come from the defaults on every open. Mirror and other non-preference tool settings still carry over</td><td><a class="id" href="#F6">F6</a> <a class="id" href="#F7">F7</a> <a class="id" href="#F16">F16</a> <a class="id" href="#D5">D5</a> <a class="id" href="#Done7">Done7</a></td></tr>
+    <tr><td>Opening a sheet</td><td>Grid = sheet tile and chessboard = 1, grid on/off carries over</td><td>Grid size, chessboard and grid on/off come from the defaults</td><td><a class="id" href="#D5">D5</a> <a class="id" href="#Done8">Done8</a></td></tr>
+    <tr><td>Grid default "Tile" (built-in)</td><td>&mdash;</td><td>Same as today: one cell per tile, or inferred from the size</td><td><a class="id" href="#D11">D11</a> <a class="id" href="#F12">F12</a> <a class="id" href="#Done6">Done6</a></td></tr>
+    <tr><td>Grid default a fixed size that doesn't divide the sprite</td><td>&mdash;</td><td>The stored value is that size. The controls show the nearest divisor, as they already do for any size</td><td><a class="id" href="#D11">D11</a> <a class="id" href="#F14">F14</a></td></tr>
+    <tr><td>Default palette later deleted</td><td>&mdash;</td><td>The panel falls back to the first palette, as it already does</td><td><a class="id" href="#D13">D13</a> <a class="id" href="#F8">F8</a></td></tr>
+    <tr><td>Changing a default in the middle of a session</td><td>&mdash;</td><td>Applies to the next create or open. The open sprite and its in-session choices are untouched</td><td><a class="id" href="#D2">D2</a> <a class="id" href="#R3">R3</a></td></tr>
+    <tr><td>Backup / restore (replace)</td><td>All settings rows exported and restored</td><td>The same, now including <code>app.defaults</code>. Defaults apply right after the restore, with no reload</td><td><a class="id" href="#F2">F2</a> <a class="id" href="#D10">D10</a> <a class="id" href="#Done4">Done4</a></td></tr>
+    <tr><td>Restore (merge)</td><td>The backup's settings rows overwrite local ones</td><td>The same: the backup's defaults replace the local ones</td><td><a class="id" href="#F2">F2</a> <a class="id" href="#R2">R2</a></td></tr>
+    <tr><td>Delete all data</td><td>Settings table cleared</td><td>Defaults return to the built-in values at once</td><td><a class="id" href="#F2">F2</a> <a class="id" href="#D10">D10</a></td></tr>
+    <tr><td>Saving fails (quota)</td><td>&mdash;</td><td>The value is used for this session and a toast reads &ldquo;Could not save defaults.&rdquo;</td><td><a class="id" href="#D9">D9</a></td></tr>
+    <tr><td>Row unreadable, or invalid (e.g. a hand-edited backup)</td><td>&mdash;</td><td>Each invalid field falls back to its built-in value. Nothing crashes</td><td><a class="id" href="#D3">D3</a> <a class="id" href="#D9">D9</a> <a class="id" href="#Done1">Done1</a></td></tr>
+    <tr><td>Existing data</td><td>No defaults row exists. <code>editor.defaultCanvasSize</code> is never written</td><td>Nothing to migrate: no row means every value is the built-in, which matches today's behaviour</td><td><a class="id" href="#F1">F1</a> <a class="id" href="#D1">D1</a></td></tr>
+    <tr><td>Existing sprites</td><td>&mdash;</td><td>Never rewritten. Defaults only set view, tool and dialog state</td><td>Goal</td></tr>
+  </table>
+</section>
+
+<section class="part">
+  <h2>Changes</h2>
+  <p class="lead">Every element added, changed or removed, per file, in task order.</p>
+
+  <h3><code>src/constants/defaults.ts</code> <span class="op-new">new</span> <a class="id" href="#T1">T1</a></h3>
+  <table class="rows">
+    <tr><th>Element</th><th>Op</th><th>What changes</th><th>Why</th><th>Effect</th></tr>
+    <tr><td><code>Defaults</code></td><td><span class="op-new">new</span></td><td>The 13-field shape in Signatures</td><td><a class="id" href="#D1">D1</a> <a class="id" href="#D11">D11</a></td><td>One type every consumer reads</td></tr>
+    <tr><td><code>BUILT_IN_DEFAULTS</code></td><td><span class="op-new">new</span></td><td>Built from the existing constants: <code>DEFAULT_TILE_SIZE</code>, <code>DEFAULT_TILE_COUNT</code>, <code>DEFAULT_FPS</code>, <code>DEFAULT_BRUSH_SIZE</code>, <code>ONION_DEFAULT</code>, <code>DEFAULT_CHECKER_SIZE</code>, plus grid on, grid "tile" and palette null</td><td><a class="id" href="#F4">F4</a>–<a class="id" href="#F11">F11</a></td><td>No behaviour change with no stored row</td></tr>
+    <tr><td><code>GRID_DEFAULT_SIZES</code></td><td><span class="op-new">new</span></td><td><code>SHEET_TILE_OPTIONS</code> re-exported under a name that describes its purpose</td><td><a class="id" href="#D11">D11</a> <a class="id" href="#F14">F14</a></td><td>None outside this file</td></tr>
+  </table>
+
+  <h3><code>src/constants/settings.ts</code> <span class="op-edit">edit</span> <a class="id" href="#T1">T1</a></h3>
+  <table class="rows">
+    <tr><th>Element</th><th>Op</th><th>What changes</th><th>Why</th><th>Effect</th></tr>
+    <tr><td><code>SETTING_KEYS.defaults</code></td><td><span class="op-new">new</span></td><td><code>"app.defaults"</code></td><td><a class="id" href="#D1">D1</a></td><td>New persisted key</td></tr>
+    <tr><td><code>SETTING_KEYS.defaultCanvasSize</code></td><td><span class="op-del">del</span></td><td>Removed (never read or written)</td><td><a class="id" href="#D12">D12</a> <a class="id" href="#F1">F1</a></td><td>None: no references</td></tr>
+  </table>
+
+  <h3><code>src/lib/defaults.ts</code> <span class="op-new">new</span> <a class="id" href="#T1">T1</a></h3>
+  <table class="rows">
+    <tr><th>Element</th><th>Op</th><th>What changes</th><th>Why</th><th>Effect</th></tr>
+    <tr><td><code>validDefaults(stored)</code></td><td><span class="op-new">new</span></td><td>Keeps only fields that are present and valid (rules in Signatures). Columns and rows are checked against the resolved sprite tile. A non-object gives <code>{}</code></td><td><a class="id" href="#D3">D3</a></td><td>A bad backup can't put an invalid value into the dialogs or stores</td></tr>
+    <tr><td><code>resolveDefaults(stored)</code></td><td><span class="op-new">new</span></td><td><code>{ ...BUILT_IN_DEFAULTS, ...validDefaults(stored) }</code></td><td><a class="id" href="#D3">D3</a></td><td>Always complete</td></tr>
+  </table>
+
+  <h3><code>tests/unit/lib/defaults.test.ts</code> <span class="op-new">new</span> <a class="id" href="#T1">T1</a></h3>
+  <table class="rows">
+    <tr><th>Element</th><th>Op</th><th>What changes</th><th>Why</th><th>Effect</th></tr>
+    <tr><td><code>falls back per field</code></td><td><span class="op-new">new</span></td><td><code>undefined</code>, <code>"x"</code>, and an object with valid and invalid fields (tile 20, fps 0, opacity 2, direction "up", unknown key) → valid fields kept, the rest built-in</td><td><a class="id" href="#Done1">Done1</a></td><td>None outside tests</td></tr>
+    <tr><td><code>caps columns by the tile</code></td><td><span class="op-new">new</span></td><td><code>{tileSize: 64, spriteColumns: 9}</code> → columns built-in (max 8)</td><td><a class="id" href="#Done1">Done1</a> <a class="id" href="#F13">F13</a></td><td>None outside tests</td></tr>
+  </table>
+
+  <h3><code>src/stores/useDefaultsStore.ts</code> <span class="op-new">new</span> <a class="id" href="#T2">T2</a></h3>
+  <table class="rows">
+    <tr><th>Element</th><th>Op</th><th>What changes</th><th>Why</th><th>Effect</th></tr>
+    <tr><td><code>useDefaultsStore</code></td><td><span class="op-new">new</span></td><td>Zustand store <code>{defaults, stored}</code>, starting at built-ins</td><td><a class="id" href="#D2">D2</a> <a class="id" href="#F20">F20</a></td><td>Synchronous reads everywhere</td></tr>
+    <tr><td><code>load()</code></td><td><span class="op-new">new</span></td><td><code>readSetting(SETTING_KEYS.defaults, {})</code> → <code>stored = validDefaults</code>, <code>defaults = resolveDefaults</code>. On a rejection it logs <code>console.error</code> and keeps the built-ins</td><td><a class="id" href="#D3">D3</a> <a class="id" href="#D9">D9</a> <a class="id" href="#F3">F3</a></td><td>Never throws</td></tr>
+    <tr><td><code>set(key, value)</code></td><td><span class="op-new">new</span></td><td>Updates <code>stored</code> and <code>defaults</code> in memory, then <code>writeSetting(SETTING_KEYS.defaults, stored)</code>. A rejection shows <code>toast.error("Could not save defaults.")</code>. Setting <code>tileSize</code> clamps the stored columns and rows to the new cap</td><td><a class="id" href="#D8">D8</a> <a class="id" href="#D9">D9</a> <a class="id" href="#F3">F3</a> <a class="id" href="#F13">F13</a></td><td>One DB write per change</td></tr>
+    <tr><td><code>reset(keys)</code></td><td><span class="op-new">new</span></td><td>Removes the keys from <code>stored</code>, re-resolves and writes, with the same failure handling</td><td><a class="id" href="#D8">D8</a></td><td>Group reset</td></tr>
+    <tr><td><code>loadDefaults()</code> / <code>reloadDefaults()</code></td><td><span class="op-new">new</span></td><td>A module-level cached promise of <code>load()</code>. Reload replaces it</td><td><a class="id" href="#D2">D2</a> <a class="id" href="#D10">D10</a></td><td>Providers and boot share one read</td></tr>
+  </table>
+
+  <h3><code>tests/unit/stores/defaultsStore.test.ts</code> <span class="op-new">new</span> <a class="id" href="#T2">T2</a></h3>
+  <table class="rows">
+    <tr><th>Element</th><th>Op</th><th>What changes</th><th>Why</th><th>Effect</th></tr>
+    <tr><td><code>set persists and survives a reload</code></td><td><span class="op-new">new</span></td><td><code>set("previewFps", 12)</code> → <code>readSetting("app.defaults")</code> equals <code>{previewFps: 12}</code>. After <code>reloadDefaults()</code>, <code>defaults.previewFps</code> is 12</td><td><a class="id" href="#Done2">Done2</a></td><td>None outside tests</td></tr>
+    <tr><td><code>reset removes the field</code></td><td><span class="op-new">new</span></td><td>After <code>reset(["previewFps"])</code> the row has no <code>previewFps</code> and <code>defaults.previewFps</code> is 5</td><td><a class="id" href="#Done3">Done3</a></td><td>None outside tests</td></tr>
+  </table>
+
+  <h3><code>src/main.tsx</code> <span class="op-edit">edit</span> <a class="id" href="#T2">T2</a></h3>
+  <table class="rows">
+    <tr><th>Element</th><th>Op</th><th>What changes</th><th>Why</th><th>Effect</th></tr>
+    <tr><td>start-up</td><td><span class="op-edit">edit</span></td><td><code>void loadDefaults()</code> next to <code>seedDatabase()</code>, without awaiting it (same reasoning as the seed)</td><td><a class="id" href="#D2">D2</a> <a class="id" href="#F18">F18</a></td><td>The Settings page and dialogs see stored values almost at once</td></tr>
+  </table>
+
+  <h3><code>src/app/DocumentProvider.tsx</code>, <code>src/app/SpritesheetProvider.tsx</code> <span class="op-edit">edit</span> <a class="id" href="#T2">T2</a></h3>
+  <table class="rows">
+    <tr><th>Element</th><th>Op</th><th>What changes</th><th>Why</th><th>Effect</th></tr>
+    <tr><td>load effect</td><td><span class="op-edit">edit</span></td><td>Waits for <code>Promise.all([openDocument(id) / findSpritesheet(id), loadDefaults()])</code> before setting <code>ready</code></td><td><a class="id" href="#D2">D2</a> <a class="id" href="#R1">R1</a></td><td>The open-time resets always see the loaded values. <code>loadDefaults</code> never rejects, so the error paths are unchanged</td></tr>
+  </table>
+
+  <h3><code>src/hooks/useBackupActions.ts</code> <span class="op-edit">edit</span> <a class="id" href="#T2">T2</a></h3>
+  <table class="rows">
+    <tr><th>Element</th><th>Op</th><th>What changes</th><th>Why</th><th>Effect</th></tr>
+    <tr><td><code>restore</code>, <code>clearAll</code></td><td><span class="op-edit">edit</span></td><td><code>await reloadDefaults()</code> after a successful import or clear</td><td><a class="id" href="#D10">D10</a></td><td>Restored defaults apply without a page reload</td></tr>
+  </table>
+
+  <h3><code>tests/unit/db/backup.test.ts</code> <span class="op-edit">edit</span> <a class="id" href="#T2">T2</a></h3>
+  <table class="rows">
+    <tr><th>Element</th><th>Op</th><th>What changes</th><th>Why</th><th>Effect</th></tr>
+    <tr><td><code>round-trips the defaults row</code></td><td><span class="op-new">new</span></td><td>Write <code>app.defaults</code>, export, <code>clearAllData</code>, import (replace) → the row is deep-equal</td><td><a class="id" href="#Done4">Done4</a> <a class="id" href="#F2">F2</a></td><td>None outside tests</td></tr>
+  </table>
+
+  <h3><code>src/components/manager/NewSpriteDialog.tsx</code>, <code>NewSpritesheetDialog.tsx</code> <span class="op-edit">edit</span> <a class="id" href="#T3">T3</a></h3>
+  <table class="rows">
+    <tr><th>Element</th><th>Op</th><th>What changes</th><th>Why</th><th>Effect</th></tr>
+    <tr><td>form initial state</td><td><span class="op-edit">edit</span></td><td><code>useState(() => useDefaultsStore.getState().defaults.tileSize)</code> in both dialogs, plus columns and rows in New Sprite. They replace <code>DEFAULT_TILE_SIZE</code> and <code>DEFAULT_TILE_COUNT</code></td><td><a class="id" href="#D4">D4</a> <a class="id" href="#F4">F4</a> <a class="id" href="#F5">F5</a></td><td>Each time the dialog opens it starts from the defaults (the form remounts per open, <a class="id" href="#F19">F19</a>)</td></tr>
+  </table>
+
+  <h3><code>src/core/grid.ts</code> <span class="op-edit">edit</span> <a class="id" href="#T4">T4</a></h3>
+  <table class="rows">
+    <tr><th>Element</th><th>Op</th><th>What changes</th><th>Why</th><th>Effect</th></tr>
+    <tr><td><code>openGridSize(pref, tile, w, h)</code></td><td><span class="op-new">new</span></td><td><code>"tile"</code> → <code>defaultGridSize(tile, w, h)</code>. A number is returned unchanged; the display already snaps it (<a class="id" href="#F14">F14</a>)</td><td><a class="id" href="#D11">D11</a> <a class="id" href="#F12">F12</a></td><td>Pure. Stays inside <code>core</code>'s import limits (<a class="id" href="#F21">F21</a>)</td></tr>
+  </table>
+
+  <h3><code>tests/unit/core/grid.test.ts</code> <span class="op-edit">edit</span> <a class="id" href="#T4">T4</a></h3>
+  <table class="rows">
+    <tr><th>Element</th><th>Op</th><th>What changes</th><th>Why</th><th>Effect</th></tr>
+    <tr><td><code>openGridSize</code></td><td><span class="op-new">new</span></td><td><code>("tile", 16, 32, 32)</code> → 16. <code>("tile", undefined, 24, 24)</code> → the same as <code>defaultGridSize</code>. <code>(8, 16, 32, 32)</code> → 8</td><td><a class="id" href="#Done6">Done6</a></td><td>None outside tests</td></tr>
+  </table>
+
+    <table class="rows">
+    <tr><th>Element</th><th>Op</th><th>What changes</th><th>Why</th><th>Effect</th></tr>
+  </table>
+
+  <h3><code>src/editor/view/store.ts</code>, <code>src/editor/view/useGridReset.ts</code> <span class="op-edit">edit</span> <a class="id" href="#T4">T4</a></h3>
+  <table class="rows">
+    <tr><th>Element</th><th>Op</th><th>What changes</th><th>Why</th><th>Effect</th></tr>
+    <tr><td><code>resetGrid</code></td><td><span class="op-edit">edit</span></td><td><code>(gridSize)</code> → <code>(gridSize, checkerSize)</code></td><td><a class="id" href="#D5">D5</a></td><td>The test at <code>tests/unit/editor/view/store.test.ts:81</code> is updated to match</td></tr>
+    <tr><td><code>useGridReset</code></td><td><span class="op-edit">edit</span></td><td>Effect 1 [doc, tileSize]: grid size and chessboard from the defaults. Effect 2 [doc]: <code>setGridEnabled(defaults.gridEnabled)</code></td><td><a class="id" href="#D5">D5</a> <a class="id" href="#D11">D11</a></td><td>Resizing tiles doesn't flip grid on/off</td></tr>
+  </table>
+
+  <h3><code>src/editor/animation/useOnionReset.ts</code> <span class="op-new">new</span>, <code>PreviewPanel.tsx</code>, <code>api.ts</code> <span class="op-edit">edit</span> <a class="id" href="#T4">T4</a></h3>
+  <table class="rows">
+    <tr><th>Element</th><th>Op</th><th>What changes</th><th>Why</th><th>Effect</th></tr>
+    <tr><td><code>useOnionReset</code></td><td><span class="op-new">new</span></td><td>[doc] → <code>setOnion({enabled, direction, opacity})</code> from the defaults</td><td><a class="id" href="#D5">D5</a> <a class="id" href="#D6">D6</a></td><td>Onion no longer carries over between sprites</td></tr>
+    <tr><td><code>PreviewPanel</code> fps</td><td><span class="op-edit">edit</span></td><td><code>useState(() => useDefaultsStore.getState().defaults.previewFps)</code> replaces <code>DEFAULT_FPS</code></td><td><a class="id" href="#D5">D5</a> <a class="id" href="#F7">F7</a> <a class="id" href="#F17">F17</a></td><td>None beyond the starting value</td></tr>
+    <tr><td><code>api.ts</code></td><td><span class="op-edit">edit</span></td><td><code>+ export { useOnionReset }</code></td><td><a class="id" href="#D6">D6</a></td><td>The shell reaches it through the module api</td></tr>
+  </table>
+
+  <h3><code>src/editor/palette/usePaletteReset.ts</code> <span class="op-new">new</span>, <code>api.ts</code> <span class="op-edit">edit</span> <a class="id" href="#T4">T4</a></h3>
+  <table class="rows">
+    <tr><th>Element</th><th>Op</th><th>What changes</th><th>Why</th><th>Effect</th></tr>
+    <tr><td><code>usePaletteReset</code></td><td><span class="op-new">new</span></td><td>[doc] → <code>setActivePalette(defaults.paletteId)</code></td><td><a class="id" href="#D5">D5</a> <a class="id" href="#D13">D13</a></td><td>A palette picked in one sprite doesn't carry over to the next</td></tr>
+    <tr><td><code>api.ts</code></td><td><span class="op-edit">edit</span></td><td><code>+ export { usePaletteReset }</code></td><td><a class="id" href="#D6">D6</a></td><td>&mdash;</td></tr>
+  </table>
+
+    <h3><code>src/editor/shell/EditorPage.tsx</code> <span class="op-edit">edit</span> <a class="id" href="#T4">T4</a></h3>
+  <table class="rows">
+    <tr><th>Element</th><th>Op</th><th>What changes</th><th>Why</th><th>Effect</th></tr>
+    <tr><td><code>EditorShell</code></td><td><span class="op-edit">edit</span></td><td>Calls <code>useOnionReset()</code>, <code>usePaletteReset()</code> and <code>useToolDefaults()</code> next to <code>useGridReset()</code></td><td><a class="id" href="#D6">D6</a></td><td>Defaults applied on every sprite open</td></tr>
+  </table>
+
+  <h3><code>src/stores/useBuilderViewStore.ts</code>, <code>src/components/builder/SpritesheetBuilderPage.tsx</code> <span class="op-edit">edit</span> <a class="id" href="#T5">T5</a></h3>
+  <table class="rows">
+    <tr><th>Element</th><th>Op</th><th>What changes</th><th>Why</th><th>Effect</th></tr>
+    <tr><td><code>resetGrid</code></td><td><span class="op-edit">edit</span></td><td><code>(gridSize)</code> → <code>(gridSize, checkerSize)</code></td><td><a class="id" href="#D5">D5</a></td><td>The test at <code>builderViewStore.test.ts:69</code> is updated to match</td></tr>
+    <tr><td><code>setGridEnabled</code></td><td><span class="op-new">new</span></td><td>Same as the editor store's</td><td><a class="id" href="#D5">D5</a> <a class="id" href="#F6">F6</a></td><td>&mdash;</td></tr>
+    <tr><td>open effect</td><td><span class="op-edit">edit</span></td><td>[doc, tileSize] → <code>resetGrid(d.gridSize === "tile" ? tileSize : d.gridSize, d.checkerSize)</code>. [doc] → <code>setGridEnabled(d.gridEnabled)</code></td><td><a class="id" href="#D5">D5</a> <a class="id" href="#D11">D11</a></td><td>Builder opens with the defaults</td></tr>
+  </table>
+
+  <h3><code>tests/unit/editor/view/store.test.ts</code>, <code>tests/unit/stores/builderViewStore.test.ts</code> <span class="op-edit">edit</span> <a class="id" href="#T4">T4</a>/<a class="id" href="#T5">T5</a></h3>
+  <table class="rows">
+    <tr><th>Element</th><th>Op</th><th>What changes</th><th>Why</th><th>Effect</th></tr>
+    <tr><td>resetGrid tests</td><td><span class="op-edit">edit</span></td><td>Pass a chessboard size and assert it is applied</td><td><a class="id" href="#D5">D5</a></td><td>None outside tests</td></tr>
+  </table>
+
+  <h3><code>tests/browser/flows/defaults.browser.test.tsx</code> <span class="op-new">new</span> <a class="id" href="#T3">T3</a>–<a class="id" href="#T5">T5</a></h3>
+  <table class="rows">
+    <tr><th>Element</th><th>Op</th><th>What changes</th><th>Why</th><th>Effect</th></tr>
+    <tr><td><code>new sprite dialog starts from the defaults</code></td><td><span class="op-new">new</span></td><td>Store sprite tile 32, 3×1 and sheet tile 8 → open each dialog → the pickers and inputs show them. Create a sprite → it is 96×32</td><td><a class="id" href="#Done5">Done5</a></td><td>&mdash;</td></tr>
+    <tr><td><code>opening a sprite applies the defaults</code></td><td><span class="op-new">new</span></td><td>Store grid off, chessboard 4, onion on/after/0.5, fps 12, a palette id → open a sprite → the view, animation, palette and toolbox stores and the fps label match</td><td><a class="id" href="#Done7">Done7</a></td><td>&mdash;</td></tr>
+    <tr><td><code>opening a sheet applies the defaults</code></td><td><span class="op-new">new</span></td><td>Store grid off, grid 8, chessboard 2 → open a sheet → the builder store matches</td><td><a class="id" href="#Done8">Done8</a></td><td>&mdash;</td></tr>
+    <tr><td><code>in-session changes stay until the next open</code></td><td><span class="op-new">new</span></td><td>Open a sprite → toggle the grid on → stays on. Open another sprite → back to the default (off)</td><td><a class="id" href="#Done9">Done9</a></td><td>&mdash;</td></tr>
+  </table>
+
+  <h3><code>src/components/settings/DefaultsSection.tsx</code>, <code>DefaultRow.tsx</code> <span class="op-new">new</span>; <code>SettingsPage.tsx</code> <span class="op-edit">edit</span> <a class="id" href="#T6">T6</a></h3>
+  <table class="rows">
+    <tr><th>Element</th><th>Op</th><th>What changes</th><th>Why</th><th>Effect</th></tr>
+    <tr><td><code>DefaultRow</code></td><td><span class="op-new">new</span></td><td>Group label, children, and a <code>TooltipButton</code> (RotateCcw, &ldquo;Reset to default&rdquo;) disabled when <code>!changed</code></td><td><a class="id" href="#D8">D8</a></td><td>&mdash;</td></tr>
+    <tr><td><code>DefaultsSection</code></td><td><span class="op-new">new</span></td><td>A Card with the 5 groups from the UI tree. Each control calls <code>set</code>. Each group calls <code>reset</code> on its own keys. Sliders write on <code>onValueCommitted</code> and update local display on <code>onValueChange</code>. The palette list comes from <code>listPalettes</code> through <code>useLiveQuery</code></td><td><a class="id" href="#D8">D8</a> <a class="id" href="#D14">D14</a> <a class="id" href="#F20">F20</a> <a class="id" href="#F22">F22</a></td><td>New UI. Reuses <code>TileSizePicker</code>, <code>TileCountFields</code>, <code>ToggleGroup</code>, <code>Switch</code>, <code>Slider</code> and <code>Select</code></td></tr>
+    <tr><td><code>SettingsPage</code></td><td><span class="op-edit">edit</span></td><td>Renders <code>&lt;DefaultsSection/></code> after <code>ThemeSection</code></td><td><a class="id" href="#D8">D8</a></td><td>&mdash;</td></tr>
+  </table>
+
+  <h3><code>tests/browser/components/DefaultsSection.browser.test.tsx</code> <span class="op-new">new</span> <a class="id" href="#T6">T6</a></h3>
+  <table class="rows">
+    <tr><th>Element</th><th>Op</th><th>What changes</th><th>Why</th><th>Effect</th></tr>
+    <tr><td><code>a change persists and enables reset</code></td><td><span class="op-new">new</span></td><td>Pick onion opacity / fps → the stored row has it and the Animation reset button is enabled</td><td><a class="id" href="#Done2">Done2</a></td><td>&mdash;</td></tr>
+    <tr><td><code>reset returns to the built-in</code></td><td><span class="op-new">new</span></td><td>Click reset → the built-in shows, the row no longer has the field, and the button is disabled</td><td><a class="id" href="#Done3">Done3</a></td><td>&mdash;</td></tr>
+  </table>
+</section>
+
+<section class="part">
+  <h2>Interactions &amp; risks</h2>
+  <table class="rows">
+    <tr><th>#</th><th>What combines</th><th>Consequence</th><th>Resolution</th></tr>
+    <tr id="R1"><td>R1</td><td><a class="id" href="#D2">D2</a> + <a class="id" href="#F18">F18</a></td><td>Defaults load asynchronously. On a deep link or reload, a sprite could open before they arrive and apply the built-ins</td><td>resolved by <a class="id" href="#D2">D2</a>: providers await <code>loadDefaults()</code></td></tr>
+    <tr id="R2"><td>R2</td><td><a class="id" href="#D1">D1</a> + <a class="id" href="#F2">F2</a></td><td>A merge restore overwrites local defaults with the backup's</td><td>accepted <span class="id">Q10</span>: this matches how every settings row already merges</td></tr>
+    <tr id="R3"><td>R3</td><td><a class="id" href="#D5">D5</a> + <a class="id" href="#D2">D2</a></td><td>If the open-time resets subscribed to the store, editing defaults would reset an open sprite</td><td>resolved by <a class="id" href="#D2">D2</a>: the resets read <code>getState()</code> once per open and never subscribe</td></tr>
+    <tr id="R4"><td>R4</td><td><a class="id" href="#D5">D5</a> + <a class="id" href="#F16">F16</a></td><td>Behaviour change: grid on/off, onion and palette used to carry over between sprites in a session; now they reset on each open</td><td>accepted <span class="id">Q5</span>: the issue says defaults apply when something is opened. Mirror and other tool settings still carry over (<a class="id" href="#D7">D7</a>)</td></tr>
+    <tr id="R5"><td>R5</td><td><a class="id" href="#D3">D3</a> + <a class="id" href="#F13">F13</a></td><td>Stored columns valid for one tile size can be invalid for another</td><td>resolved by <a class="id" href="#D3">D3</a> (validated against the resolved tile) and by <code>set</code> clamping on a tile change</td></tr>
+  </table>
+</section>
+
+<section class="part">
+  <h2>Scope</h2>
+  <div class="scope">
+    <div><h3>In</h3><ul>
+      <li>All 13 defaults listed in the issue, editable and resettable on the Settings page</li>
+      <li>One stored row, validated per field <a class="id" href="#D1">D1</a> <a class="id" href="#D3">D3</a></li>
+      <li>Applied to the New Sprite/Sheet dialogs and to every sprite and sheet open <a class="id" href="#D4">D4</a> <a class="id" href="#D5">D5</a></li>
+      <li>Included in backup and restore, and live after a restore or clear <a class="id" href="#D10">D10</a></li>
+      <li>Removing the dead <code>editor.defaultCanvasSize</code> key <a class="id" href="#D12">D12</a></li>
+    </ul></div>
+    <div class="out"><h3>Out</h3><ul>
+      <li>Remembering the last used values automatically (only explicit defaults) <span class="id">Q2</span></li>
+      <li>Separate editor and builder values for grid and chessboard <span class="id">Q6</span></li>
+      <li>Defaults for zoom, primary/secondary colour, brush size (A1), mirror, or any other tool setting <span class="id">Q7</span></li>
+      <li>The other unused keys (<code>view.grid</code>, <code>view.onion</code>, <code>palette.active</code>) <span class="id">Q12</span></li>
+      <li>Theme (it already persists in localStorage, separately) <span class="id">Q12</span></li>
+      <li>Repository fallbacks (<code>createSprite</code>/<code>createSpritesheet</code> without options keep the built-ins) <span class="id">Q4</span></li>
+      <li>Syncing defaults across open tabs <span class="id">Q2</span></li>
+    </ul></div>
+  </div>
+</section>
+
+<section class="part">
+  <h2>Decisions</h2>
+  <p class="lead">All <i>(delegated)</i>: you asked me to decide. Each Q is the question I put to myself.</p>
+  <table class="rows">
+    <tr><th>#</th><th>Question</th><th>Decision</th><th>Rejected</th><th>Implies</th></tr>
+    <tr id="D1"><td>D1</td><td><span class="id">Q1</span> How to store them? (delegated)</td><td>One <code>app.defaults</code> row in the existing settings table, holding only the changed fields</td><td>One row per default; localStorage like the theme</td><td>Backup already includes it (<a class="id" href="#F2">F2</a>). Reset = delete the field. No schema or DB version bump</td></tr>
+    <tr id="D2"><td>D2</td><td><span class="id">Q2</span> How does code read them? (delegated)</td><td>A zustand store in <code>src/stores/</code> (settings UI state lives there per <a class="id" href="#F23">F23</a>), loaded at boot. Providers await it, and consumers read <code>getState()</code> once when something is created or opened</td><td><code>useLiveQuery</code> everywhere (undefined on first render, re-fires mid-session); auto-remembering the last used values</td><td>+<code>useDefaultsStore</code>, <code>loadDefaults</code>. Providers wait. <a class="id" href="#R1">R1</a> <a class="id" href="#R3">R3</a></td></tr>
+    <tr id="D3"><td>D3</td><td><span class="id">Q3</span> Invalid stored values? (delegated)</td><td>Validated per field. An invalid field silently uses the built-in</td><td>Rejecting the backup; trusting the data</td><td>+<code>lib/defaults.ts</code> with tests</td></tr>
+    <tr id="D4"><td>D4</td><td><span class="id">Q4</span> What do the dialogs do? (delegated; amended A1)</td><td>One shared <code>tileSize</code> default seeds both dialogs; columns/rows seed New Sprite. The defaults are the form's initial state, still editable in the dialog. Repository fallbacks are unchanged</td><td>Remembering the last dialog choice</td><td>2 dialog edits</td></tr>
+    <tr id="D5"><td>D5</td><td><span class="id">Q5</span> When do editor/builder defaults apply? (delegated)</td><td>On every sprite/sheet open, as the issue says. The grid size and chessboard size are also reapplied when the tile size changes, as today</td><td>Once per app session</td><td>Behaviour change <a class="id" href="#R4">R4</a>. <code>resetGrid</code> gains a chessboard size</td></tr>
+    <tr id="D6"><td>D6</td><td><span class="id">Q8</span> Where does each reset live? (delegated)</td><td>In the module that owns the state, as a hook exported via its <code>api.ts</code>, called by the shell</td><td>One shell hook writing to every store</td><td>3 new hooks. Follows the module rules (<a class="id" href="#F23">F23</a>)</td></tr>
+    <tr id="D7" class="line-through text-muted"><td>D7</td><td><span class="id">Q9</span> How does brush size reach tools? (delegated)</td><td>A choice setting may declare <code>preference</code>. <code>brushSize()</code> declares <code>"brushSize"</code>, and the toolbox applies it generically</td><td>Hard-coding pencil/eraser in the toolbox; resetting all tool settings</td><td>The store and hook name no tool. Mirror still carries over</td></tr>
+    <tr id="D8"><td>D8</td><td><span class="id">Q11</span> Settings UI? (delegated)</td><td>One Defaults card, 5 groups, reset per group, saved instantly (like the theme). Placed after Appearance</td><td>A Save button; a reset per field (13 buttons); a separate page</td><td>+2 components</td></tr>
+    <tr id="D9"><td>D9</td><td><span class="id">Q3</span> Storage failures? (delegated)</td><td>Read fails → built-ins + <code>console.error</code>. Write fails → value kept for the session + toast</td><td>Blocking the UI; reverting the control</td><td><code>loadDefaults</code> never rejects</td></tr>
+    <tr id="D10"><td>D10</td><td><span class="id">Q10</span> After restore / clear? (delegated)</td><td>Reload the store immediately. Merge restores keep the existing overwrite behaviour</td><td>Requiring a page reload</td><td><a class="id" href="#R2">R2</a></td></tr>
+    <tr id="D11"><td>D11</td><td><span class="id">Q6</span> What is a "grid size default"? (delegated)</td><td>"Tile" (today's behaviour: one cell per tile) or a fixed size from <code>[1,2,4,8,16,32,64]</code>. The chessboard uses the same ladder. One value is shared by the editor and the builder</td><td>Separate editor and builder values; free number input</td><td>+<code>openGridSize</code>. The display already snaps sizes that don't fit</td></tr>
+    <tr id="D12"><td>D12</td><td><span class="id">Q12</span> The dead <code>defaultCanvasSize</code> key? (delegated)</td><td>Remove it; it is replaced by <code>app.defaults</code>. Other dead keys are left alone</td><td>Reusing it for the canvas size only</td><td>1-line removal</td></tr>
+    <tr id="D13"><td>D13</td><td><span class="id">Q7</span> What does "default colour palette" mean? (delegated)</td><td>Which stored palette the panel shows when a sprite opens. <code>null</code> means the first palette (today's behaviour)</td><td>Default primary/secondary colours</td><td>Missing palette → the existing fallback (<a class="id" href="#F8">F8</a>)</td></tr>
+    <tr id="D14"><td>D14</td><td><span class="id">Q11</span> Slider writes? (delegated)</td><td>Write on <code>onValueCommitted</code> (on release), not on every tick</td><td>A write per tick; a debounce</td><td>No DB churn while dragging (<a class="id" href="#F22">F22</a>)</td></tr>
+  </table>
+</section>
+
+<section class="part">
+  <h2>Tasks</h2>
+  <table class="rows tasks">
+    <tr><th>Task</th><th>Files</th><th>Serves</th><th>Verify</th></tr>
+    <tr id="T1" class="done"><td>T1 Defaults model and validation</td><td><code>src/constants/defaults.ts</code> <code>src/constants/settings.ts</code> <code>src/lib/defaults.ts</code> <code>tests/unit/lib/defaults.test.ts</code></td><td><a class="id" href="#D1">D1</a> <a class="id" href="#D3">D3</a> <a class="id" href="#D11">D11</a> <a class="id" href="#D12">D12</a> <a class="id" href="#Done1">Done1</a></td><td><code>npx vitest run --project=unit tests/unit/lib/defaults.test.ts</code> passes; <code>npx tsc -b</code> clean</td></tr>
+    <tr id="T2" class="done"><td>T2 Store, boot, providers, backup reload</td><td><code>src/stores/useDefaultsStore.ts</code> <code>src/main.tsx</code> <code>src/app/DocumentProvider.tsx</code> <code>src/app/SpritesheetProvider.tsx</code> <code>src/hooks/useBackupActions.ts</code> <code>tests/unit/stores/defaultsStore.test.ts</code> <code>tests/unit/db/backup.test.ts</code></td><td><a class="id" href="#D2">D2</a> <a class="id" href="#D9">D9</a> <a class="id" href="#D10">D10</a> <a class="id" href="#Done2">Done2</a> <a class="id" href="#Done3">Done3</a> <a class="id" href="#Done4">Done4</a></td><td><code>npx vitest run --project=unit tests/unit/stores/defaultsStore.test.ts tests/unit/db/backup.test.ts</code> passes</td></tr>
+    <tr id="T3" class="done"><td>T3 New Sprite / Sheet dialogs</td><td><code>src/components/manager/NewSpriteDialog.tsx</code> <code>src/components/manager/NewSpritesheetDialog.tsx</code> <code>tests/browser/flows/defaults.browser.test.tsx</code> (dialog test)</td><td><a class="id" href="#D4">D4</a> <a class="id" href="#Done5">Done5</a></td><td><code>npx vitest run --project=browser tests/browser/flows/defaults.browser.test.tsx -t "dialog"</code> passes</td></tr>
+    <tr id="T5" class="done"><td>T5 Builder open applies the defaults</td><td><code>src/stores/useBuilderViewStore.ts</code> <code>src/components/builder/SpritesheetBuilderPage.tsx</code> <code>tests/unit/stores/builderViewStore.test.ts</code> <code>tests/browser/flows/defaults.browser.test.tsx</code> (sheet test)</td><td><a class="id" href="#D5">D5</a> <a class="id" href="#D11">D11</a> <a class="id" href="#Done8">Done8</a></td><td>Unit <code>builderViewStore.test.ts</code> passes; browser <code>-t "sheet"</code> passes</td></tr>
+    <tr id="T6" class="done"><td>T6 Defaults card on the Settings page</td><td><code>src/components/settings/DefaultsSection.tsx</code> <code>src/components/settings/DefaultRow.tsx</code> <code>src/components/settings/SettingsPage.tsx</code> <code>tests/browser/components/DefaultsSection.browser.test.tsx</code></td><td><a class="id" href="#D8">D8</a> <a class="id" href="#D14">D14</a> <a class="id" href="#Done2">Done2</a> <a class="id" href="#Done3">Done3</a> <a class="id" href="#Done10">Done10</a></td><td>Browser <code>DefaultsSection.browser.test.tsx</code> passes; manual <a class="id" href="#Done10">Done10</a>; then the full Test cmd, <code>npx tsc -b</code> and <code>npm run lint</code> pass</td></tr>
+  </table>
+</section>
+
+<section class="part">
+  <h2>Files</h2>
+  <table class="rows">
+    <tr><th>Path</th><th>Op</th><th>Intent</th><th>Task</th></tr>
+    <tr><td><code>src/constants/defaults.ts</code></td><td><span class="op-new">new</span></td><td>Type, built-ins, grid ladder</td><td><a class="id" href="#T1">T1</a></td></tr>
+    <tr><td><code>src/constants/settings.ts</code></td><td><span class="op-edit">edit</span></td><td>+defaults key, −defaultCanvasSize</td><td><a class="id" href="#T1">T1</a></td></tr>
+    <tr><td><code>src/lib/defaults.ts</code></td><td><span class="op-new">new</span></td><td>validDefaults, resolveDefaults</td><td><a class="id" href="#T1">T1</a></td></tr>
+    <tr><td><code>tests/unit/lib/defaults.test.ts</code></td><td><span class="op-new">new</span></td><td>Validation fallbacks</td><td><a class="id" href="#T1">T1</a></td></tr>
+    <tr><td><code>src/stores/useDefaultsStore.ts</code></td><td><span class="op-new">new</span></td><td>Store, persistence, load/reload</td><td><a class="id" href="#T2">T2</a></td></tr>
+    <tr><td><code>src/main.tsx</code></td><td><span class="op-edit">edit</span></td><td>Load at boot</td><td><a class="id" href="#T2">T2</a></td></tr>
+    <tr><td><code>src/app/DocumentProvider.tsx</code></td><td><span class="op-edit">edit</span></td><td>Await defaults before ready</td><td><a class="id" href="#T2">T2</a></td></tr>
+    <tr><td><code>src/app/SpritesheetProvider.tsx</code></td><td><span class="op-edit">edit</span></td><td>Await defaults before ready</td><td><a class="id" href="#T2">T2</a></td></tr>
+    <tr><td><code>src/hooks/useBackupActions.ts</code></td><td><span class="op-edit">edit</span></td><td>Reload after restore / clear</td><td><a class="id" href="#T2">T2</a></td></tr>
+    <tr><td><code>tests/unit/stores/defaultsStore.test.ts</code></td><td><span class="op-new">new</span></td><td>Persist, reset</td><td><a class="id" href="#T2">T2</a></td></tr>
+    <tr><td><code>tests/unit/db/backup.test.ts</code></td><td><span class="op-edit">edit</span></td><td>Defaults row round-trips</td><td><a class="id" href="#T2">T2</a></td></tr>
+    <tr><td><code>src/components/manager/NewSpriteDialog.tsx</code></td><td><span class="op-edit">edit</span></td><td>Initial tile + count</td><td><a class="id" href="#T3">T3</a></td></tr>
+    <tr><td><code>src/components/manager/NewSpritesheetDialog.tsx</code></td><td><span class="op-edit">edit</span></td><td>Initial tile</td><td><a class="id" href="#T3">T3</a></td></tr>
+    <tr><td><code>tests/browser/flows/defaults.browser.test.tsx</code></td><td><span class="op-new">new</span></td><td>Dialogs, sprite open, sheet open, in-session</td><td><a class="id" href="#T3">T3</a>–<a class="id" href="#T5">T5</a></td></tr>
+    <tr><td><code>src/core/grid.ts</code></td><td><span class="op-edit">edit</span></td><td>+openGridSize</td><td><a class="id" href="#T4">T4</a></td></tr>
+    <tr><td><code>tests/unit/core/grid.test.ts</code></td><td><span class="op-edit">edit</span></td><td>openGridSize cases</td><td><a class="id" href="#T4">T4</a></td></tr>
+    <tr><td><code>src/editor/view/store.ts</code></td><td><span class="op-edit">edit</span></td><td>resetGrid(gridSize, checkerSize)</td><td><a class="id" href="#T4">T4</a></td></tr>
+    <tr><td><code>src/editor/view/useGridReset.ts</code></td><td><span class="op-edit">edit</span></td><td>Defaults for grid and chessboard sizes, and grid on/off</td><td><a class="id" href="#T4">T4</a></td></tr>
+    <tr><td><code>tests/unit/editor/view/store.test.ts</code></td><td><span class="op-edit">edit</span></td><td>resetGrid signature</td><td><a class="id" href="#T4">T4</a></td></tr>
+    <tr><td><code>src/editor/animation/useOnionReset.ts</code></td><td><span class="op-new">new</span></td><td>Onion on open</td><td><a class="id" href="#T4">T4</a></td></tr>
+    <tr><td><code>src/editor/animation/PreviewPanel.tsx</code></td><td><span class="op-edit">edit</span></td><td>Initial fps</td><td><a class="id" href="#T4">T4</a></td></tr>
+    <tr><td><code>src/editor/animation/api.ts</code></td><td><span class="op-edit">edit</span></td><td>Export hook</td><td><a class="id" href="#T4">T4</a></td></tr>
+    <tr><td><code>src/editor/palette/usePaletteReset.ts</code></td><td><span class="op-new">new</span></td><td>Palette on open</td><td><a class="id" href="#T4">T4</a></td></tr>
+    <tr><td><code>src/editor/palette/api.ts</code></td><td><span class="op-edit">edit</span></td><td>Export hook</td><td><a class="id" href="#T4">T4</a></td></tr>
+    <tr><td><code>src/editor/shell/EditorPage.tsx</code></td><td><span class="op-edit">edit</span></td><td>Call the new hooks</td><td><a class="id" href="#T4">T4</a></td></tr>
+    <tr><td><code>src/stores/useBuilderViewStore.ts</code></td><td><span class="op-edit">edit</span></td><td>resetGrid signature, setGridEnabled</td><td><a class="id" href="#T5">T5</a></td></tr>
+    <tr><td><code>src/components/builder/SpritesheetBuilderPage.tsx</code></td><td><span class="op-edit">edit</span></td><td>Open applies defaults</td><td><a class="id" href="#T5">T5</a></td></tr>
+    <tr><td><code>tests/unit/stores/builderViewStore.test.ts</code></td><td><span class="op-edit">edit</span></td><td>resetGrid signature</td><td><a class="id" href="#T5">T5</a></td></tr>
+    <tr><td><code>src/components/settings/DefaultsSection.tsx</code></td><td><span class="op-new">new</span></td><td>The card</td><td><a class="id" href="#T6">T6</a></td></tr>
+    <tr><td><code>src/components/settings/DefaultRow.tsx</code></td><td><span class="op-new">new</span></td><td>Group row with reset</td><td><a class="id" href="#T6">T6</a></td></tr>
+    <tr><td><code>src/components/settings/SettingsPage.tsx</code></td><td><span class="op-edit">edit</span></td><td>Render the card</td><td><a class="id" href="#T6">T6</a></td></tr>
+    <tr><td><code>tests/browser/components/DefaultsSection.browser.test.tsx</code></td><td><span class="op-new">new</span></td><td>Change persists; reset</td><td><a class="id" href="#T6">T6</a></td></tr>
+  </table>
+  <p class="lead">Totals: 11 new (6 src, 5 tests) · 21 edited (17 src, 4 tests) · 0 deleted.</p>
+</section>
+
+<section class="part">
+  <h2>Done when</h2>
+  <table class="rows">
+    <tr><th>#</th><th>Criterion</th><th>Verified by</th><th>Task</th></tr>
+    <tr id="Done1"><td>Done1</td><td><code>resolveDefaults</code> keeps valid fields and replaces each invalid or missing field with its built-in, including columns above the tile's cap</td><td><code>defaults.test.ts › falls back per field</code>, <code>› caps columns by the tile</code></td><td><a class="id" href="#T1">T1</a></td></tr>
+    <tr id="Done2"><td>Done2</td><td>Changing a default writes it to <code>settings["app.defaults"]</code> and it survives a reload</td><td><code>defaultsStore.test.ts › set persists and survives a reload</code>; <code>DefaultsSection.browser › a change persists and enables reset</code></td><td><a class="id" href="#T2">T2</a> <a class="id" href="#T6">T6</a></td></tr>
+    <tr id="Done3"><td>Done3</td><td>Reset removes the field and shows the built-in; the reset button disables</td><td><code>defaultsStore.test.ts › reset removes the field</code>; <code>DefaultsSection.browser › reset returns to the built-in</code></td><td><a class="id" href="#T2">T2</a> <a class="id" href="#T6">T6</a></td></tr>
+    <tr id="Done4"><td>Done4</td><td>The defaults row survives export → clear → import (replace)</td><td><code>backup.test.ts › round-trips the defaults row</code></td><td><a class="id" href="#T2">T2</a></td></tr>
+    <tr id="Done5"><td>Done5</td><td>The New Sprite and New Spritesheet dialogs open at the stored tile and count, and creating a sprite uses them</td><td><code>defaults.browser › new sprite dialog starts from the defaults</code></td><td><a class="id" href="#T3">T3</a></td></tr>
+    <tr id="Done6"><td>Done6</td><td><code>openGridSize("tile", …)</code> equals today's <code>defaultGridSize</code>; a number passes through</td><td><code>grid.test.ts › openGridSize</code></td><td><a class="id" href="#T4">T4</a></td></tr>
+    <tr id="Done7"><td>Done7</td><td>Opening a sprite applies grid on/off, chessboard, onion ×3, palette and fps</td><td><code>defaults.browser › opening a sprite applies the defaults</code></td><td><a class="id" href="#T4">T4</a></td></tr>
+    <tr id="Done8"><td>Done8</td><td>Opening a sheet applies grid on/off, grid size and chessboard</td><td><code>defaults.browser › opening a sheet applies the defaults</code></td><td><a class="id" href="#T5">T5</a></td></tr>
+    <tr id="Done9"><td>Done9</td><td>In-session changes last until the next open, which returns to the defaults</td><td><code>defaults.browser › in-session changes stay until the next open</code></td><td><a class="id" href="#T4">T4</a></td></tr>
+    <tr id="Done10"><td>Done10</td><td>The card reads well in dark and light themes, and each group's reset works</td><td>manual: <code>npm run dev</code> → Settings → change one value per group → each reset button enables; click each → the value returns to the built-in. Switch the theme and check that both look right</td><td><a class="id" href="#T6">T6</a></td></tr>
+  </table>
+  <p class="text-sm">Test command: <code>npm run test:all</code> (unit + browser), plus <code>npx tsc -b</code> and <code>npm run lint</code> <a class="id" href="#F24">F24</a></p>
+</section>
+
+<div class="space-y-2">
+<details class="more"><summary>Open</summary><ul>
+  <li>none</li>
+</ul></details>
+
+<details class="more"><summary>Facts</summary>
+  <h4>Code</h4><ul>
+  <li id="F1"><b>F1</b> <code>SETTING_KEYS.defaultCanvasSize = "editor.defaultCanvasSize"</code> has no reader or writer. <code>gridEnabled</code>, <code>onion</code> and <code>activePaletteId</code> keys are also unused <code>src/constants/settings.ts:1-8</code>; grep shows only <code>seeded</code> is used (<code>src/db/seed.ts:37</code>)</li>
+  <li id="F2"><b>F2</b> Backup exports every settings row and import <code>bulkPut</code>s them in both modes. <code>clearAllData</code> clears the table <code>src/db/backup.ts:33,80,210,228</code></li>
+  <li id="F3"><b>F3</b> <code>readSetting(key, fallback)</code> / <code>writeSetting(key, value)</code>, where the write goes through <code>withQuotaGuard</code> <code>src/db/repositories/settings.ts:4-11</code></li>
+  <li id="F4"><b>F4</b> NewSpriteDialog starts at <code>DEFAULT_TILE_SIZE</code> (16) and <code>DEFAULT_TILE_COUNT</code> (2) <code>src/components/manager/NewSpriteDialog.tsx:36-40</code>; <code>src/constants/canvas.ts:16,18</code></li>
+  <li id="F5"><b>F5</b> NewSpritesheetDialog starts at <code>DEFAULT_TILE_SIZE</code>. The tile choices are <code>TILE_SIZE_PRESETS</code> <code>src/components/manager/NewSpritesheetDialog.tsx:32</code>; <code>src/components/common/TileSizePicker.tsx</code></li>
+  <li id="F6"><b>F6</b> The editor and builder view stores start with the grid on, at <code>DEFAULT_TILE_SIZE</code>, chessboard <code>DEFAULT_CHECKER_SIZE</code> (1). <code>resetGrid(gridSize)</code> runs on every open. The editor has <code>setGridEnabled</code>; the builder doesn't <code>src/editor/view/store.ts:51-53,84-87</code>; <code>src/stores/useBuilderViewStore.ts:39-41,65</code>; <code>src/editor/view/useGridReset.ts</code>; <code>src/components/builder/SpritesheetBuilderPage.tsx:66-67</code></li>
+  <li id="F7"><b>F7</b> PreviewPanel fps is <code>useState(DEFAULT_FPS)</code> (5). The range is <code>MIN_FPS</code> 1 to <code>MAX_FPS</code> 60 <code>src/editor/animation/PreviewPanel.tsx:20</code>; <code>src/constants/animation.ts:1-3</code></li>
+  <li id="F8"><b>F8</b> <code>activePaletteId</code> starts null. <code>usePalettes</code> falls back to the first palette when the id is null or missing <code>src/editor/palette/store.ts:20</code>; <code>src/editor/palette/usePalettes.ts:20-21</code></li>
+  <li id="F10"><b>F10</b> <code>ONION_DEFAULT = {enabled:false, direction:"before", opacity:0.35}</code>. The animation store starts from it and has <code>setOnion(patch)</code> <code>src/constants/animation.ts:7-11</code>; <code>src/editor/animation/store.ts:21,24</code></li>
+  <li id="F11"><b>F11</b> The onion opacity slider spans 10–80 (%) <code>src/editor/animation/OnionSkinControl.tsx:57-58</code></li>
+  <li id="F12"><b>F12</b> <code>defaultGridSize(tile, w, h)</code>: tile, else inferred, else the snapped divisor <code>src/core/grid.ts:33-38</code></li>
+  <li id="F13"><b>F13</b> <code>maxTileCount(tile) = max(1, floor(512 / tile))</code> <code>src/lib/tiles.ts:6-8</code></li>
+  <li id="F14"><b>F14</b> The editor's view controls snap any stored grid or chessboard size to the sprite's divisors. The builder uses <code>sheetTileOptions(tile)</code> = <code>SHEET_TILE_OPTIONS</code> [1,2,4,8,16,32,64] ∪ tile <code>src/editor/view/ViewControls.tsx:24-38</code>; <code>src/lib/tiles.ts:24-26</code>; <code>src/constants/builder.ts</code></li>
+  <li id="F15"><b>F15</b> <code>ChoiceSetting {kind, label, values, default, unit?}</code>. <code>resolveSettings</code> takes the stored value first, then the default <code>src/framework/settings.ts:15-22,78-87</code></li>
+  <li id="F16"><b>F16</b> Toolbox <code>settings[toolId][key]</code> with <code>setSetting</code>. These are module singletons, so values carry over between sprites in a session <code>src/editor/toolbox/store.ts:23,64-67</code></li>
+  <li id="F17"><b>F17</b> DocumentProvider renders the fallback while loading, so the editor tree (and PreviewPanel state) remounts for each sprite <code>src/app/DocumentProvider.tsx:46,80</code></li>
+  <li id="F18"><b>F18</b> Boot seeds without awaiting, because an IndexedDB promise can hang <code>src/main.tsx:9-14</code></li>
+  <li id="F19"><b>F19</b> FormDialog renders the form through a render prop, and the forms keep their state in <code>useState</code> <code>src/components/manager/NewSpriteDialog.tsx:28,36</code></li>
+  <li id="F21"><b>F21</b> Lint stops <code>src/core/**</code> from importing stores, db or React <code>.oxlintrc.json</code> overrides</li>
+  <li id="F23"><b>F23</b> Conventions: settings UI state goes in <code>src/stores/</code>. Each pixel-editor domain owns its state in <code>src/editor/&lt;domain>/</code>, reached via <code>api.ts</code> <code>docs/conventions.md</code> §1</li>
+  <li id="F24"><b>F24</b> Scripts: <code>test</code> (unit), <code>test:browser</code>, <code>test:all</code>, <code>lint</code> (oxlint), <code>build</code> (<code>tsc -b</code>) <code>package.json</code></li>
+  </ul>
+  <h4>Docs / installed source</h4><ul>
+  <li id="F20"><b>F20</b> Installed: <code>zustand 5.0.15</code>, <code>dexie 4.4.6</code>, <code>@base-ui/react 1.8.0</code>; the project already uses <code>create()</code> and <code>useLiveQuery</code> the same way <code>node_modules/*/package.json</code></li>
+  <li id="F22"><b>F22</b> The base-ui Slider has <code>onValueCommitted(value, eventDetails)</code> <code>node_modules/@base-ui/react/slider/root/SliderRoot.d.ts</code> (1.8.0)</li>
+  </ul>
+  <h4>Probes</h4><ul>
+  <li>Baseline: ran <code>npm test</code>: <code>Test Files 53 passed (53) · Tests 345 passed (345)</code>. <code>npx tsc -b</code>: no output. <code>npm run lint</code>: 3 existing warnings, 0 errors</li>
+  </ul>
+</details>
+
+<details class="more"><summary>Drift log</summary><ul>
+  <li><b>B1</b> build, T6: lint (<code>no-restricted-imports</code>) forbids components from importing <code>dexie-react-hooks</code>/repositories, so the palette list goes through a new <code>src/hooks/usePaletteList.ts</code> (same pattern as <code>useSpriteSizes</code>). Surface: +1 hook, no behaviour change.</li>
+  <li><b>B2</b> build, tests: <code>tests/support/setup.browser.ts</code> also resets <code>useDefaultsStore</code> after each test, like the other singleton stores, so defaults set by one test cannot leak into the next.</li>
+  <li><b>B3</b> build, T6: group labels became "New sprites and sheets", "Grid and chessboard", "Animation", "Palette" (4 groups after A1); test names follow those labels. Opacity slider bounds are <code>ONION_OPACITY_MIN/MAX</code> in <code>constants/defaults.ts</code>.</li>
+  <li><b>Result</b> <code>npm run test:all</code>: 91 files, 647 tests passed. <code>npx tsc -b</code>: clean. <code>npm run lint</code>: 0 errors (existing warnings only). Done10 checked by hand in dark and light themes.</li>
+  <li id="A1"><b>A1</b> 2026-10-03, requested by the maintainer before approval: (1) brush size removed — D7 withdrawn; no <code>ChoiceSetting.preference</code>, no <code>useToolDefaults</code>, <code>brush.ts</code>/<code>framework/settings.ts</code>/toolbox untouched; Drawing group holds the palette only. (2) <code>spriteTileSize</code> + <code>sheetTileSize</code> merged into one <code>tileSize</code> used by both New Sprite and New Spritesheet; the settings card merges them into one "New sprites &amp; sheets" group. Done7 no longer checks brush size; Done5 checks one shared tile.</li>
+</ul></details>
+</div>
+
+</main>
+
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@12.0.0/+esm'
+const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;')
+const ids = s => s.replace(/\b((?:Done|[DFORT])\d+)\b/g, '<a class="id" href="#$1">$1</a>')
+for (const pre of document.querySelectorAll('pre.diff')) {
+  pre.innerHTML = pre.textContent.split('\n').map(l =>
+    `<span class="${{'+': 'add', '~': 'chg', '-': 'rm'}[l[0]] ?? 'ctx'}">${ids(esc(l)) || ' '}</span>`).join('')
+}
+for (const pre of document.querySelectorAll('pre.code')) pre.innerHTML = ids(esc(pre.textContent))
+const fill = (cls, color) => `.node.${cls} :is(rect,polygon,circle,path){fill:color-mix(in srgb,${color} 12%,white)!important;stroke:${color}!important}`
+mermaid.initialize({
+  startOnLoad: false, securityLevel: 'loose', theme: 'base',
+  flowchart: { useMaxWidth: false }, sequence: { useMaxWidth: false },
+  themeVariables: { primaryColor: '#ffffff', primaryBorderColor: '#8a94a3', lineColor: '#1c2433',
+                    fontFamily: 'ui-sans-serif, system-ui, sans-serif', fontSize: '14px' },
+  themeCSS: fill('new', '#2e7d4f') + fill('chg', '#a96a12') + fill('del', '#b23a3a'),
+})
+await mermaid.run({ querySelector: 'pre.mermaid' })
+</script>
+</body>
+</html>
