@@ -16,7 +16,7 @@ export interface LibraryCardProps {
   children?: ReactNode;
 }
 
-/** A tile in the library gallery — every kind of item the manager lists looks like this. */
+/** A tile in the Library — every kind of Library item looks like this. */
 export function LibraryCard({
   name,
   meta,

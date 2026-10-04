@@ -3,7 +3,7 @@ import { AppLayout } from "@/app/AppLayout";
 import { RouteErrorBoundary } from "@/app/RouteErrorBoundary";
 import { SpritesheetBuilderPage } from "@/components/builder/SpritesheetBuilderPage";
 import { NotFoundPage } from "@/components/common/NotFoundPage";
-import { SpriteManagerPage } from "@/components/manager/SpriteManagerPage";
+import { LibraryPage } from "@/components/library/LibraryPage";
 import { SettingsPage } from "@/components/settings/SettingsPage";
 import { ROUTES } from "@/constants/routes";
 import { EditorPage } from "@/editor/shell/EditorPage";
@@ -14,7 +14,7 @@ export function AppRoutes() {
       <Route element={<RouteErrorBoundary />}>
         <Route element={<AppLayout />}>
           <Route index element={<Navigate to={ROUTES.sprites} replace />} />
-          <Route path="sprites" element={<SpriteManagerPage />} />
+          <Route path="sprites" element={<LibraryPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>

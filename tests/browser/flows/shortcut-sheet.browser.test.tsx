@@ -75,7 +75,7 @@ test("the editor's sheet lists its groups and rows in a fixed order", async () =
       "Pan",
       "Pan",
     ],
-    ["App", "Keyboard shortcuts", "Back to sprites"],
+    ["App", "Keyboard shortcuts", "Back to library"],
   ]);
 });
 
@@ -89,6 +89,6 @@ test("the composer's sheet lists its groups and rows in a fixed order", async ()
   expect(await sheetOutline()).toEqual([
     ["Edit", "Undo", "Redo", "Save now"],
     ["View", "Zoom in", "Zoom out", "Fit to window", "Toggle grid", "Zoom"],
-    ["App", "Keyboard shortcuts", "Back to sprites"],
+    ["App", "Keyboard shortcuts", "Back to library"],
   ]);
 });

@@ -25,24 +25,24 @@ const SORT_LABELS: Record<LibrarySort, string> = {
   name: "Name",
 };
 
-export interface SpriteLibraryToolbarProps {
+export interface LibraryToolbarProps {
   library: Library;
   onCreateSprite: () => void;
   onCreateSpritesheet: () => void;
   onImportFiles: (files: File[]) => void;
 }
 
-export function SpriteLibraryToolbar({
+export function LibraryToolbar({
   library,
   onCreateSprite,
   onCreateSpritesheet,
   onImportFiles,
-}: SpriteLibraryToolbarProps) {
+}: LibraryToolbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   return (
     <Panel className="flex flex-wrap items-center gap-2 px-3 py-2">
-      <h1 className="text-lg font-semibold">Sprites</h1>
+      <h1 className="text-lg font-semibold">Library</h1>
 
       <div className="relative ml-auto">
         <Search className="pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-muted-foreground" />

@@ -52,7 +52,7 @@ export const SESSION_COMMANDS = commandsFor<SessionContext>()([
   },
   {
     id: "app.backToLibrary",
-    label: "Back to sprites",
+    label: "Back to library",
     group: "App",
     keys: [{ key: "escape", shift: true }],
     run: ({ navigate }) => navigate(ROUTES.sprites),

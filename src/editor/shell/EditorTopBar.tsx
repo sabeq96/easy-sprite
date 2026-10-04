@@ -25,7 +25,7 @@ export function EditorTopBar() {
     <Panel render={<header />} className="flex items-center gap-2 px-2 py-1.5">
       {/* A link, not a command button: navigation belongs to the <Link>. */}
       <TooltipButton
-        label="Back to sprites"
+        label="Back to library"
         shortcut={backKeys}
         size="icon-sm"
         variant="ghost"

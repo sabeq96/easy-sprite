@@ -261,7 +261,7 @@ test("? and the keyboard button open a shortcut sheet listing the sheet's keys",
     "Zoom out",
     "Fit to window",
     "Toggle grid",
-    "Back to sprites",
+    "Back to library",
     "Zoom",
   ]) {
     await expect.element(dialog.getByText(label, { exact: true })).toBeVisible();

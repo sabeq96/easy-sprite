@@ -25,7 +25,7 @@ test("creating a spritesheet from the library opens the composer, and it lists w
 
   await expect.element(screen.getByLabelText("Spritesheet name")).toHaveValue("Scene sheet");
 
-  await userEvent.click(screen.getByRole("button", { name: "Back to sprites" }));
+  await userEvent.click(screen.getByRole("button", { name: "Back to library" }));
   await expect.element(screen.getByRole("button", { name: "Open Scene sheet" })).toBeVisible();
   await expect.element(screen.getByText("Sheet", { exact: true })).toBeVisible();
 });
@@ -296,7 +296,7 @@ test("leaving the composer saves what was still pending", async () => {
   await removeBlock(removeHero);
   expect((await getSpritesheet(sheetId)).blocks).toHaveLength(1);
 
-  await userEvent.click(screen.getByRole("button", { name: "Back to sprites" }));
+  await userEvent.click(screen.getByRole("button", { name: "Back to library" }));
   await expect.poll(async () => (await getSpritesheet(sheetId)).blocks).toEqual([]);
   // The thumbnail follows the blocks; let it land before teardown closes the database.
   await expect.poll(async () => (await getSpritesheet(sheetId)).thumbnail).not.toBeUndefined();

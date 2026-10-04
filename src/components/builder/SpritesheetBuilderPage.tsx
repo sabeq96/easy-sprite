@@ -86,7 +86,7 @@ function SpritesheetBuilderShell() {
         <Panel render={<header />} className="flex min-w-0 items-center gap-2 px-2 py-1.5">
           {/* A link, not a command button: navigation belongs to the <Link>. */}
           <TooltipButton
-            label="Back to sprites"
+            label="Back to library"
             shortcut={keysOf(commands["app.backToLibrary"])}
             size="icon-sm"
             variant="ghost"

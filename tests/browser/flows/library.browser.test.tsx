@@ -7,6 +7,15 @@ import { useViewStore } from "@/editor/view/api";
 import { useBuilderViewStore } from "@/stores/useBuilderViewStore";
 import { render } from "@test/render";
 
+test("the library is headed and listed in the nav as Library", async () => {
+  const screen = await render(<AppRoutes />, { route: "/sprites" });
+
+  await expect.element(screen.getByRole("heading", { name: "Library" })).toBeVisible();
+  await expect
+    .element(screen.getByRole("navigation").getByRole("button", { name: "Library" }))
+    .toBeVisible();
+});
+
 test("creating a sprite from the library opens it in the editor, and it lists on the way back", async () => {
   const screen = await render(<AppRoutes />, { route: "/sprites" });
 
@@ -20,7 +29,7 @@ test("creating a sprite from the library opens it in the editor, and it lists on
 
   await expect.element(screen.getByRole("application", { name: "Sprite canvas" })).toBeVisible();
 
-  await userEvent.click(screen.getByRole("button", { name: "Back to sprites" }));
+  await userEvent.click(screen.getByRole("button", { name: "Back to library" }));
   await expect.element(screen.getByRole("button", { name: "Open Hero walk" })).toBeVisible();
 });
 
@@ -76,7 +85,7 @@ test("tags entered when creating a sprite show up in the library", async () => {
   await userEvent.click(screen.getByRole("button", { name: "Create" }));
   await expect.element(screen.getByRole("application", { name: "Sprite canvas" })).toBeVisible();
 
-  await userEvent.click(screen.getByRole("button", { name: "Back to sprites" }));
+  await userEvent.click(screen.getByRole("button", { name: "Back to library" }));
   await expect.element(screen.getByRole("button", { name: "hero 1", exact: true })).toBeVisible();
   await expect.element(screen.getByRole("button", { name: "walk 1", exact: true })).toBeVisible();
 });
@@ -89,7 +98,7 @@ test("deleting a sprite through its menu removes it from the library", async () 
   await userEvent.click(screen.getByRole("button", { name: "Create" }));
   await expect.element(screen.getByRole("application", { name: "Sprite canvas" })).toBeVisible();
 
-  await userEvent.click(screen.getByRole("button", { name: "Back to sprites" }));
+  await userEvent.click(screen.getByRole("button", { name: "Back to library" }));
   await expect.element(screen.getByRole("button", { name: "Open Throwaway" })).toBeVisible();
 
   await userEvent.click(screen.getByRole("button", { name: "Actions for Throwaway" }));
