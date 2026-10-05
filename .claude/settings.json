@@ -1,5 +1,4 @@
 {
-  "allowedMcpServers": [],
   "permissions": {
     "allow": ["mcp__claude-in-chrome"]
   }
