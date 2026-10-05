@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
   constrainViewport,
   fitViewport,
-  isInsideSprite,
   screenToSprite,
   spriteToScreen,
   wheelZoomFactor,
@@ -92,11 +91,5 @@ describe("viewport", () => {
     );
     expect(viewport.originX).toBe(24);
     expect(viewport.originY).toBe(168);
-  });
-
-  it("tests sprite bounds exclusively at the far edge", () => {
-    const sprite = { width: 4, height: 4 };
-    expect(isInsideSprite({ x: 3, y: 3 }, sprite)).toBe(true);
-    expect(isInsideSprite({ x: 4, y: 0 }, sprite)).toBe(false);
   });
 });

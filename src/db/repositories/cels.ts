@@ -48,11 +48,3 @@ export function flushCels(writes: CelWrite[]): Promise<void> {
 export function removeCelsForLayer(layerId: string): Promise<number> {
   return db.cels.where("layerId").equals(layerId).delete();
 }
-
-export function removeCelsForFrame(frameId: string): Promise<number> {
-  return db.cels.where("frameId").equals(frameId).delete();
-}
-
-export function findCel(layerId: string, frameId: string): Promise<CelRecord | undefined> {
-  return db.cels.get(celKey(layerId, frameId));
-}

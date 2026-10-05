@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db/db";
 import { createSprite } from "@/db/repositories/sprites";
-import { flushCels, findCel, isCelEmpty, removeCelsForFrame } from "@/db/repositories/cels";
+import { celKey, flushCels, isCelEmpty } from "@/db/repositories/cels";
 
 beforeEach(async () => {
   await db.delete();
@@ -38,19 +38,7 @@ describe("cel repository", () => {
     ]);
 
     pixels[0] = 99;
-    const stored = await findCel(sprite.layerIds[0], sprite.frames[0].id);
+    const stored = await db.cels.get(celKey(sprite.layerIds[0], sprite.frames[0].id));
     expect(stored?.pixels[0]).toBe(10);
-  });
-
-  it("removes every cel of a frame", async () => {
-    const sprite = await createSprite({ width: 1, height: 1 });
-    const frameId = sprite.frames[0].id;
-    await flushCels([
-      { spriteId: sprite.id, layerId: "a", frameId, pixels: new Uint8ClampedArray([1, 1, 1, 255]) },
-      { spriteId: sprite.id, layerId: "b", frameId, pixels: new Uint8ClampedArray([2, 2, 2, 255]) },
-    ]);
-
-    await removeCelsForFrame(frameId);
-    expect(await db.cels.count()).toBe(0);
   });
 });

@@ -1,11 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   blendPixel,
-  clearRegion,
   createBuffer,
   cropRegion,
   getPixel,
-  isBufferEmpty,
   pasteRegion,
   resizeBuffer,
   setPixel,
@@ -51,8 +49,7 @@ describe("buffer primitives", () => {
 
     const rect = { x: 1, y: 1, w: 2, h: 2 };
     const region = cropRegion(buffer, 4, rect);
-    clearRegion(buffer, 4, rect);
-    expect(isBufferEmpty(buffer)).toBe(true);
+    buffer.fill(0);
 
     pasteRegion(buffer, 4, rect, region);
     expect(getPixel(buffer, 1, 1, 4)).toEqual({ r: 10, g: 20, b: 30, a: 255 });

@@ -7,7 +7,7 @@ import type { CommandRegistry } from "@/commands/types";
 import { useBuilderCommands } from "@/commands/useBuilderCommands";
 import { SHARED_KEYS, type SharedViewCommandId } from "@/constants/shortcuts";
 import { createSpritesheet } from "@/db/repositories/spritesheets";
-import { bindingSignature } from "@/lib/keys";
+import { formatBinding } from "@/lib/keys";
 import { render } from "@test/render";
 
 function Probe({ onRegistry }: { onRegistry: (registry: CommandRegistry) => void }) {
@@ -43,7 +43,7 @@ test("the Builder's registry files each command under its own id and binds no ch
   const commands = Object.entries(registry);
 
   for (const [id, command] of commands) expect(command?.id).toBe(id);
-  const chords = commands.flatMap(([, command]) => (command?.keys ?? []).map(bindingSignature));
+  const chords = commands.flatMap(([, command]) => (command?.keys ?? []).map(formatBinding));
   expect(chords.length).toBeGreaterThan(0);
   expect(duplicates(chords)).toEqual([]);
 });

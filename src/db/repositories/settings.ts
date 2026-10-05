@@ -9,7 +9,3 @@ export async function readSetting<T>(key: string, fallback: T): Promise<T> {
 export function writeSetting<T>(key: string, value: T): Promise<string> {
   return withQuotaGuard(() => db.settings.put({ key, value }));
 }
-
-export function listSettings() {
-  return db.settings.toArray();
-}

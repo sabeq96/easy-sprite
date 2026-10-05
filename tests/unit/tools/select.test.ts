@@ -14,7 +14,8 @@ import { createToolHost, type DocumentToolHost } from "@/editor/canvas/toolHost/
 import { startToolLifecycle } from "@/editor/canvas/useToolLifecycle";
 import { isSelected } from "@/tools/select/selection";
 import { currentSelection, selectedRect, selectTool } from "@/tools/select/tool";
-import { makeDocument, makeGesture, NO_MODIFIERS, RED } from "@test/factories";
+import { pencilTool } from "@/tools/pencil/tool";
+import { fakeHost, makeDocument, makeGesture, NO_MODIFIERS, RED } from "@test/factories";
 import { moduleContext } from "@test/modules";
 import { resetEditorStores } from "@test/store";
 
@@ -278,6 +279,26 @@ describe("select tool: lasso", () => {
       [true, true, true, true, true],
     );
     expect([selected(2, 1), selected(2, 2), selected(1, 2)]).toEqual([false, false, false]);
+  });
+
+  it("the traced edge is exactly what a Pencil Stroke along the same path paints", () => {
+    // Diagonal ties on every slanted edge; the thin triangle has no interior to add.
+    const path = [{ x: 0, y: 0 }, { x: 2, y: 1 }, { x: 0, y: 1 }];
+    const canvas = makeDocument();
+    const first = makeGesture(canvas, path[0]);
+    pencilTool.onPointerDown(fakeHost(), first);
+    [...path.slice(1), path[0]].forEach((point, i) => {
+      pencilTool.onPointerMove!(fakeHost(), makeGesture(canvas, point, { previous: path[i], surface: first.surface }));
+    });
+
+    gesture(path);
+
+    const painted = canvas.getCel("l1", "f1")!.pixels;
+    for (let y = 0; y < 4; y++) {
+      for (let x = 0; x < 4; x++) {
+        expect(selected(x, y), `(${x},${y})`).toBe(getPixel(painted, x, y, 4).a > 0);
+      }
+    }
   });
 
   it("a click selects one pixel, and one drawn off-canvas selects nothing", () => {

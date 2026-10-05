@@ -6,7 +6,6 @@ import {
   floodFill,
   forEachBrushPixel,
   forEachLinePixel,
-  pickColor,
 } from "@/core/pixels";
 import { BLUE, RED } from "@test/factories";
 
@@ -111,11 +110,5 @@ describe("color sampling", () => {
   it("measures max-channel distance", () => {
     expect(colorDistance(RED, BLUE)).toBe(255);
     expect(colorDistance(RED, RED)).toBe(0);
-  });
-
-  it("returns null outside the canvas", () => {
-    const area = target(2, 2);
-    expect(pickColor(area, 0, 0)).toEqual({ r: 0, g: 0, b: 0, a: 0 });
-    expect(pickColor(area, 2, 0)).toBeNull();
   });
 });

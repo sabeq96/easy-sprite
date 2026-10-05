@@ -42,28 +42,6 @@ export function fromRows<T extends RowBlock>(rows: SheetRows<T>): T[] {
     );
 }
 
-export interface RowTarget {
-  row: number;
-  /** Insertion point within the row, counted once the moving block is out of it. */
-  index: number;
-}
-
-/** Moves an existing block, or inserts a new one, so it sits at `target` — then renormalises. */
-export function placeBlock<T extends RowBlock>(blocks: T[], block: T, target: RowTarget): T[] {
-  const rows = toRows(blocks).map((row) => row.filter((entry) => entry.id !== block.id));
-  while (rows.length <= target.row) rows.push([]);
-  const row = rows[target.row];
-  row.splice(Math.min(Math.max(target.index, 0), row.length), 0, block);
-  return fromRows(rows);
-}
-
-/** Inserts a new row at `row`, pushing the rows at and below it down, with `block` alone in it. */
-export function insertRow<T extends RowBlock>(blocks: T[], block: T, row: number): T[] {
-  const rows = toRows(blocks).map((entry) => entry.filter((other) => other.id !== block.id));
-  rows.splice(Math.min(Math.max(row, 0), rows.length), 0, [block]);
-  return fromRows(rows);
-}
-
 /** Removes a block, collapsing its row if it was the last one in it. */
 export function dropBlock<T extends RowBlock>(blocks: T[], blockId: string): T[] {
   return fromRows(toRows(blocks).map((row) => row.filter((block) => block.id !== blockId)));

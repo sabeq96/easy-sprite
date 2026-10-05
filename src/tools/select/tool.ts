@@ -117,7 +117,7 @@ function view(): SelectionView | null {
 
   if (drag?.kind === "move" && drag.floating) {
     const { floating, offset } = drag;
-    const moved = selectionMoved(floating.selection, floating.rect.x + offset.x, floating.rect.y + offset.y);
+    const moved = selectionMoved(floating.selection, floating.selection.rect.x + offset.x, floating.selection.rect.y + offset.y);
     return {
       selection: selectionClamped(moved, width, height),
       floating: { region: floating, offset },
@@ -147,7 +147,7 @@ function clearSelection(host: ToolHost, label: string, cut: boolean): void {
     const { pixels, width } = gridOf(surface);
     if (cut) {
       const copied = eraseOutside(cropRegion(pixels, width, selection.rect), selection);
-      setClipboard({ rect: selection.rect, selection, pixels: copied });
+      setClipboard({ selection, pixels: copied });
     }
     clearSelected(pixels, width, selection);
     surface.commit(selection.rect);
@@ -198,7 +198,7 @@ export const selectTool = defineTool({
       run(host: ToolHost) {
         const selection = state.selection;
         const pixels = selection && host.document.crop(selection.rect);
-        if (selection && pixels) setClipboard({ rect: selection.rect, selection, pixels: eraseOutside(pixels, selection) });
+        if (selection && pixels) setClipboard({ selection, pixels: eraseOutside(pixels, selection) });
       },
     },
     {
@@ -325,10 +325,10 @@ export const selectTool = defineTool({
       state.selection = drag.selection;
     } else if (drag.floating) {
       const { floating, offset, surface } = drag;
-      const target = { x: floating.rect.x + offset.x, y: floating.rect.y + offset.y };
+      const target = { x: floating.selection.rect.x + offset.x, y: floating.selection.rect.y + offset.y };
       const written = stampRegion(gridOf(surface), floating, target);
       // Lift + drop share the gesture: one drag, one undo step (even when dropped off-canvas).
-      surface.commit(rectUnion(written, floating.rect));
+      surface.commit(rectUnion(written, floating.selection.rect));
       // The selection follows the pixels.
       state.selection = selectionClamped(
         selectionMoved(floating.selection, target.x, target.y),

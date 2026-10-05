@@ -5,7 +5,7 @@ import { SHARED_KEYS, type SharedViewCommandId } from "@/constants/shortcuts";
 import { bindCommands, type ModuleCommand } from "@/editor/module";
 import { bindEditorCommands, EDITOR_MODULES, type ModuleCommandId } from "@/editor/modules";
 import { useToolboxStore } from "@/editor/toolbox/api";
-import { bindingSignature } from "@/lib/keys";
+import { formatBinding } from "@/lib/keys";
 import { moduleContext } from "@test/modules";
 import { resetEditorStores } from "@test/store";
 
@@ -27,7 +27,7 @@ describe("EDITOR_MODULES", () => {
   it("binds no chord to two commands in the editor's registry", () => {
     const registry = bindEditorCommands(moduleContext());
     const chords = Object.values(registry).flatMap((command) =>
-      (command?.keys ?? []).map(bindingSignature),
+      (command?.keys ?? []).map(formatBinding),
     );
 
     expect(chords.length).toBeGreaterThan(0);

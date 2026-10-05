@@ -34,10 +34,6 @@ export function spriteToScreen(viewport: Viewport, point: Point): Point {
   };
 }
 
-export function isInsideSprite(point: Point, sprite: Size): boolean {
-  return point.x >= 0 && point.y >= 0 && point.x < sprite.width && point.y < sprite.height;
-}
-
 /** Zoom keeping the sprite pixel under the cursor fixed on screen. */
 export function zoomAt(viewport: Viewport, cursor: Point, nextScale: number): Viewport {
   const ratio = nextScale / viewport.scale;
@@ -64,7 +60,7 @@ export function fitViewport(container: Size, sprite: Size, padding = VIEW_PADDIN
     height: Math.max(1, container.height - padding * 2),
   };
   const raw = Math.min(available.width / sprite.width, available.height / sprite.height);
-  const scale = [...ZOOM_LEVELS].reverse().find((level) => level <= raw) ?? ZOOM_LEVELS[0];
+  const scale = ZOOM_LEVELS.findLast((level) => level <= raw) ?? ZOOM_LEVELS[0];
 
   return {
     scale,

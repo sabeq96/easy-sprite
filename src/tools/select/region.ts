@@ -11,7 +11,6 @@ export interface PixelGrid {
 }
 
 export interface FloatingSelection {
-  rect: Rect;
   /** The shape the pixels came from; `pixels` outside it are transparent. */
   selection: Selection;
   pixels: PixelBuffer;
@@ -65,7 +64,7 @@ export function liftRegion(grid: PixelGrid, selection: Selection, cut: boolean):
   const canvas = new OffscreenCanvas(rect.w, rect.h);
   canvas.getContext("2d")?.putImageData(new ImageData(pixels, rect.w, rect.h), 0, 0);
 
-  return { rect, selection, pixels, canvas };
+  return { selection, pixels, canvas };
 }
 
 /**
@@ -77,7 +76,7 @@ export function stampRegion(
   region: FloatingSelection,
   at: { x: number; y: number },
 ): Rect | null {
-  const target = rectClamp({ ...region.rect, x: at.x, y: at.y }, grid.width, grid.height);
+  const target = rectClamp({ ...region.selection.rect, x: at.x, y: at.y }, grid.width, grid.height);
   if (target.w <= 0 || target.h <= 0) return null;
 
   const offsetX = target.x - at.x;
@@ -85,7 +84,7 @@ export function stampRegion(
 
   for (let y = 0; y < target.h; y++) {
     for (let x = 0; x < target.w; x++) {
-      const source = ((y + offsetY) * region.rect.w + (x + offsetX)) * 4;
+      const source = ((y + offsetY) * region.selection.rect.w + (x + offsetX)) * 4;
       if (region.pixels[source + 3] === 0) continue;
       const destination = ((target.y + y) * grid.width + (target.x + x)) * 4;
       grid.pixels.set(region.pixels.subarray(source, source + 4), destination);

@@ -103,14 +103,6 @@ export function pasteRegion(
   }
 }
 
-export function clearRegion(buffer: PixelBuffer, width: number, rect: Rect): void {
-  const rowBytes = rect.w * BYTES_PER_PIXEL;
-  for (let row = 0; row < rect.h; row++) {
-    const start = bufferIndex(rect.x, rect.y + row, width);
-    buffer.fill(0, start, start + rowBytes);
-  }
-}
-
 export function isBufferEmpty(buffer: PixelBuffer): boolean {
   for (let index = 3; index < buffer.length; index += BYTES_PER_PIXEL) {
     if (buffer[index] !== 0) return false;

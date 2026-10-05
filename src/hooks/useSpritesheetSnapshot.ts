@@ -1,9 +1,7 @@
-import { useMemo, useSyncExternalStore } from "react";
+import { useMemo } from "react";
 import type { SpritesheetBlockRecord } from "@/db/schema";
-import type {
-  SpritesheetDocument,
-  SpritesheetRevisionChannel,
-} from "@/core/spritesheetDocument";
+import type { SpritesheetDocument } from "@/core/spritesheetDocument";
+import { useDocumentRevision } from "@/hooks/useDocumentRevision";
 
 export interface SpritesheetSnapshot {
   revision: number;
@@ -13,20 +11,13 @@ export interface SpritesheetSnapshot {
   blocks: SpritesheetBlockRecord[];
 }
 
-function useRevision(doc: SpritesheetDocument, channel: SpritesheetRevisionChannel): number {
-  return useSyncExternalStore(
-    (onChange) => doc.events.on(channel, onChange),
-    () => doc.revisions[channel],
-  );
-}
-
 /**
  * The only safe way for a component to read an open spritesheet during render — see
  * useDocumentSnapshot for why the revisions are read inside the memo.
  */
 export function useSpritesheetSnapshot(doc: SpritesheetDocument): SpritesheetSnapshot {
-  const blocks = useRevision(doc, "blocks");
-  const meta = useRevision(doc, "meta");
+  const blocks = useDocumentRevision(doc, "blocks");
+  const meta = useDocumentRevision(doc, "meta");
 
   return useMemo(
     () => ({

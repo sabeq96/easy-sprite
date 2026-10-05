@@ -1,3 +1,4 @@
+import { forEachLinePixel } from "@/core/pixels";
 import { rectClamp, rectIsEmpty, type Rect } from "@/lib/rect";
 import type { ToolPoint } from "@/framework/tool";
 
@@ -39,7 +40,7 @@ export function selectionFromRect(rect: Rect, width: number, height: number): Se
 }
 
 /**
- * Every pixel the path touches, joined by straight lines and closed back to its start, plus
+ * Every pixel the path touches, joined as the Pencil joins a Stroke and closed back to its start, plus
  * everything inside it (even-odd). Clamped to the canvas and trimmed; null when nothing is left.
  */
 export function selectionFromPath(
@@ -71,7 +72,7 @@ export function selectionFromPath(
   };
 
   const edges = path.map((from, i) => [from, path[(i + 1) % path.length]] as const);
-  for (const [from, to] of edges) traceLine(from, to, set);
+  for (const [from, to] of edges) forEachLinePixel(from.x, from.y, to.x, to.y, set);
 
   // Even-odd fill, sampling each pixel at its centre.
   for (let y = box.y; y < box.y + box.h; y++) {
@@ -87,29 +88,6 @@ export function selectionFromPath(
   }
 
   return trimmed({ rect: box, bits });
-}
-
-/** Bresenham: every pixel from `from` to `to`, both included. */
-function traceLine(from: ToolPoint, to: ToolPoint, visit: (x: number, y: number) => void): void {
-  const dx = Math.abs(to.x - from.x);
-  const dy = Math.abs(to.y - from.y);
-  const stepX = from.x < to.x ? 1 : -1;
-  const stepY = from.y < to.y ? 1 : -1;
-  let error = dx - dy;
-  let { x, y } = from;
-  for (;;) {
-    visit(x, y);
-    if (x === to.x && y === to.y) return;
-    const doubled = 2 * error;
-    if (doubled > -dy) {
-      error -= dy;
-      x += stepX;
-    }
-    if (doubled < dx) {
-      error += dx;
-      y += stepY;
-    }
-  }
 }
 
 function trimmed(selection: Selection): Selection | null {

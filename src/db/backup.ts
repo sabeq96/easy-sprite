@@ -2,14 +2,7 @@ import { BACKUP_FORMAT_VERSION } from "@/constants/storage";
 import { db } from "@/db/db";
 import { withQuotaGuard } from "@/db/errors";
 import { seedDatabase } from "@/db/seed";
-import type {
-  CelRecord,
-  LayerRecord,
-  PaletteRecord,
-  SettingRecord,
-  SpriteRecord,
-  SpritesheetRecord,
-} from "@/db/schema";
+import type { CelRecord, LayerRecord, SpriteRecord, SpritesheetRecord } from "@/db/schema";
 import { deflate, fromBase64, inflate, toBase64 } from "@/lib/binary";
 import { err, ok, type Result } from "@/types/result";
 import type {
@@ -46,18 +39,9 @@ export async function exportBackup(onProgress?: ProgressCallback): Promise<Backu
     onProgress?.(index + 1, cels.length);
   }
 
-  const backupSprites: BackupSprite[] = await Promise.all(
-    sprites.map(async ({ thumbnail, ...sprite }) => ({
-      ...sprite,
-      ...(thumbnail ? { thumbnail: toBase64(new Uint8Array(await thumbnail.arrayBuffer())) } : {}),
-    })),
-  );
-
+  const backupSprites: BackupSprite[] = await Promise.all(sprites.map(encodeThumbnail));
   const backupSpritesheets: BackupSpritesheet[] = await Promise.all(
-    spritesheets.map(async ({ thumbnail, ...sheet }) => ({
-      ...sheet,
-      ...(thumbnail ? { thumbnail: toBase64(new Uint8Array(await thumbnail.arrayBuffer())) } : {}),
-    })),
+    spritesheets.map(encodeThumbnail),
   );
 
   return {
@@ -125,17 +109,8 @@ export async function importBackup(
     })),
   );
 
-  const sprites: SpriteRecord[] = backup.sprites.map(({ thumbnail, ...sprite }) => ({
-    ...sprite,
-    thumbnail: thumbnail ? new Blob([fromBase64(thumbnail)], { type: "image/png" }) : null,
-  }));
-
-  const spritesheets: SpritesheetRecord[] = (backup.spritesheets ?? []).map(
-    ({ thumbnail, ...sheet }) => ({
-      ...sheet,
-      thumbnail: thumbnail ? new Blob([fromBase64(thumbnail)], { type: "image/png" }) : null,
-    }),
-  );
+  const sprites: SpriteRecord[] = backup.sprites.map(decodeThumbnail);
+  const spritesheets: SpritesheetRecord[] = (backup.spritesheets ?? []).map(decodeThumbnail);
 
   let keptSprites = sprites;
   let keptLayers: LayerRecord[] = backup.layers;
@@ -161,35 +136,8 @@ export async function importBackup(
     keptSheets = spritesheets.filter((sheet) => !existingSheets.has(sheet.id));
   }
 
-  await applyImport(
-    keptSprites,
-    keptLayers,
-    keptCels,
-    backup.palettes,
-    keptSheets,
-    backup.settings,
-    mode,
-  );
-
-  return ok({
-    sprites: keptSprites.length,
-    palettes: backup.palettes.length,
-    spritesheets: keptSheets.length,
-    skipped,
-  });
-}
-
-/** One transaction, so a failure halfway leaves the database untouched. */
-function applyImport(
-  sprites: SpriteRecord[],
-  layers: LayerRecord[],
-  cels: CelRecord[],
-  palettes: PaletteRecord[],
-  spritesheets: SpritesheetRecord[],
-  settings: SettingRecord[],
-  mode: ImportMode,
-): Promise<void> {
-  return withQuotaGuard(() =>
+  // One transaction, so a failure halfway leaves the database untouched.
+  await withQuotaGuard(() =>
     db.transaction(
       "rw",
       [db.sprites, db.layers, db.cels, db.palettes, db.spritesheets, db.settings],
@@ -202,15 +150,43 @@ function applyImport(
           await db.palettes.clear();
         }
 
-        await db.sprites.bulkPut(sprites);
-        await db.layers.bulkPut(layers);
-        await db.cels.bulkPut(cels);
-        await db.palettes.bulkPut(palettes);
-        await db.spritesheets.bulkPut(spritesheets);
-        await db.settings.bulkPut(settings);
+        await db.sprites.bulkPut(keptSprites);
+        await db.layers.bulkPut(keptLayers);
+        await db.cels.bulkPut(keptCels);
+        await db.palettes.bulkPut(backup.palettes);
+        await db.spritesheets.bulkPut(keptSheets);
+        await db.settings.bulkPut(backup.settings);
       },
     ),
   );
+
+  return ok({
+    sprites: keptSprites.length,
+    palettes: backup.palettes.length,
+    spritesheets: keptSheets.length,
+    skipped,
+  });
+}
+
+/** Sprite and Spritesheet thumbnails travel as base64 PNG; omitted when there is none yet. */
+async function encodeThumbnail<T extends { thumbnail: Blob | null }>({
+  thumbnail,
+  ...record
+}: T): Promise<Omit<T, "thumbnail"> & { thumbnail?: string }> {
+  return {
+    ...record,
+    ...(thumbnail ? { thumbnail: toBase64(new Uint8Array(await thumbnail.arrayBuffer())) } : {}),
+  };
+}
+
+function decodeThumbnail<T extends { thumbnail?: string }>({
+  thumbnail,
+  ...record
+}: T): Omit<T, "thumbnail"> & { thumbnail: Blob | null } {
+  return {
+    ...record,
+    thumbnail: thumbnail ? new Blob([fromBase64(thumbnail)], { type: "image/png" }) : null,
+  };
 }
 
 /** Back to a first-run database: every table emptied, then starter content re-seeded. */

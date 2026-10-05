@@ -11,7 +11,7 @@ const HOVER_FILL = "rgba(59,130,246,0.2)";
 export interface SelectionView {
   /** Already clamped to the sprite. */
   selection: Selection | null;
-  /** Pixels being dragged, drawn at `region.rect + offset`. */
+  /** Pixels being dragged, drawn at `region.selection.rect + offset`. */
   floating: { region: FloatingSelection; offset: { x: number; y: number } } | null;
   /** In-sprite pixel under the pointer, only when it is not over the selection. */
   hover: ToolPoint | null;
@@ -57,10 +57,10 @@ export function selectionPainter(getView: () => SelectionView | null): OverlayPa
       ctx.imageSmoothingEnabled = false;
       ctx.drawImage(
         region.canvas,
-        viewport.originX + (region.rect.x + offset.x) * viewport.scale,
-        viewport.originY + (region.rect.y + offset.y) * viewport.scale,
-        region.rect.w * viewport.scale,
-        region.rect.h * viewport.scale,
+        viewport.originX + (region.selection.rect.x + offset.x) * viewport.scale,
+        viewport.originY + (region.selection.rect.y + offset.y) * viewport.scale,
+        region.selection.rect.w * viewport.scale,
+        region.selection.rect.h * viewport.scale,
       );
     }
     if (view.selection) {

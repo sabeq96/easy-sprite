@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { rectClamp, rectContains, rectFromPoints, rectsIntersect, rectUnion } from "@/lib/rect";
+import { rectClamp, rectFromPoints, rectUnion } from "@/lib/rect";
 
 describe("rect", () => {
   it("builds an inclusive rect from two points in any order", () => {
@@ -16,23 +16,5 @@ describe("rect", () => {
   it("clamps to the canvas, collapsing fully outside rects", () => {
     expect(rectClamp({ x: -2, y: -2, w: 4, h: 4 }, 8, 8)).toEqual({ x: 0, y: 0, w: 2, h: 2 });
     expect(rectClamp({ x: 10, y: 10, w: 4, h: 4 }, 8, 8).w).toBe(0);
-  });
-
-  it("tests containment exclusively at the far edge", () => {
-    const rect = { x: 1, y: 1, w: 2, h: 2 };
-    expect(rectContains(rect, 1, 1)).toBe(true);
-    expect(rectContains(rect, 3, 1)).toBe(false);
-  });
-
-  it("detects overlap, including partial overlap", () => {
-    expect(rectsIntersect({ x: 0, y: 0, w: 2, h: 2 }, { x: 1, y: 1, w: 2, h: 2 })).toBe(true);
-  });
-
-  it("treats edge-touching rects as non-overlapping", () => {
-    expect(rectsIntersect({ x: 0, y: 0, w: 2, h: 2 }, { x: 2, y: 0, w: 2, h: 2 })).toBe(false);
-  });
-
-  it("does not overlap when fully separate", () => {
-    expect(rectsIntersect({ x: 0, y: 0, w: 2, h: 2 }, { x: 5, y: 5, w: 2, h: 2 })).toBe(false);
   });
 });

@@ -17,7 +17,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useOptimisticOrder } from "@/hooks/useOptimisticOrder";
-import { useDragSource, useDropZone, useSortableItem } from "@/hooks/useDnd";
+import { type DragItem, useDragSource, useDropZone, useSortableItem } from "@/hooks/useDnd";
 import { hexToRgba, rgbaToHex, rgbaEquals, type RGBA } from "@/lib/color";
 import { cn } from "@/lib/utils";
 import { ActiveColors } from "./ActiveColors";
@@ -299,10 +299,15 @@ function SwatchGrid({
       isActive: rgbaEquals(color, activeColor),
       onPick,
       onPickSecondary,
-      onRemove: source === "palette" ? onRemove : undefined,
     };
     return sortable ? (
-      <SortableSwatch key={id} {...commonProps} position={index} isIncoming={isIncoming} />
+      <SortableSwatch
+        key={id}
+        {...commonProps}
+        position={index}
+        isIncoming={isIncoming}
+        onRemove={source === "palette" ? onRemove : undefined}
+      />
     ) : (
       <DraggableSwatch key={id} {...commonProps} source={source} />
     );
@@ -341,77 +346,68 @@ interface BaseSwatchProps {
   isActive: boolean;
   onPick: (color: RGBA) => void;
   onPickSecondary: (color: RGBA) => void;
-  onRemove?: (hex: string) => void;
 }
 
 /** Plain drag source — the read-only "Used in sprite" grid. Every palette grid is sortable now. */
-function DraggableSwatch({
-  id,
-  hex,
-  color,
-  isActive,
-  onPick,
-  onPickSecondary,
-  onRemove,
-  source,
-}: BaseSwatchProps & { source: PaletteDragSource }) {
-  const { dragProps, dragClass } = useDragSource(id, {
+function DraggableSwatch({ id, hex, source, ...body }: BaseSwatchProps & { source: PaletteDragSource }) {
+  const drag = useDragSource(id, {
     data: { hex, source } satisfies PaletteDragData,
   });
 
-  return (
-    <div
-      {...dragProps}
-      className={cn(
-        // Padding (not the container's gap) makes the interactive hitbox touch its neighbor, so the
-        // pointer always resolves to a specific swatch — never the vague gap between two of them —
-        // which is what makes "drop between two colors" land precisely.
-        "rounded-full p-0.5",
-        dragClass,
-      )}
-      onDoubleClick={() => onRemove?.(hex)}
-    >
-      <ColorSwatch
-        color={color}
-        isActive={isActive}
-        onPick={onPick}
-        onPickSecondary={onPickSecondary}
-      />
-    </div>
-  );
+  return <SwatchBody drag={drag} {...body} />;
 }
 
 /** Sortable drag source — only for the editable Palette-colors grid. */
 function SortableSwatch({
   id,
   hex,
-  color,
   position,
   isIncoming,
-  isActive,
-  onPick,
-  onPickSecondary,
   onRemove,
-}: BaseSwatchProps & { position: number; isIncoming: boolean }) {
-  const { dragProps, dragClass } = useSortableItem(id, {
+  ...body
+}: BaseSwatchProps & { position: number; isIncoming: boolean; onRemove?: (hex: string) => void }) {
+  const drag = useSortableItem(id, {
     index: position,
     group: "palette",
     data: { hex, source: "palette" } satisfies PaletteDragData,
   });
 
   return (
+    <SwatchBody
+      drag={drag}
+      // The stand-in for a color being copied in: already in its slot, visibly not yet committed.
+      className={cn(isIncoming && "opacity-50")}
+      onDoubleClick={() => onRemove?.(hex)}
+      {...body}
+    />
+  );
+}
+
+function SwatchBody({
+  drag,
+  className,
+  color,
+  isActive,
+  onPick,
+  onPickSecondary,
+  onDoubleClick,
+}: Omit<BaseSwatchProps, "id" | "hex"> & {
+  drag: DragItem;
+  className?: string;
+  onDoubleClick?: () => void;
+}) {
+  return (
     <div
-      {...dragProps}
+      {...drag.dragProps}
       className={cn(
         // Padding (not the container's gap) makes the interactive hitbox touch its neighbor, so the
         // pointer always resolves to a specific swatch — never the vague gap between two of them —
         // which is what makes "drop between two colors" land precisely.
         "rounded-full p-0.5",
-        // The stand-in for a color being copied in: already in its slot, visibly not yet committed.
-        isIncoming && "opacity-50",
-        dragClass,
+        className,
+        drag.dragClass,
       )}
-      onDoubleClick={() => onRemove?.(hex)}
+      onDoubleClick={onDoubleClick}
     >
       <ColorSwatch
         color={color}

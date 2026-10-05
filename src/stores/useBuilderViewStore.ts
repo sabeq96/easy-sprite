@@ -56,7 +56,7 @@ export const useBuilderViewStore = create<BuilderViewState>()((set) => ({
         return { zoom: DEFAULT_BUILDER_ZOOM };
       }
       const raw = Math.min(containerSize.width / sheet.width, containerSize.height / sheet.height);
-      const level = [...BUILDER_ZOOM_LEVELS].reverse().find((step) => step <= raw);
+      const level = BUILDER_ZOOM_LEVELS.findLast((step) => step <= raw);
       return { zoom: level ?? BUILDER_ZOOM_LEVELS[0] };
     }),
 
