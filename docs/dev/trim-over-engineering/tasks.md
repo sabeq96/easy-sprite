@@ -60,7 +60,11 @@ Checks:
 
 ## 6. Branch verification and PR
 The branch is verified as a whole and opened as a PR.
-- [ ] `npm run build` passes
-- [ ] `npm run test:all` passes (browser suites: select/move, Palette, drag-and-drop visuals, spritesheet drag, Builder)
-- [ ] `git diff --stat main -- src` shows roughly −229 lines
-- [ ] PR opened against `main`
+- [x] `npm run build` passes
+- [x] `npm run test:all` passes (browser suites: select/move, Palette, drag-and-drop visuals, spritesheet drag, Builder)
+- [x] `git diff --stat main -- src` shows roughly −229 lines
+- [x] PR opened against `main` (#53)
+
+Notes:
+- Net −189 lines in `src/` (195+, 384−), not ~−229: `cropPixels` stays in db (see task 2), and the shared helpers add some back. Tests: net −57.
+- 93 files / 667 tests pass; the build's only warning is the existing chunk-size notice.
