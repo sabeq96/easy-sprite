@@ -161,8 +161,11 @@ test("a sprite survives a remount (the persistence a page reload would exercise)
   await screen.unmount();
   // Unmounting flushes the save — cels, then the thumbnail last. Waiting for the thumbnail means
   // the remount reads a finished save, and no write is still in flight when teardown closes the
-  // database (which would surface as an unhandled DatabaseClosedError).
-  await expect.poll(async () => (await db.sprites.get(spriteId))?.thumbnail).toBeTruthy();
+  // database (which would surface as an unhandled DatabaseClosedError). Encoding the PNG can outlast
+  // the default 1s poll on a slow CI runner, so allow longer.
+  await expect
+    .poll(async () => (await db.sprites.get(spriteId))?.thumbnail, { timeout: 5000 })
+    .toBeTruthy();
 
   const reopened = await render(<AppRoutes />, { route: `/sprites/${spriteId}` });
   await expect
