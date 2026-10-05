@@ -9,14 +9,18 @@ export interface ColorPickerPopoverProps {
   value: RGBA;
   onChange: (color: RGBA) => void;
   children: React.ReactElement;
+  /** Rendered under the hex field; `close` shuts the popover. */
+  footer?: (close: () => void) => React.ReactNode;
 }
 
-export function ColorPickerPopover({ value, onChange, children }: ColorPickerPopoverProps) {
+export function ColorPickerPopover({ value, onChange, children, footer }: ColorPickerPopoverProps) {
+  const [open, setOpen] = useState(false);
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger render={children} />
       <PopoverContent className="w-60">
         <ColorPickerBody value={value} onChange={onChange} />
+        {footer?.(() => setOpen(false))}
       </PopoverContent>
     </Popover>
   );

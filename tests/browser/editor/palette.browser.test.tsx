@@ -128,6 +128,46 @@ test("the typed hex in the primary color's picker sets the color", async () => {
   expect(useToolboxStore.getState().toolId).toBe("pencil");
 });
 
+test("clicking a shade in the primary color's editor picks it and closes the editor", async () => {
+  const editor = await openEditor();
+  usePaletteStore.getState().setPrimaryColor(RED);
+
+  await userEvent.click(editor.screen.getByRole("button", { name: "Primary color #ff0000ff" }));
+  await userEvent.click(editor.screen.getByRole("button", { name: "Shade #990000ff" }));
+
+  expect(activeColors().primary).toBe("#990000ff");
+  await expect.element(editor.screen.getByRole("textbox", { name: "Hex" })).not.toBeInTheDocument();
+});
+
+test("'Add shades to palette' appends the shades the palette lacks", async () => {
+  const { editor, paletteId } = await withPalette(["#ff0000"]);
+  usePaletteStore.getState().setPrimaryColor(RED);
+
+  await userEvent.click(editor.screen.getByRole("button", { name: "Primary color #ff0000ff" }));
+  await userEvent.click(editor.screen.getByRole("button", { name: "Add shades to palette" }));
+
+  await expect
+    .poll(async () => (await findPalette(paletteId))?.colors)
+    .toEqual(["#ff0000", "#990000", "#cc0000", "#ff3333", "#ff6666"]);
+});
+
+test("dragging a shade into the palette adds it at the drop slot and keeps the editor open", async () => {
+  const { editor, paletteId } = await withPalette(["#00ff00"]);
+  usePaletteStore.getState().setPrimaryColor(RED);
+
+  await userEvent.click(editor.screen.getByRole("button", { name: "Primary color #ff0000ff" }));
+  const shade = await settled(() => document.querySelector("[aria-label='Shade #990000ff']"));
+  const first = (await settled(() => paletteSwatches()[0])).getBoundingClientRect();
+  const to = { x: first.left + first.width / 2, y: first.top + first.height / 2 };
+
+  await holdDrag(shade, to);
+  await releaseDrag(to);
+
+  await expect.poll(async () => (await findPalette(paletteId))?.colors).toEqual(["#990000", "#00ff00"]);
+  await expect.element(editor.screen.getByRole("textbox", { name: "Hex" })).toBeVisible();
+  expect(activeColors().primary).toBe("#ff0000ff");
+});
+
 test("double-clicking a palette swatch removes it from the palette", async () => {
   const { editor, paletteId } = await withPalette(["#ff0000", "#00ff00", "#0000ff"]);
 

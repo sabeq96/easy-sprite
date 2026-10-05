@@ -104,3 +104,11 @@ export function hsvToRgb({ h, s, v }: HSV, alpha = 255): RGBA {
     a: alpha,
   };
 }
+
+/** Two darker and two lighter steps around `color`, darkest first, `color` itself in the middle. */
+export function shadesOf(color: RGBA): RGBA[] {
+  const { h, s, v } = rgbToHsv(color);
+  const darker = (t: number) => hsvToRgb({ h, s, v: v * (1 - t) }, color.a);
+  const lighter = (t: number) => hsvToRgb({ h, s: s * (1 - t), v: v + (1 - v) * t }, color.a);
+  return [darker(0.4), darker(0.2), color, lighter(0.2), lighter(0.4)];
+}

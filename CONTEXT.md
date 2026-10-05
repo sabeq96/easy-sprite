@@ -101,6 +101,10 @@ _Avoid_: Lifted region, floating layer
 The two colors the user paints with, the primary with the left button and the secondary with the right.
 _Avoid_: Foreground/background color, color slot
 
+**Color editor**:
+The popover that opens from the Primary or Secondary color's swatch, for choosing that color by hue, saturation, value, alpha or hex.
+_Avoid_: Palette picker, color picker (the Color picker is a Tool)
+
 **Palette**:
 A named, ordered list of colors to paint from: built in (such as PICO-8) or made by the user. A Sprite remembers its Palette.
 _Avoid_: Swatches, color set

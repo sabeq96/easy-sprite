@@ -4,6 +4,7 @@ import { CommandButton } from "@/components/common/CommandButton";
 import { useDragSource } from "@/hooks/useDnd";
 import { rgbaToHex, type RGBA } from "@/lib/color";
 import { cn } from "@/lib/utils";
+import { ColorShades } from "./ColorShades";
 import type { PaletteDragData, PaletteDragSource } from "./PalettePanel";
 import { usePaletteStore } from "./store";
 
@@ -59,7 +60,19 @@ function DraggableActiveSwatch({
   });
 
   return (
-    <ColorPickerPopover value={color} onChange={onChange}>
+    <ColorPickerPopover
+      value={color}
+      onChange={onChange}
+      footer={(close) => (
+        <ColorShades
+          color={color}
+          onPick={(shade) => {
+            onChange(shade);
+            close();
+          }}
+        />
+      )}
+    >
       <button
         type="button"
         aria-label={`${source === "active-primary" ? "Primary" : "Secondary"} color ${hex}`}

@@ -28,7 +28,12 @@ import { usePaletteActions } from "./usePaletteActions";
 import { usePalettes } from "./usePalettes";
 import { usePaletteStore } from "./store";
 
-export type PaletteDragSource = "palette" | "used" | "active-primary" | "active-secondary";
+export type PaletteDragSource =
+  | "palette"
+  | "used"
+  | "active-primary"
+  | "active-secondary"
+  | "shade";
 export interface PaletteDragData {
   hex: string;
   source: PaletteDragSource;
