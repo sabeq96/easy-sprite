@@ -46,13 +46,13 @@ function setup() {
 describe("contributed commands", () => {
   it("derives their ids from the tools", () => {
     expectTypeOf<ContributedCommandId>().toEqualTypeOf<(typeof SELECTION_COMMANDS)[number]>();
-    expectTypeOf<SettingCommandId>().toEqualTypeOf<"tool.toggleMirror">();
+    expectTypeOf<SettingCommandId>().toEqualTypeOf<"tool.toggleMirror" | "tool.toggleFill">();
   });
 
-  it("registers the select tool's six commands and the pencil's mirror, each with its keys once", () => {
+  it("registers the select tool's six commands, the pencil's mirror and the shape's fill, each with its keys once", () => {
     const commands = setup();
 
-    expect(Object.keys(commands).sort()).toEqual([...SELECTION_COMMANDS, "tool.toggleMirror"].sort());
+    expect(Object.keys(commands).sort()).toEqual([...SELECTION_COMMANDS, "tool.toggleMirror", "tool.toggleFill"].sort());
     for (const id of SELECTION_COMMANDS) {
       expect(commands[id]?.id).toBe(id);
       expect(commands[id]?.keys?.length).toBeGreaterThan(0);

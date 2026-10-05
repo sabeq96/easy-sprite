@@ -5,7 +5,7 @@ const TOOL_IDS = TOOL_LIST.map((tool) => tool.id);
 
 describe("tool registry", () => {
   it("lists the tools in sidebar order", () => {
-    expect(TOOL_IDS).toEqual(["pencil", "eraser", "bucket", "fillSimilar", "picker", "select"]);
+    expect(TOOL_IDS).toEqual(["pencil", "eraser", "shape", "bucket", "fillSimilar", "picker", "select"]);
   });
 
   it("gives every tool a unique id", () => {

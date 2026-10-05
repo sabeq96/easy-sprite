@@ -70,7 +70,7 @@ _Avoid_: Chessboard, transparency grid
 ### Drawing
 
 **Tool**:
-One way of acting on the Canvas with the pointer: Pencil, Eraser, Paint bucket, Fill similar, Color picker, Select & move.
+One way of acting on the Canvas with the pointer: Pencil, Eraser, Shape, Paint bucket, Fill similar, Color picker, Select & move.
 _Avoid_: Brush (a brush is the Pencil's and Eraser's footprint)
 
 **Tool setting**:
