@@ -3,6 +3,7 @@ import { eraserTool } from "@/tools/eraser/tool";
 import { pencilTool } from "@/tools/pencil/tool";
 import { pickerTool } from "@/tools/picker/tool";
 import { selectTool } from "@/tools/select/tool";
+import { shapeTool } from "@/tools/shape/tool";
 import type { ContributedCommand } from "@/framework/command";
 import type { SettingCommandIdOf, Settings } from "@/framework/settings";
 import type { Tool } from "@/framework/tool";
@@ -14,6 +15,7 @@ import type { Tool } from "@/framework/tool";
 export const TOOL_LIST = [
   pencilTool,
   eraserTool,
+  shapeTool,
   bucketTool,
   fillSimilarTool,
   pickerTool,

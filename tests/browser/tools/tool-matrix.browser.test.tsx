@@ -11,12 +11,13 @@ import { KEYS, chooseTool, openEditor, paintedPixels, type Editor } from "@test/
  * from the tool registry, so a tool that quietly gains or loses an option fails here.
  */
 const TOOLS = [
-  { label: "Pencil", key: "p", size: true, mirror: true, pickSource: false },
-  { label: "Eraser", key: "e", size: true, mirror: false, pickSource: false },
-  { label: "Paint bucket", key: "b", size: false, mirror: false, pickSource: false },
-  { label: "Fill similar", key: "g", size: false, mirror: false, pickSource: false },
-  { label: "Color picker", key: "o", size: false, mirror: false, pickSource: true },
-  { label: "Select & move", key: "s", size: false, mirror: false, pickSource: false },
+  { label: "Pencil", key: "p", size: true, mirror: true, pickSource: false, fill: false },
+  { label: "Eraser", key: "e", size: true, mirror: false, pickSource: false, fill: false },
+  { label: "Shape", key: "r", size: false, mirror: false, pickSource: false, fill: true },
+  { label: "Paint bucket", key: "b", size: false, mirror: false, pickSource: false, fill: false },
+  { label: "Fill similar", key: "g", size: false, mirror: false, pickSource: false, fill: false },
+  { label: "Color picker", key: "o", size: false, mirror: false, pickSource: true, fill: false },
+  { label: "Select & move", key: "s", size: false, mirror: false, pickSource: false, fill: false },
 ] as const;
 
 test.each(TOOLS)("$label: its key selects it and the options bar offers exactly its options", async (tool) => {
@@ -43,6 +44,7 @@ test.each(TOOLS)("$label: its key selects it and the options bar offers exactly 
   await present(editor.screen.getByRole("button", { name: "Mirror horizontally" }), tool.mirror);
   await present(editor.screen.getByRole("button", { name: "Mirror vertically" }), tool.mirror);
   await present(editor.screen.getByText("Sample merged image"), tool.pickSource);
+  await present(editor.screen.getByRole("button", { name: "Fill", exact: true }), tool.fill);
 });
 
 test("tool keys typed into a text field never switch tools", async () => {
@@ -58,6 +60,7 @@ test("tool keys typed into a text field never switch tools", async () => {
 const WRITERS = [
   { label: "Pencil", act: (editor: Editor) => editor.drag([{ x: 1, y: 1 }, { x: 9, y: 9 }]) },
   { label: "Eraser", act: (editor: Editor) => editor.drag([{ x: 1, y: 1 }, { x: 9, y: 9 }]) },
+  { label: "Shape", act: (editor: Editor) => editor.drag([{ x: 1, y: 1 }, { x: 12, y: 12 }, { x: 9, y: 9 }]) },
   { label: "Paint bucket", act: (editor: Editor) => editor.click({ x: 3, y: 12 }) },
   { label: "Fill similar", act: (editor: Editor) => editor.click({ x: 3, y: 12 }) },
   {

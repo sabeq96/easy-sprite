@@ -6,6 +6,7 @@ const TOOL_IDS = TOOL_LIST.map((tool) => tool.id);
 const EXPECTED: Record<string, readonly string[]> = {
   pencil: ["size", "mirrorHorizontal", "mirrorVertical"],
   eraser: ["size"],
+  shape: ["shape", "fill"],
   bucket: [],
   fillSimilar: [],
   picker: ["pickFromComposite"],
@@ -24,10 +25,11 @@ describe("tool setting declarations", () => {
     expect(mirroring).toEqual(["pencil"]);
   });
 
-  it("the pencil and eraser step their brush size, and select steps its shape, when their key is pressed again", () => {
-    expect(TOOL_IDS.filter((id) => TOOLS[id].reselect)).toEqual(["pencil", "eraser", "select"]);
+  it("the pencil and eraser step their brush size, and shape and select step their shape, when their key is pressed again", () => {
+    expect(TOOL_IDS.filter((id) => TOOLS[id].reselect)).toEqual(["pencil", "eraser", "shape", "select"]);
     expect(TOOLS.pencil.reselect).toBe("size");
     expect(TOOLS.eraser.reselect).toBe("size");
+    expect(TOOLS.shape.reselect).toBe("shape");
     expect(TOOLS.select.reselect).toBe("shape");
   });
 
