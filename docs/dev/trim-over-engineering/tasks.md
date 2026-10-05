@@ -31,8 +31,13 @@ Notes:
 
 ## 3. Dead code
 Every export the spec lists as unused or test-only is deleted, along with tests that exercise only those exports. This includes `rgbaToCss`, `toHexList`, `EMPTY_RECT`, `MIN_CHECKER_SIZE`, list-all-settings, `NumberField.tsx`, `clearRegion`, `isInsideSprite`, `pickColor`, `removeCelsForFrame`, `findCel`, `placeBlock`, `insertRow` and `RowTarget`, `bindingSignature`, the rect contains/intersects predicates, and the Keyboard shortcuts tool-list alias.
-- [ ] `grep` finds no remaining references to the deleted names
-- [ ] Unit tests and lint pass; committed
+- [x] `grep` finds no remaining references to the deleted names
+- [x] Unit tests and lint pass; committed
+
+Notes:
+- `bindingSignature` was also used by the two duplicate-chord tests (`modules.test.ts`, `useBuilderCommands.browser.test.tsx`); they now use `formatBinding`, which the app runs.
+- Tests that used a deleted helper only as a step keep their subject: the crop round-trip clears with `buffer.fill(0)`, the flush-copy test reads via `db.cels.get(celKey(...))`.
+- `src/editor/toolbox/contributed.ts` has its own `TOOLS_WITH_COMMANDS` alias; not in the spec, left alone.
 
 ## 4. Shrinks
 Zoom step-down uses `findLast` instead of copying and reversing the ladder. The quota guard keeps one name check. The clipboard entry and the Floating selection drop their `rect` field, and readers use the selection shape's bounds instead.

@@ -25,7 +25,6 @@ export const GRID_LINE_WIDTH = 1.5;
 
 export const MAX_GRID_SIZE = 64;
 
-export const MIN_CHECKER_SIZE = 1;
 export const MAX_CHECKER_SIZE = 64;
 /** A 2×2-tile checkerboard in the theme's checker colors; set `background-size` to twice the tile. */
 export const CHECKER_GRADIENT =

@@ -33,10 +33,6 @@ export function rgbaToHex({ r, g, b, a }: RGBA, includeAlpha = false): string {
   return `#${channel(r)}${channel(g)}${channel(b)}${includeAlpha ? channel(a) : ""}`;
 }
 
-export function rgbaToCss({ r, g, b, a }: RGBA): string {
-  return `rgba(${r}, ${g}, ${b}, ${a / 255})`;
-}
-
 /** Packed 0xRRGGBBAA — a cheap key for color-count maps and swatch identity. */
 export function packRgba({ r, g, b, a }: RGBA): number {
   return ((r << 24) | (g << 16) | (b << 8) | a) >>> 0;

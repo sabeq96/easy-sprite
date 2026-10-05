@@ -6,10 +6,9 @@ import {
   KeyboardShortcutsDialog as CommonKeyboardShortcutsDialog,
   type ShortcutSection,
 } from "@/components/common/KeyboardShortcutsDialog";
-import type { Tool } from "@/framework/tool";
 import { EDITOR_MODULES } from "@/editor/modules";
 import { reselectLabel, TOOL_KEY_HOLD_HINT } from "@/editor/toolbox/api";
-import { TOOL_LIST, type ToolId } from "@/tools";
+import { TOOL_LIST } from "@/tools";
 
 export interface KeyboardShortcutsDialogProps {
   commands: CommandRegistry;
@@ -17,14 +16,12 @@ export interface KeyboardShortcutsDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const TOOLS_WITH_COMMANDS: readonly Tool<ToolId>[] = TOOL_LIST;
-
 /**
  * Commands listed with their tool rather than in their group: each tool's activation key (in the
  * Tools section) and the commands a tool contributes (the selection's copy, cut, …).
  */
 const TOOL_OWNED_COMMANDS = new Set<string>(
-  TOOLS_WITH_COMMANDS.flatMap((tool) => [
+  TOOL_LIST.flatMap((tool) => [
     `tool.${tool.id}`,
     ...(tool.commands ?? []).map(({ id }) => id),
   ]),
@@ -54,7 +51,7 @@ const MODULE_HINTS = EDITOR_MODULES.flatMap((editorModule) => editorModule.hints
  * commands, and last the hold gesture every tool key shares.
  */
 function toolsRows(commands: CommandRegistry): ShortcutRow[] {
-  const rows = TOOLS_WITH_COMMANDS.flatMap((tool) => {
+  const rows = TOOL_LIST.flatMap((tool) => {
     const row = { label: tool.label, keys: keysOf(commands[`tool.${tool.id}`]) };
     const reselect = reselectLabel(tool);
     return reselect ? [row, { label: reselect, keys: reselectKeys(tool, commands) }] : [row];
@@ -71,7 +68,7 @@ function toolsRows(commands: CommandRegistry): ShortcutRow[] {
  * from the tool's own definitions so Keyboard shortcuts cannot drift from them.
  */
 function toolSections(commands: CommandRegistry): ShortcutSection[] {
-  return TOOLS_WITH_COMMANDS.flatMap((tool) => {
+  return TOOL_LIST.flatMap((tool) => {
     const rows: ShortcutRow[] = (tool.commands ?? []).map((command) => ({
       label: command.label,
       keys: keysOf(commands[command.id as CommandId]),

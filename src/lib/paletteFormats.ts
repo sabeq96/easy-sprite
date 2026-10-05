@@ -46,10 +46,6 @@ export function parseHexList(text: string): Result<string[]> {
   return colors.length ? ok(colors) : err("No valid hex colors found.");
 }
 
-export function toHexList(colors: string[]): string {
-  return `${colors.map((hex) => hex.replace("#", "")).join("\n")}\n`;
-}
-
 /** Picks the parser from the file extension, falling back to sniffing the contents. */
 export function parsePaletteFile(filename: string, text: string): Result<string[]> {
   if (filename.toLowerCase().endsWith(".gpl")) return parseGpl(text);

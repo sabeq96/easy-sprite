@@ -35,18 +35,6 @@ export function matchesBinding(event: KeyboardEvent, binding: KeyBinding): boole
   );
 }
 
-/** A stable signature used to detect two features claiming the same chord. */
-export function bindingSignature(binding: KeyBinding): string {
-  return [
-    binding.mod ? "mod" : "",
-    binding.shift ? "shift" : "",
-    binding.alt ? "alt" : "",
-    binding.key,
-  ]
-    .filter(Boolean)
-    .join("+");
-}
-
 const KEY_LABELS: Record<string, string> = {
   arrowleft: "←",
   arrowright: "→",

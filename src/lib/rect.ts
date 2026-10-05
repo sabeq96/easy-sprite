@@ -5,8 +5,6 @@ export interface Rect {
   h: number;
 }
 
-export const EMPTY_RECT: Rect = { x: 0, y: 0, w: 0, h: 0 };
-
 export function rectFromPoints(x0: number, y0: number, x1: number, y1: number): Rect {
   const x = Math.min(x0, x1);
   const y = Math.min(y0, y1);
@@ -37,14 +35,6 @@ export function rectClamp(rect: Rect, width: number, height: number): Rect {
   };
 }
 
-export function rectContains(rect: Rect, x: number, y: number): boolean {
-  return x >= rect.x && y >= rect.y && x < rect.x + rect.w && y < rect.y + rect.h;
-}
-
 export function rectIsEmpty(rect: Rect | null): boolean {
   return !rect || rect.w <= 0 || rect.h <= 0;
-}
-
-export function rectsIntersect(a: Rect, b: Rect): boolean {
-  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
 }

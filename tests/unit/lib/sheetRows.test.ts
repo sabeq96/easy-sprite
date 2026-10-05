@@ -5,9 +5,7 @@ import {
   draftToRows,
   dropBlock,
   fromRows,
-  insertRow,
   placeBeside,
-  placeBlock,
   rowOfBlock,
   toRowDraft,
   toRows,
@@ -40,35 +38,6 @@ describe("sheet rows", () => {
     expect(shape(dropBlock(blocks([["a", 0], ["b", 1], ["c", 2]]), "b"))).toEqual([
       ["a", 0],
       ["c", 1],
-    ]);
-  });
-
-  it("never leaves a gap when a block is placed in a row beyond the last one", () => {
-    const next = placeBlock(blocks([["a", 0]]), { id: "b", spriteId: "s-b", row: 0 }, { row: 5, index: 0 });
-    expect(shape(next)).toEqual([["a", 0], ["b", 1]]);
-  });
-
-  it("moves the only block of row 0 into the trailing row without leaving row 0 blank", () => {
-    const [block] = blocks([["a", 0]]);
-    expect(shape(placeBlock([block], block, { row: 1, index: 0 }))).toEqual([["a", 0]]);
-  });
-
-  it("inserts a row in the middle, pushing the rows below down", () => {
-    const next = insertRow(blocks([["a", 0], ["b", 1]]), { id: "c", spriteId: "s-c", row: 0 }, 1);
-    expect(shape(next)).toEqual([["a", 0], ["c", 1], ["b", 2]]);
-  });
-
-  it("moves a block to a new row of its own, collapsing the one it left", () => {
-    const list = blocks([["a", 0], ["b", 1]]);
-    expect(shape(insertRow(list, list[1], 0))).toEqual([["b", 0], ["a", 1]]);
-  });
-
-  it("reorders within a row", () => {
-    const list = blocks([["a", 0], ["b", 0], ["c", 0]]);
-    expect(placeBlock(list, list[0], { row: 0, index: 2 }).map((block) => block.id)).toEqual([
-      "b",
-      "c",
-      "a",
     ]);
   });
 });

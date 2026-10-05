@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  bindingSignature,
   formatBinding,
   IS_APPLE,
   isTypingTarget,
@@ -54,15 +53,6 @@ describe("matchesBinding", () => {
     expect(
       matchesBinding(keyEvent({ key: "Escape", shiftKey: true }), { key: "escape" }),
     ).toBe(false);
-  });
-});
-
-describe("bindingSignature", () => {
-  it("is stable for the same binding and distinct across modifiers", () => {
-    expect(bindingSignature({ key: "z", mod: true })).toBe(bindingSignature({ key: "z", mod: true }));
-    expect(bindingSignature({ key: "z", mod: true })).not.toBe(
-      bindingSignature({ key: "z", mod: true, shift: true }),
-    );
   });
 });
 

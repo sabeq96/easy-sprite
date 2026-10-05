@@ -145,8 +145,3 @@ export function floodFill(
 
   return dirty;
 }
-
-export function pickColor(target: PlotTarget, x: number, y: number): RGBA | null {
-  if (x < 0 || y < 0 || x >= target.width || y >= target.height) return null;
-  return getPixel(target.buffer, x, y, target.width);
-}
