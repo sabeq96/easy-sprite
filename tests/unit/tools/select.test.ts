@@ -12,8 +12,8 @@ import type { PointerModifiers } from "@/framework/host";
 import type { ToolPoint } from "@/framework/tool";
 import { createToolHost, type DocumentToolHost } from "@/editor/canvas/toolHost/createToolHost";
 import { startToolLifecycle } from "@/editor/canvas/useToolLifecycle";
-import { maskHas } from "@/tools/select/mask";
-import { selectedMask, selectedRect, selectTool } from "@/tools/select/tool";
+import { isSelected } from "@/tools/select/selection";
+import { currentSelection, selectedRect, selectTool } from "@/tools/select/tool";
 import { makeDocument, makeGesture, NO_MODIFIERS, RED } from "@test/factories";
 import { moduleContext } from "@test/modules";
 import { resetEditorStores } from "@test/store";
@@ -104,7 +104,7 @@ describe("select tool: selecting", () => {
     gesture([{ x: 1, y: 1 }, { x: 3, y: 2 }]);
     expect(selectedRect()).toEqual({ x: 1, y: 1, w: 3, h: 2 });
 
-    // Starts outside the first selection, so this is a new marquee rather than a move.
+    // Starts outside the first selection, so this is a new rectangle rather than a move.
     gesture([{ x: 0, y: 3 }, { x: 9, y: 9 }]);
     expect(selectedRect()).toEqual({ x: 0, y: 3, w: 4, h: 1 });
   });
@@ -261,7 +261,7 @@ describe("select tool: lifecycle", () => {
 describe("select tool: lasso", () => {
   // A 3-pixel-wide triangle on the 4×4 canvas: (0,0) (2,0) (0,2), closed by the tool.
   const TRIANGLE = [{ x: 0, y: 0 }, { x: 2, y: 0 }, { x: 0, y: 2 }];
-  const selected = (x: number, y: number) => maskHas(selectedMask()!, x, y);
+  const selected = (x: number, y: number) => isSelected(currentSelection()!, x, y);
 
   beforeEach(() => {
     useToolboxStore.getState().setSetting("select", "shape", "lasso");
