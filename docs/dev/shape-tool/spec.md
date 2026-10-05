@@ -22,7 +22,7 @@ Add one new Tool, **Shape**. It draws a Rectangle, an Ellipse or a Line from the
 8. **Ellipse**: a 1px ellipse inscribed in the bounding box, touching all four sides. It has no gaps and no doubled pixels. With Fill on, the outline plus everything inside it.
    - **How Rectangle and Ellipse are computed (one shared path):** each shape is an "inside" test over the bounding box.
      - Rectangle: every pixel in the box is inside.
-     - Ellipse: a pixel is inside when its centre `(x + 0.5, y + 0.5)` satisfies `((px − cx)/rx)² + ((py − cy)/ry)² ≤ 1`. `cx, cy` is the box centre and `rx, ry` are half the box width and height, in pixels, inclusive of both edges.
+     - Ellipse: a pixel is inside when its centre `(x + 0.5, y + 0.5)` satisfies `((px − cx)/rx)² + ((py − cy)/ry)² ≤ 1`. `cx, cy` is the box centre and `rx, ry` are half the box width and height, in pixels, inclusive of both edges. A pixel in the middle row or middle column (centre within half a pixel of the box centre) is always inside, so very flat ellipses such as 8×2 still reach all four sides.
      - Fill on: draw every inside pixel. Fill off (outline): draw the inside pixels that have at least one of their 4 direct neighbours (up, down, left, right) outside the shape.
      - The result is gap-free, symmetric and correct for even sizes. Each pixel is visited once, which satisfies rule 15.
 9. **Line**: Bresenham from the press point to the current point (reuse `forEachLinePixel`). Line ignores Fill. The Fill toggle stays visible while Line is chosen.
@@ -43,7 +43,7 @@ Add one new Tool, **Shape**. It draws a Rectangle, an Ellipse or a Line from the
 - **Fill uses the outline's color.** A secondary-color fill was rejected: more code and less predictable.
 - **1px only, no brush size.** Thick ellipses look poor in pixel art and add stamping complexity. Mirroring isn't offered either.
 - **Shift is not re-applied on the key event.** Tools don't receive key events. Adding a host key hook was rejected as medium cost for little gain.
-- **Ellipse by inside test plus 4-neighbour boundary, not the midpoint ellipse algorithm.** It is one code path shared with Rectangle and about 15 lines, it can't double-write, and it handles even sizes for free. The curve may differ slightly from Aseprite's; that is accepted for v1.
+- **Ellipse by inside test plus 4-neighbour boundary, not the midpoint ellipse algorithm.** It is one code path shared with Rectangle and about 15 lines, it can't double-write, and it handles even sizes for free. The curve may differ slightly from Aseprite's; that is accepted for v1. The middle row and column are forced inside because the pure centre test leaves flat even-height ellipses (8×2) one pixel short of the box's sides; don't remove that rule.
 - **Line ignores Fill and the toggle stays visible.** The settings framework has no conditional visibility, and the user picked the simplest option.
 
 ## Context
