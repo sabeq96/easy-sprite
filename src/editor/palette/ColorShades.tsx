@@ -6,7 +6,8 @@ import type { PaletteDragData } from "./PalettePanel";
 import { usePaletteActions } from "./usePaletteActions";
 import { usePalettes } from "./usePalettes";
 
-/** The Color editor's shades of `color`: click one to pick it, drag one into the palette. */
+/** The Color editor's shades of `color` (click one to pick it, drag one into the palette), and
+ *  buttons adding `color` or its shades to the active palette. */
 export function ColorShades({
   color,
   onPick,
@@ -17,6 +18,12 @@ export function ColorShades({
   const { active } = usePalettes();
   const paletteActions = usePaletteActions();
   const shades = shadesOf(color);
+  const addToPalette = (colors: RGBA[]) =>
+    active &&
+    void paletteActions.addColors(
+      active,
+      colors.map((entry) => rgbaToHex(entry, entry.a !== 255)),
+    );
 
   return (
     <div className="flex flex-col gap-2">
@@ -31,18 +38,10 @@ export function ColorShades({
           />
         ))}
       </div>
-      <Button
-        variant="outline"
-        size="xs"
-        disabled={!active}
-        onClick={() =>
-          active &&
-          void paletteActions.addColors(
-            active,
-            shades.map((shade) => rgbaToHex(shade, shade.a !== 255)),
-          )
-        }
-      >
+      <Button size="xs" disabled={!active} onClick={() => addToPalette([color])}>
+        Add color to palette
+      </Button>
+      <Button variant="secondary" size="xs" disabled={!active} onClick={() => addToPalette(shades)}>
         Add shades to palette
       </Button>
     </div>

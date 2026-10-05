@@ -139,6 +139,16 @@ test("clicking a shade in the primary color's editor picks it and closes the edi
   await expect.element(editor.screen.getByRole("textbox", { name: "Hex" })).not.toBeInTheDocument();
 });
 
+test("'Add color to palette' appends the color being edited", async () => {
+  const { editor, paletteId } = await withPalette(["#00ff00"]);
+  usePaletteStore.getState().setPrimaryColor(RED);
+
+  await userEvent.click(editor.screen.getByRole("button", { name: "Primary color #ff0000ff" }));
+  await userEvent.click(editor.screen.getByRole("button", { name: "Add color to palette" }));
+
+  await expect.poll(async () => (await findPalette(paletteId))?.colors).toEqual(["#00ff00", "#ff0000"]);
+});
+
 test("'Add shades to palette' appends the shades the palette lacks", async () => {
   const { editor, paletteId } = await withPalette(["#ff0000"]);
   usePaletteStore.getState().setPrimaryColor(RED);
