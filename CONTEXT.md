@@ -90,7 +90,7 @@ An area of the Active layer's Cel chosen with Select & move, drawn as a Rectangl
 _Avoid_: Marquee, region, mask
 
 **Lasso**:
-A Selection drawn freehand: the pixels the pointer traces, plus everything they enclose. Select & move's Shape setting picks between Rectangle and Lasso.
+A Selection drawn freehand: the pixels the pointer traces, joined exactly as the Pencil would join them, plus everything they enclose. Select & move's Shape setting picks between Rectangle and Lasso.
 _Avoid_: Freehand selection, polygon
 
 **Floating selection**:

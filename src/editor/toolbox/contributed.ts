@@ -2,7 +2,6 @@ import type { ModuleCommand } from "@/editor/module";
 import type { ContributedCommand } from "@/framework/command";
 import type { ToolHost } from "@/framework/host";
 import type { Settings } from "@/framework/settings";
-import type { Tool } from "@/framework/tool";
 import {
   TOOL_LIST,
   type ContributedCommandId,
@@ -10,8 +9,6 @@ import {
   type ToolId,
 } from "@/tools";
 import { useToolboxStore } from "./store";
-
-const TOOLS_WITH_COMMANDS: readonly Tool<ToolId>[] = TOOL_LIST;
 
 /**
  * The commands a tool's settings declare: one per boolean setting with a `command`. It flips the
@@ -57,7 +54,7 @@ function contribution(toolId: ToolId, command: ContributedCommand): ModuleComman
  * binds them to the open document, so each runs through the document's own tool host.
  */
 export const CONTRIBUTED_COMMANDS: readonly ModuleCommand<ContributionId>[] =
-  TOOLS_WITH_COMMANDS.flatMap((tool) =>
+  TOOL_LIST.flatMap((tool) =>
     [...(tool.commands ?? []), ...settingCommands(tool.id, tool.settings)].map((command) =>
       contribution(tool.id, command),
     ),

@@ -17,8 +17,8 @@ export async function withQuotaGuard<T>(run: () => Promise<T>): Promise<T> {
   try {
     return await run();
   } catch (error) {
-    // A DOMException is an Error too, and Dexie's wrapper keeps the name.
-    if (error instanceof Error && error.name === "QuotaExceededError") throw new QuotaError();
+    // The browser's DOMException and Dexie's wrapper around it both carry this name.
+    if ((error as { name?: unknown } | null)?.name === "QuotaExceededError") throw new QuotaError();
     throw error;
   }
 }

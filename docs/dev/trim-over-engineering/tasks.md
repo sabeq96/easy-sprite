@@ -37,7 +37,7 @@ Every export the spec lists as unused or test-only is deleted, along with tests 
 Notes:
 - `bindingSignature` was also used by the two duplicate-chord tests (`modules.test.ts`, `useBuilderCommands.browser.test.tsx`); they now use `formatBinding`, which the app runs.
 - Tests that used a deleted helper only as a step keep their subject: the crop round-trip clears with `buffer.fill(0)`, the flush-copy test reads via `db.cels.get(celKey(...))`.
-- `src/editor/toolbox/contributed.ts` has its own `TOOLS_WITH_COMMANDS` alias; not in the spec, left alone.
+- `src/editor/toolbox/contributed.ts` had its own `TOOLS_WITH_COMMANDS` alias; removed after review.
 
 ## 4. Shrinks
 Zoom step-down uses `findLast` instead of copying and reversing the ladder. The quota guard keeps one name check. The clipboard entry and the Floating selection drop their `rect` field, and readers use the selection shape's bounds instead.
@@ -46,7 +46,7 @@ Zoom step-down uses `findLast` instead of copying and reversing the ladder. The 
 
 Notes:
 - `findLast` replaces the copy-and-reverse in all three zoom ladders: `viewport.ts`, `useBuilderViewStore.ts`, `stepLadder`. The tile-preset search in `lib/tiles.ts` is not a zoom ladder and stays.
-- Quota guard: in Chromium a raw `DOMException` is `instanceof Error`, so the single check still catches it (checked with a throwaway browser test). jsdom's `DOMException` is not, which matters only if a unit test ever covers the guard.
+- Quota guard: one name check with no `instanceof`, so a raw `DOMException` is caught in Chromium and jsdom alike (checked with throwaway tests).
 
 ## 5. Restructures
 - Palette: sortable and plain swatches share one swatch body. The plain swatch has no remove handler.
