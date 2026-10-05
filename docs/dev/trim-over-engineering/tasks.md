@@ -41,8 +41,12 @@ Notes:
 
 ## 4. Shrinks
 Zoom step-down uses `findLast` instead of copying and reversing the ladder. The quota guard keeps one name check. The clipboard entry and the Floating selection drop their `rect` field, and readers use the selection shape's bounds instead.
-- [ ] Viewport and Builder view store suites pass unchanged
-- [ ] Unit tests and lint pass; committed
+- [x] Viewport and Builder view store suites pass unchanged
+- [x] Unit tests and lint pass; committed
+
+Notes:
+- `findLast` replaces the copy-and-reverse in all three zoom ladders: `viewport.ts`, `useBuilderViewStore.ts`, `stepLadder`. The tile-preset search in `lib/tiles.ts` is not a zoom ladder and stays.
+- Quota guard: in Chromium a raw `DOMException` is `instanceof Error`, so the single check still catches it (checked with a throwaway browser test). jsdom's `DOMException` is not, which matters only if a unit test ever covers the guard.
 
 ## 5. Restructures
 - Palette: sortable and plain swatches share one swatch body. The plain swatch has no remove handler.

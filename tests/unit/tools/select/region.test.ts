@@ -67,7 +67,7 @@ describe("clipboard", () => {
   it("keeps its own copy of the pixels", () => {
     const pixels = new Uint8ClampedArray([12, 34, 56, 200]);
     const rect = { x: 2, y: 2, w: 1, h: 1 };
-    setClipboard({ rect, selection: rectSelection(rect), pixels });
+    setClipboard({ selection: rectSelection(rect), pixels });
     pixels[0] = 0;
 
     expect(hasClipboard()).toBe(true);
@@ -76,19 +76,19 @@ describe("clipboard", () => {
 
   it("pastes at the original position", () => {
     const rect = { x: 1, y: 2, w: 2, h: 2 };
-    const clip = { rect, selection: rectSelection(rect), pixels: createBuffer(2, 2) };
+    const clip = { selection: rectSelection(rect), pixels: createBuffer(2, 2) };
     expect(pasteRect(clip, 4, 4)).toEqual({ x: 1, y: 2, w: 2, h: 2 });
   });
 
   it("nudges a paste in-bounds when it would overflow", () => {
     const rect = { x: 3, y: 3, w: 2, h: 2 };
-    const clip = { rect, selection: rectSelection(rect), pixels: createBuffer(2, 2) };
+    const clip = { selection: rectSelection(rect), pixels: createBuffer(2, 2) };
     expect(pasteRect(clip, 4, 4)).toEqual({ x: 2, y: 2, w: 2, h: 2 });
   });
 
   it("refuses a clip bigger than the canvas", () => {
     const rect = { x: 0, y: 0, w: 5, h: 1 };
-    const clip = { rect, selection: rectSelection(rect), pixels: createBuffer(5, 1) };
+    const clip = { selection: rectSelection(rect), pixels: createBuffer(5, 1) };
     expect(pasteRect(clip, 4, 4)).toBeNull();
   });
 });

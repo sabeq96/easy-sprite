@@ -60,7 +60,7 @@ export function fitViewport(container: Size, sprite: Size, padding = VIEW_PADDIN
     height: Math.max(1, container.height - padding * 2),
   };
   const raw = Math.min(available.width / sprite.width, available.height / sprite.height);
-  const scale = [...ZOOM_LEVELS].reverse().find((level) => level <= raw) ?? ZOOM_LEVELS[0];
+  const scale = ZOOM_LEVELS.findLast((level) => level <= raw) ?? ZOOM_LEVELS[0];
 
   return {
     scale,

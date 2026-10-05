@@ -11,5 +11,5 @@ export function stepLadder(
   const epsilon = 1e-9;
   return direction > 0
     ? (ladder.find((entry) => entry > value + epsilon) ?? ladder[ladder.length - 1])
-    : ([...ladder].reverse().find((entry) => entry < value - epsilon) ?? ladder[0]);
+    : (ladder.findLast((entry) => entry < value - epsilon) ?? ladder[0]);
 }

@@ -4,8 +4,7 @@ import type { PixelBuffer } from "@/types/pixels";
 import type { Selection } from "./selection";
 
 export interface ClipboardEntry {
-  rect: Rect;
-  /** The copied shape, over `rect`; a Rectangle's is fully set. */
+  /** The copied shape; a Rectangle's is fully set. */
   selection: Selection;
   pixels: PixelBuffer;
 }
@@ -19,7 +18,6 @@ let entry: ClipboardEntry | null = null;
 export function setClipboard(next: ClipboardEntry | null): void {
   entry = next
     ? {
-        rect: { ...next.rect },
         selection: { rect: { ...next.selection.rect }, bits: new Uint8Array(next.selection.bits) },
         pixels: new Uint8ClampedArray(next.pixels),
       }
@@ -39,10 +37,11 @@ export function hasClipboard(): boolean {
  * the source. Null when the clip is bigger than the canvas.
  */
 export function pasteRect(clip: ClipboardEntry, width: number, height: number): Rect | null {
+  const source = clip.selection.rect;
   const rect: Rect = {
-    ...clip.rect,
-    x: clamp(clip.rect.x, 0, width - clip.rect.w),
-    y: clamp(clip.rect.y, 0, height - clip.rect.h),
+    ...source,
+    x: clamp(source.x, 0, width - source.w),
+    y: clamp(source.y, 0, height - source.h),
   };
   return rect.w > width || rect.h > height ? null : rect;
 }
