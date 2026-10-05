@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { selectionFromPath, selectionFromRect, isSelected, type Selection } from "@/tools/select/selection";
+import { isSelected, selectionFromPath, selectionFromRect, type Selection } from "@/tools/select/selection";
 
 /** The selection as rows of "#" and ".", over its own bounding box. */
 function draw(selection: Selection | null): string[] {

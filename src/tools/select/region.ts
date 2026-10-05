@@ -48,7 +48,7 @@ export function pasteSelected(
   }
 }
 
-/** Makes the pixels of a crop of the selection's box transparent wherever the selection is not set. */
+/** Makes the pixels of a crop of the selection's box transparent wherever a pixel isn't selected. */
 export function eraseOutside(pixels: PixelBuffer, selection: Selection): PixelBuffer {
   selection.bits.forEach((bit, i) => {
     if (!bit) pixels.fill(0, i * BYTES_PER_PIXEL, (i + 1) * BYTES_PER_PIXEL);

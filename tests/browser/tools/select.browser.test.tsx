@@ -36,7 +36,7 @@ function selectBlock(editor: Editor) {
   expect(selectedRect()).toEqual({ x: 2, y: 2, w: 3, h: 3 });
 }
 
-test("a rectangle drag selects the rectangle between its corners, whichever way it is dragged", async () => {
+test("a rectangle drag selects the area between its corners, whichever way it is dragged", async () => {
   const editor = await openEditor();
   await chooseTool(editor, "Select & move");
 
