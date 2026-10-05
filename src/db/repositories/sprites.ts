@@ -9,6 +9,7 @@ import { createId } from "@/lib/id";
 import type { PixelBuffer } from "@/types/pixels";
 import { fromRows, toRows } from "@/lib/sheetRows";
 import { inferTileSize } from "@/lib/tiles";
+import { computeSplitGrid } from "@/lib/validation";
 
 export interface SpriteSnapshot {
   sprite: SpriteRecord;
@@ -172,8 +173,7 @@ export async function splitSpriteIntoFrames(
   frameHeight: number,
 ): Promise<SpriteRecord> {
   const { sprite, layers, cels } = await loadSnapshot(id);
-  const columns = Math.floor(sprite.width / frameWidth);
-  const rows = Math.floor(sprite.height / frameHeight);
+  const { columns, rows } = computeSplitGrid(sprite, { width: frameWidth, height: frameHeight });
   if (columns < 1 || rows < 1) {
     throw new Error("Frame size is larger than the sprite.");
   }

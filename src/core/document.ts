@@ -2,6 +2,7 @@ import { createBuffer, isBufferEmpty, resizeBuffer, type ResizeOptions } from "@
 import { type Cel, celKey, createCel } from "@/core/cel";
 import { Emitter } from "@/core/emitter";
 import { createId } from "@/lib/id";
+import { clamp } from "@/lib/math";
 import type { Rect } from "@/lib/rect";
 import type { PixelBuffer } from "@/types/pixels";
 
@@ -322,13 +323,13 @@ export class SpriteDocument {
 }
 
 function insertAt<T>(items: readonly T[], index: number, item: T): T[] {
-  const clamped = Math.max(0, Math.min(index, items.length));
+  const clamped = clamp(index, 0, items.length);
   return [...items.slice(0, clamped), item, ...items.slice(clamped)];
 }
 
 function moveItem<T>(items: readonly T[], from: number, to: number): T[] {
   const next = [...items];
   const [moved] = next.splice(from, 1);
-  next.splice(Math.max(0, Math.min(to, next.length)), 0, moved);
+  next.splice(clamp(to, 0, next.length), 0, moved);
   return next;
 }

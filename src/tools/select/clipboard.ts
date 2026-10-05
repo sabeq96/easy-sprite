@@ -1,3 +1,4 @@
+import { clamp } from "@/lib/math";
 import type { Rect } from "@/lib/rect";
 import type { PixelBuffer } from "@/types/pixels";
 import type { Selection } from "./selection";
@@ -40,8 +41,8 @@ export function hasClipboard(): boolean {
 export function pasteRect(clip: ClipboardEntry, width: number, height: number): Rect | null {
   const rect: Rect = {
     ...clip.rect,
-    x: Math.max(0, Math.min(clip.rect.x, width - clip.rect.w)),
-    y: Math.max(0, Math.min(clip.rect.y, height - clip.rect.h)),
+    x: clamp(clip.rect.x, 0, width - clip.rect.w),
+    y: clamp(clip.rect.y, 0, height - clip.rect.h),
   };
   return rect.w > width || rect.h > height ? null : rect;
 }

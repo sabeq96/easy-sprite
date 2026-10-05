@@ -2,14 +2,6 @@ export function clamp(value: number, min: number, max: number): number {
   return value < min ? min : value > max ? max : value;
 }
 
-/** Snap to the nearest entry of an ascending ladder (zoom levels, fps presets). */
-export function snapToLadder(value: number, ladder: readonly number[]): number {
-  return ladder.reduce(
-    (best, entry) => (Math.abs(entry - value) < Math.abs(best - value) ? entry : best),
-    ladder[0],
-  );
-}
-
 /** The next ladder entry strictly above (1) or below (-1) `value`, which may sit between entries. */
 export function stepLadder(
   value: number,

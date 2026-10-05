@@ -20,10 +20,14 @@ Duplicates collapse onto the existing helper:
 - Hand-written `Math.max(0, Math.min(...))` clamps use `clamp`.
 
 Checks:
-- [ ] Lasso expectations in the select tool unit suite re-derived (expected masks only)
-- [ ] New unit test: a Lasso along a path selects edge pixels identical to a Pencil Stroke along the same path
-- [ ] Sprite document, history, grid and sprite repository suites pass unchanged
-- [ ] Unit tests and lint pass; committed
+- [x] Lasso expectations in the select tool unit suite re-derived (expected masks only)
+- [x] New unit test: a Lasso along a path selects edge pixels identical to a Pencil Stroke along the same path
+- [x] Sprite document, history, grid and sprite repository suites pass unchanged
+- [x] Unit tests and lint pass; committed
+
+Notes:
+- Kept db's `cropPixels`: the lint layering rule bars `src/db/**` from importing `@/core/buffer` (user's call). Split into frames still uses `computeSplitGrid`.
+- The existing Lasso expectations already held under the Pencil tie-break; none needed re-deriving.
 
 ## 3. Dead code
 Every export the spec lists as unused or test-only is deleted, along with tests that exercise only those exports. This includes `rgbaToCss`, `toHexList`, `EMPTY_RECT`, `MIN_CHECKER_SIZE`, list-all-settings, `NumberField.tsx`, `clearRegion`, `isInsideSprite`, `pickColor`, `removeCelsForFrame`, `findCel`, `placeBlock`, `insertRow` and `RowTarget`, `bindingSignature`, the rect contains/intersects predicates, and the Keyboard shortcuts tool-list alias.

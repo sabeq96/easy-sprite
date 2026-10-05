@@ -2,7 +2,7 @@ import { HISTORY_MAX_BYTES, HISTORY_MAX_ENTRIES } from "@/constants/storage";
 import { cropRegion, pasteRegion } from "@/core/buffer";
 import type { SpriteDocument } from "@/core/document";
 import { Emitter } from "@/core/emitter";
-import { rectUnion, type Rect } from "@/lib/rect";
+import { rectClamp, rectUnion, type Rect } from "@/lib/rect";
 import type { PixelBuffer } from "@/types/pixels";
 
 export interface Command {
@@ -101,8 +101,10 @@ interface CelPatch {
 
 /** One stroke = one undo step. Records the minimum rectangle that actually changed. */
 export class StrokeRecorder {
-  private readonly before = new Map<string, PixelBuffer>();
-  private readonly rects = new Map<string, Rect>();
+  private readonly cels = new Map<
+    string,
+    { layerId: string; frameId: string; before: PixelBuffer; rect: Rect | null }
+  >();
   private readonly doc: SpriteDocument;
   private readonly label: string;
 
@@ -114,14 +116,14 @@ export class StrokeRecorder {
   /** Call before the first write to a cel in this stroke. Idempotent per cel. */
   touch(layerId: string, frameId: string): void {
     const key = `${layerId}:${frameId}`;
-    if (this.before.has(key)) return;
-    this.before.set(key, this.doc.snapshotCel(layerId, frameId));
+    if (this.cels.has(key)) return;
+    this.cels.set(key, { layerId, frameId, before: this.doc.snapshotCel(layerId, frameId), rect: null });
   }
 
   /** Call after each write, with the bounds of what was written. */
   extend(layerId: string, frameId: string, rect: Rect): void {
-    const key = `${layerId}:${frameId}`;
-    this.rects.set(key, rectUnion(this.rects.get(key) ?? null, rect));
+    const entry = this.cels.get(`${layerId}:${frameId}`);
+    if (entry) entry.rect = rectUnion(entry.rect, rect);
   }
 
   /** Null when the stroke changed nothing — e.g. filling with the color already there. */
@@ -129,15 +131,11 @@ export class StrokeRecorder {
     const patches: CelPatch[] = [];
     let bytes = 0;
 
-    for (const [key, rawRect] of this.rects) {
-      const separator = key.lastIndexOf(":");
-      const layerId = key.slice(0, separator);
-      const frameId = key.slice(separator + 1);
-
+    for (const { layerId, frameId, before, rect: rawRect } of this.cels.values()) {
       const cel = this.doc.getCel(layerId, frameId);
-      const before = this.before.get(key);
-      const rect = clampRect(rawRect, this.doc.width, this.doc.height);
-      if (!cel || !before || rect.w <= 0 || rect.h <= 0) continue;
+      if (!cel || !rawRect) continue;
+      const rect = rectClamp(rawRect, this.doc.width, this.doc.height);
+      if (rect.w <= 0 || rect.h <= 0) continue;
 
       const beforeRegion = cropRegion(before, this.doc.width, rect);
       const afterRegion = cropRegion(cel.pixels, this.doc.width, rect);
@@ -179,17 +177,6 @@ class PixelEditCommand implements Command {
       this.doc.markPixelsChanged(cel, patch.rect);
     }
   }
-}
-
-function clampRect(rect: Rect, width: number, height: number): Rect {
-  const x = Math.max(0, Math.min(rect.x, width));
-  const y = Math.max(0, Math.min(rect.y, height));
-  return {
-    x,
-    y,
-    w: Math.max(0, Math.min(rect.w + rect.x - x, width - x)),
-    h: Math.max(0, Math.min(rect.h + rect.y - y, height - y)),
-  };
 }
 
 function regionsEqual(a: PixelBuffer, b: PixelBuffer): boolean {
