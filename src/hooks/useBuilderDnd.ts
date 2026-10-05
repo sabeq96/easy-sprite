@@ -84,6 +84,16 @@ function draftHeights(
   );
 }
 
+/** Every committed block by id, plus the ghost while a sprite is being dragged in. */
+function blockLookup(
+  blocks: readonly SpritesheetBlockRecord[],
+  ghost: SpritesheetBlockRecord | null,
+): Map<string, SpritesheetBlockRecord> {
+  const lookup = new Map(blocks.map((block) => [block.id, block]));
+  if (ghost) lookup.set(ghost.id, ghost);
+  return lookup;
+}
+
 function maxHeights(a: Record<string, number>, b: Record<string, number>): Record<string, number> {
   return Object.fromEntries(Object.entries(b).map(([key, h]) => [key, Math.max(h, a[key] ?? 0)]));
 }
@@ -120,18 +130,13 @@ export function useBuilderDnd(
   const ghostRef = useRef<SpritesheetBlockRecord | null>(null);
   const [ghost, setGhost] = useState<SpritesheetBlockRecord | null>(null);
 
-  const lookup = new Map(blocks.map((block) => [block.id, block]));
-  if (ghost) lookup.set(ghost.id, ghost);
-  const rows: BuilderRowView[] = Object.entries(draft ?? toRowDraft(blocks)).map(
-    ([key, ids]) => ({
-      key,
-      blocks: ids.flatMap((id) => {
-        const block = lookup.get(id);
-        return block ? [block] : [];
-      }),
-      heldHeight: draft ? held[key] : undefined,
-    }),
-  );
+  const shown = draft ?? toRowDraft(blocks);
+  const shownBlocks = draftToRows(shown, blockLookup(blocks, ghost));
+  const rows: BuilderRowView[] = Object.keys(shown).map((key, index) => ({
+    key,
+    blocks: shownBlocks[index],
+    heldHeight: draft ? held[key] : undefined,
+  }));
 
   // Opened for everything the sheet *shows*, ghost included, so a sprite being dragged in starts
   // loading its pixels before it is even dropped.
@@ -142,8 +147,7 @@ export function useBuilderDnd(
     draftRef.current = next;
     setDraft(next);
 
-    const records = new Map(blocks.map((block) => [block.id, block]));
-    if (ghostRef.current) records.set(ghostRef.current.id, ghostRef.current);
+    const records = blockLookup(blocks, ghostRef.current);
     heldRef.current = next ? maxHeights(heldRef.current, draftHeights(next, records, sizes)) : {};
     setHeld(heldRef.current);
   };
@@ -228,8 +232,7 @@ export function useBuilderDnd(
       return;
     }
 
-    const records = new Map(base.map((block) => [block.id, block]));
-    if (pending) records.set(pending.id, pending);
+    const records = blockLookup(base, pending);
 
     // What the drag showed is what lands; a gutter is the one target that means something the
     // draft didn't already show — a new row, opened on drop.

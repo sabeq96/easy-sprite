@@ -160,11 +160,7 @@ export class SpriteDocument {
 
   insertLayer(layer: LayerModel, atIndex: number, cels: CelData[] = []): void {
     this.layers = insertAt(this.layers, atIndex, layer);
-    for (const cel of cels) {
-      const restored = createCel(cel.layerId, cel.frameId, this.width, this.height, cel.pixels);
-      restored.storeDirty = true;
-      this.cels.set(celKey(cel.layerId, cel.frameId), restored);
-    }
+    this.restoreCels(cels);
     this.bump("structure");
   }
 
@@ -177,14 +173,7 @@ export class SpriteDocument {
     const layer = this.layers[index];
     this.layers = this.layers.filter((candidate) => candidate.id !== layerId);
 
-    const removed: CelData[] = [];
-    for (const frame of this.frames) {
-      const key = celKey(layerId, frame.id);
-      const cel = this.cels.get(key);
-      if (!cel) continue;
-      removed.push({ layerId, frameId: frame.id, pixels: cel.pixels });
-      this.cels.delete(key);
-    }
+    const removed = this.takeCels(this.frames.map((frame) => ({ layerId, frameId: frame.id })));
 
     this.bump("structure");
     return { layer, index, cels: removed };
@@ -243,14 +232,7 @@ export class SpriteDocument {
     const frame = this.frames[index];
     this.frames = this.frames.filter((candidate) => candidate.id !== frameId);
 
-    const removed: CelData[] = [];
-    for (const layer of this.layers) {
-      const key = celKey(layer.id, frameId);
-      const cel = this.cels.get(key);
-      if (!cel) continue;
-      removed.push({ layerId: layer.id, frameId, pixels: cel.pixels });
-      this.cels.delete(key);
-    }
+    const removed = this.takeCels(this.layers.map((layer) => ({ layerId: layer.id, frameId })));
 
     this.bump("structure");
     return { frame, index, cels: removed };
@@ -258,11 +240,7 @@ export class SpriteDocument {
 
   insertFrame(frame: FrameModel, atIndex: number, cels: CelData[] = []): void {
     this.frames = insertAt(this.frames, atIndex, frame);
-    for (const cel of cels) {
-      const restored = createCel(cel.layerId, cel.frameId, this.width, this.height, cel.pixels);
-      restored.storeDirty = true;
-      this.cels.set(celKey(cel.layerId, cel.frameId), restored);
-    }
+    this.restoreCels(cels);
     this.bump("structure");
   }
 
@@ -314,6 +292,28 @@ export class SpriteDocument {
 
   get celCount(): number {
     return this.cels.size;
+  }
+
+  /** Deletes these cels where they exist and returns them, so a command can put them back. */
+  private takeCels(keys: Omit<CelData, "pixels">[]): CelData[] {
+    const removed: CelData[] = [];
+    for (const { layerId, frameId } of keys) {
+      const key = celKey(layerId, frameId);
+      const cel = this.cels.get(key);
+      if (!cel) continue;
+      removed.push({ layerId, frameId, pixels: cel.pixels });
+      this.cels.delete(key);
+    }
+    return removed;
+  }
+
+  /** Puts removed cels back, dirty so Autosave writes them again. */
+  private restoreCels(cels: CelData[]): void {
+    for (const cel of cels) {
+      const restored = createCel(cel.layerId, cel.frameId, this.width, this.height, cel.pixels);
+      restored.storeDirty = true;
+      this.cels.set(celKey(cel.layerId, cel.frameId), restored);
+    }
   }
 
   private bump(channel: RevisionChannel): void {

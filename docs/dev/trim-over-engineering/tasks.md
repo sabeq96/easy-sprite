@@ -55,8 +55,8 @@ Notes:
 - Backup: one encode and one decode helper for thumbnails. The import-writing helper is inlined into import, and the one-transaction comment stays. The file format is unchanged.
 
 Checks:
-- [ ] Sprite document and backup suites pass unchanged (round trips, merge and replace)
-- [ ] Unit tests and lint pass; committed
+- [x] Sprite document and backup suites pass unchanged (round trips, merge and replace)
+- [x] Unit tests and lint pass; committed
 
 ## 6. Branch verification and PR
 The branch is verified as a whole and opened as a PR.
