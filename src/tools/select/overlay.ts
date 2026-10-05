@@ -1,7 +1,7 @@
 import type { OverlayPaint } from "@/framework/host";
 import type { ToolPoint } from "@/framework/tool";
 import type { Rect } from "@/lib/rect";
-import type { Mask } from "./mask";
+import type { Selection } from "./selection";
 import type { FloatingSelection } from "./region";
 
 // Same flat-fill language as the brush preview (brushCursor.ts), in blue.
@@ -10,27 +10,27 @@ const HOVER_FILL = "rgba(59,130,246,0.2)";
 
 export interface SelectionView {
   /** Already clamped to the sprite. */
-  mask: Mask | null;
+  selection: Selection | null;
   /** Pixels being dragged, drawn at `region.rect + offset`. */
   floating: { region: FloatingSelection; offset: { x: number; y: number } } | null;
   /** In-sprite pixel under the pointer, only when it is not over the selection. */
   hover: ToolPoint | null;
 }
 
-const rasters = new WeakMap<Mask, OffscreenCanvas>();
+const rasters = new WeakMap<Selection, OffscreenCanvas>();
 
-/** One pixel per masked pixel, in the selection fill; rebuilt only when the mask changes. */
-function rasterOf(mask: Mask): OffscreenCanvas {
-  let raster = rasters.get(mask);
+/** One pixel per selected pixel, in the selection fill; rebuilt only when the selection changes. */
+function rasterOf(selection: Selection): OffscreenCanvas {
+  let raster = rasters.get(selection);
   if (!raster) {
-    const { w, h } = mask.rect;
+    const { w, h } = selection.rect;
     const data = new ImageData(w, h);
-    mask.bits.forEach((bit, i) => {
+    selection.bits.forEach((bit, i) => {
       if (bit) data.data.set(SELECTION_RGBA, i * 4);
     });
     raster = new OffscreenCanvas(w, h);
     raster.getContext("2d")?.putImageData(data, 0, 0);
-    rasters.set(mask, raster);
+    rasters.set(selection, raster);
   }
   return raster;
 }
@@ -63,11 +63,11 @@ export function selectionPainter(getView: () => SelectionView | null): OverlayPa
         region.rect.h * viewport.scale,
       );
     }
-    if (view.mask) {
-      const { rect } = view.mask;
+    if (view.selection) {
+      const { rect } = view.selection;
       ctx.imageSmoothingEnabled = false;
       ctx.drawImage(
-        rasterOf(view.mask),
+        rasterOf(view.selection),
         viewport.originX + rect.x * viewport.scale,
         viewport.originY + rect.y * viewport.scale,
         rect.w * viewport.scale,

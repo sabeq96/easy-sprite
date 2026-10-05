@@ -2,37 +2,37 @@ import { rectClamp, rectIsEmpty, type Rect } from "@/lib/rect";
 import type { ToolPoint } from "@/framework/tool";
 
 /** A Selection: its bounding rectangle plus one flag per pixel inside it, row by row. */
-export interface Mask {
+export interface Selection {
   rect: Rect;
   bits: Uint8Array;
 }
 
-export function maskHas(mask: Mask, x: number, y: number): boolean {
-  const { rect } = mask;
+export function isSelected(selection: Selection, x: number, y: number): boolean {
+  const { rect } = selection;
   if (x < rect.x || y < rect.y || x >= rect.x + rect.w || y >= rect.y + rect.h) return false;
-  return mask.bits[(y - rect.y) * rect.w + (x - rect.x)] === 1;
+  return selection.bits[(y - rect.y) * rect.w + (x - rect.x)] === 1;
 }
 
 /** The same shape somewhere else. */
-export function maskMoved(mask: Mask, x: number, y: number): Mask {
-  return { rect: { ...mask.rect, x, y }, bits: mask.bits };
+export function selectionMoved(selection: Selection, x: number, y: number): Selection {
+  return { rect: { ...selection.rect, x, y }, bits: selection.bits };
 }
 
-/** The part of the mask on the canvas, trimmed; null when nothing is left. */
-export function maskClamped(mask: Mask, width: number, height: number): Mask | null {
-  const box = rectClamp(mask.rect, width, height);
+/** The part of the selection on the canvas, trimmed; null when nothing is left. */
+export function selectionClamped(selection: Selection, width: number, height: number): Selection | null {
+  const box = rectClamp(selection.rect, width, height);
   if (rectIsEmpty(box)) return null;
   const bits = new Uint8Array(box.w * box.h);
   for (let y = 0; y < box.h; y++) {
     for (let x = 0; x < box.w; x++) {
-      bits[y * box.w + x] = maskHas(mask, box.x + x, box.y + y) ? 1 : 0;
+      bits[y * box.w + x] = isSelected(selection, box.x + x, box.y + y) ? 1 : 0;
     }
   }
   return trimmed({ rect: box, bits });
 }
 
 /** Clamped to the canvas; null when nothing is left. */
-export function maskFromRect(rect: Rect, width: number, height: number): Mask | null {
+export function selectionFromRect(rect: Rect, width: number, height: number): Selection | null {
   const clamped = rectClamp(rect, width, height);
   if (rectIsEmpty(clamped)) return null;
   return { rect: clamped, bits: new Uint8Array(clamped.w * clamped.h).fill(1) };
@@ -42,11 +42,11 @@ export function maskFromRect(rect: Rect, width: number, height: number): Mask | 
  * Every pixel the path touches, joined by straight lines and closed back to its start, plus
  * everything inside it (even-odd). Clamped to the canvas and trimmed; null when nothing is left.
  */
-export function maskFromPath(
+export function selectionFromPath(
   path: readonly ToolPoint[],
   width: number,
   height: number,
-): Mask | null {
+): Selection | null {
   if (path.length === 0) return null;
 
   const xs = path.map((point) => point.x);
@@ -112,8 +112,8 @@ function traceLine(from: ToolPoint, to: ToolPoint, visit: (x: number, y: number)
   }
 }
 
-function trimmed(mask: Mask): Mask | null {
-  const { rect, bits } = mask;
+function trimmed(selection: Selection): Selection | null {
+  const { rect, bits } = selection;
   let minX = rect.w, minY = rect.h, maxX = -1, maxY = -1;
   for (let y = 0; y < rect.h; y++) {
     for (let x = 0; x < rect.w; x++) {

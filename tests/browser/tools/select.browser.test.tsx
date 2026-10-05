@@ -30,20 +30,20 @@ async function withRedBlock(editor: Editor) {
   await chooseTool(editor, "Select & move");
 }
 
-/** Marquee-selects the block by dragging over exactly its pixels. */
+/** Rectangle-selects the block by dragging over exactly its pixels. */
 function selectBlock(editor: Editor) {
   editor.drag([{ x: 2, y: 2 }, { x: 4, y: 4 }]);
   expect(selectedRect()).toEqual({ x: 2, y: 2, w: 3, h: 3 });
 }
 
-test("a marquee drag selects the rectangle between its corners, whichever way it is dragged", async () => {
+test("a rectangle drag selects the rectangle between its corners, whichever way it is dragged", async () => {
   const editor = await openEditor();
   await chooseTool(editor, "Select & move");
 
   editor.drag([{ x: 9, y: 8 }, { x: 3, y: 2 }]);
   expect(selectedRect()).toEqual({ x: 3, y: 2, w: 7, h: 7 });
 
-  // A plain click is a one-pixel marquee.
+  // A plain click is a one-pixel rectangle.
   editor.click({ x: 12, y: 12 });
   expect(selectedRect()).toEqual({ x: 12, y: 12, w: 1, h: 1 });
 });
@@ -86,7 +86,7 @@ test("a move is one undo step that puts the pixels back where they were", async 
   await userEvent.keyboard(KEYS.undo);
 
   expect(paintedPixels()).toEqual(keys(rectPoints(2, 2, 3, 3)));
-  // Undo moved pixels out from under the marquee, so it is dropped rather than left lying.
+  // Undo moved pixels out from under the selection, so it is dropped rather than left lying.
   expect(selectedRect()).toBeNull();
 
   await userEvent.keyboard(KEYS.redo);
